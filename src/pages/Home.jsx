@@ -1,7 +1,9 @@
-import React from 'react'
+import React from "react";
 
 export default function home() {
   return (
-    <div>home</div>
-  )
+    <main className="min-h-screen pt-4">
+      <div>home</div>
+    </main>
+  );
 }

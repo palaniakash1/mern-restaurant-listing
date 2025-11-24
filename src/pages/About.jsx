@@ -2,6 +2,9 @@ import React from 'react'
 
 export default function about() {
   return (
-    <div>about</div>
+    <main className='min-h-screen pt-4'>
+
+    <div className=''>about</div>
+    </main>
   )
 }
