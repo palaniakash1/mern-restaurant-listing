@@ -11,8 +11,8 @@ export default function Header() {
             <span className="text-red-500">Mapper</span>
           </h1>
         </Link>
-        <div className="">
-          <form className="bg-pink-50 p-2 rounded-md shadow-sm flex items-center gap-2">
+        <div className="flex gap-2">
+          <form className="bg-white p-2 rounded-md shadow-sm flex items-center gap-2">
             <input
               type="text"
               id="search-name"
@@ -21,8 +21,17 @@ export default function Header() {
             />
             <FaSearch className="text-red-600" />
           </form>
+          <form className="bg-white p-2 rounded-md shadow-sm flex items-center gap-2">
+            <input
+              type="text"
+              id="search-location"
+              className="bg-transparent focus:outline-none w-24 sm:w-64"
+              placeholder="search by Location..."
+            />
+            <FaSearch className="text-red-600" />
+          </form>
         </div>
-        <ul className="flex gap-2.5">
+        <ul className="flex gap-4">
           <Link to="/">
             <li className="hidden sm:inline text-zinc-900 hover:text-zinc-600 active:text-zinc-500">
               Home
