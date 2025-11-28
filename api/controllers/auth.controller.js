@@ -18,12 +18,12 @@ export const signup = async (req, res, next) => {
     );
   }
   // --------------------------------------number check
-  // simple email validation using regex
   const userNameRegex = /^\D+$/;
   if (!userNameRegex.test(userName)) {
     return next(errorHandler(400, "Username must not contain numbers"));
   }
 
+  // simple email validation using regex
   // --------------------------------------empty email check
   if (!email || email.trim() === "") {
     return next(errorHandler(400, "Please enter an email"));
@@ -72,9 +72,14 @@ export const signup = async (req, res, next) => {
 
   // previous codes
   const hashedPassword = bcryptjs.hashSync(password, 10);
+  const lowerCasedEmail = email.toLowerCase();
 
   // Here, you would typically add logic to save the user to your database
-  const newUser = new User({ userName, email, password: hashedPassword });
+  const newUser = new User({
+    userName,
+    email: lowerCasedEmail,
+    password: hashedPassword,
+  });
 
   try {
     await newUser.save();
@@ -87,18 +92,47 @@ export const signup = async (req, res, next) => {
 // signin module
 export const signin = async (req, res, next) => {
   const { email, password } = req.body;
-  try {
 
-    const validUser = await User.findOne({ email });
-    console.log("Entered password:", password);
-    console.log("Stored hash:", validUser.password);
+  // simple email validation using regex
+  // --------------------------------------empty email check
+  if (!email || email.trim() === "") {
+    return next(errorHandler(400, "Please enter an email"));
+  }
+
+  // --------------------------------------email format check
+  // simple email validation using regex
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return next(errorHandler(400, "Please enter a valid email address"));
+  }
+
+  // password validation ---------------- empty password
+  if (!password || password.trim() === "") {
+    return next(errorHandler(400, "Please enter a password"));
+  }
+  // --------------------------------------password strength check
+  // simple email validation using regex
+  const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9]).{6,}$/;
+  if (!passwordRegex.test(password)) {
+    return next(
+      errorHandler(
+        400,
+        "Minimum 8 characters total. Must contain at least 1 capital letter (A-Z). Must contain at least 1 number (0-9)."
+      )
+    );
+  }
+  const lowerCasedEmail = email.toLowerCase();
+
+  try {
+    const validUser = await User.findOne({ email: lowerCasedEmail });
+
     if (!validUser)
-      return next(errorHandler(404, `User with this email ${email} not found`));
+      return next(errorHandler(404, `User with this email ${lowerCasedEmail} not found`));
 
     const validPassword = bcryptjs.compareSync(password, validUser.password);
     if (!validPassword)
       return next(
-        errorHandler(401, `Password does not match for email ${email}`)
+        errorHandler(401, `Password does not match for email ${lowerCasedEmail}`)
       );
 
     // Generate JWT token
@@ -108,7 +142,7 @@ export const signin = async (req, res, next) => {
     res
       .cookie("access_token", token, { httpOnly: true })
       .status(200)
-      .json(rest); 
+      .json(rest);
   } catch (error) {
     next(error);
   }
