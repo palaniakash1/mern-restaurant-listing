@@ -17,6 +17,12 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    role: {
+      type: String,
+      enum: ["user", "storeManager", "admin", "superAdmin"], // Define valid roles
+      default: "user", // Default role for new signups
+      required: true,
+    },
   },
   { timestamps: true }
 );
@@ -24,7 +30,4 @@ const userSchema = new mongoose.Schema(
 const User = mongoose.model("User", userSchema);
 
 export default User;
-
-
-
 

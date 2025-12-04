@@ -79,6 +79,7 @@ export const signup = async (req, res, next) => {
     userName,
     email: lowerCasedEmail,
     password: hashedPassword,
+    role: "user", // ⬅️ Explicitly set the default role here
   });
 
   try {
@@ -89,7 +90,10 @@ export const signup = async (req, res, next) => {
   }
 };
 
+// ================================================
 // signin module
+// ================================================
+
 export const signin = async (req, res, next) => {
   const { email, password } = req.body;
 
@@ -110,29 +114,24 @@ export const signin = async (req, res, next) => {
   if (!password || password.trim() === "") {
     return next(errorHandler(400, "Please enter a password"));
   }
-  // --------------------------------------password strength check
-  // simple email validation using regex
-  const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9]).{6,}$/;
-  if (!passwordRegex.test(password)) {
-    return next(
-      errorHandler(
-        400,
-        "Minimum 8 characters total. Must contain at least 1 capital letter (A-Z). Must contain at least 1 number (0-9)."
-      )
-    );
-  }
+
   const lowerCasedEmail = email.toLowerCase();
 
   try {
     const validUser = await User.findOne({ email: lowerCasedEmail });
 
     if (!validUser)
-      return next(errorHandler(404, `User with this email ${lowerCasedEmail} not found`));
+      return next(
+        errorHandler(404, `User with this email ${lowerCasedEmail} not found`)
+      );
 
     const validPassword = bcryptjs.compareSync(password, validUser.password);
     if (!validPassword)
       return next(
-        errorHandler(401, `Password does not match for email ${lowerCasedEmail}`)
+        errorHandler(
+          401,
+          `Password does not match for email ${lowerCasedEmail}`
+        )
       );
 
     // Generate JWT token
