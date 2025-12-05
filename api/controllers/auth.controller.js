@@ -3,6 +3,18 @@ import bcryptjs from "bcryptjs";
 import { errorHandler } from "../utils/error.js";
 import jwt from "jsonwebtoken";
 
+function toTitleCase(str) {
+  return str
+    .toLowerCase()
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+// ===============================================
+// signup module
+// ===============================================
+
 export const signup = async (req, res, next) => {
   const { userName, email, password } = req.body;
 
@@ -73,10 +85,11 @@ export const signup = async (req, res, next) => {
   // previous codes
   const hashedPassword = bcryptjs.hashSync(password, 10);
   const lowerCasedEmail = email.toLowerCase();
+  const capitalizeUserName = toTitleCase(userName);
 
   // Here, you would typically add logic to save the user to your database
   const newUser = new User({
-    userName,
+    userName: capitalizeUserName,
     email: lowerCasedEmail,
     password: hashedPassword,
     role: "user", // ⬅️ Explicitly set the default role here
@@ -142,6 +155,50 @@ export const signin = async (req, res, next) => {
       .cookie("access_token", token, { httpOnly: true })
       .status(200)
       .json(rest);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ================================================
+// google oauth module
+// ================================================
+
+export const google = async (req, res, next) => {
+  const { name, email, googlePhotoUrl } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (user) {
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+      const { password, ...rest } = user._doc;
+      res
+        .status(200)
+        .cookie("access_token", token, { httpOnly: true })
+        .json(rest);
+    } else {
+      const generatedPassword =
+        Math.random().toString(36).slice(-8) +
+        Math.random().toString(36).slice(-8);
+      const hashedPassword = bcryptjs.hashSync(generatedPassword, 10);
+
+      const newUser = new User({
+        userName:
+          name.toLowerCase().split(" ").join("") +
+          Math.random().toString(9).slice(-4),
+        email,
+        password: hashedPassword,
+        profilePicture: googlePhotoUrl,
+      });
+      await newUser.save();
+      const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET);
+      const { passowrd, ...rest } = newUser._doc;
+      res
+        .status(200)
+        .cookie("access_token", token, {
+          httpOnly: true,
+        })
+        .json(rest);
+    }
   } catch (error) {
     next(error);
   }

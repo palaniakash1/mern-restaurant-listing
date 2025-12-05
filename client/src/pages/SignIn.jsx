@@ -4,8 +4,10 @@ import {
   signInStart,
   signInSuccess,
   signInFailure,
+  clearError,
 } from "../redux/user/userSlice";
 import { useDispatch, useSelector } from "react-redux";
+// import OAuth from "../components/OAuth";
 
 const EyeIcon = (props) => (
   <svg
@@ -57,6 +59,7 @@ export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
+    if (error) dispatch(clearError());
     setFormData({
       ...formData,
       [e.target.id]: e.target.value,
@@ -64,13 +67,16 @@ export default function SignIn() {
     if (e.target.id === "password") {
       setPassword(e.target.value);
     }
+
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+   
     if (!formData.email || !formData.password) {
       dispatch(signInFailure("Please fill in all fields"));
-}
+      return;
+    }
     try {
       dispatch(signInStart());
       const res = await fetch("/api/auth/signin", {
@@ -147,6 +153,7 @@ export default function SignIn() {
           >
             {loading ? "Signing in..." : "Sign In"}
           </button>
+          {/* <OAuth/> */}
         </form>
         <div className="flex gap-2 mt-4">
           <p className="capitalize">Don't having an account?</p>
