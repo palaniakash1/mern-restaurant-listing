@@ -7,7 +7,7 @@ import {
   clearError,
 } from "../redux/user/userSlice";
 import { useDispatch, useSelector } from "react-redux";
-// import OAuth from "../components/OAuth";
+import OAuth from "../components/OAuth";
 
 const EyeIcon = (props) => (
   <svg
@@ -153,7 +153,7 @@ export default function SignIn() {
           >
             {loading ? "Signing in..." : "Sign In"}
           </button>
-          {/* <OAuth/> */}
+          <OAuth/>
         </form>
         <div className="flex gap-2 mt-4">
           <p className="capitalize">Don't having an account?</p>
