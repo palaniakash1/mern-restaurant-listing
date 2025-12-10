@@ -9,6 +9,8 @@ import Dashboard from "./pages/Dashboard";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import PrivateRoute from "./components/PrivateRoute";
+import "flowbite/dist/flowbite.css";
+
 
 export default function App() {
   return (

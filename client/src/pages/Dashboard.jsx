@@ -1,9 +1,28 @@
-import React from 'react'
+import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
+import DashSidebar from "../components/DashSidebar";
+import DashProfile from "../components/DashProfile";
 
 export default function Dashboard() {
-    return (
-      <main className="min-h-[88vh] w-[90%] mx-auto pt-6">
-          <div>Dashboard</div>
-    </main>
-  )
+  const location = useLocation();
+  const [tab, setTab] = useState("");
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const tabFromUrl = urlParams.get("tab");
+    if (tabFromUrl) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTab(tabFromUrl);
+    }
+  }, [location.search]);
+
+  return (
+    <div className="min-h-screen flex flex-col md:flex-row">
+      <div className="md:w-56">
+        {/* sidebar */}
+        <DashSidebar />
+      </div>
+      {/* profile&etc */}
+      {tab === "profile" && <DashProfile />}
+    </div>
+  );
 }
