@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, Button, TextInput } from "flowbite-react";
 import { useSelector } from "react-redux";
 import {
@@ -20,6 +20,8 @@ export default function DashProfile() {
   const [isUploading, setIsUploading] = useState(false);
   const filePickerRef = useRef();
 
+  console.log(imageFileUploadingProgress, imageFileUploadingError);
+
   const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB in bytes
 
   const handleImageChange = (e) => {
@@ -35,6 +37,7 @@ export default function DashProfile() {
     // ✅ 1. Check file size BEFORE upload
     if (file.size > MAX_FILE_SIZE) {
       setImageFileUploadingError("Image must be less than 2MB.");
+      e.target.value = null;
       setImageFile(null);
       return; // ❗ STOP here — do not upload
     }
@@ -47,12 +50,12 @@ export default function DashProfile() {
     setImageFileUrl(URL.createObjectURL(file));
   };
 
-  const uploadImage = async () => {
+  const uploadImage = useCallback(() => {
+    if (!imageFile) return;
     setIsUploading(true); // 👈 START upload UI
     setImageFileUploadingError(null);
     const storage = getStorage(app);
     const fileName = new Date().getTime() + imageFile.name;
-
     const storageRef = ref(storage, fileName);
     const uploadTask = uploadBytesResumable(storageRef, imageFile);
     uploadTask.on(
@@ -78,13 +81,13 @@ export default function DashProfile() {
         });
       }
     );
-  };
+  }, [imageFile]);
 
   useEffect(() => {
     if (imageFile) {
       uploadImage();
     }
-  }, [imageFile]);
+  }, [imageFile, uploadImage]);
 
   return (
     <div className="max-w-lg mx-auto p-3 w-full">

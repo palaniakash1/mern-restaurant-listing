@@ -3,14 +3,6 @@ import bcryptjs from "bcryptjs";
 import { errorHandler } from "../utils/error.js";
 import jwt from "jsonwebtoken";
 
-function toTitleCase(str) {
-  return str
-    .toLowerCase()
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
-
 // ===============================================
 // signup module
 // ===============================================
@@ -29,6 +21,10 @@ export const signup = async (req, res, next) => {
       errorHandler(400, "Username must be at least 3 characters long")
     );
   }
+  if (req.body.userName !== req.body.userName.toLowerCase()) {
+    return next(errorHandler(400, " UserName must be lowercase"));
+  }
+
   // --------------------------------------number check
   const userNameRegex = /^\D+$/;
   if (!userNameRegex.test(userName)) {
@@ -85,11 +81,10 @@ export const signup = async (req, res, next) => {
   // previous codes
   const hashedPassword = bcryptjs.hashSync(password, 10);
   const lowerCasedEmail = email.toLowerCase();
-  const capitalizeUserName = toTitleCase(userName);
 
   // Here, you would typically add logic to save the user to your database
   const newUser = new User({
-    userName: capitalizeUserName,
+    userName,
     email: lowerCasedEmail,
     password: hashedPassword,
     role: "user", // ⬅️ Explicitly set the default role here
