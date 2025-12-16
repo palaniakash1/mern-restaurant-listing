@@ -25,11 +25,6 @@ export const signup = async (req, res, next) => {
     return next(errorHandler(400, " UserName must be lowercase"));
   }
 
-  // --------------------------------------number check
-  const userNameRegex = /^\D+$/;
-  if (!userNameRegex.test(userName)) {
-    return next(errorHandler(400, "Username must not contain numbers"));
-  }
 
   // simple email validation using regex
   // --------------------------------------empty email check

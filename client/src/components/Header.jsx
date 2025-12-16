@@ -8,16 +8,15 @@ export default function Header() {
   const [openDropdown, setOpenDropdown] = useState(false);
   const { currentUser } = useSelector((state) => state.user);
 
-
-useEffect(() => {
-  const handleClick = (e) => {
-    if (!e.target.closest(".dropdown-area")) {
-      setOpenDropdown(false);
-    }
-  };
-  document.addEventListener("click", handleClick);
-  return () => document.removeEventListener("click", handleClick);
-}, []);
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (!e.target.closest(".dropdown-area")) {
+        setOpenDropdown(false);
+      }
+    };
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, []);
 
   return (
     <header className="bg-green-100 shadow-md min-w-full flex flex-wrap justify-between px-7">
@@ -51,12 +50,12 @@ useEffect(() => {
         </div>
         <ul className="flex gap-4 items-center">
           <Link to="/">
-            <li className="hidden sm:inline text-zinc hover:text-green-600 active:text-green-500 cursor-pointer">
+            <li className="hidden sm:block text-zinc hover:text-green-600 active:text-green-500 cursor-pointer">
               Home
             </li>
           </Link>
           <Link to="/about">
-            <li className="hidden sm:inline  text-zinc hover:text-green-600 active:text-green-500 cursor-pointer">
+            <li className="hidden sm:block  text-zinc hover:text-green-600 active:text-green-500 cursor-pointer">
               About
             </li>
           </Link>
@@ -71,7 +70,7 @@ useEffect(() => {
                 <img
                   src={currentUser.profilePicture}
                   alt={currentUser.userName}
-                  className="w-10 h-10 rounded-full border cursor-pointer"
+                  className="w-10 h-10 rounded-full border cursor-pointer object-cover"
                 />
               </button>
               {/* dropdown menu */}

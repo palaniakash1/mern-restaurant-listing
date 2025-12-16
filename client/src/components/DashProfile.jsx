@@ -9,6 +9,12 @@ import {
 } from "firebase/storage";
 import { app } from "../firebase";
 import ImageCircleLoader from "../components/ImageCircleLoader";
+import {
+  updateStart,
+  updateSuccess,
+  updateFailure,
+} from "../redux/user/userSlice";
+import { useDispatch } from "react-redux";
 
 export default function DashProfile() {
   const { currentUser } = useSelector((state) => state.user);
@@ -18,7 +24,14 @@ export default function DashProfile() {
     useState(null);
   const [imageFileUploadingError, setImageFileUploadingError] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [formData, setFromData] = useState({});
+  const [updateUserSuccess, setUpdateUserSuccess] = useState(null);
+  const [updateUserError, setUpdateUserError] = useState(null);
+
+  const [imageFileUploading, setImageFileUploading] = useState(false);
+
   const filePickerRef = useRef();
+  const dispatch = useDispatch();
 
   console.log(imageFileUploadingProgress, imageFileUploadingError);
 
@@ -50,9 +63,11 @@ export default function DashProfile() {
     setImageFileUrl(URL.createObjectURL(file));
   };
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const uploadImage = useCallback(() => {
     if (!imageFile) return;
     setIsUploading(true); // 👈 START upload UI
+    setImageFileUploading(true);
     setImageFileUploadingError(null);
     const storage = getStorage(app);
     const fileName = new Date().getTime() + imageFile.name;
@@ -65,7 +80,8 @@ export default function DashProfile() {
           (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
         setImageFileUploadingProgress(Math.round(progress));
       },
-      () => {
+      // eslint-disable-next-line no-unused-vars
+      (error) => {
         setIsUploading(false);
         setImageFileUploadingProgress(null);
         setImageFile(null);
@@ -73,11 +89,14 @@ export default function DashProfile() {
         setImageFileUploadingError(
           `couldn't upload image (image size exceeds 2MB)`
         );
+        setImageFileUploading(false);
       },
       () => {
         getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
           setImageFileUrl(downloadURL);
           setIsUploading(false);
+          setFromData({ ...formData, profilePicture: downloadURL });
+          setImageFileUploading(false);
         });
       }
     );
@@ -85,14 +104,60 @@ export default function DashProfile() {
 
   useEffect(() => {
     if (imageFile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       uploadImage();
     }
-  }, [imageFile, uploadImage]);
+  }, [imageFile]);
+
+  const handleChange = (e) => {
+    setFromData({ ...formData, [e.target.id]: e.target.value });
+  };
+  console.log(formData);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    setUpdateUserError(null);
+    setUpdateUserSuccess(null);
+
+    if (Object.keys(formData).length === 0) {
+      setUpdateUserError(`No changes made to update`);
+      return;
+    }
+
+    if (imageFileUploading) {
+      setUpdateUserError("please wait for the image to uploaded");
+      return;
+    }
+
+    try {
+      dispatch(updateStart());
+      const res = await fetch(`/api/user/update/${currentUser._id}`, {
+        method: "PUT",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        dispatch(updateFailure(data.message));
+        setUpdateUserError(data.message);
+      } else {
+        dispatch(updateSuccess(data));
+        setUpdateUserSuccess(`User Profile updated successfully!`);
+      }
+    } catch (error) {
+      dispatch(updateFailure(error.message));
+      setUpdateUserError(error.message);
+    }
+  };
 
   return (
     <div className="max-w-lg mx-auto p-3 w-full">
       <h1 className="my-7 text-center font-semibold text-3xl ">Profile</h1>
-      <form className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
           type="file"
           accept="image/*"
@@ -124,14 +189,21 @@ export default function DashProfile() {
           id="userName"
           placeholder="userName"
           defaultValue={currentUser.userName}
+          onChange={handleChange}
         />
         <TextInput
           type="email"
           id="email"
           placeholder="email"
           defaultValue={currentUser.email}
+          onChange={handleChange}
         />
-        <TextInput type="text" id="password" placeholder="password" />
+        <TextInput
+          type="text"
+          id="password"
+          placeholder="password"
+          onChange={handleChange}
+        />
         <Button
           type="submit"
           className="bg-gradient-to-br from-purple-600 to-blue-500 text-white hover:bg-gradient-to-bl focus:ring-blue-300 dark:focus:ring-blue-800"
@@ -142,16 +214,26 @@ export default function DashProfile() {
       </form>
       <div className="text-red-500 flex justify-between mt-5 items-center">
         <span className="cursor-pointer">Delete Account</span>
-        <span
+        {/* <span
           className="cursor-pointer p-2 px-4 rounded-lg bg-blue-500 text-white"
           onClick={() => {
             filePickerRef.current.click();
           }}
         >
           Change Image
-        </span>
+        </span> */}
         <span className="cursor-pointer ">Sign out</span>
       </div>
+      {updateUserSuccess && (
+        <Alert color="success" className="mt-5">
+          {updateUserSuccess}
+        </Alert>
+      )}
+      {updateUserError && (
+        <Alert color="failure" className="mt-5">
+          {updateUserError}
+        </Alert>
+      )}
     </div>
   );
 }
