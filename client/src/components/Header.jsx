@@ -3,10 +3,13 @@ import { Link } from "react-router-dom";
 import logo from "../assets/eatwisely.ico";
 import { useSelector } from "react-redux";
 import { useEffect, useState } from "react";
+import { signOutSuccess } from "../redux/user/userSlice";
+import { useDispatch } from "react-redux";
 
 export default function Header() {
   const [openDropdown, setOpenDropdown] = useState(false);
   const { currentUser } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const handleClick = (e) => {
@@ -17,6 +20,22 @@ export default function Header() {
     document.addEventListener("click", handleClick);
     return () => document.removeEventListener("click", handleClick);
   }, []);
+
+  const handleSignOut = async () => {
+    try {
+      const res = await fetch(`/api/user/signout`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        console.log(data.message);
+      } else {
+        dispatch(signOutSuccess());
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
     <header className="bg-green-100 shadow-md min-w-full flex flex-wrap justify-between px-7">
@@ -98,10 +117,12 @@ export default function Header() {
                   {/* Divider */}
                   <div className="border-t dark:border-gray-700"></div>
                   <div
-                    onClick={() => {
-                      setOpenDropdown(false);
-                      // handleSignout();
-                    }}
+                    onClick={
+                      (() => {
+                        setOpenDropdown(false);
+                      },
+                      handleSignOut)
+                    }
                     className="px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
                   >
                     Sign out

@@ -5,9 +5,12 @@ import { useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { FaPizzaSlice } from "react-icons/fa";
 import { MdFastfood } from "react-icons/md";
+import { useDispatch } from "react-redux";
+import { signOutSuccess } from "../redux/user/userSlice";
 
 export default function DashSidebar() {
   const location = useLocation();
+  const dispatch = useDispatch();
   const [tab, setTab] = useState("");
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -17,6 +20,22 @@ export default function DashSidebar() {
       setTab(tabFromUrl);
     }
   }, [location.search]);
+
+  const handleSignOut = async () => {
+    try {
+      const res = await fetch(`/api/user/signout`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        console.log(data.message);
+      } else {
+        dispatch(signOutSuccess());
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
     <Sidebar
@@ -115,6 +134,7 @@ export default function DashSidebar() {
           hover:text-red-600 
           [&>a:hover]:!text[#CC0001]
         "
+            onClick={handleSignOut}
           >
             Signout
           </Sidebar.Item>
