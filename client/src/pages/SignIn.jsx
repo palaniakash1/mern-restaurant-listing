@@ -67,12 +67,11 @@ export default function SignIn() {
     if (e.target.id === "password") {
       setPassword(e.target.value);
     }
-
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-   
+
     if (!formData.email || !formData.password) {
       dispatch(signInFailure("Please fill in all fields"));
       return;
@@ -149,11 +148,12 @@ export default function SignIn() {
 
           <button
             disabled={loading}
-            className="uppercase bg-red-700  transition-colors duration-500 p-3 rounded-lg text-white font-medium hover:bg-green-600 hover:opacity-90 disabled:opacity-60"
+            outline
+            className="uppercase p-2 rounded-lg bg-gradient-to-br from-pink-500 to-orange-400 text-white hover:bg-gradient-to-bl focus:ring-pink-200 dark:focus:ring-pink-800"
           >
             {loading ? "Signing in..." : "Sign In"}
           </button>
-          <OAuth/>
+          <OAuth />
         </form>
         <div className="flex gap-2 mt-4">
           <p className="capitalize">Don't having an account?</p>
