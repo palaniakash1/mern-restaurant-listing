@@ -12,6 +12,7 @@
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.0",
     "@vitejs/plugin-react": "^5.1.1",
+    "browser-image-compression": "^2.0.2",
     "firebase": "^12.6.0",
     "flowbite": "^1.8.1",
     "flowbite-react": "^0.7.2",

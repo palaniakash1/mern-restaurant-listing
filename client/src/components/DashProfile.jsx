@@ -1,3 +1,4 @@
+import imageCompression from "browser-image-compression";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, Button, TextInput, Modal } from "flowbite-react";
 import { useSelector } from "react-redux";
@@ -20,9 +21,10 @@ import {
 } from "../redux/user/userSlice";
 import { useDispatch } from "react-redux";
 import { HiOutlineExclamationCircle } from "react-icons/hi";
+import { Link } from "react-router-dom";
 
 export default function DashProfile() {
-  const { currentUser, error } = useSelector((state) => state.user);
+  const { currentUser, error, loading } = useSelector((state) => state.user);
   const [imageFile, setImageFile] = useState(null);
   const [imageFileUrl, setImageFileUrl] = useState(null);
   const [imageFileUploadingProgress, setImageFileUploadingProgress] =
@@ -34,7 +36,7 @@ export default function DashProfile() {
   const [updateUserError, setUpdateUserError] = useState(null);
   const [showModal, setShowModal] = useState(null);
 
-  const [formData, setFromData] = useState({});
+  const [formData, setFormData] = useState({});
 
   const filePickerRef = useRef();
   const dispatch = useDispatch();
@@ -43,7 +45,7 @@ export default function DashProfile() {
 
   const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB in bytes
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -53,20 +55,45 @@ export default function DashProfile() {
       e.target.value = null; // reset input
       return;
     }
-    // ✅ 1. Check file size BEFORE upload
-    if (file.size > MAX_FILE_SIZE) {
-      setImageFileUploadingError("Image must be less than 2MB.");
-      e.target.value = null;
-      setImageFile(null);
-      return; // ❗ STOP here — do not upload
-    }
+    // Define our 2MB limit (2 * 1024 * 1024 bytes)
+    const limitInBytes = 2 * 1024 * 1024;
+    console.log((file.size / (1024 * 1024)).toFixed(2) + " MB");
 
+    // 2. Conditional Compression
+    if (file.size > limitInBytes) {
+      console.log("File is large. Starting compression...");
+
+      const options = {
+        maxSizeMB: 2,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+      };
+
+      try {
+        setImageFileUploading(true);
+        setImageFileUploadingError(null);
+
+        const compressedFile = await imageCompression(file, options);
+
+        // Use the compressed file
+        setImageFile(compressedFile);
+        setImageFileUrl(URL.createObjectURL(compressedFile));
+        console.log((compressedFile.size / (1024 * 1024)).toFixed(2) + " MB");
+      } catch (error) {
+        console.error(error);
+        setImageFileUploadingError("Compression failed. Try a smaller photo.");
+      } finally {
+        setImageFileUploading(false);
+      }
+    } else {
+      // 3. File is already small, skip compression and use original
+      console.log("File is under 2MB. Skipping compression.");
+      setImageFile(file);
+      setImageFileUrl(URL.createObjectURL(file));
+      setImageFileUploadingError(null);
+    }
     // ✅ 2. Clear old errors
     setImageFileUploadingError(null);
-
-    // ✅ 3. Accept file
-    setImageFile(file);
-    setImageFileUrl(URL.createObjectURL(file));
   };
 
   // eslint-disable-next-line react-hooks/preserve-manual-memoization
@@ -101,7 +128,7 @@ export default function DashProfile() {
         getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
           setImageFileUrl(downloadURL);
           setIsUploading(false);
-          setFromData({ ...formData, profilePicture: downloadURL });
+          setFormData((prev) => ({ ...prev, profilePicture: downloadURL }));
           setImageFileUploading(false);
         });
       }
@@ -116,7 +143,7 @@ export default function DashProfile() {
   }, [imageFile]);
 
   const handleChange = (e) => {
-    setFromData({ ...formData, [e.target.id]: e.target.value });
+    setFormData({ ...formData, [e.target.id]: e.target.value });
   };
   console.log(formData);
 
@@ -196,7 +223,9 @@ export default function DashProfile() {
 
   return (
     <div className="max-w-lg mx-auto p-3 w-full">
-      <h1 className="my-7 text-center font-semibold text-3xl ">Profile</h1>
+      <h1 className="my-7 text-center font-semibold text-3xl ">
+        welcome {currentUser.role}!
+      </h1>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
           type="file"
@@ -248,9 +277,52 @@ export default function DashProfile() {
           type="submit"
           className="bg-gradient-to-br from-purple-600 to-blue-500 text-white hover:bg-gradient-to-bl focus:ring-blue-300 dark:focus:ring-blue-800"
           outline
+          disabled={loading || imageFileUploading}
         >
-          Update
+          {loading ? "loading..." : "Update"}
         </Button>
+
+        {/* Standardized Dashboard Actions */}
+        <div className="flex flex-col gap-3">
+          {/* Restaurants - SuperAdmin & Admin */}
+          {(currentUser.role === "superAdmin" ||
+            currentUser.role === "admin") && (
+            <Link to="/create-restaurant">
+              <Button className="w-full bg-gradient-to-r from-green-400 to-blue-600">
+                {currentUser.role === "superAdmin"
+                  ? "Manage All Restaurants"
+                  : "Create New Restaurant"}
+              </Button>
+            </Link>
+          )}
+
+          {/* Store Manager - Only Admin */}
+          {currentUser.role === "admin" && (
+            <Link to="/create-storeManager">
+              <Button className="w-full bg-gradient-to-br from-purple-600 to-blue-500">
+                Create Store Manager
+              </Button>
+            </Link>
+          )}
+
+          {/* Food & Categories - Everyone except regular users */}
+          {["superAdmin", "admin", "storeManager"].includes(
+            currentUser.role
+          ) && (
+            <div className="flex gap-3">
+              <Link to="/dashboard?tab=foods" className="flex-1">
+                <Button color="gray" className="w-full">
+                  Create Food
+                </Button>
+              </Link>
+              <Link to="/dashboard?tab=categories" className="flex-1">
+                <Button color="gray" className="w-full">
+                  Create Category
+                </Button>
+              </Link>
+            </div>
+          )}
+        </div>
       </form>
       <div className="text-red-500 flex justify-between mt-5 items-center">
         <span onClick={() => setShowModal(true)} className="cursor-pointer">

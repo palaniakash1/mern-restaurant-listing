@@ -4,11 +4,13 @@ import { HiArrowSmRight, HiUser, HiUsers } from "react-icons/hi";
 import { useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { FaPizzaSlice } from "react-icons/fa";
-import { MdFastfood } from "react-icons/md";
+import { MdApartment, MdBuild, MdFastfood } from "react-icons/md";
 import { useDispatch } from "react-redux";
 import { signOutSuccess } from "../redux/user/userSlice";
+import { useSelector } from "react-redux";
 
 export default function DashSidebar() {
+  const { currentUser } = useSelector((state) => state.user);
   const location = useLocation();
   const dispatch = useDispatch();
   const [tab, setTab] = useState("");
@@ -66,23 +68,41 @@ export default function DashSidebar() {
           >
             Profile
           </Sidebar.Item>
+          {currentUser?.role === "superAdmin" && (
+            <Sidebar.Item
+              as={Link}
+              to="/dashboard?tab=users"
+              icon={HiUsers}
+              active={tab === "users"}
+              className={`
+      rounded-lg transition-all duration-200 font-medium
+      ${
+        tab === "users"
+          ? "!bg-green-600 !text-white [&>a]:!text-white shadow-md"
+          : "!text-white [&>a]:!text-white hover:bg-green-100 hover:!text-white [&>a:hover]:!text-green-700"
+      }
+    `}
+            >
+              Users
+            </Sidebar.Item>
+          )}
 
-          {/* USERS */}
+          {/* restaurants */}
           <Sidebar.Item
             as={Link}
-            to="/dashboard?tab=users"
-            icon={HiUsers}
-            active={tab === "users"}
+            to="/dashboard?tab=restaurants"
+            icon={MdApartment}
+            active={tab === "restaurants"}
             className={`
           rounded-lg transition-all duration-200 font-medium
           ${
-            tab === "users"
+            tab === "restaurants"
               ? "!bg-green-600 !text-white [&>a]:!text-white shadow-md"
               : "!text-white [&>a]:!text-white hover:bg-green-100 hover:!text-white [&>a:hover]:!text-green-700"
           }
         `}
           >
-            Users
+            Restaurants
           </Sidebar.Item>
 
           {/* Categories */}
