@@ -76,3 +76,29 @@ export const signout = (req, res, next) => {
     next(error);
   }
 };
+
+export const getAllusers = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const allusers = await User.find()
+      .select("-__v")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const total = await User.countDocuments();
+
+    res.status(200).json({
+      success: true,
+      page,
+      limit,
+      total,
+      data: allusers,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

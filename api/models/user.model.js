@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema(
       default: "user", // Default role for new signups
       required: true,
     },
+    restaurantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Restaurant",
+    },
   },
   { timestamps: true }
 );
@@ -35,4 +39,3 @@ const userSchema = new mongoose.Schema(
 const User = mongoose.model("User", userSchema);
 
 export default User;
-
