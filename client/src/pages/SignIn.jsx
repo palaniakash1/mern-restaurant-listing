@@ -148,7 +148,6 @@ export default function SignIn() {
 
           <button
             disabled={loading}
-            outline
             className="uppercase p-2 rounded-lg bg-gradient-to-br from-pink-500 to-orange-400 text-white hover:bg-gradient-to-bl focus:ring-pink-200 dark:focus:ring-pink-800"
           >
             {loading ? "Signing in..." : "Sign In"}
@@ -162,6 +161,7 @@ export default function SignIn() {
           </Link>
         </div>
       </div>
+
     </main>
   );
 }

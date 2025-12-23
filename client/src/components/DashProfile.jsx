@@ -310,14 +310,14 @@ export default function DashProfile() {
             currentUser.role
           ) && (
             <div className="flex gap-3">
-              <Link to="/dashboard?tab=foods" className="flex-1">
+              <Link to="/dashboard?tab=menu" className="flex-1">
                 <Button color="gray" className="w-full">
-                  Create Food
+                  View Menu
                 </Button>
               </Link>
               <Link to="/dashboard?tab=categories" className="flex-1">
                 <Button color="gray" className="w-full">
-                  Create Category
+                  View Categories
                 </Button>
               </Link>
             </div>

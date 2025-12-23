@@ -68,6 +68,7 @@ export default function DashSidebar() {
           >
             Profile
           </Sidebar.Item>
+          {/* users */}
           {currentUser?.role === "superAdmin" && (
             <Sidebar.Item
               as={Link}
@@ -88,12 +89,13 @@ export default function DashSidebar() {
           )}
 
           {/* restaurants */}
-          <Sidebar.Item
-            as={Link}
-            to="/dashboard?tab=restaurants"
-            icon={MdApartment}
-            active={tab === "restaurants"}
-            className={`
+          {["superAdmin", "admin"].includes(currentUser?.role) && (
+            <Sidebar.Item
+              as={Link}
+              to="/dashboard?tab=restaurants"
+              icon={MdApartment}
+              active={tab === "restaurants"}
+              className={`
           rounded-lg transition-all duration-200 font-medium
           ${
             tab === "restaurants"
@@ -101,9 +103,10 @@ export default function DashSidebar() {
               : "!text-white [&>a]:!text-white hover:bg-green-100 hover:!text-white [&>a:hover]:!text-green-700"
           }
         `}
-          >
-            Restaurants
-          </Sidebar.Item>
+            >
+              Restaurants
+            </Sidebar.Item>
+          )}
 
           {/* Categories */}
           <Sidebar.Item
@@ -122,25 +125,23 @@ export default function DashSidebar() {
           >
             Categories
           </Sidebar.Item>
-
-          {/* Foods */}
+          {/* menu */}
           <Sidebar.Item
             as={Link}
-            to="/dashboard?tab=foods"
+            to="/dashboard?tab=menu"
             icon={FaPizzaSlice}
-            active={tab === "foods"}
+            active={tab === "menu"}
             className={`
           rounded-lg transition-all duration-200 font-medium
           ${
-            tab === "foods"
+            tab === "menu"
               ? "!bg-green-600 !text-white [&>a]:!text-white shadow-md"
               : "!text-white [&>a]:!text-white hover:bg-green-100 hover:!text-white [&>a:hover]:!text-green-700"
           }
         `}
           >
-            Foods
+            Menu
           </Sidebar.Item>
-
           {/* SIGNOUT */}
           <Sidebar.Item
             icon={HiArrowSmRight}
