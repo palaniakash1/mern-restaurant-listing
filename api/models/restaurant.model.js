@@ -29,7 +29,7 @@ const restaurantSchema = new mongoose.Schema(
     mapSnippet: {
       type: String,
     },
-    image: {
+    imageLogo: {
       type: String,
       required: true,
       default:
