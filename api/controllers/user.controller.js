@@ -102,3 +102,31 @@ export const getAllusers = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getAvailableAdmins = async (req, res, next) => {
+  try {
+    // only superAdmin is allowed
+    if (req.user.role !== "superAdmin") {
+      return next(
+        errorHandler(403, "only superAdmin can access this resource")
+      );
+    }
+
+    // admins who do not have restaurant linked
+
+    const search = req.query.q || "";
+
+    const admins = await User.find({
+      role: "admin",
+      restaurantId: { $exists: false },
+      userName: { $regex: search, $options: "i" },
+    }).select("_id userName email");
+
+    res.status(200).json({
+      success: true,
+      data: admins,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
