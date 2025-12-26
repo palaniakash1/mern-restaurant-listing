@@ -2,6 +2,9 @@ import Restaurant from "../models/restaurant.model.js";
 import User from "../models/user.model.js";
 import { errorHandler } from "../utils/error.js";
 
+// ===============================================
+// create a new restaurant
+// ===============================================
 export const create = async (req, res, next) => {
   try {
     if (!req.body || Object.keys(req.body).length === 0) {
@@ -103,6 +106,9 @@ export const create = async (req, res, next) => {
   }
 };
 
+// =================================================================
+// get all restaurants
+// =================================================================
 export const getAllRestaurants = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -123,6 +129,113 @@ export const getAllRestaurants = async (req, res, next) => {
       limit,
       total,
       data: restaurants,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ===============================================================================
+// get restaurant by id (admin / superAdmin)
+// ===============================================================================
+export const getRestaurantById = async (req, res, next) => {
+  try {
+    const restaurant = await Restaurant.findById(req.params.id).select("-__v");
+
+    if (!restaurant) {
+      return next(errorHandler(404, "Restaurant not found"));
+    }
+
+    // ownership enforcement
+    if (
+      req.user.role !== "superAdmin" &&
+      restaurant.adminId.toString() !== req.user.id
+    ) {
+      return next(
+        errorHandler(403, `You are not allowed to access this restaurant`)
+      );
+    }
+
+    res.status(200).json({
+      success: true,
+      data: restaurant,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ===============================================================================
+// update Restaurant using restaurantID and userID + superAdmin
+// ===============================================================================
+export const updateRestaurant = async (req, res, next) => {
+  try {
+    const restaurant = await Restaurant.findById(req.params.id);
+
+    if (!restaurant) {
+      return next(errorHandler(404, "Restaurant not found"));
+    }
+
+    // ownership check
+    if (
+      req.user.role !== "superAdmin" ||
+      restaurant.adminId.toString() !== req.user.id
+    ) {
+      return next(
+        errorHandler(403, "You are not allowed to update this Restaurant")
+      );
+    }
+    // prevent admin reassignment via update
+    if (req.body.adminId) {
+      return next(errorHandler(403, "Admin reassignment is not allowed here"));
+    }
+
+    const updateRestaurant = await Restaurant.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { $new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      data: updateRestaurant,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ===============================================================================
+// delete Restaurant using restaurantID and userID + superAdmin
+// ===============================================================================
+export const deleteRestaurant = async (req, res, next) => {
+  try {
+    const restaurant = await Restaurant.findById(req.params.id);
+
+    if (!restaurant) {
+      return next(404, "Restaurant not found");
+    }
+
+    // ownership check
+    if (
+      req.user.role !== "superAdmin" &&
+      restaurant.adminId.toString() !== req.user.id
+    ) {
+      return next(
+        errorHandler(403, "You are not allowed to Delete this restaurant")
+      );
+    }
+
+    // remove restaurant reference from admin
+    await User.findByIdAndUpdate(restaurant.adminId, {
+      $unset: { restaurantId: "" },
+    });
+
+    await restaurant.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: "Restaurant Deleted Successfully",
     });
   } catch (error) {
     next(error);

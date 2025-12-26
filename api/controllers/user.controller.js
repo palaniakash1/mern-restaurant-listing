@@ -6,6 +6,10 @@ export const test = (req, res) => {
   res.json({ message: "API test message is displaying" });
 };
 
+
+// =========================================================
+// update "user" using user Id - API
+// =========================================================
 export const updateUser = async (req, res, next) => {
   if (req.user.id !== req.params.userId) {
     return next(errorHandler(403, "you are not allowed to update the user"));
@@ -54,6 +58,10 @@ export const updateUser = async (req, res, next) => {
   }
 };
 
+// ======================================
+// delete "user" using id - API
+// ======================================
+
 export const deleteUser = async (req, res, next) => {
   if (req.user.id !== req.params.userId) {
     return next(errorHandler(403, "you are not allowed to delete the user"));
@@ -77,6 +85,9 @@ export const signout = (req, res, next) => {
   }
 };
 
+// ================================
+// get all "users" - API
+// ================================
 export const getAllusers = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -102,6 +113,10 @@ export const getAllusers = async (req, res, next) => {
     next(error);
   }
 };
+
+// ===================================
+// get available "admins users" without "restaurants" linked  - API
+// ===================================
 
 export const getAvailableAdmins = async (req, res, next) => {
   try {
