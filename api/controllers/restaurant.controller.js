@@ -166,6 +166,28 @@ export const getRestaurantById = async (req, res, next) => {
 };
 
 // ===============================================================================
+// get restaurant by slug (admin / superAdmin)
+// ===============================================================================
+export const getRestaurantBySlug = async (req, res, next) => {
+  try {
+    const restaurant = await Restaurant.findOne({
+      slug: req.params.slug,
+    }).select("-_v");
+
+    if (!restaurant) {
+      return next(errorHandler(404, "Restaurant not found"));
+    }
+
+    res.status(200).json({
+      success: true,
+      data: restaurant,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ===============================================================================
 // update Restaurant using restaurantID and userID + superAdmin
 // ===============================================================================
 export const updateRestaurant = async (req, res, next) => {
