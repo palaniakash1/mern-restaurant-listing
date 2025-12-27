@@ -6,6 +6,7 @@ import {
   updateRestaurant,
   deleteRestaurant,
   getRestaurantBySlug,
+  reassignRestaurantAdmin,
 } from "../controllers/restaurant.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
 
@@ -19,7 +20,11 @@ router.get("/:id", verifyToken, getRestaurantById); // get restaurant by id - do
 router.get("/:id/reassign-admin", verifyToken, getRestaurantById); // get restaurant by id - done
 router.put("/:id", verifyToken, updateRestaurant); // update restaurant by id - done
 router.delete("/:id", verifyToken, deleteRestaurant); //delete restaurant by id - done
-
+router.put(
+  "/restaurant/:id/reassign-admin",
+  verifyToken,
+  reassignRestaurantAdmin
+);
 // public
 router.get("/slug/:slug", getRestaurantBySlug); // done
 

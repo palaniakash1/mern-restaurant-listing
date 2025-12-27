@@ -263,3 +263,68 @@ export const deleteRestaurant = async (req, res, next) => {
     next(error);
   }
 };
+
+// ===============================================================================
+// reassign restaurant admin (SUPER ADMIN ONLY)
+// ===============================================================================
+
+export const reassignRestaurantAdmin = async (req, res, next) => {
+  try {
+    // only accessible for superAdmin - role gaurd
+    if (req.user.role !== "superAdmin") {
+      return next(
+        errorHandler(403, "Only superAdmin can Reassign the ownership")
+      );
+    }
+
+    //
+    const { id } = req.params;
+    const { newAdminId } = req.body;
+
+    if (!newAdminId) {
+      return next(errorHandler(400, "New admin ID is required"));
+    }
+
+    const restaurant = await Restaurant.findById(id);
+    if (!restaurant) {
+      return next(errorHandler(404, "Restaurant Not Found"));
+    }
+
+    // fetch old admin before changing ownership
+    const oldAdmin = await User.findById(restaurant.adminId);
+    if (!oldAdmin) {
+      return next(errorHandler(400, "Current Admin not found"));
+    }
+
+    const newAdmin = await User.findById(newAdminId);
+    if (!newAdmin || newAdmin.role !== "admin") {
+      return next(errorHandler(400, `Invalid admin selected`));
+    }
+
+    // check if admin already exists
+    if (newAdmin.restaurantId) {
+      return next(
+        errorHandler(403, `Selected admin already owns a restaurant`)
+      );
+    }
+
+    // remove restaurant from old admin
+    await User.findByIdAndUpdate(oldAdmin._id, {
+      $unset: { restaurantId: "" },
+    });
+
+    // assign restaurant to the new admin
+    restaurant.adminId = newAdmin._id;
+    await restaurant.save();
+
+    newAdmin.restaurantId = restaurant._id;
+    await newAdmin.save();
+
+    res.success(200).json({
+      success: true,
+      message: `Restaurant ownership transferred successfully from ${oldAdmin.userName} to ${newAdmin.userName} `,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
