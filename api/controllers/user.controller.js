@@ -6,7 +6,6 @@ export const test = (req, res) => {
   res.json({ message: "API test message is displaying" });
 };
 
-
 // =========================================================
 // update "user" using user Id - API
 // =========================================================
@@ -90,6 +89,13 @@ export const signout = (req, res, next) => {
 // ================================
 export const getAllusers = async (req, res, next) => {
   try {
+    // only accessible for superAdmin - role gaurd
+    if (req.user.role !== "superAdmin") {
+      return next(
+        errorHandler(403, "you are not allowed to access all the user")
+      );
+    }
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -104,6 +110,7 @@ export const getAllusers = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
+      message: `showing all the users`,
       page,
       limit,
       total,
@@ -139,6 +146,7 @@ export const getAvailableAdmins = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
+      message: "showing available admins",
       data: admins,
     });
   } catch (error) {

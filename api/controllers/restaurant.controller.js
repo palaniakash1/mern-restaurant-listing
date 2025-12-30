@@ -111,6 +111,12 @@ export const create = async (req, res, next) => {
 // =================================================================
 export const getAllRestaurants = async (req, res, next) => {
   try {
+    // only accessible for superAdmin - role gaurd
+    if (req.user.role !== "superAdmin") {
+      return next(
+        errorHandler(403, "you are not allowed to access all the restaurants")
+      );
+    }
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -125,6 +131,7 @@ export const getAllRestaurants = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
+      message: "showing all restaurants",
       page,
       limit,
       total,
@@ -158,6 +165,7 @@ export const getRestaurantById = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
+      message: `Showing your restaurant name: ${restaurant.name}`,
       data: restaurant,
     });
   } catch (error) {
@@ -172,7 +180,7 @@ export const getRestaurantBySlug = async (req, res, next) => {
   try {
     const restaurant = await Restaurant.findOne({
       slug: req.params.slug,
-    }).select("-_v");
+    }).select("-__v");
 
     if (!restaurant) {
       return next(errorHandler(404, "Restaurant not found"));
@@ -180,6 +188,7 @@ export const getRestaurantBySlug = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
+      message: `showing restaurant using slug: ${restaurant.slug}`,
       data: restaurant,
     });
   } catch (error) {
@@ -200,7 +209,7 @@ export const updateRestaurant = async (req, res, next) => {
 
     // ownership check
     if (
-      req.user.role !== "superAdmin" ||
+      req.user.role !== "superAdmin" &&
       restaurant.adminId.toString() !== req.user.id
     ) {
       return next(
@@ -220,6 +229,7 @@ export const updateRestaurant = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
+      message: "Restaurant Updated Successfully",
       data: updateRestaurant,
     });
   } catch (error) {
@@ -320,9 +330,37 @@ export const reassignRestaurantAdmin = async (req, res, next) => {
     newAdmin.restaurantId = restaurant._id;
     await newAdmin.save();
 
-    res.success(200).json({
+    res.status(200).json({
       success: true,
       message: `Restaurant ownership transferred successfully from ${oldAdmin.userName} to ${newAdmin.userName} `,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+// ===============================================================================
+// get logged-in admin restaurant (ADMIN ONLY)
+// ===============================================================================
+
+export const getMyRestaurant = async (req, res, next) => {
+  try {
+    // role guard
+    if (req.user.role !== "admin") {
+      return next(errorHandler(403, "Only admin can access this resource"));
+    }
+
+    const restaurant = await Restaurant.findOne({
+      adminId: req.user.id, // ✅ FIXED
+    }).select("-__v");
+
+    if (!restaurant) {
+      return next(errorHandler(404, "No restaurant assigned to this admin"));
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `viewing your restaurant - restaurant name ${restaurant.name}`,
+      data: restaurant,
     });
   } catch (error) {
     next(error);
