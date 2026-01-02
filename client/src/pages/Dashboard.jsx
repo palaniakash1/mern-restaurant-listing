@@ -3,6 +3,11 @@ import React, { useEffect, useState } from "react";
 import DashSidebar from "../components/DashSidebar";
 import DashProfile from "../components/DashProfile";
 import { HiMenu, HiOutlineChevronLeft } from "react-icons/hi";
+import DashUsers from "../components/DashUsers";
+import DashRestaurants from "../components/DashRestaurants";
+import DashCategories from "../components/DashCategories";
+import DashMenu from "../components/DashMenu";
+import Dashboards from "../components/Dashboards";
 
 export default function Dashboard() {
   const location = useLocation();
@@ -78,9 +83,19 @@ export default function Dashboard() {
         </div>
 
         {/* CONTENT */}
+        {/* Profile tab */}
         <div className="p-4 overflow-y-auto">
           {tab === "profile" && <DashProfile />}
-          {/* other tabs */}
+          {/* Restaurant tab */}
+          {tab === "users" && <DashUsers />}
+          {/* Restaurant tab */}
+          {tab === "restaurants" && <DashRestaurants />}
+          {/* categories tab */}
+          {tab === "categories" && <DashCategories />}
+          {/* menu tab */}
+          {tab === "menu" && <DashMenu />}
+          {/* dashboard tab */}
+          {tab === "dashboard" && <Dashboards />}
         </div>
       </div>
     </div>

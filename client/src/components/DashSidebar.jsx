@@ -104,6 +104,8 @@ export default function DashSidebar({ onClose }) {
             as={Link}
             to="/dashboard?tab=profile"
             active={tab === "profile"}
+            label={currentUser.role}
+            labelColor="red"
             icon={() => <CgProfile className="text-white text-xl" />}
             className={getItemClass("profile")}
           >
