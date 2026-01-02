@@ -163,7 +163,9 @@ export default function SignIn() {
             {/* Header Area */}
             <div className="py-8 text-center pb-0">
               <div className="flex items-center justify-center gap-1 mb-6">
-                <img src={logo} width="200px" height="200px" alt="logo" />
+                <Link to="/">
+                  <img src={logo} width="200px" height="200px" alt="logo" />
+                </Link>
               </div>
               <div className="bg-[#8fa31e] text-white py-3 rounded-[2px] shadow-md">
                 <h2 className="text-xl font-semibold">Welcome Back</h2>

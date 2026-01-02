@@ -271,27 +271,27 @@ export default function DashProfile() {
                 <label className="text-sm font-semibold text-gray-500">
                   Name
                 </label>
-                <TextInput
+                <input
                   type="text"
                   id="userName"
                   placeholder="Enter name"
                   defaultValue={currentUser.userName}
                   onChange={handleChange}
-                  className="[&>div>input]:bg-white [&>div>input]:border-gray-300 [&>div>input]:rounded-lg"
+                  className="w-full border-gray-200 p-3 !rounded-[5px] bg-white focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-500">
-                  E-mail ID
+                  Email
                 </label>
-                <TextInput
+                <input
                   type="email"
                   id="email"
                   placeholder="name@gmail.com"
                   defaultValue={currentUser.email}
                   onChange={handleChange}
-                  className="[&>div>input]:bg-white [&>div>input]:border-gray-300 [&>div>input]:rounded-lg"
+                  className="w-full border-gray-200 p-3 !rounded-[5px] bg-white focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                 />
               </div>
 
@@ -300,79 +300,52 @@ export default function DashProfile() {
                 <label className="text-sm font-semibold text-gray-500">
                   Password
                 </label>
-                <TextInput
+                <input
                   type="password"
                   id="password"
                   placeholder="********"
                   onChange={handleChange}
-                  className="[&>div>input]:bg-white [&>div>input]:border-gray-300 [&>div>input]:rounded-lg"
+                  className="w-full border-gray-200 p-3 !rounded-[5px] bg-white focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                 />
               </div>
-
+              {/* role */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-500">
                   Role
                 </label>
-                <Select
+                <select
                   id="role"
-                  disabled
                   defaultValue={currentUser.role}
-                  className="[&>div>select]:bg-gray-50 [&>div>select]:border-gray-300 [&>div>select]:rounded-lg"
+                  disabled
+                  className="w-full border-gray-200 p-3 !rounded-[5px] bg-white focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                 >
                   <option value="superAdmin">SuperAdmin</option>
                   <option value="admin">Admin</option>
                   <option value="storeManager">Store Manager</option>
                   <option value="user">User</option>
-                </Select>
+                </select>
               </div>
 
               {/* BOTTOM ACTIONS (DELETE & SIGN OUT) */}
               <div
-                className="
-    lg:col-span-2
-    flex flex-col gap-4
-    lg:flex-row lg:justify-between lg:items-center
-    mt-4 border-t pt-6
-  "
+                className="lg:col-span-2 flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center
+    mt-4 border-t pt-6"
               >
                 {/* UPDATE BUTTON */}
                 <Button
                   type="submit"
-                  className="
-      w-full
-      lg:w-[30%]
-      !bg-[#8fa31e]
-      hover:!bg-[#7a8c1a]
-      text-white
-      !rounded-[4px]
-      border-none
-    "
+                  className=" w-full lg:w-[30%] !bg-[#8fa31e] hover:!bg-[#7a8c1a] text-white !rounded-[4px] border-none"
                   disabled={loading || imageFileUploading}
                 >
                   {loading ? "loading..." : "Update"}
                 </Button>
 
                 {/* DELETE + SIGN OUT */}
-                <div
-                  className="
-      w-full
-      flex gap-3
-      lg:w-[30%] lg:gap-5
-    "
-                >
+                <div className=" w-full flex gap-3 lg:w-[30%] lg:gap-5">
                   <button
                     type="button"
                     onClick={() => setShowModal(true)}
-                    className="
-        w-1/2
-        flex items-center justify-center gap-2
-        !bg-[#CC0001] hover:!bg-[#ea2020]
-        text-white
-        px-4 py-2
-        rounded-[4px]
-        font-medium
-        transition-colors
-      "
+                    className=" w-1/2 flex items-center justify-center gap-2 !bg-[#CC0001] hover:!bg-[#ea2020] text-white px-4 py-2 rounded-[4px] font-medium transition-colors"
                   >
                     <HiTrash className="text-lg" />
                     Delete

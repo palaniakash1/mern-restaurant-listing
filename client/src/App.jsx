@@ -14,10 +14,13 @@ export default function App() {
   const location = useLocation();
   // check whether the current path includes the "dashboard"
   const isDashboardPage = location.pathname.startsWith("/dashboard");
+
+  // check whether the current path includes the "dashboard"
+  const authentication = location.pathname.startsWith("/sign");
   return (
     <>
       {/* Only show Header if NOT on a dashboard page */}
-      {!isDashboardPage && <Header />}
+      {!authentication && !isDashboardPage && <Header />}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/sign-in" element={<SignIn />} />
