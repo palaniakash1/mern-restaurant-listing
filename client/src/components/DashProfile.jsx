@@ -228,7 +228,7 @@ export default function DashProfile() {
       <div className="p-3 w-full max-w-full mx-auto">
         <form onSubmit={handleSubmit}>
           {/* MAIN PROFILE CARD */}
-          <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm border border-gray-100 flex flex-col md:flex-row gap-10 items-start relative">
+          <div className="bg-white rounded-3xl p-6 lg:p-10 shadow-sm border border-gray-100 flex flex-col lg:flex-row gap-10 items-start relative">
             {/* LEFT SIDE: IMAGE PICKER */}
             <div
               className="relative w-36 h-36 flex-shrink-0 cursor-pointer group"
@@ -265,7 +265,7 @@ export default function DashProfile() {
             </div>
 
             {/* RIGHT SIDE: FORM FIELDS */}
-            <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+            <div className="flex-1 w-full grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
               {/* Row 1: Name and Email */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-500">
@@ -327,27 +327,74 @@ export default function DashProfile() {
               </div>
 
               {/* BOTTOM ACTIONS (DELETE & SIGN OUT) */}
-              <div className="md:col-span-2 flex justify-between items-center gap-4 mt-4 border-t pt-6">
+              <div
+                className="
+    lg:col-span-2
+    flex flex-col gap-4
+    lg:flex-row lg:justify-between lg:items-center
+    mt-4 border-t pt-6
+  "
+              >
+                {/* UPDATE BUTTON */}
                 <Button
                   type="submit"
-                  className="w-[30%] !bg-[#8fa31e] hover:!bg-[#7a8c1a] text-white !rounded-[4px] border-none"
+                  className="
+      w-full
+      lg:w-[30%]
+      !bg-[#8fa31e]
+      hover:!bg-[#7a8c1a]
+      text-white
+      !rounded-[4px]
+      border-none
+    "
                   disabled={loading || imageFileUploading}
                 >
                   {loading ? "loading..." : "Update"}
                 </Button>
-                <div className="flex gap-5">
+
+                {/* DELETE + SIGN OUT */}
+                <div
+                  className="
+      w-full
+      flex gap-3
+      lg:w-[30%] lg:gap-5
+    "
+                >
                   <button
+                    type="button"
                     onClick={() => setShowModal(true)}
-                    className="flex items-center gap-2 bg-[#ff6b6b] text-white px-4 py-2 !rounded-[4px] font-medium hover:bg-red-600 transition-colors"
+                    className="
+        w-1/2
+        flex items-center justify-center gap-2
+        !bg-[#CC0001] hover:!bg-[#ea2020]
+        text-white
+        px-4 py-2
+        rounded-[4px]
+        font-medium
+        transition-colors
+      "
                   >
-                    <HiTrash className="text-lg" /> Delete
+                    <HiTrash className="text-lg" />
+                    Delete
                   </button>
 
                   <button
+                    type="button"
                     onClick={handleSignOut}
-                    className="flex items-center gap-2 border border-gray-300 text-gray-700 px-4 py-2 !rounded-[4px] font-medium hover:bg-gray-50 transition-colors"
+                    className="
+        w-1/2
+        flex items-center justify-center gap-2
+        border border-gray-300
+        text-gray-700
+        px-4 py-2
+        rounded-[4px]
+        font-medium
+        hover:bg-gray-50
+        transition-colors
+      "
                   >
-                    <VscSignOut className="text-lg text-red-500" /> Sign out
+                    <VscSignOut className="text-lg text-red-500" />
+                    Sign out
                   </button>
                 </div>
               </div>
