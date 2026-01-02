@@ -1,6 +1,6 @@
 import imageCompression from "browser-image-compression";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Button, TextInput, Modal } from "flowbite-react";
+import { Alert, Button, TextInput, Modal, Select } from "flowbite-react";
 import { useSelector } from "react-redux";
 import {
   getDownloadURL,
@@ -20,8 +20,9 @@ import {
   signOutSuccess,
 } from "../redux/user/userSlice";
 import { useDispatch } from "react-redux";
-import { HiOutlineExclamationCircle } from "react-icons/hi";
+import { HiOutlineExclamationCircle, HiTrash } from "react-icons/hi";
 import { Link } from "react-router-dom";
+import { VscSignOut } from "react-icons/vsc";
 
 export default function DashProfile() {
   const { currentUser, error, loading } = useSelector((state) => state.user);
@@ -140,7 +141,7 @@ export default function DashProfile() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       uploadImage();
     }
-  }, [imageFile]);
+  }, [imageFile, uploadImage]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
@@ -222,167 +223,202 @@ export default function DashProfile() {
   };
 
   return (
-    <div className="max-w-lg mx-auto p-3 w-full">
-      <h1 className="my-7 text-center font-semibold text-3xl ">
-        welcome {currentUser.role}!
-      </h1>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleImageChange}
-          ref={filePickerRef}
-          hidden
-        />
-        <div
-          className="relative w-32 h-32 self-center cursor-pointer shadow-md overflow-hidden rounded-full"
-          onClick={() => {
-            filePickerRef.current.click();
-          }}
-        >
-          {/* 👇 Loader overlays image ONLY while uploading */}
-          {isUploading && (
-            <ImageCircleLoader progress={imageFileUploadingProgress || 0} />
-          )}
-          <img
-            src={imageFileUrl || currentUser.profilePicture}
-            alt="user"
-            className={`rounded-full w-full h-full object-cover border-8 border-[#DEF7EC]`}
-          />
-        </div>
-        {imageFileUploadingError && (
-          <Alert color="failure"> {imageFileUploadingError}</Alert>
-        )}
-        <TextInput
-          type="text"
-          id="userName"
-          placeholder="userName"
-          defaultValue={currentUser.userName}
-          onChange={handleChange}
-        />
-        <TextInput
-          type="email"
-          id="email"
-          placeholder="email"
-          defaultValue={currentUser.email}
-          onChange={handleChange}
-        />
-        <TextInput
-          type="text"
-          id="password"
-          placeholder="password"
-          onChange={handleChange}
-        />
-        <Button
-          type="submit"
-          className="bg-gradient-to-br from-purple-600 to-blue-500 text-white hover:bg-gradient-to-bl focus:ring-blue-300 dark:focus:ring-blue-800"
-          outline
-          disabled={loading || imageFileUploading}
-        >
-          {loading ? "loading..." : "Update"}
-        </Button>
+    <>
+      {/* gemini design */}
+      <div className="p-3 w-full max-w-full mx-auto">
+        <form onSubmit={handleSubmit}>
+          {/* MAIN PROFILE CARD */}
+          <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm border border-gray-100 flex flex-col md:flex-row gap-10 items-start relative">
+            {/* LEFT SIDE: IMAGE PICKER */}
+            <div
+              className="relative w-36 h-36 flex-shrink-0 cursor-pointer group"
+              onClick={() => filePickerRef.current.click()}
+            >
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                ref={filePickerRef}
+                hidden
+              />
 
-        {/* Standardized Dashboard Actions */}
-        <div className="flex flex-col gap-3">
-          {/* Restaurants - SuperAdmin & Admin */}
-          {(currentUser.role === "superAdmin" ||
-            currentUser.role === "admin") && (
-            <Link to="/create-restaurant">
-              <Button className="w-full bg-gradient-to-r from-green-400 to-blue-600">
-                {currentUser.role === "superAdmin"
-                  ? "Manage All Restaurants"
-                  : "Create New Restaurant"}
-              </Button>
-            </Link>
-          )}
-
-          {/* Store Manager - Only Admin */}
-          {currentUser.role === "admin" && (
-            <Link to="/create-storeManager">
-              <Button className="w-full bg-gradient-to-br from-purple-600 to-blue-500">
-                Create Store Manager
-              </Button>
-            </Link>
-          )}
-
-          {/* Food & Categories - Everyone except regular users */}
-          {["superAdmin", "admin", "storeManager"].includes(
-            currentUser.role
-          ) && (
-            <div className="flex gap-3">
-              <Link to="/dashboard?tab=menu" className="flex-1">
-                <Button color="gray" className="w-full">
-                  View Menu
-                </Button>
-              </Link>
-              <Link to="/dashboard?tab=categories" className="flex-1">
-                <Button color="gray" className="w-full">
-                  View Categories
-                </Button>
-              </Link>
+              <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#DEF7EC] shadow-inner relative">
+                {isUploading && (
+                  <div className="absolute inset-0 z-10">
+                    <ImageCircleLoader
+                      progress={imageFileUploadingProgress || 0}
+                    />
+                  </div>
+                )}
+                <img
+                  src={imageFileUrl || currentUser.profilePicture}
+                  alt="user"
+                  className="w-full h-full object-cover"
+                />
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                  <span className="text-white text-xs font-medium">
+                    Change Photo
+                  </span>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
-      </form>
-      <div className="text-red-500 flex justify-between mt-5 items-center">
-        <span onClick={() => setShowModal(true)} className="cursor-pointer">
-          Delete Account
-        </span>
-        {/* <span
-          className="cursor-pointer p-2 px-4 rounded-lg bg-blue-500 text-white"
-          onClick={() => {
-            filePickerRef.current.click();
-          }}
-        >
-          Change Image
-        </span> */}
-        <span onClick={handleSignOut} className="cursor-pointer ">
-          Sign out
-        </span>
-      </div>
-      {updateUserSuccess && (
-        <Alert color="success" className="mt-5">
-          {updateUserSuccess}
-        </Alert>
-      )}
-      {updateUserError && (
-        <Alert color="failure" className="mt-5">
-          {updateUserError}
-        </Alert>
-      )}
-      {error && (
-        <Alert color="failure" className="mt-5">
-          {error}
-        </Alert>
-      )}
-      <Modal
-        show={showModal}
-        onClose={() => setShowModal(false)}
-        popup
-        size="md"
-      >
-        <Modal.Header />
-        <Modal.Body>
-          <div className="text-center">
-            <HiOutlineExclamationCircle className="h-14 w-14 text-gray-400 dark:text-gray-200 mb-4 mx-auto" />
-            <h3 className="mb-5 text-lg text-gray-500 dark:text-gray-400">
-              Are you sure, you want to delete your account?
-            </h3>
-            <div className="flex flex-row justify-center gap-4">
-              <Button color="failure" className="" onClick={handleDeleteUser}>
-                Yes, I'm sure
-              </Button>
-              <Button
-                color="gray"
-                className=""
-                onClick={() => setShowModal(false)}
-              >
-                No, Cancel
-              </Button>
+
+            {/* RIGHT SIDE: FORM FIELDS */}
+            <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+              {/* Row 1: Name and Email */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-500">
+                  Name
+                </label>
+                <TextInput
+                  type="text"
+                  id="userName"
+                  placeholder="Enter name"
+                  defaultValue={currentUser.userName}
+                  onChange={handleChange}
+                  className="[&>div>input]:bg-white [&>div>input]:border-gray-300 [&>div>input]:rounded-lg"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-500">
+                  E-mail ID
+                </label>
+                <TextInput
+                  type="email"
+                  id="email"
+                  placeholder="name@gmail.com"
+                  defaultValue={currentUser.email}
+                  onChange={handleChange}
+                  className="[&>div>input]:bg-white [&>div>input]:border-gray-300 [&>div>input]:rounded-lg"
+                />
+              </div>
+
+              {/* Row 2: Password and Role */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-500">
+                  Password
+                </label>
+                <TextInput
+                  type="password"
+                  id="password"
+                  placeholder="********"
+                  onChange={handleChange}
+                  className="[&>div>input]:bg-white [&>div>input]:border-gray-300 [&>div>input]:rounded-lg"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-500">
+                  Role
+                </label>
+                <Select
+                  id="role"
+                  disabled
+                  defaultValue={currentUser.role}
+                  className="[&>div>select]:bg-gray-50 [&>div>select]:border-gray-300 [&>div>select]:rounded-lg"
+                >
+                  <option value="superAdmin">SuperAdmin</option>
+                  <option value="admin">Admin</option>
+                  <option value="storeManager">Store Manager</option>
+                  <option value="user">User</option>
+                </Select>
+              </div>
+
+              {/* BOTTOM ACTIONS (DELETE & SIGN OUT) */}
+              <div className="md:col-span-2 flex justify-between items-center gap-4 mt-4 border-t pt-6">
+                <Button
+                  type="submit"
+                  className="w-[30%] !bg-[#8fa31e] hover:!bg-[#7a8c1a] text-white !rounded-[4px] border-none"
+                  disabled={loading || imageFileUploading}
+                >
+                  {loading ? "loading..." : "Update"}
+                </Button>
+                <div className="flex gap-5">
+                  <button
+                    onClick={() => setShowModal(true)}
+                    className="flex items-center gap-2 bg-[#ff6b6b] text-white px-4 py-2 !rounded-[4px] font-medium hover:bg-red-600 transition-colors"
+                  >
+                    <HiTrash className="text-lg" /> Delete
+                  </button>
+
+                  <button
+                    onClick={handleSignOut}
+                    className="flex items-center gap-2 border border-gray-300 text-gray-700 px-4 py-2 !rounded-[4px] font-medium hover:bg-gray-50 transition-colors"
+                  >
+                    <VscSignOut className="text-lg text-red-500" /> Sign out
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </Modal.Body>
-      </Modal>
-    </div>
+        </form>
+        {/* FEEDBACK ALERTS */}
+        <div className="mt-6 max-w-full space-y-3">
+          {/* Image Upload Error */}
+          {imageFileUploadingError && (
+            <Alert
+              color="failure"
+              onDismiss={() => setImageFileUploadingError(null)}
+            >
+              {imageFileUploadingError}
+            </Alert>
+          )}
+
+          {/* Profile Update Success */}
+          {updateUserSuccess && (
+            <Alert color="success" onDismiss={() => setUpdateUserSuccess(null)}>
+              {updateUserSuccess}
+            </Alert>
+          )}
+
+          {/* Profile Update Error (Logic Error) */}
+          {updateUserError && (
+            <Alert color="failure" onDismiss={() => setUpdateUserError(null)}>
+              {updateUserError}
+            </Alert>
+          )}
+
+          {/* General Redux/API Error */}
+          {error && (
+            <Alert
+              color="failure"
+              // Note: Usually 'error' from Redux should be cleared via an action,
+              // but for UI dismissal, we can check if your slice has a clearError action.
+              // If not, this X will show but won't hide unless the page refreshes.
+            >
+              {error}
+            </Alert>
+          )}
+        </div>
+
+        {/* DELETE MODAL */}
+        <Modal
+          show={showModal}
+          onClose={() => setShowModal(false)}
+          popup
+          size="md"
+        >
+          <Modal.Header />
+          <Modal.Body>
+            <div className="text-center">
+              <HiOutlineExclamationCircle className="h-14 w-14 text-gray-400 mb-4 mx-auto" />
+              <h3 className="mb-5 text-lg text-gray-500">
+                Are you sure you want to delete your account?
+              </h3>
+              <div className="flex justify-center gap-4">
+                <Button color="failure" onClick={handleDeleteUser}>
+                  Yes, I'm sure
+                </Button>
+                <Button color="gray" onClick={() => setShowModal(false)}>
+                  No, Cancel
+                </Button>
+              </div>
+            </div>
+          </Modal.Body>
+        </Modal>
+      </div>
+    </>
   );
 }
