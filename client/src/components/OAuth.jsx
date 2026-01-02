@@ -5,7 +5,7 @@ import { app } from "../firebase";
 import { useDispatch } from "react-redux";
 import { signInSuccess } from "../redux/user/userSlice";
 import { useNavigate } from "react-router-dom";
-import { AiFillGoogleCircle } from 'react-icons/ai'
+import { AiFillGoogleCircle } from "react-icons/ai";
 
 export default function OAuth() {
   const auth = getAuth(app);
@@ -44,10 +44,11 @@ export default function OAuth() {
   return (
     <Button
       type="button"
-      className="uppercase bg-gradient-to-br from-green-400 to-blue-600 text-white hover:bg-gradient-to-bl focus:ring-green-200 dark:focus:ring-green-800"
+      outline
+      className=" uppercase !bg-[#8fa31e] hover:!bg-[#7a8c1a] text-white !rounded-lg border-none"
       onClick={handleGoogleClick}
     >
-      <AiFillGoogleCircle className="w-6 h-6 mr-2"/>
+      <AiFillGoogleCircle className="w-6 h-6 mr-2" />
       Signin with Google
     </Button>
   );

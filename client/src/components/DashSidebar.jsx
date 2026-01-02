@@ -9,6 +9,13 @@ import { useDispatch } from "react-redux";
 import { signOutSuccess } from "../redux/user/userSlice";
 import { useSelector } from "react-redux";
 import logo from "../assets/eatwisely.ico";
+import { LuLayoutDashboard } from "react-icons/lu";
+import { CgProfile } from "react-icons/cg";
+import { TbUsers } from "react-icons/tb";
+import { PiBuildingApartment } from "react-icons/pi";
+import { MdOutlineFastfood } from "react-icons/md";
+import { BiFoodMenu } from "react-icons/bi";
+import { VscSignOut } from "react-icons/vsc";
 
 export default function DashSidebar({ onClose }) {
   const { currentUser } = useSelector((state) => state.user);
@@ -21,7 +28,7 @@ export default function DashSidebar({ onClose }) {
     w-full !rounded-none transition-all duration-200
     ${
       tab === itemTab
-        ? "!bg-red-600 !text-white"
+        ? "!bg-red-700 !text-white"
         : "bg-transparent !text-white hover:!bg-red-600 hover:!text-white"
     }
   `;
@@ -86,7 +93,7 @@ export default function DashSidebar({ onClose }) {
             as={Link}
             to="/dashboard?tab=dashboard"
             active={tab === "dashboard"}
-            icon={() => <HiHome className="text-white text-xl" />}
+            icon={() => <LuLayoutDashboard className="text-white text-xl" />}
             className={getItemClass("dashboard")}
           >
             Dashboard
@@ -97,7 +104,7 @@ export default function DashSidebar({ onClose }) {
             as={Link}
             to="/dashboard?tab=profile"
             active={tab === "profile"}
-            icon={() => <HiUser className="text-white text-xl" />}
+            icon={() => <CgProfile className="text-white text-xl" />}
             className={getItemClass("profile")}
           >
             Profile
@@ -108,7 +115,7 @@ export default function DashSidebar({ onClose }) {
             <Sidebar.Item
               as={Link}
               to="/dashboard?tab=users"
-              icon={() => <HiUsers className="text-white text-xl" />}
+              icon={() => <TbUsers className="text-white text-xl" />}
               active={tab === "users"}
               className={getItemClass("users")}
             >
@@ -121,7 +128,9 @@ export default function DashSidebar({ onClose }) {
             <Sidebar.Item
               as={Link}
               to="/dashboard?tab=restaurants"
-              icon={() => <MdApartment className="text-white text-xl" />}
+              icon={() => (
+                <PiBuildingApartment className="text-white text-xl" />
+              )}
               active={tab === "restaurants"}
               className={getItemClass("restaurants")}
             >
@@ -133,7 +142,7 @@ export default function DashSidebar({ onClose }) {
           <Sidebar.Item
             as={Link}
             to="/dashboard?tab=categories"
-            icon={() => <MdFastfood className="text-white text-xl" />}
+            icon={() => <MdOutlineFastfood className="text-white text-xl" />}
             active={tab === "categories"}
             className={getItemClass("categories")}
           >
@@ -143,7 +152,7 @@ export default function DashSidebar({ onClose }) {
           <Sidebar.Item
             as={Link}
             to="/dashboard?tab=menu"
-            icon={() => <FaPizzaSlice className="text-white text-xl" />}
+            icon={() => <BiFoodMenu className="text-white text-xl" />}
             active={tab === "menu"}
             className={getItemClass("menu")}
           >
@@ -152,9 +161,9 @@ export default function DashSidebar({ onClose }) {
           <div className="border-t border-white/20 mt-4 pt-4">
             <Sidebar.Item
               icon={() => (
-                <HiOutlineLogout className="text-red-500 hover:!text-white text-2xl" />
+                <VscSignOut className="text-red-500 text-2xl group-hover:text-white" />
               )}
-              className="!rounded-none !text-white hover:!bg-red-600 cursor-pointer"
+              className="group !rounded-none !text-white hover:!bg-red-600 cursor-pointer"
               onClick={() => {
                 handleSignOut();
               }}

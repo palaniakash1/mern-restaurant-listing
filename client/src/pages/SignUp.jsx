@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import wavepattern from "../assets/wavepattern.png";
 // import OAuth from "../components/OAuth";
+import logo from "../assets/eatwisely.ico";
+import { Alert } from "flowbite-react";
 
 const EyeIcon = (props) => (
   <svg
@@ -48,6 +51,7 @@ export default function SignUp() {
 
   // State to hold the password value
   const [password, setPassword] = useState("");
+
   // State to toggle between 'password' and 'text' input types
   const [showPassword, setShowPassword] = useState(false);
 
@@ -97,66 +101,159 @@ export default function SignUp() {
   const inputType = showPassword ? "text" : "password";
 
   return (
-    <main className="min-h-[88vh] pt-4">
-      <div className="p-3 max-w-lg mx-auto">
-        <h1 className="text-3xl text-center font-bold my-5">Sign Up</h1>
-        {error && <p className="text-red-600 my-4">{error}</p>}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <input
-            type="text"
-            placeholder="Username"
-            id="userName"
-            className="border p-3 rounded-lg bg-white "
-            onChange={handleChange}
+    <>
+      <main className="min-h-screen flex">
+        {/* LEFT SIDE: BRANDING PANEL */}
+        <div className="hidden lg:flex flex-col w-[45%] bg-[#8fa31e] relative overflow-hidden p-12 justify-center items-start">
+          <img
+            src={wavepattern}
+            alt="pattern"
+            className="absolute top-0 left-0 w-full opacity-30 pointer-events-none object-cover"
           />
-          <input
-            type="email"
-            placeholder="Email"
-            id="email"
-            className="border p-3 rounded-lg bg-white"
-            onChange={handleChange}
-          />
-          {/* Password Input Container */}
-          <div className="relative">
-            <input
-              type={inputType} // Dynamically set type
-              placeholder="Password"
-              id="password"
-              className="w-full border p-3 rounded-lg bg-white pr-10 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
-              onChange={handleChange}
-              value={password}
-            />
 
-            {/* Password Toggle Button */}
-            <button
-              type="button"
-              onClick={togglePasswordVisibility}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-150"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? (
-                <EyeOffIcon className="h-5 w-5" />
-              ) : (
-                <EyeIcon className="h-5 w-5" />
-              )}
-            </button>
+          <div className="relative z-10">
+            <h1 className="text-7xl font-black text-white leading-tight uppercase tracking-normal">
+              Your Menu <br /> Made <br /> Smarter
+            </h1>
+            {/* Decorative Smile Icon */}
+            <div className="mt-8 w-full">
+              <svg
+                viewBox="0 0 120 40"
+                fill="none"
+                className="w-full h-auto"
+                preserveAspectRatio="xMidYMid meet"
+              >
+                <path
+                  d="M10 10C30 35 90 35 110 10"
+                  stroke="#ff0000"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M5 12L15 8"
+                  stroke="#ff0000"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M115 12L105 8"
+                  stroke="#ff0000"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </div>
           </div>
-
-          <button
-            disabled={loading}
-            className="uppercase bg-red-700 transition-colors duration-500  hover:bg-green-600 p-3 rounded-lg text-white font-medium hover:opacity-90 disabled:opacity-60"
-          >
-            {loading ? "Signing Up..." : "Sign Up"}
-          </button>
-          {/* <OAuth /> */}
-        </form>
-        <div className="flex gap-2 mt-4">
-          <p className="capitalize">having an account?</p>
-          <Link to={"/sign-in"}>
-            <span className="text-blue-700 underline">Sign in</span>
-          </Link>
         </div>
-      </div>
-    </main>
+
+        {/* RIGHT SIDE: FORM PANEL */}
+        <div className="flex-1 bg-[#f1f8eb] flex flex-col items-center justify-center p-6">
+          <div className="w-full max-w-md bg-white rounded-[2rem] shadow-xl overflow-hidden border border-gray-100">
+            {/* Header Area */}
+            <div className="py-8 text-center pb-0">
+              <div className="flex items-center justify-center gap-1 mb-6">
+                <img src={logo} width="200px" height="200px" alt="logo" />
+              </div>
+              <div className="bg-[#8fa31e] text-white py-3 rounded-[2px] shadow-md">
+                <h2 className="text-xl font-semibold">Create Account</h2>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
+              {/* UserName Input */}
+              <div className="space-y-1 mt-4">
+                <label className="text-md font-normal text-gray-500 mt-10">
+                  Enter UserName
+                </label>
+                <input
+                  type="text"
+                  placeholder=""
+                  id="userName"
+                  className="w-full border-gray-200 p-3 !rounded-[5px] bg-white focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
+                  onChange={handleChange}
+                />
+              </div>
+
+              {/* Email Input */}
+              <div className="space-y-1 ">
+                <label className="text-md font-normal text-gray-500 mt-10">
+                  Enter Email
+                </label>
+                <input
+                  type="email"
+                  placeholder=""
+                  id="email"
+                  className="w-full border-gray-200 p-3 !rounded-[5px] bg-white focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
+                  onChange={handleChange}
+                />
+              </div>
+
+              {/* Password Input Container */}
+              <div className="space-y-1 relative ">
+                <label className="text-md font-normal text-gray-500 mt-10">
+                  Enter Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={inputType} // Dynamically set type
+                    placeholder=""
+                    id="password"
+                    className="w-full border-gray-200 p-3 !rounded-[5px] bg-white pr-12 focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
+                    onChange={handleChange}
+                    value={password}
+                  />
+                </div>
+
+                {/* Password Toggle Button */}
+                <button
+                  type="button"
+                  onClick={togglePasswordVisibility}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center top-6 !text-[#8fa31e] "
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOffIcon className="h-5 w-5" />
+                  ) : (
+                    <EyeIcon className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+              {/* Combined Error Alert */}
+              {error && (
+                <Alert color="failure" onDismiss={() => setError(null)}>
+                  {error}
+                </Alert>
+              )}
+
+              <button
+                disabled={loading}
+                className=" p-2 rounded-[5px] !bg-[#8fa31e] hover:!bg-[#7a8c1a] text-white !rounded-[4px] border-none"
+              >
+                {loading ? "Sigining up..." : "Sign Up"}
+              </button>
+              {/* <OAuth /> */}
+            </form>
+
+            {/* Bottom Link */}
+            <div className="text-center pt-4">
+              <p className="text-gray-600 text-sm">
+                Already having a account?{" "}
+                <Link
+                  to="/sign-in"
+                  className="text-red-600 font-bold hover:underline"
+                >
+                  Login Now
+                </Link>
+              </p>
+            </div>
+
+            {/* Copyright */}
+            <div className="pb-6 mt-10 text-center">
+              <p className="text-[10px] text-gray-400">© 2025 EatWisely</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </>
   );
 }
