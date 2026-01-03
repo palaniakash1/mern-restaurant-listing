@@ -15,7 +15,7 @@ router.get("/test", test);
 router.put("/update/:userId", verifyToken, updateUser);
 router.delete("/delete/:userId", verifyToken, deleteUser);
 router.post("/signout", signout);
-router.get("/all-users", getAllusers);
+router.get("/all-users", verifyToken, getAllusers);
 router.get("/available-admins", verifyToken, getAvailableAdmins);
 
 export default router;

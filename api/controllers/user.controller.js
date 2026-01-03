@@ -89,32 +89,43 @@ export const signout = (req, res, next) => {
 // ================================
 export const getAllusers = async (req, res, next) => {
   try {
-    // only accessible for superAdmin - role gaurd
-    if (req.user.role !== "superAdmin") {
+    if (!req.user || req.user.role !== "superAdmin") {
       return next(
-        errorHandler(403, "you are not allowed to access all the user")
+        errorHandler(403, "You are not allowed to access all the users")
       );
     }
 
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
+    const sortDirection = req.query.order === "asc" ? 1 : -1;
 
-    const allusers = await User.find()
+    const searchFilter = req.query.searchTerm
+      ? {
+          $or: [
+            { userName: { $regex: req.query.searchTerm, $options: "i" } },
+            { email: { $regex: req.query.searchTerm, $options: "i" } },
+            { role: { $regex: req.query.searchTerm, $options: "i" } },
+          ],
+        }
+      : {};
+
+    const users = await User.find(searchFilter)
       .select("-__v")
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 });
+      .sort({ updatedAt: sortDirection });
 
-    const total = await User.countDocuments();
+    const totalUser = await User.countDocuments(searchFilter);
+    const totalPages = Math.ceil(totalUser / limit);
 
     res.status(200).json({
       success: true,
-      message: `showing all the users`,
       page,
       limit,
-      total,
-      data: allusers,
+      totalUser,
+      totalPages,
+      data: users,
     });
   } catch (error) {
     next(error);

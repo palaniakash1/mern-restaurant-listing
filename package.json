@@ -20,5 +20,8 @@
     "mongoose": "^9.0.0",
     "nodemon": "^3.1.11",
     "react-circular-progressbar": "^2.2.0"
+  },
+  "devDependencies": {
+    "tailwind-scrollbar": "^4.0.2"
   }
 }
