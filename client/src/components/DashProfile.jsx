@@ -188,6 +188,9 @@ export default function DashProfile() {
     }
   };
 
+  // =================================================
+  // Delete User Module
+  // =================================================
   const handleDeleteUser = async () => {
     setShowModal(false);
     try {
@@ -224,7 +227,6 @@ export default function DashProfile() {
 
   return (
     <>
-      {/* gemini design */}
       <div className="p-3 w-full max-w-full mx-auto">
         <form onSubmit={handleSubmit}>
           {/* MAIN PROFILE CARD */}
@@ -327,10 +329,7 @@ export default function DashProfile() {
               </div>
 
               {/* BOTTOM ACTIONS (DELETE & SIGN OUT) */}
-              <div
-                className="lg:col-span-2 flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center
-    mt-4 border-t pt-6"
-              >
+              <div className="lg:col-span-2 flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center mt-4 border-t pt-6">
                 {/* UPDATE BUTTON */}
                 <Button
                   type="submit"
@@ -407,6 +406,7 @@ export default function DashProfile() {
               // Note: Usually 'error' from Redux should be cleared via an action,
               // but for UI dismissal, we can check if your slice has a clearError action.
               // If not, this X will show but won't hide unless the page refreshes.
+              onDismiss={() => setUpdateUserError(null)}
             >
               {error}
             </Alert>

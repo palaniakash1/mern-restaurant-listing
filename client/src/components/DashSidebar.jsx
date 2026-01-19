@@ -16,6 +16,7 @@ import { PiBuildingApartment } from "react-icons/pi";
 import { MdOutlineFastfood } from "react-icons/md";
 import { BiFoodMenu } from "react-icons/bi";
 import { VscSignOut } from "react-icons/vsc";
+import { MdOutlineReviews } from "react-icons/md";
 
 export default function DashSidebar({ onClose }) {
   const { currentUser } = useSelector((state) => state.user);
@@ -98,7 +99,6 @@ export default function DashSidebar({ onClose }) {
           >
             Dashboard
           </Sidebar.Item>
-
           {/* PROFILE */}
           <Sidebar.Item
             as={Link}
@@ -111,7 +111,6 @@ export default function DashSidebar({ onClose }) {
           >
             Profile
           </Sidebar.Item>
-
           {/* users */}
           {currentUser?.role === "superAdmin" && (
             <Sidebar.Item
@@ -124,7 +123,6 @@ export default function DashSidebar({ onClose }) {
               Users
             </Sidebar.Item>
           )}
-
           {/* restaurants */}
           {["superAdmin", "admin"].includes(currentUser?.role) && (
             <Sidebar.Item
@@ -139,27 +137,48 @@ export default function DashSidebar({ onClose }) {
               Restaurants
             </Sidebar.Item>
           )}
-
           {/* Categories */}
-          <Sidebar.Item
-            as={Link}
-            to="/dashboard?tab=categories"
-            icon={() => <MdOutlineFastfood className="text-white text-xl" />}
-            active={tab === "categories"}
-            className={getItemClass("categories")}
-          >
-            Categories
-          </Sidebar.Item>
+          {["superAdmin", "admin", "storeManager"].includes(
+            currentUser?.role
+          ) && (
+            <Sidebar.Item
+              as={Link}
+              to="/dashboard?tab=categories"
+              icon={() => <MdOutlineFastfood className="text-white text-xl" />}
+              active={tab === "categories"}
+              className={getItemClass("categories")}
+            >
+              Categories
+            </Sidebar.Item>
+          )}
           {/* menu */}
-          <Sidebar.Item
-            as={Link}
-            to="/dashboard?tab=menu"
-            icon={() => <BiFoodMenu className="text-white text-xl" />}
-            active={tab === "menu"}
-            className={getItemClass("menu")}
-          >
-            Menu
-          </Sidebar.Item>
+          {["superAdmin", "admin", "storeManager"].includes(
+            currentUser?.role
+          ) && (
+            <Sidebar.Item
+              as={Link}
+              to="/dashboard?tab=menu"
+              icon={() => <BiFoodMenu className="text-white text-xl" />}
+              active={tab === "menu"}
+              className={getItemClass("menu")}
+            >
+              Menu
+            </Sidebar.Item>
+          )}
+          {/* reviews */}
+          {["superAdmin", "admin", "storeManager", "user"].includes(
+            currentUser?.role
+          ) && (
+            <Sidebar.Item
+              as={Link}
+              to="/dashboard?tab=reviews"
+              icon={() => <MdOutlineReviews className="text-white text-xl" />}
+              active={tab === "reviews"}
+              className={getItemClass("reviews")}
+            >
+              Reviews
+            </Sidebar.Item>
+          )}
           <div className="border-t border-white/20 mt-4 pt-4">
             <Sidebar.Item
               icon={() => (
