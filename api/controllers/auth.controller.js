@@ -43,8 +43,8 @@ export const signup = async (req, res, next) => {
     return next(errorHandler(400, "Please enter a password"));
   }
   // --------------------------------------password strength check
-  // simple email validation using regex
-  const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9]).{6,}$/;
+  // simple password validation using regex
+  const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9]).{8,}$/;
   if (!passwordRegex.test(password)) {
     return next(
       errorHandler(
@@ -138,6 +138,9 @@ export const signin = async (req, res, next) => {
 
     // Generate JWT token
     const token = jwt.sign(
+      payload,
+      secret,
+      { expiresIn: "7d" },
       {
         id: validUser._id,
         role: validUser.role,
@@ -165,6 +168,9 @@ export const google = async (req, res, next) => {
     const user = await User.findOne({ email });
     if (user) {
       const token = jwt.sign(
+        payload,
+        secret,
+        { expiresIn: "7d" },
         { id: user._id, role: user.role },
         process.env.JWT_SECRET
       );
@@ -186,9 +192,13 @@ export const google = async (req, res, next) => {
         email,
         password: hashedPassword,
         profilePicture: googlePhotoUrl,
+        role: "user",
       });
       await newUser.save();
       const token = jwt.sign(
+        payload,
+        secret,
+        { expiresIn: "7d" },
         { id: newUser._id, role: newUser.role },
         process.env.JWT_SECRET
       );
