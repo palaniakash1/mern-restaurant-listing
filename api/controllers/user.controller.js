@@ -10,7 +10,7 @@ export const test = (req, res) => {
 // update "user" using user Id - API
 // =========================================================
 export const updateUser = async (req, res, next) => {
-  if (req.user.id !== req.params.userId) {
+  if (req.user.role !== "superAdmin" && req.user.id !== req.params.userId) {
     return next(errorHandler(403, "you are not allowed to update the user"));
   }
   if (req.body.password) {
@@ -38,15 +38,19 @@ export const updateUser = async (req, res, next) => {
     }
   }
   try {
+    const updates = {};
+
+    if (req.body.userName) updates.userName = req.body.userName;
+    if (req.body.password) updates.password = req.body.password;
+    if (req.body.profilePicture) {
+      updates.profilePicture = req.body.profilePicture;
+    }
+    if (req.body.email) updates.email = req.body.email.toLowerCase();
+
     const updateUser = await User.findByIdAndUpdate(
       req.params.userId,
       {
-        $set: {
-          userName: req.body.userName,
-          email: req.body.email,
-          profilePicture: req.body.profilePicture,
-          password: req.body.password,
-        },
+        $set: updates,
       },
       { new: true }
     );
@@ -62,12 +66,23 @@ export const updateUser = async (req, res, next) => {
 // ======================================
 
 export const deleteUser = async (req, res, next) => {
-  if (req.user.id !== req.params.userId) {
-    return next(errorHandler(403, "you are not allowed to delete the user"));
-  }
   try {
-    await User.findByIdAndDelete(req.params.userId);
-    res.status(200).json("User Deleted Successfully!");
+    // 1️⃣ Must be authenticated
+    if (!req.user) {
+      return next(errorHandler(401, "Unauthorized"));
+    }
+    // 2️⃣ SuperAdmin can delete anyone
+    if (req.user.role === "superAdmin") {
+      await User.findByIdAndDelete(req.params.userId);
+      return res.status(200).json("User deleted successfully");
+    }
+    // 3️⃣ Normal users can delete only themselves
+    if (req.user.id !== req.params.userId) {
+      await User.findByIdAndDelete(req.params.userId);
+      return res.status(200).json("Account deleted successfully");
+    }
+    // 4️⃣ Otherwise — forbidden
+    return next(errorHandler(403, "You are not allowed to delete this user"));
   } catch (error) {
     next(error);
   }
