@@ -5,6 +5,8 @@ import userRouter from "./routes/user.route.js";
 import authRouter from "./routes/auth.route.js";
 import adminRouter from "./routes/admin.route.js";
 import restaurantRouter from "./routes/restaurant.routes.js";
+import categoryRouter from "./routes/category.route.js";
+import menuRouter from "./routes/menu.route.js";
 import cookieParser from "cookie-parser";
 
 dotenv.config();
@@ -28,8 +30,10 @@ app.listen(3000, () => {
 
 app.use("/api/user", userRouter);
 app.use("/api/auth", authRouter);
-app.use("/api/restaurant", restaurantRouter);
+app.use("/api/restaurants", restaurantRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/categories", categoryRouter);
+app.use("/api/menu", menuRouter);
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
