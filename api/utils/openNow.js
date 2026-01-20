@@ -7,9 +7,6 @@ export const isRestaurantOpen = (openingHours) => {
     .toLowerCase();
 
   const today = openingHours[day];
-  console.log(now);
-  console.log(day);
-  console.log(today);
 
   if (!today || today.isClosed) return false;
 

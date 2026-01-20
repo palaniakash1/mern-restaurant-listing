@@ -1,5 +1,6 @@
 import axios from "axios";
 import { response } from "express";
+import { errorHandler } from "./error.js";
 
 export const geocodeAddress = async ({
   addressLine1,
@@ -17,11 +18,11 @@ export const geocodeAddress = async ({
         address: fullAddress,
         key: process.env.GOOGLE_MAPS_API_KEY,
       },
-    }
+    },
   );
 
   if (!response.data.results.length) {
-    throw new Error("Unable to geocode address");
+    throw errorHandler("Unable to geocode address");
   }
 
   const location = response.data.results[0].geometry.location;
@@ -31,4 +32,3 @@ export const geocodeAddress = async ({
     coordinates: [location.lng, location.lat],
   };
 };
-console.log(response);

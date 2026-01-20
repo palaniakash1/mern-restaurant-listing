@@ -6,12 +6,18 @@ import { isRestaurantOpen } from "../utils/openNow.js";
 import Menu from "../models/menu.model.js";
 import { paginate } from "../utils/paginate.js";
 import { publicRestaurantFilter } from "../utils/restaurantVisibility.js";
+import AuditLog from "../models/auditLog.model.js";
+import { withTransaction } from "../utils/withTransaction.js";
+import { diffObject } from "../utils/diff.js";
+import mongoose from "mongoose";
 
 // ===============================================
 // create a new restaurant
 // ===============================================
 export const create = async (req, res, next) => {
   try {
+    // BASIC VALIDATIONS (NO DB MUTATION)
+
     if (!req.body || Object.keys(req.body).length === 0) {
       return next(errorHandler(400, "Request body is missing"));
     }
@@ -26,7 +32,6 @@ export const create = async (req, res, next) => {
       name,
       tagline,
       description,
-      categories,
       address,
       location,
       openingHours,
@@ -44,46 +49,12 @@ export const create = async (req, res, next) => {
       return next(errorHandler(400, "All required fields must be filled"));
     }
 
-    // Admin → only one restaurant
-    if (req.user.role === "admin") {
-      const adminUser = await User.findById(req.user.id);
-      if (adminUser.restaurantId) {
-        return next(errorHandler(403, "Admin can create only one restaurant"));
-      }
-    }
-
     // Slug generation (clean)
     const slug = name
       .trim()
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)+/g, "");
-
-    const slugExists = await Restaurant.findOne({ slug });
-    if (slugExists) {
-      return next(
-        errorHandler(409, "Restaurant with this name already exists"),
-      );
-    }
-
-    // Ownership resolution
-    let assignedAdminId = req.user.id;
-
-    if (req.user.role === "superAdmin" && adminId) {
-      const adminExists = await User.findById(adminId);
-
-      if (!adminExists || adminExists.role !== "admin") {
-        return next(errorHandler(400, "Invalid admin selected"));
-      }
-
-      if (adminExists.restaurantId) {
-        return next(
-          errorHandler(403, "Selected admin already owns a restaurant"),
-        );
-      }
-
-      assignedAdminId = adminId;
-    }
 
     let geoLocation;
 
@@ -98,41 +69,117 @@ export const create = async (req, res, next) => {
     else {
       geoLocation = await geocodeAddress(address);
     }
+    const forbiddenOnCreate = [
+      "isFeatured",
+      "isTrending",
+      "status",
+      "isActive",
+    ];
 
-    const newRestaurant = new Restaurant({
-      name,
-      tagline,
-      description,
-      slug,
-      categories,
-      address: {
-        ...address,
-        location: geoLocation,
-      },
-      openingHours,
-      contactNumber,
-      email,
-      website,
-      imageLogo,
-      gallery,
-      isFeatured,
-      isTrending,
-      adminId: assignedAdminId,
+    for (const field of forbiddenOnCreate) {
+      if (field in req.body && req.user.role !== "superAdmin") {
+        throw errorHandler(403, `${field} cannot be set during creation`);
+      }
+    }
+    const restaurant = await withTransaction(async (session) => {
+      //  Slug uniqueness check (DB dependent)
+      const slugExists = await Restaurant.findOne({ slug }).session(session);
+      if (slugExists) {
+        throw errorHandler(409, "Restaurant with this name already exists");
+      }
+
+      let assignedAdminId = req.user.id;
+
+      // Admin → only one restaurant
+      if (req.user.role === "admin") {
+        const adminUser = await User.findById(req.user.id).session(session);
+        if (adminUser.restaurantId) {
+          throw errorHandler(403, "Admin can create only one restaurant");
+        }
+      }
+
+      // SuperAdmin assigning ownership
+      if (req.user.role === "superAdmin" && adminId) {
+        const adminExists = await User.findById(adminId).session(session);
+
+        if (!adminExists || adminExists.role !== "admin") {
+          throw errorHandler(400, "Invalid admin selected");
+        }
+
+        if (adminExists.restaurantId) {
+          throw errorHandler(403, "Selected admin already owns a restaurant");
+        }
+
+        assignedAdminId = adminId;
+      }
+
+      // 🏗 Create restaurant
+      const [createdRestaurant] = await Restaurant.create(
+        [
+          {
+            name,
+            tagline,
+            description,
+            slug,
+            address: {
+              ...address,
+              location: geoLocation,
+            },
+            openingHours,
+            contactNumber,
+            email,
+            website,
+            imageLogo,
+            gallery,
+            isFeatured,
+            isTrending,
+            adminId: assignedAdminId,
+          },
+        ],
+        { session },
+      );
+
+      // 🔗 Link restaurant to admin
+      await User.findByIdAndUpdate(
+        assignedAdminId,
+        { restaurantId: createdRestaurant._id },
+        { session },
+      );
+
+      // 🧾 Audit log
+      await AuditLog.create(
+        [
+          {
+            actorId: req.user.id,
+            actorRole: req.user.role,
+            entityType: "restaurant",
+            entityId: createdRestaurant._id,
+            action: "CREATE",
+            before: null,
+            after: createdRestaurant,
+            ipAddress: req.ip,
+          },
+        ],
+        { session },
+      );
+
+      return createdRestaurant;
     });
 
-    const savedRestaurant = await newRestaurant.save();
-
-    // Link restaurant to admin
-    const adminUser = await User.findById(assignedAdminId);
-    adminUser.restaurantId = savedRestaurant._id;
-    await adminUser.save();
+    /* ---------------------------------------------------
+       5️⃣ RESPONSE
+    --------------------------------------------------- */
 
     res.status(201).json({
       success: true,
       message: "Restaurant created successfully",
-      data: savedRestaurant,
+      data: restaurant,
     });
   } catch (error) {
+    if (error.code === 11000) {
+      return next(errorHandler(409, "Restaurant slug already exists"));
+    }
+
     next(error);
   }
 };
@@ -241,24 +288,50 @@ export const getRestaurantBySlug = async (req, res, next) => {
 
 export const publishRestaurant = async (req, res, next) => {
   try {
-    if (req.user.role !== "superAdmin") {
-      next(errorHandler(403, "Only superAdmin can publish restaurants"));
-    }
-    const restaurant = await Restaurant.findById(req.params.id);
-    if (!restaurant) {
-      return next(errorHandler(404, "Restaurant not found"));
-    }
-    if (restaurant.status === "published") {
-      return next(errorHandler(400, "Restaurant is already published"));
-    }
-    restaurant.status = "published";
-    restaurant.isActive = true;
-    await restaurant.save();
+    const result = await withTransaction(async (session) => {
+      if (req.user.role !== "superAdmin") {
+        throw errorHandler(403, "Only superAdmin can publish restaurants");
+      }
+      const restaurant = await Restaurant.findById(req.params.id)
+        .session(session)
+        .lean();
+
+      if (!restaurant) {
+        throw errorHandler(404, "Restaurant not found");
+      }
+      if (restaurant.status === "published") {
+        throw errorHandler(400, "Restaurant already published");
+      }
+
+      const updated = await Restaurant.findByIdAndUpdate(
+        req.params.id,
+        { status: "published", isActive: true },
+        { new: true, session },
+      ).lean();
+
+      await AuditLog.create(
+        [
+          {
+            actorId: req.user.id,
+            actorRole: req.user.role,
+            entityType: "restaurant",
+            entityId: updated._id,
+            action: "STATUS_CHANGE",
+            before: { status: restaurant.status },
+            after: { status: updated.status },
+            ipAddress: req.ip,
+          },
+        ],
+        { session },
+      );
+
+      return updated;
+    });
 
     res.json({
       success: true,
       message: "Restaurant published successfully",
-      data: restaurant,
+      data: result,
     });
   } catch (error) {
     next(error);
@@ -271,27 +344,51 @@ export const publishRestaurant = async (req, res, next) => {
 // PUT /api/restaurants/:id/block
 export const blockRestaurant = async (req, res, next) => {
   try {
-    if (req.user.role !== "superAdmin") {
-      return next(errorHandler(403, "Only superAdmin can block restaurants"));
-    }
+    const result = await withTransaction(async (session) => {
+      if (req.user.role !== "superAdmin") {
+        throw errorHandler(403, "Only superAdmin can block restaurants");
+      }
 
-    const restaurant = await Restaurant.findById(req.params.id);
-    if (!restaurant) {
-      return next(errorHandler(404, "Restaurant not found"));
-    }
+      const restaurant = await Restaurant.findById(req.params.id)
+        .session(session)
+        .lean();
 
-    if (restaurant.status === "blocked") {
-      return next(errorHandler(400, "Restaurant is already blocked"));
-    }
+      if (!restaurant) {
+        throw errorHandler(404, "Restaurant not found");
+      }
 
-    restaurant.status = "blocked";
-    restaurant.isActive = false;
-    await restaurant.save();
+      if (restaurant.status === "blocked") {
+        throw errorHandler(400, "Restaurant is already blocked");
+      }
+
+      const updated = await Restaurant.findByIdAndUpdate(
+        req.params.id,
+        { status: "blocked", isActive: false },
+        { new: true, session },
+      ).lean();
+
+      await AuditLog.create(
+        [
+          {
+            actorId: req.user.id,
+            actorRole: req.user.role,
+            entityType: "restaurant",
+            entityId: updated._id,
+            action: "STATUS_CHANGE",
+            before: { status: restaurant.status },
+            after: { status: updated.status },
+            ipAddress: req.ip,
+          },
+        ],
+        { session },
+      );
+      return updated;
+    });
 
     res.json({
       success: true,
       message: "Restaurant blocked successfully",
-      data: restaurant,
+      data: result,
     });
   } catch (error) {
     next(error);
@@ -303,59 +400,104 @@ export const blockRestaurant = async (req, res, next) => {
 // ===============================================================================
 export const updateRestaurant = async (req, res, next) => {
   try {
-    const restaurant = req.restaurant;
+    const result = await withTransaction(async (session) => {
+      // Fetch old snapshot for audit
+      const oldRestaurant = await Restaurant.findById(req.params.id)
+        .session(session)
+        .lean();
 
-    if (!restaurant) {
-      return next(errorHandler(404, "Restaurant not found"));
-    }
-
-    // prevent admin reassignment via update
-    if (req.body.adminId) {
-      return next(errorHandler(403, "Admin reassignment is not allowed here"));
-    }
-
-    const forbiddenFields = [
-      "status",
-      "isActive",
-      "isFeatured",
-      "isTrending",
-      "adminId",
-    ];
-
-    for (const field of forbiddenFields) {
-      if (field in req.body && req.user.role !== "superAdmin") {
-        return next(errorHandler(403, `${field} cannot be updated`));
+      if (!oldRestaurant) {
+        throw errorHandler(404, "Restaurant not found");
       }
-    }
-    const allowedUpdates = [
-      "name",
-      "tagline",
-      "description",
-      "categories",
-      "address",
-      "openingHours",
-      "contactNumber",
-      "email",
-      "website",
-      "imageLogo",
-      "gallery",
-    ];
-    const updates = {};
-    allowedUpdates.forEach((field) => {
-      if (req.body[field] !== undefined) {
-        updates[field] = req.body[field];
+
+      // Forbidden Fields
+      const forbiddenFields = [
+        "slug",
+        "status",
+        "isActive",
+        "isFeatured",
+        "isTrending",
+        "adminId",
+      ];
+
+      for (const field of forbiddenFields) {
+        if (field in req.body) {
+          throw errorHandler(403, `${field} cannot be updated`);
+        }
       }
+
+      // Allowlisted updates
+      const allowedUpdates = [
+        "name",
+        "tagline",
+        "description",
+        "categories",
+        "address",
+        "openingHours",
+        "contactNumber",
+        "email",
+        "website",
+        "imageLogo",
+        "gallery",
+      ];
+
+      const updates = {};
+
+      allowedUpdates.forEach((field) => {
+        if (req.body[field] !== undefined) {
+          updates[field] = req.body[field];
+        }
+      });
+
+      if (!Object.keys(updates).length) {
+        throw errorHandler(400, "No valid fields provided");
+      }
+
+      // Recompute geo if address changes
+      if (updates.address) {
+        const geo = await geocodeAddress(updates.address);
+        updates.address.location = geo;
+      }
+
+      // Perform update
+      const updatedRestaurant = await Restaurant.findByIdAndUpdate(
+        req.params.id,
+        { $set: updates },
+        { new: true, session },
+      ).lean();
+
+      if (!updatedRestaurant) {
+        throw errorHandler(404, "Restaurant not found after update");
+      }
+
+      const diff = diffObject(oldRestaurant, updatedRestaurant, allowedUpdates);
+
+      // Audit log AFTER success
+      if (Object.keys(diff).length) {
+        await AuditLog.create(
+          [
+            {
+              actorId: req.user.id,
+              actorRole: req.user.role,
+              entityType: "restaurant",
+              entityId: updatedRestaurant._id,
+              action: "UPDATE",
+              before: diff,
+              after: null,
+              ipAddress: req.ip,
+            },
+          ],
+          { session },
+        );
+      }
+
+      return updatedRestaurant;
     });
-    const updateRestaurant = await Restaurant.findByIdAndUpdate(
-      req.params.id,
-      { $set: updates },
-      { new: true },
-    );
 
     res.status(200).json({
       success: true,
       message: "Restaurant Updated Successfully",
-      data: updateRestaurant,
+      data: result,
     });
   } catch (error) {
     next(error);
@@ -366,25 +508,59 @@ export const updateRestaurant = async (req, res, next) => {
 // delete Restaurant using restaurantID and userID + superAdmin
 // ===============================================================================
 export const deleteRestaurant = async (req, res, next) => {
-  try {
-    const restaurant = req.restaurant;
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
+  try {
+    // Fetch snapshot BEFORE deletion
+    const restaurant = await Restaurant.findById(req.params.id)
+      .session(session)
+      .lean();
     if (!restaurant) {
       return next(errorHandler(404, "Restaurant not found"));
     }
 
     // remove restaurant reference from admin
-    await User.findByIdAndUpdate(restaurant.adminId, {
-      $unset: { restaurantId: "" },
-    });
+    await User.findByIdAndUpdate(
+      restaurant.adminId,
+      {
+        $unset: { restaurantId: "" },
+      },
+      { session },
+    );
 
-    await restaurant.deleteOne();
+    await Menu.deleteMany({ restaurantId: restaurant._id }, { session });
+
+    // Delete restaurant
+    await Restaurant.findByIdAndDelete(req.params.id, { session });
+
+    // AUDIT LOG (DELETE)
+    await AuditLog.create(
+      [
+        {
+          actorId: req.user.id,
+          actorRole: req.user.role,
+          entityType: "restaurant",
+          entityId: restaurant._id,
+          action: "DELETE",
+          before: restaurant,
+          after: null,
+          ipAddress: req.ip,
+        },
+      ],
+      { session },
+    );
+
+    await session.commitTransaction();
+    session.endSession();
 
     res.status(200).json({
       success: true,
       message: "Restaurant Deleted Successfully",
     });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(error);
   }
 };
@@ -395,59 +571,97 @@ export const deleteRestaurant = async (req, res, next) => {
 
 export const reassignRestaurantAdmin = async (req, res, next) => {
   try {
-    // only accessible for superAdmin - role gaurd
-    if (req.user.role !== "superAdmin") {
-      return next(
-        errorHandler(403, "Only superAdmin can Reassign the ownership"),
+    const result = await withTransaction(async (session) => {
+      // only accessible for superAdmin - role gaurd
+      if (req.user.role !== "superAdmin") {
+        throw errorHandler(403, "Only superAdmin can Reassign the ownership");
+      }
+
+      //
+      const { id } = req.params;
+      const { newAdminId } = req.body;
+
+      if (!newAdminId) {
+        throw errorHandler(400, "New admin ID is required");
+      }
+      // Fetch restaurant (LEAN snapshot)
+      const restaurant = await Restaurant.findById(id).session(session).lean();
+
+      if (!restaurant) {
+        throw errorHandler(404, "Restaurant Not Found");
+      }
+
+      // Fetch admins
+      const oldAdmin = await User.findById(restaurant.adminId).session(session);
+      const newAdmin = await User.findById(newAdminId).session(session);
+
+      // const newAdmin = await User.findById(newAdminId);
+      if (!newAdmin || newAdmin.role !== "admin") {
+        throw errorHandler(400, `Invalid admin selected`);
+      }
+
+      // check if admin already exists
+      // if (newAdmin.restaurantId) {
+      //   return next(
+      //     errorHandler(403, `Selected admin already owns a restaurant`),
+      //   );
+      // }
+
+      // Perform reassignment
+      // remove restaurant from old admin
+      await User.findByIdAndUpdate(
+        oldAdmin._id,
+        {
+          $unset: { restaurantId: "" },
+        },
+        { session },
       );
-    }
 
-    //
-    const { id } = req.params;
-    const { newAdminId } = req.body;
-
-    if (!newAdminId) {
-      return next(errorHandler(400, "New admin ID is required"));
-    }
-
-    const restaurant = await Restaurant.findById(id);
-    if (!restaurant) {
-      return next(errorHandler(404, "Restaurant Not Found"));
-    }
-
-    // fetch old admin before changing ownership
-    const oldAdmin = await User.findById(restaurant.adminId);
-    if (!oldAdmin) {
-      return next(errorHandler(400, "Current Admin not found"));
-    }
-
-    const newAdmin = await User.findById(newAdminId);
-    if (!newAdmin || newAdmin.role !== "admin") {
-      return next(errorHandler(400, `Invalid admin selected`));
-    }
-
-    // check if admin already exists
-    if (newAdmin.restaurantId) {
-      return next(
-        errorHandler(403, `Selected admin already owns a restaurant`),
+      // Assign new admin
+      await Restaurant.findByIdAndUpdate(
+        id,
+        {
+          adminId: newAdmin._id,
+        },
+        { session },
       );
-    }
 
-    // remove restaurant from old admin
-    await User.findByIdAndUpdate(oldAdmin._id, {
-      $unset: { restaurantId: "" },
+      await User.findByIdAndUpdate(
+        newAdmin._id,
+        {
+          restaurantId: id,
+        },
+        { session },
+      );
+
+      // AUDIT LOG (STATUS_CHANGE)
+      await AuditLog.create(
+        [
+          {
+            actorId: req.user.id,
+            actorRole: req.user.role,
+            entityType: "restaurant",
+            entityId: restaurant._id,
+            action: "STATUS_CHANGE",
+            before: { adminId: restaurant.adminId },
+            after: { adminId: newAdmin._id },
+            ipAddress: req.ip,
+          },
+        ],
+        { session },
+      );
+
+      return {
+        restaurantId: restaurant._id,
+        oldAdminId: restaurant.adminId,
+        newAdminId: newAdmin._id,
+      };
     });
-
-    // assign restaurant to the new admin
-    restaurant.adminId = newAdmin._id;
-    await restaurant.save();
-
-    newAdmin.restaurantId = restaurant._id;
-    await newAdmin.save();
 
     res.status(200).json({
       success: true,
-      message: `Restaurant ownership transferred successfully from ${oldAdmin.userName} to ${newAdmin.userName} `,
+      message: `Restaurant ownership reassigned successfully `,
+      data: result,
     });
   } catch (error) {
     next(error);
@@ -478,7 +692,7 @@ export const getMyRestaurant = async (req, res, next) => {
       message: `viewing your restaurant - restaurant name ${restaurant.name}`,
       data: restaurant,
     });
-    console.log(`restaurant: ${restaurant}`);
+    // console.log(`restaurant: ${restaurant}`);
   } catch (error) {
     next(error);
   }
@@ -531,8 +745,8 @@ export const getNearByRestaurants = async (req, res, next) => {
       count: enriched.length,
       data: enriched,
     });
-    console.log(`enriched:  ${enriched}`);
-    console.log(`restaurants: ${restaurants}`);
+    // console.log(`enriched:  ${enriched}`);
+    // console.log(`restaurants: ${restaurants}`);
   } catch (error) {
     next(error);
   }
@@ -634,8 +848,8 @@ export const listRestaurants = async (req, res, next) => {
       hasPrev: pagination.hasPrev,
       data: result,
     });
-    console.log(result);
-    console.log(`restaurants ${restaurants}`);
+    // console.log(result);
+    // console.log(`restaurants ${restaurants}`);
   } catch (error) {
     next(error);
   }
@@ -671,8 +885,8 @@ export const getRestaurantDetails = async (req, res, next) => {
         menu,
       },
     });
-    console.log(`restaurant ${restaurant}`);
-    console.log(`menu ${menu}`);
+    // console.log(`restaurant ${restaurant}`);
+    // console.log(`menu ${menu}`);
   } catch (error) {
     next(error);
   }
@@ -708,8 +922,8 @@ export const getFeaturedRestaurants = async (req, res, next) => {
       })),
     });
 
-    console.log("restaurants:", restaurant.length);
-    console.log("total:", total);
+    // console.log("restaurants:", restaurant.length);
+    // console.log("total:", total);
   } catch (error) {
     next(error);
   }
@@ -730,8 +944,8 @@ export const getTrendingRestaurants = async (req, res, next) => {
         isOpenNow: isRestaurantOpen(r.openingHours),
       })),
     });
-    console.log("restaurants:", restaurant.length);
-    console.log("total:", total);
+    // console.log("restaurants:", restaurant.length);
+    // console.log("total:", total);
   } catch (error) {
     next(error);
   }

@@ -13,12 +13,14 @@ import {
   getFeaturedRestaurants,
   getTrendingRestaurants,
   getRestaurantDetails,
+  publishRestaurant,
+  blockRestaurant,
 } from "../controllers/restaurant.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
 import {
   verifyRestaurantOwner,
   verifyAdminOrSuperAdmin,
-} from "../middlewares/restaurantGuards.js";
+} from "../utils/restaurantGuards.js";
 
 const router = express.Router();
 

@@ -21,7 +21,7 @@ const restaurantSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Category",
-        required: true,
+        // required: true,
       },
     ],
 
@@ -106,5 +106,9 @@ const restaurantSchema = new mongoose.Schema(
 restaurantSchema.index({
   "address.location": "2dsphere",
 });
+
+restaurantSchema.index({ status: 1, isActive: 1 });
+restaurantSchema.index({ "address.city": 1 });
+restaurantSchema.index({ categories: 1 });
 
 export default mongoose.model("Restaurant", restaurantSchema);
