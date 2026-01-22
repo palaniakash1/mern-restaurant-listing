@@ -1,6 +1,9 @@
 import { errorHandler } from "../utils/error.js";
 import bcryptjs from "bcryptjs";
 import User from "../models/user.model.js";
+import { withTransaction } from "../utils/withTransaction.js";
+import AuditLog from "../models/auditLog.model.js";
+import { diffObject } from "../utils/diff.js";
 
 export const test = (req, res) => {
   res.json({ message: "API test message is displaying" });
@@ -10,52 +13,99 @@ export const test = (req, res) => {
 // update "user" using user Id - API
 // =========================================================
 export const updateUser = async (req, res, next) => {
-  if (req.user.role !== "superAdmin" && req.user.id !== req.params.userId) {
-    return next(errorHandler(403, "you are not allowed to update the user"));
-  }
-  if (req.body.password) {
-    if (req.body.password.length < 8) {
-      return next(errorHandler(400, "password must be atleast 8 characters"));
-    }
-    req.body.password = bcryptjs.hashSync(req.body.password, 10);
-  }
-  if (req.body.userName) {
-    if (req.body.userName.length < 3 || req.body.userName.length > 20) {
-      return next(
-        errorHandler(400, "userName must be between 3 and 20 characters")
-      );
-    }
-    if (req.body.userName.includes(" ")) {
-      return next(errorHandler(400, "userName should not contain spaces"));
-    }
-    if (req.body.userName !== req.body.userName.toLowerCase()) {
-      return next(errorHandler(400, " UserName must be lowercase"));
-    }
-    if (!req.body.userName.match(/^[a-zA-Z0-9]+$/)) {
-      return next(
-        errorHandler(400, "UserName can only contain letters and numbers")
-      );
-    }
-  }
   try {
-    const updates = {};
+    const result = await withTransaction(async (session) => {
+      const { userId } = req.params;
 
-    if (req.body.userName) updates.userName = req.body.userName;
-    if (req.body.password) updates.password = req.body.password;
-    if (req.body.profilePicture) {
-      updates.profilePicture = req.body.profilePicture;
-    }
-    if (req.body.email) updates.email = req.body.email.toLowerCase();
+      if (req.user.role !== "superAdmin" && req.user.id !== userId) {
+        throw errorHandler(403, "you are not allowed to update the user");
+      }
 
-    const updateUser = await User.findByIdAndUpdate(
-      req.params.userId,
-      {
-        $set: updates,
-      },
-      { new: true }
-    );
-    const { password, ...rest } = updateUser._doc;
-    res.status(200).json(rest);
+      const oldUser = await User.findById(userId).session(session);
+      if (!oldUser) throw errorHandler(404, "User Not Found!");
+
+      const allowedFields = ["userName", "password", "profilePicture", "email"];
+      const updates = {};
+
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          updates[field] = req.body[field];
+        }
+      }
+
+      // password
+      if (updates.password) {
+        if (updates.password.length < 8) {
+          throw errorHandler(400, "password must be atleast 8 characters");
+        }
+        updates.password = bcryptjs.hashSync(updates.password, 10);
+      }
+
+      // username
+      if (updates.userName) {
+        if (updates.userName.length < 3 || updates.userName.length > 30) {
+          throw errorHandler(
+            400,
+            "userName must be between 3 and 30 characters",
+          );
+        }
+
+        if (updates.userName.includes(" ")) {
+          throw errorHandler(400, "userName should not contain spaces");
+        }
+
+        if (updates.userName !== updates.userName.toLowerCase()) {
+          throw errorHandler(400, " UserName must be lowercase");
+        }
+        if (!updates.userName.match(/^[a-z0-9]+$/)) {
+          throw errorHandler(
+            400,
+            "UserName can only contain lowercase  letters and numbers",
+          );
+        }
+      }
+
+      if (updates.email) updates.email = updates.email.toLowerCase();
+
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        {
+          $set: updates,
+        },
+        { new: true, session },
+      )
+        .select("-password")
+        .lean();
+
+      if (!updatedUser) {
+        throw errorHandler(404, "User not found after update");
+      }
+      // DIFF
+      const diff = diffObject(oldUser, updatedUser, allowedFields);
+
+      // AUDIT LOG (only if something changed)
+      if (Object.keys(diff).length) {
+        await AuditLog.create(
+          [
+            {
+              actorId: req.user.id,
+              actorRole: req.user.role,
+              entityType: "user",
+              entityId: updatedUser._id,
+              action: "UPDATE",
+              before: diff,
+              after: null,
+              ipAddress: req.ip,
+            },
+          ],
+          { session },
+        );
+      }
+
+      return updatedUser;
+    });
+
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }
@@ -67,29 +117,79 @@ export const updateUser = async (req, res, next) => {
 
 export const deleteUser = async (req, res, next) => {
   try {
-    // 1️⃣ Must be authenticated
-    if (!req.user) {
-      return next(errorHandler(401, "Unauthorized"));
-    }
-    // 2️⃣ SuperAdmin can delete anyone
-    if (req.user.role === "superAdmin") {
-      await User.findByIdAndDelete(req.params.userId);
-      return res.status(200).json("User deleted successfully");
-    }
-    // 3️⃣ Normal users can delete only themselves
-    if (req.user.id !== req.params.userId) {
-      await User.findByIdAndDelete(req.params.userId);
-      return res.status(200).json("Account deleted successfully");
-    }
-    // 4️⃣ Otherwise — forbidden
-    return next(errorHandler(403, "You are not allowed to delete this user"));
+    const result = await withTransaction(async (session) => {
+      const { userId } = req.params;
+
+      // 1️⃣ Must be authenticated
+      if (!req.user) {
+        throw errorHandler(401, "Unauthorized");
+      }
+
+      // Fetch snapshot BEFORE delete.
+      const oldUser = await User.findById(userId).session(session).lean();
+
+      if (!oldUser) throw errorHandler(404, "user not found");
+
+      // Authorization rules
+      const isSuperAdmin = req.user.role === "superAdmin";
+      const isSelfDelete = req.user.id === userId;
+
+      if (!isSuperAdmin && !isSelfDelete) {
+        throw errorHandler(403, "You are not allowed to delete this user");
+      }
+
+      //  Delete user
+      await User.findByIdAndDelete(userId, { session });
+
+      // Audit log
+      await AuditLog.create(
+        [
+          {
+            actorId: req.user.id,
+            actorRole: req.user.role,
+            entityType: "user",
+            entityId: oldUser._id,
+            action: "DELETE",
+            before: oldUser,
+            after: null,
+            ipAddress: req.ip,
+          },
+        ],
+        { session },
+      );
+      return {
+        deletedUserId: oldUser._id,
+        deletedBy: req.user.id,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      message:
+        req.user.role === "superAdmin"
+          ? "User deleted successfully"
+          : "Account deleted successfully",
+      data: result,
+    });
   } catch (error) {
     next(error);
   }
 };
 
-export const signout = (req, res, next) => {
+export const signout = async (req, res, next) => {
   try {
+    if (req.user) {
+      await AuditLog.create({
+        actorId: req.user.id,
+        actorRole: req.user.role,
+        entityType: "auth",
+        entityId: req.user.id,
+        action: "LOGOUT",
+        before: null,
+        after: null,
+        ipAddress: req.ip,
+      });
+    }
     res
       .clearCookie("access_token")
       .status(200)
@@ -106,7 +206,7 @@ export const getAllusers = async (req, res, next) => {
   try {
     if (!req.user || req.user.role !== "superAdmin") {
       return next(
-        errorHandler(403, "You are not allowed to access all the users")
+        errorHandler(403, "You are not allowed to access all the users"),
       );
     }
 
@@ -156,7 +256,7 @@ export const getAvailableAdmins = async (req, res, next) => {
     // only superAdmin is allowed
     if (req.user.role !== "superAdmin") {
       return next(
-        errorHandler(403, "only superAdmin can access this resource")
+        errorHandler(403, "only superAdmin can access this resource"),
       );
     }
 

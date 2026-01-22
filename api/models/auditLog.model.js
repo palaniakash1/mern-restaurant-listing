@@ -5,25 +5,34 @@ const auditLogSchema = new mongoose.Schema(
     actorId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      default: null,
     },
     actorRole: {
       type: String,
-      enum: ["admin", "superAdmin"],
+      enum: ["anonymous", "user", "storeManager", "admin", "superAdmin"],
       required: true,
     },
     entityType: {
       type: String,
-      enum: ["restaurant", "menu", "category", "user"],
+      enum: ["auth", "restaurant", "menu", "category", "user"],
       required: true,
     },
     entityId: {
       type: mongoose.Schema.Types.ObjectId,
-      required: true,
+      default: null,
     },
     action: {
       type: String,
-      enum: ["CREATE", "UPDATE", "DELETE", "STATUS_CHANGE"],
+      enum: [
+        "CREATE",
+        "UPDATE",
+        "DELETE",
+        "STATUS_CHANGE",
+        // ✅ AUTH EVENTS
+        "LOGIN",
+        "LOGIN_FAILED",
+        "LOGOUT",
+      ],
       required: true,
     },
     before: {
