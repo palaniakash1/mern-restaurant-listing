@@ -190,10 +190,10 @@ export const signout = async (req, res, next) => {
         ipAddress: req.ip,
       });
     }
-    res
-      .clearCookie("access_token")
-      .status(200)
-      .json("user has been signed out");
+    res.clearCookie("access_token").status(200).json({
+      success: true,
+      message: "user has been signed out",
+    });
   } catch (error) {
     next(error);
   }

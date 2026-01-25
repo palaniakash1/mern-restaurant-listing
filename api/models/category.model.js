@@ -41,8 +41,13 @@ const categorySchema = new mongoose.Schema(
       type: Number,
       default: 0, // display order
     },
+    
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Prevent duplicate categories per restaurant
