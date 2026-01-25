@@ -95,7 +95,7 @@ export const updateUser = async (req, res, next) => {
               action: "UPDATE",
               before: diff,
               after: null,
-              ipAddress: req.ip,
+              ipAddress: req.headers["x-forwarded-for"] || req.ip,
             },
           ],
           { session },
@@ -152,7 +152,7 @@ export const deleteUser = async (req, res, next) => {
             action: "DELETE",
             before: oldUser,
             after: null,
-            ipAddress: req.ip,
+            ipAddress: req.headers["x-forwarded-for"] || req.ip,
           },
         ],
         { session },
@@ -187,7 +187,7 @@ export const signout = async (req, res, next) => {
         action: "LOGOUT",
         before: null,
         after: null,
-        ipAddress: req.ip,
+        ipAddress: req.headers["x-forwarded-for"] || req.ip,
       });
     }
     res.clearCookie("access_token").status(200).json({

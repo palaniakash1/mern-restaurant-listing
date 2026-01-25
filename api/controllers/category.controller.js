@@ -1,6 +1,8 @@
 import { errorHandler } from "../utils/error.js";
 import Category from "../models/category.model.js";
 import Restaurant from "../models/restaurant.model.js";
+import AuditLog from "../models/auditLog.model.js";
+import { diffObject } from "../utils/diff.js";
 
 // ===============================================
 // Create new Category
@@ -87,6 +89,23 @@ export const createCategory = async (req, res, next) => {
       restaurantId: isGeneric ? null : restaurantId,
       order,
     });
+    await AuditLog.create({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      entityType: "category",
+      entityId: category._id,
+      action: "CREATE",
+      before: null,
+      after: {
+        name: category.name,
+        slug: category.slug,
+        isGeneric: category.isGeneric,
+        restaurantId: category.restaurantId,
+        order: category.order,
+        isActive: category.isActive,
+      },
+      ipAddress: req.headers["x-forwarded-for"] || req.ip,
+    });
 
     res.status(201).json({
       success: true,
@@ -144,6 +163,8 @@ export const updateCategory = async (req, res, next) => {
       return next(errorHandler(404, "Category not found"));
     }
 
+    const before = category.toObject();
+
     // authorization
     if (category.isGeneric && req.user.role !== "superAdmin") {
       return next(
@@ -176,6 +197,26 @@ export const updateCategory = async (req, res, next) => {
     if (isActive !== undefined) category.isActive = isActive;
 
     await category.save();
+
+    const diff = diffObject(before, category, [
+      "name",
+      "slug",
+      "order",
+      "isActive",
+    ]);
+
+    if (Object.keys(diff).length > 0) {
+      await AuditLog.create({
+        actorId: req.user.id,
+        actorRole: req.user.role,
+        entityType: "category",
+        entityId: category._id,
+        action: isActive !== undefined ? "STATUS_CHANGE" : "UPDATE",
+        before: diff,
+        after: diff,
+        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -210,8 +251,25 @@ export const deleteCategory = async (req, res, next) => {
       return next(errorHandler(403, "not allowed"));
     }
 
+    const before = {
+      isActive: category.isActive,
+    };
+
     category.isActive = false;
     await category.save();
+
+    await AuditLog.create({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      entityType: "category",
+      entityId: category._id,
+      action: "STATUS_CHANGE",
+      before,
+      after: {
+        isActive: category.isActive,
+      },
+      ipAddress: req.headers["x-forwarded-for"] || req.ip,
+    });
 
     res.status(200).json({
       success: true,
@@ -276,6 +334,20 @@ export const reorderCategories = async (req, res, next) => {
     if (result.matchedCount === 0) {
       return next(errorHandler(404, "No categories found to reorder"));
     }
+
+    await AuditLog.create({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      entityType: "category",
+      entityId: req.user.role === "admin" ? req.user.restaurantId : null,
+      action: "UPDATE",
+      before: null,
+      after: {
+        reorderedCount: req.body.length,
+        restaurantId: req.user.role === "admin" ? req.user.restaurantId : null,
+      },
+      ipAddress: req.headers["x-forwarded-for"] || req.ip,
+    });
 
     res.status(200).json({
       success: true,

@@ -101,7 +101,7 @@ export const signup = async (req, res, next) => {
         email: newUser.email,
         role: newUser.role,
       },
-      ipAddress: req.ip,
+      ipAddress: req.headers["x-forwarded-for"] || req.ip,
     });
 
     res.status(201).json("User registered successfully");
@@ -149,7 +149,7 @@ export const signin = async (req, res, next) => {
         action: "LOGIN_FAILED",
         before: { email: lowerCasedEmail },
         after: null,
-        ipAddress: req.ip,
+        ipAddress: req.headers["x-forwarded-for"] || req.ip,
       });
 
       return next(
@@ -167,7 +167,7 @@ export const signin = async (req, res, next) => {
         action: "LOGIN_FAILED",
         before: { email: validUser.email },
         after: null,
-        ipAddress: req.ip,
+        ipAddress: req.headers["x-forwarded-for"] || req.ip,
       });
 
       return next(
@@ -200,7 +200,7 @@ export const signin = async (req, res, next) => {
       after: {
         email: validUser.email,
       },
-      ipAddress: req.ip,
+      ipAddress: req.headers["x-forwarded-for"] || req.ip,
     });
 
     res
