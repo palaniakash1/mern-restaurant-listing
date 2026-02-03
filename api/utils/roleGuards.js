@@ -22,3 +22,16 @@ export const verifyAdminOrSuperAdmin = async (req, res, next) => {
   }
   next();
 };
+
+export const verifySuperAdmin = (req, res, next) => {
+  if (req.user.role !== "superAdmin") {
+    return next(errorHandler(403, "Only superAdmin allowed"));
+  }
+  next();
+};
+
+export const verifyAdmin = async () => {
+  if (req.user.role !== "admin") {
+    next(errorHandler(403, "Only admin"));
+  }
+};

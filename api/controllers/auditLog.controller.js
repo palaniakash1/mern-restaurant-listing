@@ -1,6 +1,10 @@
 import AuditLog from "../models/auditLog.model.js";
+import User from "../models/user.model.js";
+// import Restaurant from "../models/restaurant.model.js";
+// import Menu from "../models/menu.model.js";
+// import Category from "../models/category.model.js";
 import { errorHandler } from "../utils/error.js";
-
+import { paginate } from "../utils/paginate.js";
 // ======================================================================
 // GET AUDIT LOGS (SUPER ADMIN + ADMIN)
 // ======================================================================
@@ -8,11 +12,7 @@ import { errorHandler } from "../utils/error.js";
 
 export const getAuditLogs = async (req, res, next) => {
   try {
-    const { role, id: userId } = req.user;
-
-    if (!["admin", "superAdmin"].includes(role)) {
-      return next(errorHandler(403, "Access denied"));
-    }
+    const { role, id: userId, restaurantId } = req.user;
 
     const {
       entityType,
@@ -23,44 +23,85 @@ export const getAuditLogs = async (req, res, next) => {
       limit = 20,
     } = req.query;
 
-    const query = {};
+    const filter = {};
 
     // ----------------------------
-    // Whitelisted filters
+    // SuperAdmin: full access
     // ----------------------------
-    if (entityType) query.entityType = entityType;
-    if (entityId) query.entityId = entityId;
-    if (action) query.action = action;
-    if (actorId) query.actorId = actorId;
-
-    // ----------------------------
-    // Role-based scoping
-    // ----------------------------
-    if (role === "admin") {
-      // Admins can ONLY see logs where they are involved
-      // (actor or entity owner — safe default)
-      query.actorId = userId;
+    if (role === "superAdmin") {
+      if (entityType) filter.entityType = entityType;
+      if (entityId) filter.entityId = entityId;
+      if (action) filter.action = action;
+      if (actorId) filter.actorId = actorId;
     }
 
-    const pageNum = Math.max(parseInt(page), 1);
-    const limitNum = Math.min(parseInt(limit), 50); // hard cap
-    const skip = (pageNum - 1) * limitNum;
+    // ----------------------------
+    // Admin: restaurant-scoped
+    // ----------------------------
+    // DO NOT apply actorId filter for admins
+    // Admin: never trust actorId from query
+    else if (role === "admin") {
+      if (!restaurantId) {
+        // Admin without restaurant → no audit scope
+        return res.json({
+          success: true,
+          page: 1,
+          limit,
+          total: 0,
+          data: [],
+        });
+      }
 
-    const [logs, total] = await Promise.all([
-      AuditLog.find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limitNum)
-        .lean(),
+      // storeManagers under this restaurant
+      const storeManagerIds = await User.find({
+        role: "storeManager",
+        restaurantId,
+      }).distinct("_id");
 
-      AuditLog.countDocuments(query),
-    ]);
+      filter.$or = [
+        // Admin’s own actions
+        { actorId: userId },
+
+        // Restaurant actions
+        {
+          entityType: "restaurant",
+          entityId: restaurantId,
+        },
+
+        // StoreManagers under this restaurant
+        {
+          entityType: "user",
+          entityId: { $in: storeManagerIds },
+        },
+      ];
+
+      // Optional narrowing (safe)
+      if (entityType) filter.entityType = entityType;
+      if (action) filter.action = action;
+    } else {
+      return next(errorHandler(403, "Access denied"));
+    }
+
+    // ----------------------------
+    // Pagination
+    // ----------------------------
+
+    const total = await AuditLog.countDocuments(filter);
+    const pagination = paginate({ page, limit, total });
+
+    // ----------------------------
+    // Data query
+    // ----------------------------
+    const logs = await AuditLog.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(pagination.skip)
+      .limit(pagination.limit)
+      .lean();
 
     res.status(200).json({
       success: true,
-      page: pageNum,
-      limit: limitNum,
-      total,
+      message: "Audit logs fetched successfully",
+      ...pagination,
       data: logs,
     });
   } catch (error) {

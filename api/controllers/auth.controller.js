@@ -62,7 +62,7 @@ export const signup = async (req, res, next) => {
       return next(
         errorHandler(
           400,
-          `Username '${userName}' already exists, try login instead`,
+          `Username '${existingUserName}' already exists, try login instead`,
         ),
       );
     }
@@ -70,7 +70,10 @@ export const signup = async (req, res, next) => {
     const existingEmail = await User.findOne({ email });
     if (existingEmail) {
       return next(
-        errorHandler(400, `Email '${email}' already exists, try login instead`),
+        errorHandler(
+          400,
+          `Email '${existingEmail}' already exists, try login instead`,
+        ),
       );
     }
 
@@ -232,8 +235,6 @@ export const google = async (req, res, next) => {
         .status(200)
         .cookie("access_token", token, { httpOnly: true })
         .json(rest);
-      
-      
     } else {
       const generatedPassword =
         Math.random().toString(36).slice(-8) +
@@ -263,6 +264,33 @@ export const google = async (req, res, next) => {
         })
         .json(rest);
     }
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ======================================
+// signout - API
+// ======================================
+
+export const signout = async (req, res, next) => {
+  try {
+    if (req.user) {
+      await AuditLog.create({
+        actorId: req.user.id,
+        actorRole: req.user.role,
+        entityType: "auth",
+        entityId: req.user.id,
+        action: "LOGOUT",
+        before: null,
+        after: null,
+        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+      });
+    }
+    res.clearCookie("access_token").status(200).json({
+      success: true,
+      message: "signed out successfully",
+    });
   } catch (error) {
     next(error);
   }

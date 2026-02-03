@@ -23,7 +23,7 @@ export const verifyToken = async (req, res, next) => {
     req.user = {
       id: user._id.toString(),
       role: user.role,
-      restaurantId: user.restaurantId.toString(),
+      restaurantId: user.restaurantId ? user.restaurantId.toString() : null,
     };
 
     next();
