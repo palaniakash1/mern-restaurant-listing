@@ -6,10 +6,12 @@ import { isRestaurantOpen } from "../utils/openNow.js";
 import Menu from "../models/menu.model.js";
 import { paginate } from "../utils/paginate.js";
 import { publicRestaurantFilter } from "../utils/restaurantVisibility.js";
-import AuditLog from "../models/auditLog.model.js";
+ 
 import { withTransaction } from "../utils/withTransaction.js";
 import { diffObject } from "../utils/diff.js";
 import mongoose from "mongoose";
+import { logAudit } from "../utils/auditLogger.js";
+
 
 // ===============================================
 // create a new restaurant
@@ -20,12 +22,6 @@ export const create = async (req, res, next) => {
 
     if (!req.body || Object.keys(req.body).length === 0) {
       return next(errorHandler(400, "Request body is missing"));
-    }
-
-    if (!["superAdmin", "admin"].includes(req.user.role)) {
-      return next(
-        errorHandler(403, "You are not allowed to create a restaurant"),
-      );
     }
 
     const {
@@ -147,7 +143,7 @@ export const create = async (req, res, next) => {
       );
 
       // 🧾 Audit log
-      await AuditLog.create(
+      await logAudit(
         [
           {
             actorId: req.user.id,
@@ -189,26 +185,20 @@ export const create = async (req, res, next) => {
 // =================================================================
 export const getAllRestaurants = async (req, res, next) => {
   try {
-    // only accessible for superAdmin - role gaurd
-    if (req.user.role !== "superAdmin") {
-      return next(
-        errorHandler(403, "you are not allowed to access all the restaurants"),
-      );
-    }
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     const sortDirection = req.query.order === "asc" ? 1 : -1;
 
-    const searchFilter = req.query.searchTerm
+    const searchFilter = req.query.q
       ? {
           $or: [
-            { name: { $regex: req.query.searchTerm, $options: "i" } },
-            { slug: { $regex: req.query.searchTerm, $options: "i" } },
-            { "address.city": { $regex: req.query.searchTerm, $options: "i" } },
+            { name: { $regex: req.query.q, $options: "i" } },
+            { slug: { $regex: req.query.q, $options: "i" } },
+            { "address.city": { $regex: req.query.q, $options: "i" } },
             {
               "address.areaLocality": {
-                $regex: req.query.searchTerm,
+                $regex: req.query.q,
                 $options: "i",
               },
             },
@@ -281,17 +271,21 @@ export const getRestaurantBySlug = async (req, res, next) => {
   }
 };
 
-// ======================================================================
-// PUBLISH RESTAURANT (SUPER ADMIN ONLY)
-// ======================================================================
-// PUT /api/restaurants/:id/publish
-
-export const publishRestaurant = async (req, res, next) => {
+export const updateRestaurantStatus = async (req, res, next) => {
   try {
+    const { status } = req.body;
+
+    const allowedStatuses = ["published", "draft", "blocked"];
+
+    if (!allowedStatuses.includes(status))
+      throw errorHandler(400, "Invalid restaurant status");
+
     const result = await withTransaction(async (session) => {
+      // 🔐 Role guard (defensive — router already protects)
       if (req.user.role !== "superAdmin") {
-        throw errorHandler(403, "Only superAdmin can publish restaurants");
+        throw errorHandler(403, "Only superAdmin can change restaurant status");
       }
+      // 📄 Fetch current state
       const restaurant = await Restaurant.findById(req.params.id)
         .session(session)
         .lean();
@@ -299,17 +293,27 @@ export const publishRestaurant = async (req, res, next) => {
       if (!restaurant) {
         throw errorHandler(404, "Restaurant not found");
       }
-      if (restaurant.status === "published") {
-        throw errorHandler(400, "Restaurant already published");
+
+      // ⛔ No-op protection
+      if (restaurant.status === status) {
+        throw errorHandler(400, `Restaurant already in '${status}' status`);
       }
 
+      // 🧠 Derive isActive from status (single source of truth)
+      const isActive = status === "published";
+
+      // 🔁 Update
       const updated = await Restaurant.findByIdAndUpdate(
         req.params.id,
-        { status: "published", isActive: true },
+        {
+          status,
+          isActive,
+        },
         { new: true, session },
       ).lean();
 
-      await AuditLog.create(
+      // 🧾 Audit log
+      await logAudit(
         [
           {
             actorId: req.user.id,
@@ -318,7 +322,7 @@ export const publishRestaurant = async (req, res, next) => {
             entityId: updated._id,
             action: "STATUS_CHANGE",
             before: { status: restaurant.status },
-            after: { status: updated.status },
+            after: { status },
             ipAddress: req.headers["x-forwarded-for"] || req.ip,
           },
         ],
@@ -328,9 +332,9 @@ export const publishRestaurant = async (req, res, next) => {
       return updated;
     });
 
-    res.json({
+    res.status(200).json({
       success: true,
-      message: "Restaurant published successfully",
+      message: `Restaurant status updated to '${result.status}'`,
       data: result,
     });
   } catch (error) {
@@ -338,62 +342,217 @@ export const publishRestaurant = async (req, res, next) => {
   }
 };
 
-// ======================================================================
-// BLOCK RESTAURANT (SUPER ADMIN ONLY)
-// ======================================================================
-// PUT /api/restaurants/:id/block
-export const blockRestaurant = async (req, res, next) => {
-  try {
-    const result = await withTransaction(async (session) => {
-      if (req.user.role !== "superAdmin") {
-        throw errorHandler(403, "Only superAdmin can block restaurants");
-      }
+// // ======================================================================
+// // PUBLISH RESTAURANT (SUPER ADMIN ONLY)
+// // ======================================================================
+// // PUT /api/restaurants/:id/publish
 
-      const restaurant = await Restaurant.findById(req.params.id)
-        .session(session)
-        .lean();
+// export const publishRestaurant = async (req, res, next) => {
+//   try {
+//     const result = await withTransaction(async (session) => {
+//       if (req.user.role !== "superAdmin") {
+//         throw errorHandler(403, "Only superAdmin can publish restaurants");
+//       }
+//       const restaurant = await Restaurant.findById(req.params.id)
+//         .session(session)
+//         .lean();
 
-      if (!restaurant) {
-        throw errorHandler(404, "Restaurant not found");
-      }
+//       if (!restaurant) {
+//         throw errorHandler(404, "Restaurant not found");
+//       }
+//       if (restaurant.status === "published") {
+//         throw errorHandler(400, "Restaurant already published");
+//       }
 
-      if (restaurant.status === "blocked") {
-        throw errorHandler(400, "Restaurant is already blocked");
-      }
+//       const updated = await Restaurant.findByIdAndUpdate(
+//         req.params.id,
+//         { status: "published", isActive: true },
+//         { new: true, session },
+//       ).lean();
 
-      const updated = await Restaurant.findByIdAndUpdate(
-        req.params.id,
-        { status: "blocked", isActive: false },
-        { new: true, session },
-      ).lean();
+//       await logAudit(
+//         [
+//           {
+//             actorId: req.user.id,
+//             actorRole: req.user.role,
+//             entityType: "restaurant",
+//             entityId: updated._id,
+//             action: "STATUS_CHANGE",
+//             before: { status: restaurant.status },
+//             after: { status: updated.status },
+//             ipAddress: req.headers["x-forwarded-for"] || req.ip,
+//           },
+//         ],
+//         { session },
+//       );
 
-      await AuditLog.create(
-        [
-          {
-            actorId: req.user.id,
-            actorRole: req.user.role,
-            entityType: "restaurant",
-            entityId: updated._id,
-            action: "STATUS_CHANGE",
-            before: { status: restaurant.status },
-            after: { status: updated.status },
-            ipAddress: req.headers["x-forwarded-for"] || req.ip,
-          },
-        ],
-        { session },
-      );
-      return updated;
-    });
+//       return updated;
+//     });
 
-    res.json({
-      success: true,
-      message: "Restaurant blocked successfully",
-      data: result,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+//     res.json({
+//       success: true,
+//       message: "Restaurant published successfully",
+//       data: result,
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+// // ======================================================================
+// // Unpublish restaurant (SUPERADMIN)
+// // ======================================================================
+
+// export const unpublishRestaurant = async (req, res, next) => {
+//   try {
+//     await withTransaction(async (session) => {
+//       if (req.user.role !== "superAdmin") {
+//         throw errorHandler(403, "superAdmin Only");
+//       }
+
+//       const restaurant = await Restaurant.findById(req.params.id).session(
+//         session,
+//       );
+
+//       if (!restaurant) {
+//         throw errorHandler(404, "Restaurant not found");
+//       }
+
+//       restaurant.status = "draft";
+//       restaurant.isActive = false;
+//       restaurant.save({ session });
+
+//       await logAudit(
+//         [
+//           {
+//             actorId: req.user.id,
+//             actorRole: req.user.role,
+//             entityType: "restaurant",
+//             entityId: restaurant._id,
+//             action: "STATUS_CHANGE",
+//             before: { status: "published" },
+//             after: { status: "draft" },
+//             ipAddress: req.headers["x-forwarded-for"] || req.ip,
+//           },
+//         ],
+//         { session },
+//       );
+//     });
+
+//     res.json({
+//       success: true,
+//       message: "Restaurant unpublished from published",
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+// // ======================================================================
+// // BLOCK RESTAURANT (SUPER ADMIN ONLY)
+// // ======================================================================
+// // PUT /api/restaurants/:id/block
+// export const blockRestaurant = async (req, res, next) => {
+//   try {
+//     const result = await withTransaction(async (session) => {
+//       if (req.user.role !== "superAdmin") {
+//         throw errorHandler(403, "Only superAdmin can block restaurants");
+//       }
+
+//       const restaurant = await Restaurant.findById(req.params.id)
+//         .session(session)
+//         .lean();
+
+//       if (!restaurant) {
+//         throw errorHandler(404, "Restaurant not found");
+//       }
+
+//       if (restaurant.status === "blocked") {
+//         throw errorHandler(400, "Restaurant is already blocked");
+//       }
+
+//       const updated = await Restaurant.findByIdAndUpdate(
+//         req.params.id,
+//         { status: "blocked", isActive: false },
+//         { new: true, session },
+//       ).lean();
+
+//       await logAudit(
+//         [
+//           {
+//             actorId: req.user.id,
+//             actorRole: req.user.role,
+//             entityType: "restaurant",
+//             entityId: updated._id,
+//             action: "STATUS_CHANGE",
+//             before: { status: restaurant.status },
+//             after: { status: updated.status },
+//             ipAddress: req.headers["x-forwarded-for"] || req.ip,
+//           },
+//         ],
+//         { session },
+//       );
+//       return updated;
+//     });
+
+//     res.json({
+//       success: true,
+//       message: "Restaurant blocked successfully",
+//       data: result,
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+// // ======================================================================
+// // Restore blocked restaurant (SUPERADMIN)
+// // ======================================================================
+
+// export const restoreBlockedRestaurant = async (req, res, next) => {
+//   try {
+//     await withTransaction(async (session) => {
+//       if (req.user.role !== "superAdmin") {
+//         throw errorHandler(403, "superAdmin Only");
+//       }
+
+//       const restaurant = await Restaurant.findById(req.params.id).session(
+//         session,
+//       );
+
+//       if (!restaurant) {
+//         throw errorHandler(404, "Restaurant not found");
+//       }
+
+//       restaurant.status = "published";
+//       restaurant.isActive = true;
+//       restaurant.save({ session });
+
+//       await logAudit(
+//         [
+//           {
+//             actorId: req.user.id,
+//             actorRole: req.user.role,
+//             entityType: "restaurant",
+//             entityId: restaurant._id,
+//             action: "STATUS_CHANGE",
+//             before: { status: "blocked" },
+//             after: { status: "published" },
+//             ipAddress: req.headers["x-forwarded-for"] || req.ip,
+//           },
+//         ],
+//         { session },
+//       );
+//     });
+
+//     res.json({
+//       success: true,
+//       message: "Restaurant unblocked and published",
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
 
 // ===============================================================================
 // update Restaurant using restaurantID and userID + superAdmin
@@ -474,7 +633,7 @@ export const updateRestaurant = async (req, res, next) => {
 
       // Audit log AFTER success
       if (Object.keys(diff).length) {
-        await AuditLog.create(
+        await logAudit(
           [
             {
               actorId: req.user.id,
@@ -535,7 +694,7 @@ export const deleteRestaurant = async (req, res, next) => {
     await Restaurant.findByIdAndDelete(req.params.id, { session });
 
     // AUDIT LOG (DELETE)
-    await AuditLog.create(
+    await logAudit(
       [
         {
           actorId: req.user.id,
@@ -635,7 +794,7 @@ export const reassignRestaurantAdmin = async (req, res, next) => {
       );
 
       // AUDIT LOG (STATUS_CHANGE)
-      await AuditLog.create(
+      await logAudit(
         [
           {
             actorId: req.user.id,
@@ -785,7 +944,7 @@ export const listRestaurants = async (req, res, next) => {
       isFeatured,
       isTrending,
       isOpenNow,
-      search,
+      q, // q=search
       sortBy,
       page = 1,
       limit = 10,
@@ -804,11 +963,11 @@ export const listRestaurants = async (req, res, next) => {
       filter.categories = { $in: categoryArray };
     }
 
-    if (search) {
+    if (q) {
       filter.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { "address.areaLocality": { $regex: search, $options: "i" } },
-        { "address.city": { $regex: search, $options: "i" } },
+        { name: { $regex: q, $options: "i" } },
+        { "address.areaLocality": { $regex: q, $options: "i" } },
+        { "address.city": { $regex: q, $options: "i" } },
       ];
     }
 
@@ -948,5 +1107,43 @@ export const getTrendingRestaurants = async (req, res, next) => {
     // console.log("total:", total);
   } catch (error) {
     next(error);
+  }
+};
+
+// ======================================================================
+// admin restaurant summary
+// ======================================================================
+
+// ======================================================================
+
+// 📌 Routes
+// GET /api/restaurants/admin-summary
+
+// ======================================================================
+
+export const getAdminRestaurantSummary = async (req, res, next) => {
+  try {
+    if (req.user.role !== "admin") {
+      return next(errorHandler(403, "Only admin"));
+    }
+
+    const restaurantId = req.user.restaurantId;
+
+    const [menuCount, categoryCount, storeManagerCount] = await Promise.all([
+      Menu.countDocuments({ restaurantId, isActive: true }),
+      Category.countDocuments({ restaurantId, isActive: true }),
+      User.countDocuments({ role: "storeManager", restaurantId }),
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        menuCount,
+        categoryCount,
+        storeManagerCount,
+      },
+    });
+  } catch (err) {
+    next(err);
   }
 };

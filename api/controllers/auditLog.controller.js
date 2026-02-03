@@ -5,11 +5,11 @@ import User from "../models/user.model.js";
 // import Category from "../models/category.model.js";
 import { errorHandler } from "../utils/error.js";
 import { paginate } from "../utils/paginate.js";
+
 // ======================================================================
 // GET AUDIT LOGS (SUPER ADMIN + ADMIN)
 // ======================================================================
-// GET /api/audit-logs
-
+// GET /api/auditlogs
 export const getAuditLogs = async (req, res, next) => {
   try {
     const { role, id: userId, restaurantId } = req.user;
@@ -43,7 +43,7 @@ export const getAuditLogs = async (req, res, next) => {
     else if (role === "admin") {
       if (!restaurantId) {
         // Admin without restaurant → no audit scope
-        return res.json({
+        return res.status(200).json({
           success: true,
           page: 1,
           limit,
@@ -52,7 +52,7 @@ export const getAuditLogs = async (req, res, next) => {
         });
       }
 
-      // storeManagers under this restaurant
+      // Find storeManagers under this restaurant
       const storeManagerIds = await User.find({
         role: "storeManager",
         restaurantId,
@@ -73,12 +73,22 @@ export const getAuditLogs = async (req, res, next) => {
           entityType: "user",
           entityId: { $in: storeManagerIds },
         },
+        // Menu & category actions belonging to this restaurant
+        {
+          entityType: { $in: ["menu", "category"] },
+          entityId: restaurantId,
+        },
       ];
 
       // Optional narrowing (safe)
       if (entityType) filter.entityType = entityType;
       if (action) filter.action = action;
-    } else {
+    }
+
+    // =========================================================
+    // UNAUTHORIZED ROLES
+    // =========================================================
+    else {
       return next(errorHandler(403, "Access denied"));
     }
 

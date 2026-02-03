@@ -2,7 +2,7 @@ import User from "../models/user.model.js";
 import bcryptjs from "bcryptjs";
 import { errorHandler } from "../utils/error.js";
 import jwt from "jsonwebtoken";
-import AuditLog from "../models/auditLog.model.js";
+import { logAudit } from "../utils/auditLogger.js";
 
 // ===============================================
 // signup module
@@ -92,7 +92,7 @@ export const signup = async (req, res, next) => {
     await newUser.save();
 
     // AUDIT LOG — SIGNUP
-    await AuditLog.create({
+    await logAudit({
       actorId: newUser._id,
       actorRole: "user",
       entityType: "user",
@@ -141,10 +141,12 @@ export const signin = async (req, res, next) => {
 
     const lowerCasedEmail = email.toLowerCase();
 
-    const validUser = await User.findOne({ email: lowerCasedEmail });
+    const validUser = await User.findOne({ email: lowerCasedEmail }).select(
+      "+password",
+    );
 
     if (!validUser) {
-      await AuditLog.create({
+      await logAudit({
         actorId: null,
         actorRole: "anonymous",
         entityType: "auth",
@@ -162,7 +164,7 @@ export const signin = async (req, res, next) => {
 
     const validPassword = bcryptjs.compareSync(password, validUser.password);
     if (!validPassword) {
-      await AuditLog.create({
+      await logAudit({
         actorId: validUser._id,
         actorRole: validUser.role,
         entityType: "auth",
@@ -193,7 +195,7 @@ export const signin = async (req, res, next) => {
     const { password: pass, ...rest } = validUser._doc; // Exclude password from user data
 
     // after successful login
-    await AuditLog.create({
+    await logAudit({
       actorId: validUser._id,
       actorRole: validUser.role,
       entityType: "auth",
@@ -276,7 +278,7 @@ export const google = async (req, res, next) => {
 export const signout = async (req, res, next) => {
   try {
     if (req.user) {
-      await AuditLog.create({
+      await logAudit({
         actorId: req.user.id,
         actorRole: req.user.role,
         entityType: "auth",

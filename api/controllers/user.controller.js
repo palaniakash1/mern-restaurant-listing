@@ -2,7 +2,9 @@ import { errorHandler } from "../utils/error.js";
 import bcryptjs from "bcryptjs";
 import User from "../models/user.model.js";
 import { withTransaction } from "../utils/withTransaction.js";
-import AuditLog from "../models/auditLog.model.js";
+ 
+import { logAudit } from "../utils/auditLogger.js";
+
 import { diffObject } from "../utils/diff.js";
 import { paginate } from "../utils/paginate.js";
 import Restaurant from "../models/restaurant.model.js";
@@ -95,7 +97,7 @@ export const updateUser = async (req, res, next) => {
 
       // AUDIT LOG (only if something changed)
       if (Object.keys(diff).length) {
-        await AuditLog.create(
+        await logAudit(
           [
             {
               actorId: req.user.id,
@@ -160,7 +162,7 @@ export const deleteUser = async (req, res, next) => {
       }
 
       // Audit log
-      await AuditLog.create(
+      await logAudit(
         [
           {
             actorId: req.user.id,
@@ -225,7 +227,7 @@ export const deactivateUser = async (req, res, next) => {
       await oldUser.save({ session });
 
       // Audit log
-      await AuditLog.create(
+      await logAudit(
         [
           {
             actorId: req.user.id,
@@ -276,7 +278,7 @@ export const restoreUser = async (req, res, next) => {
       user.isActive = true;
       await user.save({ session });
 
-      await AuditLog.create(
+      await logAudit(
         [
           {
             actorId: req.user.id,
@@ -411,7 +413,7 @@ export const createStoreManager = async (req, res, next) => {
       createdByAdminId: req.user.role === "admin" ? req.user.id : null,
     });
 
-    await AuditLog.create({
+    await logAudit({
       actorId: req.user.id,
       actorRole: req.user.role,
       entityType: "user",
@@ -502,7 +504,7 @@ export const assignStoreManagerToRestaurant = async (req, res, next) => {
       await storeManager.save({ session });
 
       // audit
-      await AuditLog.create(
+      await logAudit(
         [
           {
             actorId: req.user.id,
@@ -589,7 +591,7 @@ export const unassignStoreManager = async (req, res, next) => {
     storeManager.restaurantId = null;
     await storeManager.save();
 
-    await AuditLog.create({
+    await logAudit({
       actorId: req.user.id,
       actorRole: req.user.role,
       entityType: "user",
@@ -626,7 +628,7 @@ export const changeStoreManagerOwner = async (req, res, next) => {
     storeManager.createdByAdminId = newAdminId;
     await storeManager.save();
 
-    await AuditLog.create({
+    await logAudit({
       actorId: req.user.id,
       actorRole: "superAdmin",
       entityType: "user",

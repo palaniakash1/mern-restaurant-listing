@@ -1,7 +1,7 @@
 import User from "../models/user.model.js";
 import bcryptjs from "bcryptjs";
 import { errorHandler } from "../utils/error.js";
-import AuditLog from "../models/auditLog.model.js";
+import { logAudit } from "../utils/auditLogger.js";
 
 // create a new admin and storeManager using SuperAdmin id (only superadmin can create other users using this API)
 
@@ -41,7 +41,7 @@ export const createUserBySuperAdmin = async (req, res, next) => {
 
     await newUser.save();
 
-    await AuditLog.create({
+    await logAudit({
       actorId: req.user.id,
       actorRole: req.user.role,
       entityType: "user",
