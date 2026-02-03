@@ -20,7 +20,9 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^9.0.0",
     "nodemon": "^3.1.11",
-    "react-circular-progressbar": "^2.2.0"
+    "react-circular-progressbar": "^2.2.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "tailwind-scrollbar": "^4.0.2"
