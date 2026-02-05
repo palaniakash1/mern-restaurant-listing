@@ -45,7 +45,7 @@ export default function DashSidebar({ onClose }) {
 
   const handleSignOut = async () => {
     try {
-      const res = await fetch(`/api/user/signout`, {
+      const res = await fetch(`/api/auth/signout`, {
         method: "POST",
       });
       const data = await res.json();
@@ -139,7 +139,7 @@ export default function DashSidebar({ onClose }) {
           )}
           {/* Categories */}
           {["superAdmin", "admin", "storeManager"].includes(
-            currentUser?.role
+            currentUser?.role,
           ) && (
             <Sidebar.Item
               as={Link}
@@ -153,7 +153,7 @@ export default function DashSidebar({ onClose }) {
           )}
           {/* menu */}
           {["superAdmin", "admin", "storeManager"].includes(
-            currentUser?.role
+            currentUser?.role,
           ) && (
             <Sidebar.Item
               as={Link}
@@ -167,7 +167,7 @@ export default function DashSidebar({ onClose }) {
           )}
           {/* reviews */}
           {["superAdmin", "admin", "storeManager", "user"].includes(
-            currentUser?.role
+            currentUser?.role,
           ) && (
             <Sidebar.Item
               as={Link}

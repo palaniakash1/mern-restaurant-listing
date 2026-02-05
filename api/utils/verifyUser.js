@@ -4,8 +4,23 @@ import { errorHandler } from "./error.js";
 
 export const verifyToken = async (req, res, next) => {
   try {
-    const token = req.cookies?.access_token;
+    let token = null;
+
+    // 1️⃣ Authorization header (Swagger / Postman / Mobile)
+
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith("Bearer ")
+    ) {
+      token = req.headers.authorization.split(" ")[1];
+    }
+    // 2️⃣ Cookie (Browser)
+    if (!token && req.cookies?.access_token) {
+      token = req.cookies.access_token;
+    }
+
     if (!token) {
+      // let token = req.cookies?.access_token;
       return next(errorHandler(401, "Authentication token missing"));
     }
 

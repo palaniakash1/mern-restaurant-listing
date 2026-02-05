@@ -89,7 +89,7 @@ export default function DashRestaurants() {
   ========================= */
   useEffect(() => {
     if (currentUser.role === "admin") {
-      const fetchMYRestaurant = async () => {
+      const fetchRestaurants = async () => {
         try {
           setLoading(true);
           const res = await fetch(
@@ -111,9 +111,9 @@ export default function DashRestaurants() {
       fetchRestaurants();
     }
   }, [currentUser.role, page]);
-      return;
-    }
-    if (currentUser.role !== "superAdmin") {
+
+  useEffect(() => {
+    if (currentUser.role === "superAdmin") {
       const fetchRestaurants = async () => {
         try {
           setLoading(true);

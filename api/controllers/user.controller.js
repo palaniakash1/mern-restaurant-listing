@@ -2,7 +2,8 @@ import { errorHandler } from "../utils/error.js";
 import bcryptjs from "bcryptjs";
 import User from "../models/user.model.js";
 import { withTransaction } from "../utils/withTransaction.js";
- 
+import { sanitizeAuditData } from "../utils/sanitizeAuditData.js";
+
 import { logAudit } from "../utils/auditLogger.js";
 
 import { diffObject } from "../utils/diff.js";
@@ -97,21 +98,16 @@ export const updateUser = async (req, res, next) => {
 
       // AUDIT LOG (only if something changed)
       if (Object.keys(diff).length) {
-        await logAudit(
-          [
-            {
-              actorId: req.user.id,
-              actorRole: req.user.role,
-              entityType: "user",
-              entityId: updatedUser._id,
-              action: "UPDATE",
-              before: diff,
-              after: null,
-              ipAddress: req.headers["x-forwarded-for"] || req.ip,
-            },
-          ],
-          { session },
-        );
+        await logAudit({
+          actorId: req.user.id,
+          actorRole: req.user.role,
+          entityType: "user",
+          entityId: updatedUser._id,
+          action: "UPDATE",
+          before: diff,
+          after: null,
+          ipAddress: req.headers["x-forwarded-for"] || req.ip,
+        });
       }
 
       return updatedUser;
@@ -162,24 +158,20 @@ export const deleteUser = async (req, res, next) => {
       }
 
       // Audit log
-      await logAudit(
-        [
-          {
-            actorId: req.user.id,
-            actorRole: req.user.role,
-            entityType: "user",
-            entityId: oldUser._id,
-            action: "DELETE",
-            before: oldUser,
-            after: null,
-            ipAddress: req.headers["x-forwarded-for"] || req.ip,
-          },
-        ],
-        { session },
-      );
+      await logAudit({
+        actorId: req.user.id,
+        actorRole: req.user.role,
+        entityType: "user",
+        entityId: oldUser._id,
+        action: "DELETE",
+        before: sanitizeAuditData(oldUser.userName),
+        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+      });
       return {
         deletedid: oldUser._id,
+        deletedName: oldUser.userName,
         deletedBy: req.user.id,
+        deletedByName: req.user.name,
       };
     });
 
@@ -214,6 +206,10 @@ export const deactivateUser = async (req, res, next) => {
       const oldUser = await User.findById(id).session(session);
       if (!oldUser) throw errorHandler(404, "user not found");
 
+      if (!oldUser.isActive) {
+        throw errorHandler(400, "already deactivated");
+      }
+
       // Authorization rules
       const isSuperAdmin = req.user.role === "superAdmin";
       const isSelfDelete = req.user.id === id;
@@ -227,23 +223,19 @@ export const deactivateUser = async (req, res, next) => {
       await oldUser.save({ session });
 
       // Audit log
-      await logAudit(
-        [
-          {
-            actorId: req.user.id,
-            actorRole: req.user.role,
-            entityType: "user",
-            entityId: oldUser._id,
-            action: "STATUS_CHANGE",
-            before: { isActive: true },
-            after: { isActive: false },
-            ipAddress: req.headers["x-forwarded-for"] || req.ip,
-          },
-        ],
-        { session },
-      );
+      await logAudit({
+        actorId: req.user.id,
+        actorRole: req.user.role,
+        entityType: "user",
+        entityId: oldUser._id,
+        action: "STATUS_CHANGE",
+        before: { isActive: true },
+        after: { isActive: false },
+        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+      });
       return {
         userId: oldUser._id,
+        userName: oldUser.userName,
         deactivatedBy: req.user.id,
       };
     });
@@ -278,21 +270,16 @@ export const restoreUser = async (req, res, next) => {
       user.isActive = true;
       await user.save({ session });
 
-      await logAudit(
-        [
-          {
-            actorId: req.user.id,
-            actorRole: req.user.role,
-            entityType: "user",
-            entityId: user._id,
-            action: "STATUS_CHANGE",
-            before: { isActive: false },
-            after: { isActive: true },
-            ipAddress: req.headers["x-forwarded-for"] || req.ip,
-          },
-        ],
-        { session },
-      );
+      await logAudit({
+        actorId: req.user.id,
+        actorRole: req.user.role,
+        entityType: "user",
+        entityId: user._id,
+        action: "STATUS_CHANGE",
+        before: { isActive: false },
+        after: { isActive: true },
+        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+      });
       return { restoredUserId: user._id };
     });
 
@@ -504,20 +491,15 @@ export const assignStoreManagerToRestaurant = async (req, res, next) => {
       await storeManager.save({ session });
 
       // audit
-      await logAudit(
-        [
-          {
-            actorId: req.user.id,
-            actorRole: req.user.role,
-            entityType: "user",
-            entityId: storeManager._id,
-            action: "UPDATE",
-            after: { restaurantId },
-            ipAddress: req.headers["x-forwarded-for"] || req.ip,
-          },
-        ],
-        { session },
-      );
+      await logAudit({
+        actorId: req.user.id,
+        actorRole: req.user.role,
+        entityType: "user",
+        entityId: storeManager._id,
+        action: "UPDATE",
+        after: { restaurantId },
+        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+      });
     });
 
     res.json({

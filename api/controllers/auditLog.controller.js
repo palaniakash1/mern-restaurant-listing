@@ -103,6 +103,7 @@ export const getAuditLogs = async (req, res, next) => {
     // Data query
     // ----------------------------
     const logs = await AuditLog.find(filter)
+      .populate("actorId", "userName role")
       .sort({ createdAt: -1 })
       .skip(pagination.skip)
       .limit(pagination.limit)

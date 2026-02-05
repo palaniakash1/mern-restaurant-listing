@@ -8,12 +8,12 @@ const options = {
     info: {
       title: "MERN Restaurant API",
       version: "1.0.0",
-      descripion: "Production REST API documentation",
+      description: "Production-grade API documentation",
     },
-    server: [
+    servers: [
       {
         url: "http://localhost:3000/api",
-        description: "Local server",
+        description: "Local development",
       },
     ],
     components,

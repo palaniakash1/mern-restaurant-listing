@@ -1,14 +1,29 @@
-export const diffObject = (before, after, fields) => {
+const normalize = (value) => {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+
+  return value;
+};
+
+export const diffObject = (before = {}, after = {}, fields = []) => {
   const diff = {};
 
   for (const field of fields) {
-    if (JSON.stringify(before[field]) !== JSON.stringify(after[field])) {
+    const beforeValue = normalize(before[field]);
+    const afterValue = normalize(after[field]);
+
+    if (beforeValue !== afterValue) {
       diff[field] = {
-        before: before[field],
-        after: after[field],
+        before: before[field] ?? null,
+        after: after[field] ?? null,
       };
     }
   }
 
-  return diff;
+  return Object.keys(diff).length > 0 ? diff : null;
 };

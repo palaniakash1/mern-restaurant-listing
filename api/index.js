@@ -9,7 +9,7 @@ import categoryRouter from "./routes/category.route.js";
 import menuRouter from "./routes/menu.route.js";
 import auditLogRoutes from "./routes/auditLog.routes.js";
 import cookieParser from "cookie-parser";
-
+import { swaggerSpec, swaggerUiHandler } from "./docs/swagger.js";
 dotenv.config();
 
 mongoose
@@ -29,13 +29,18 @@ app.listen(3000, () => {
   console.log("Server is running on port 3000!");
 });
 
-app.use("/api/user", userRouter);
+app.use("/api/users", userRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/restaurants", restaurantRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/categories", categoryRouter);
-app.use("/api/menu", menuRouter);
-app.use("/api/audit-logs", auditLogRoutes);
+app.use("/api/menus", menuRouter);
+app.use("/api/auditlogs", auditLogRoutes);
+app.use(
+  "/api/docs",
+  swaggerUiHandler.serve,
+  swaggerUiHandler.setup(swaggerSpec),
+);
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;

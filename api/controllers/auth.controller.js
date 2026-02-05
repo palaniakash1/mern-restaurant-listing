@@ -284,7 +284,7 @@ export const signout = async (req, res, next) => {
         entityType: "auth",
         entityId: req.user.id,
         action: "LOGOUT",
-        before: null,
+        before: "login",
         after: null,
         ipAddress: req.headers["x-forwarded-for"] || req.ip,
       });

@@ -1,4 +1,5 @@
 import express from "express";
+
 import {
   create,
   getAllRestaurants,
@@ -13,46 +14,69 @@ import {
   getFeaturedRestaurants,
   getTrendingRestaurants,
   getRestaurantDetails,
-  publishRestaurant,
-  blockRestaurant,
+  // publishRestaurant,
+  // blockRestaurant,
+  // unpublishRestaurant,
+  // restoreBlockedRestaurant,
+  getAdminRestaurantSummary,
+  updateRestaurantStatus,
 } from "../controllers/restaurant.controller.js";
+
 import { verifyToken } from "../utils/verifyUser.js";
+
 import {
   verifyRestaurantOwner,
   verifyAdminOrSuperAdmin,
-} from "../utils/restaurantGuards.js";
+  verifyAdmin,
+  verifySuperAdmin,
+} from "../utils/roleGuards.js";
 
 const router = express.Router();
 
 // =======================
-// PUBLIC ROUTES
+// PUBLIC ROUTES (LISTING)
 // =======================
-
+router.get("/", listRestaurants);
 router.get("/nearby", getNearByRestaurants);
 router.get("/featured", getFeaturedRestaurants);
 router.get("/trending", getTrendingRestaurants);
-router.get("/", listRestaurants);
 
-// public
-router.get("/slug/:slug", getRestaurantBySlug); // done
-
+// =======================
+// PUBLIC DETAILS
+// =======================
+router.get("/slug/:slug", getRestaurantBySlug);
 router.get("/:slug/details", getRestaurantDetails);
 
-router.put("/:id/publish", verifyToken, publishRestaurant);
-
-router.put("/:id/block", verifyToken, blockRestaurant);
-
 // =======================
-// PROTECTED ROUTES
+// PROTECTED ACTIONS
 // =======================
-router.post("/create", verifyToken, create); // create new restaurant - done
-router.get("/all-restaurants", verifyToken, getAllRestaurants); // get all restaurant - done
+router.post("/", verifyToken, verifyAdminOrSuperAdmin, create); // create new restaurant - done
 
 // admin
-router.get("/my", verifyToken, getMyRestaurant);
+router.get("/me", verifyToken, verifyAdmin, getMyRestaurant);
 
+router.get("/me/summary", verifyToken, verifyAdmin, getAdminRestaurantSummary);
+
+router.get("/all", verifyToken, verifySuperAdmin, getAllRestaurants); // get all restaurant - done
+
+// =======================
+// STATE MANAGEMENT
+// =======================
+// router.put("/:id/publish", verifyToken, publishRestaurant);
+// router.patch("/:id/unpublish", verifyToken, unpublishRestaurant);
+// router.put("/:id/block", verifyToken, blockRestaurant);
+// router.patch("/:id/restore", verifyToken, restoreBlockedRestaurant);
+router.patch(
+  "/:id/status",
+  verifyToken,
+  verifySuperAdmin,
+  updateRestaurantStatus,
+);
+
+// =======================
 // admin/superAdmin
-router.put(
+// =======================
+router.patch(
   "/:id",
   verifyToken,
   verifyAdminOrSuperAdmin,
@@ -67,8 +91,13 @@ router.delete(
   verifyRestaurantOwner,
   deleteRestaurant,
 ); //delete restaurant by id - done
-router.put("/:id/reassign-admin", verifyToken, reassignRestaurantAdmin); // reassign restaurant from superAdmin to admin
 
+router.patch(
+  "/:id/admin",
+  verifyToken,
+  verifySuperAdmin,
+  reassignRestaurantAdmin,
+); // reassign restaurant from superAdmin to admin
 router.get("/:id", verifyToken, getRestaurantById); // get restaurant by id - done
 
 export default router;

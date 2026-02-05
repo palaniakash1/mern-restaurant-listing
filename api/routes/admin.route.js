@@ -8,5 +8,5 @@ const router = express.Router();
 // =================================
 // POST endpoints
 // =================================
-router.post("/admin", verifyToken, verifySuperAdmin, createUserBySuperAdmin);
+router.post("/users", verifyToken, verifySuperAdmin, createUserBySuperAdmin);
 export default router;

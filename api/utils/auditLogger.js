@@ -1,4 +1,6 @@
 import AuditLog from "../models/auditLog.model.js";
+import { sanitizeAuditData } from "./sanitizeAuditData.js";
+
 export const logAudit = async ({
   actorId = null,
   actorRole = "anonymous",
@@ -16,10 +18,11 @@ export const logAudit = async ({
       entityType,
       entityId,
       action,
-      before,
-      after,
+      before: sanitizeAuditData(before),
+      after: sanitizeAuditData(after),
       ipAddress,
     });
+    
   } catch (error) {
     // DO NOT throw — audit logs must never break business logic
     console.error("Audit log failed:", error.message);

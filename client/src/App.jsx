@@ -41,13 +41,13 @@ function AppContent() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <>
       <LoadScript
         googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
         libraries={libraries}
       >
         <AppContent />
       </LoadScript>
-    </BrowserRouter>
+    </>
   );
 }

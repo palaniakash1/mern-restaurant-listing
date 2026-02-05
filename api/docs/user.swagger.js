@@ -1,0 +1,242 @@
+/**
+ * @swagger
+ * tags:
+ *   name: Users
+ *   description: User management (admin & superAdmin)
+ */
+
+// ================================================================================================
+// router.get("/", verifyToken, verifySuperAdmin, getAllUsers);
+// 🔹 1️⃣ GET /api/users – Get all users
+// ================================================================================================
+
+/**
+ * @swagger
+ * /users:
+ *   get:
+ *     tags: [Users]
+ *     summary: Get all users
+ *     description: SuperAdmin can view all users with pagination and search
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *         description: Search by username, email, or role
+ *     responses:
+ *       200:
+ *         description: Users fetched successfully
+ *       403:
+ *         description: Access denied
+ */
+
+// ================================================================================================
+// 🔹 2️⃣ PATCH /api/users/:id – Update user
+// router.patch("/:id", verifyToken, updateUser);
+// ================================================================================================
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   patch:
+ *     tags: [Users]
+ *     summary: Update user profile
+ *     description: User can update their own profile. SuperAdmin can update any user.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userName:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               profilePicture:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *       403:
+ *         description: Not authorized
+ *       404:
+ *         description: User not found
+ */
+
+// ================================================================================================
+// 🔹 3️⃣ DELETE /api/users/:id – Delete user
+// ================================================================================================
+
+// (hard delete – superAdmin or self)
+// router.delete("/:id", verifyToken, deleteUser);
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   delete:
+ *     tags: [Users]
+ *     summary: Delete user
+ *     description: User can delete self. SuperAdmin can delete any user.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ *       403:
+ *         description: Not authorized
+ *       404:
+ *         description: User not found
+ */
+
+// ================================================================================================
+// 🔹 4️⃣ PATCH /api/users/:id/deactivate
+// router.patch("/:id/deactivate", verifyToken, deactivateUser);
+// ================================================================================================
+
+/**
+ * @swagger
+ * /users/{id}/deactivate:
+ *   patch:
+ *     tags: [Users]
+ *     summary: Deactivate user account
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User deactivated
+ *       403:
+ *         description: Not authorized
+ */
+
+// ================================================================================================
+// 🔹 5️⃣ PATCH /api/users/:id/restore (SuperAdmin)
+//router.patch("/:id/restore", verifyToken, verifySuperAdmin, restoreUser);
+// ================================================================================================
+
+/**
+ * @swagger
+ * /users/{id}/restore:
+ *   patch:
+ *     tags: [Users]
+ *     summary: Restore deactivated user - using superAdmin
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User restored
+ *       403:
+ *         description: SuperAdmin only
+ */
+
+// ===============================================================================================================
+// 🔹 6️⃣ POST /api/users – Create storeManager
+// router.patch( "/:id/owner", verifyToken, verifySuperAdmin, changeStoreManagerOwner,);
+// ===============================================================================================================
+
+/**
+ * @swagger
+ * /users:
+ *   post:
+ *     tags: [Users]
+ *     summary: Create store manager
+ *     description:  Admin or SuperAdmin can create a storeManager.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [userName, email, password]
+ *             properties:
+ *               userName:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: StoreManager created
+ *       409:
+ *         description: User already exists
+ */
+
+// ===========================================================================================================
+// 🔹 7️⃣ PATCH /api/users/:id/restaurant – Assign storeManager
+// route: router.patch( "/:id/restaurant", verifyToken, verifyAdminOrSuperAdmin, assignStoreManagerToRestaurant,);
+// ===========================================================================================================
+
+/**
+ * @swagger
+ * /users/{id}/restaurant:
+ *   patch:
+ *     tags: [Users]
+ *     summary: Assign store manager to restaurant 
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [restaurantId]
+ *             properties:
+ *               restaurantId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: StoreManager assigned
+ *       403:
+ *         description: Not authorized
+ */

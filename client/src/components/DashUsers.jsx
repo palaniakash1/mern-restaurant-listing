@@ -65,7 +65,7 @@ export default function DashUsers() {
       try {
         setLoading(true);
         const res = await fetch(
-          `/api/user/all-users?page=${page}&limit=${limit}`,
+          `/api/users?page=${page}&limit=${limit}`,
           { credentials: "include" }
         );
         const data = await res.json();
