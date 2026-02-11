@@ -1,16 +1,20 @@
 export const paginate = ({ page = 1, limit = 10, total }) => {
-  page = Number(Math.max(parseInt(page), 1));
-  limit = Number(Math.max(parseInt(limit), 50));
+  const safePage = Math.max(parseInt(page, 10) || 1, 1);
 
-  const totalPages = Math.ceil(total / limit);
+  const safeLimit = Math.min(
+    Math.max(parseInt(limit, 10) || 10, 1),
+    50, // hard cap to protect DB
+  );
+
+  const totalPages = Math.ceil(total / safeLimit);
 
   return {
-    page,
-    limit,
+    page: safePage,
+    limit: safeLimit,
     total,
     totalPages,
-    hasPrev: page > 1,
-    hasNext: page < totalPages,
-    skip: (page - 1) * limit,
+    hasPrev: safePage > 1,
+    hasNext: safePage < totalPages,
+    skip: (safePage - 1) * safeLimit,
   };
 };
