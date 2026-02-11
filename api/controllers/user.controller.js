@@ -10,13 +10,56 @@ import { diffObject } from "../utils/diff.js";
 import { paginate } from "../utils/paginate.js";
 import Restaurant from "../models/restaurant.model.js";
 
+// ===============================================================================
+// 🔷 GET /api/users/test — Test / health-check endpoint
+// ===============================================================================
+// Purpose:
+// - Verify authentication & authorization wiring
+// - Used during development and debugging
+//
+// Who can access:
+// - SuperAdmin only
+//
+// Real-world usage:
+// - Smoke test after deployment
+// - Permission validation
+//
+// ===============================================================================
+
 export const test = (req, res) => {
   res.json({ message: "API test message is displaying" });
 };
 
-// =========================================================
-// update "user" using user Id - API
-// =========================================================
+// ===============================================================================
+// 🔷 PATCH /api/users/{id} — Update user profile
+// ===============================================================================
+// Purpose:
+// - Update basic user profile information
+//
+// Who can access:
+// - SuperAdmin → any user
+// - User → own account only
+//
+// Allowed fields:
+// - userName
+// - email
+// - password
+// - profilePicture
+//
+// Rules:
+// - Password is hashed
+// - Username is validated (lowercase, no spaces)
+// - Email must be unique
+//
+// Side effects:
+// - Audit log recorded (diff-based)
+//
+// Real-world usage:
+// - Profile edit page
+// - Admin user management
+//
+// ===============================================================================
+
 export const updateUser = async (req, res, next) => {
   try {
     const result = await withTransaction(async (session) => {
@@ -123,9 +166,25 @@ export const updateUser = async (req, res, next) => {
   }
 };
 
-// ======================================
-// delete "user" using user id - API
-// ======================================
+// ===============================================================================
+// 🔷 DELETE /api/users/{id} — Permanently delete user (hard delete)
+// ===============================================================================
+// Purpose:
+// - Completely remove a user from the system
+//
+// Who can access:
+// - SuperAdmin → any user
+// - User → own account only
+//
+// Notes:
+// - This is a hard delete (data is removed)
+// - Audit log stores sanitized snapshot
+//
+// Real-world usage:
+// - Account closure
+// - Admin enforcement
+//
+// ===============================================================================
 
 export const deleteUser = async (req, res, next) => {
   try {
@@ -164,7 +223,7 @@ export const deleteUser = async (req, res, next) => {
         entityType: "user",
         entityId: oldUser._id,
         action: "DELETE",
-        before: sanitizeAuditData(oldUser.userName),
+        before: sanitizeAuditData(oldUser),
         ipAddress: req.headers["x-forwarded-for"] || req.ip,
       });
       return {
@@ -188,9 +247,25 @@ export const deleteUser = async (req, res, next) => {
   }
 };
 
-// ======================================
-// soft delete "user" using id - API
-// ======================================
+// ===============================================================================
+// 🔷 PATCH /api/users/{id}/deactivate — Deactivate user account
+// ===============================================================================
+// Purpose:
+// - Soft-disable a user without deleting data
+//
+// Who can access:
+// - SuperAdmin → any user
+// - User → own account only
+//
+// Effects:
+// - isActive set to false
+// - Login / access is blocked
+//
+// Real-world usage:
+// - Temporary suspension
+// - User self-deactivation
+//
+// ===============================================================================
 
 export const deactivateUser = async (req, res, next) => {
   try {
@@ -253,9 +328,23 @@ export const deactivateUser = async (req, res, next) => {
   }
 };
 
-// ======================================
-// soft delete "user" using id - API
-// ======================================
+// ===============================================================================
+// 🔷 PATCH /api/users/{id}/restore — Restore deactivated user
+// ===============================================================================
+// Purpose:
+// - Reactivate a previously deactivated user
+//
+// Who can access:
+// - SuperAdmin only
+//
+// Rules:
+// - User must already be inactive
+//
+// Real-world usage:
+// - Appeal handling
+// - Admin recovery actions
+//
+// ===============================================================================
 
 export const restoreUser = async (req, res, next) => {
   try {
@@ -289,9 +378,26 @@ export const restoreUser = async (req, res, next) => {
   }
 };
 
-// ================================
-// get all "users" - API
-// ================================
+// ===============================================================================
+// 🔷 GET /api/users — Get all users (system-wide view)
+// ===============================================================================
+// Purpose:
+// - List all users in the system
+//
+// Who can access:
+// - SuperAdmin only
+//
+// Supports:
+// - Pagination
+// - Search (username, email, role)
+// - Sorting
+//
+// Real-world usage:
+// - Admin user management
+// - Audits & investigations
+//
+// ===============================================================================
+
 export const getAllUsers = async (req, res, next) => {
   try {
     const { page, limit, q } = req.query;
@@ -327,9 +433,20 @@ export const getAllUsers = async (req, res, next) => {
   }
 };
 
-// ===================================
-// get available "admins users" without "restaurants" linked  - API
-// ===================================
+// ===============================================================================
+// 🔷 GET /api/users/admins — Get available admin users
+// ===============================================================================
+// Purpose:
+// - Fetch admins who are not yet assigned to any restaurant
+//
+// Who can access:
+// - SuperAdmin only
+//
+// Real-world usage:
+// - Restaurant creation flow
+// - Admin reassignment workflows
+//
+// ===============================================================================
 
 export const getAvailableAdmins = async (req, res, next) => {
   try {
@@ -362,17 +479,26 @@ export const getAvailableAdmins = async (req, res, next) => {
   }
 };
 
-// ==============================================
-// create storemanager by admin or superAdmin
-// ==============================================
-
-// ==============================================
-// 🎯 Endpoint
-// POST /api/users/create-store-manager
-// 🔐 Who can call
-// admin
-// superAdmin
-// ==============================================
+// ===============================================================================
+// 🔷 POST /api/users — Create store manager
+// ===============================================================================
+// Purpose:
+// - Create a storeManager user under an admin or superAdmin
+//
+// Who can access:
+// - Admin
+// - SuperAdmin
+//
+// Rules:
+// - userName & email must be unique
+// - Password is hashed
+// - Admin-created storeManagers are linked via createdByAdminId
+//
+// Real-world usage:
+// - Staff onboarding
+// - Restaurant operations setup
+//
+// ===============================================================================
 
 export const createStoreManager = async (req, res, next) => {
   try {
@@ -428,18 +554,26 @@ export const createStoreManager = async (req, res, next) => {
   }
 };
 
-// ============================================
-// assignStoreManagerToRestaurant
-// ============================================
-
-// ============================================
-// 🎯 Endpoint
-// PATCH /api/users/:id/restaurant
-// 🔐 Rules
-// superAdmin → any restaurant
-// admin → only own restaurant
-// user must be storeManager
-// ============================================
+// ===============================================================================
+// 🔷 PATCH /api/users/{id}/restaurant — Assign storeManager to restaurant
+// ===============================================================================
+// Purpose:
+// - Link a storeManager to a restaurant
+//
+// Who can access:
+// - SuperAdmin → any restaurant
+// - Admin → own restaurant only
+//
+// Rules:
+// - User must be storeManager
+// - StoreManager can only be assigned once
+// - Admin can manage only storeManagers they created
+//
+// Real-world usage:
+// - Staff assignment
+// - Restaurant operations
+//
+// ===============================================================================
 
 export const assignStoreManagerToRestaurant = async (req, res, next) => {
   try {
@@ -511,9 +645,24 @@ export const assignStoreManagerToRestaurant = async (req, res, next) => {
   }
 };
 
-// ==============================================
-// GET storeManagers (admin / superAdmin)
-// ==============================================
+// ===============================================================================
+// 🔷 GET /api/users/store-managers — List store managers
+// ===============================================================================
+// Purpose:
+// - Fetch storeManager users
+//
+// Who can access:
+// - SuperAdmin → all storeManagers
+// - Admin → only storeManagers they created
+//
+// Supports:
+// - Pagination
+//
+// Real-world usage:
+// - Staff management dashboard
+//
+// ===============================================================================
+
 export const getStoreManagers = async (req, res, next) => {
   try {
     const { page, limit } = req.query;
@@ -547,40 +696,54 @@ export const getStoreManagers = async (req, res, next) => {
   }
 };
 
-// ==============================================
-// Unassign StoreManager from Restaurant (admin / superAdmin)
-// ==============================================
+// ===============================================================================
+// 🔷 DELETE /api/users/{id}/restaurant — Unassign storeManager from restaurant
+// ===============================================================================
+// Purpose:
+// - Remove restaurant assignment from a storeManager
+//
+// Who can access:
+// - SuperAdmin
+// - Admin → only own storeManagers
+//
+// Real-world usage:
+// - Staff role changes
+// - Restaurant closure or reassignment
+//
+// ===============================================================================
 
 export const unassignStoreManager = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    await withTransaction(async (session) => {
+      const { id } = req.params;
 
-    const storeManager = await User.findById(id);
-    if (!storeManager || storeManager.role !== "storeManager") {
-      throw errorHandler(404, "StoreManager not found");
-    }
+      const storeManager = await User.findById(id).session(session);
+      if (!storeManager || storeManager.role !== "storeManager") {
+        throw errorHandler(404, "StoreManager not found");
+      }
 
-    if (
-      req.user.role === "admin" &&
-      storeManager.createdByAdminId?.toString() !== req.user.id
-    ) {
-      throw errorHandler(403, "Not your storeManager");
-    }
+      if (
+        req.user.role === "admin" &&
+        storeManager.createdByAdminId?.toString() !== req.user.id
+      ) {
+        throw errorHandler(403, "Not your storeManager");
+      }
 
-    if (!storeManager.restaurantId) {
-      throw errorHandler(400, "StoreManager is not assigned");
-    }
-    storeManager.restaurantId = null;
-    await storeManager.save();
+      if (!storeManager.restaurantId) {
+        throw errorHandler(400, "StoreManager is not assigned");
+      }
+      storeManager.restaurantId = null;
+      await storeManager.save({ session });
 
-    await logAudit({
-      actorId: req.user.id,
-      actorRole: req.user.role,
-      entityType: "user",
-      entityId: storeManager._id,
-      action: "UPDATE",
-      after: { restaurantId: null },
-      ipAddress: req.headers["x-forwarded-for"] || req.ip,
+      await logAudit({
+        actorId: req.user.id,
+        actorRole: req.user.role,
+        entityType: "user",
+        entityId: storeManager._id,
+        action: "UPDATE",
+        after: { restaurantId: null },
+        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+      });
     });
 
     res.json({ success: true, message: "StoreManager unassigned" });
@@ -589,37 +752,49 @@ export const unassignStoreManager = async (req, res, next) => {
   }
 };
 
-// ======================================
-// Transfer StoreManager to another Admin (SUPERADMIN ONLY)
-// ======================================
+// ===============================================================================
+// 🔷 PATCH /api/users/{id}/owner — Transfer storeManager ownership
+// ===============================================================================
+// Purpose:
+// - Change which admin owns a storeManager
+//
+// Who can access:
+// - SuperAdmin only
+//
+// Real-world usage:
+// - Admin reassignment
+// - Organizational restructuring
+//
+// ===============================================================================
+
 export const changeStoreManagerOwner = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { newAdminId } = req.body;
+    await withTransaction(async (session) => {
+      const newAdmin = await User.findById(newAdminId).session(session);
+      if (!newAdmin || newAdmin.role !== "admin") {
+        throw errorHandler(400, "Invalid admin");
+      }
 
-    const newAdmin = await User.findById(newAdminId);
-    if (!newAdmin || newAdmin.role !== "admin") {
-      throw errorHandler(400, "Invalid admin");
-    }
+      const storeManager = await User.findById(id);
+      if (!storeManager || storeManager.role !== "storeManager") {
+        throw errorHandler(404, "StoreManager not found");
+      }
 
-    const storeManager = await User.findById(id);
-    if (!storeManager || storeManager.role !== "storeManager") {
-      throw errorHandler(404, "StoreManager not found");
-    }
+      storeManager.createdByAdminId = newAdminId;
+      await storeManager.save({ session });
 
-    storeManager.createdByAdminId = newAdminId;
-    await storeManager.save();
-
-    await logAudit({
-      actorId: req.user.id,
-      actorRole: "superAdmin",
-      entityType: "user",
-      entityId: storeManager._id,
-      action: "UPDATE",
-      after: { createdByAdminId: newAdminId },
-      ipAddress: req.headers["x-forwarded-for"] || req.ip,
+      await logAudit({
+        actorId: req.user.id,
+        actorRole: "superAdmin",
+        entityType: "user",
+        entityId: storeManager._id,
+        action: "UPDATE",
+        after: { createdByAdminId: newAdminId },
+        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+      });
     });
-
     res.json({ success: true, message: "Transferred successfully" });
   } catch (error) {
     next(error);

@@ -3,7 +3,39 @@ import bcryptjs from "bcryptjs";
 import { errorHandler } from "../utils/error.js";
 import { logAudit } from "../utils/auditLogger.js";
 
-// create a new admin and storeManager using SuperAdmin id (only superadmin can create other users using this API)
+// ===============================================================================
+// 🔷 POST /api/admin/users — Create user (Admin / StoreManager)
+// ===============================================================================
+// Purpose:
+// - Allow SuperAdmin to directly create privileged users
+// - Bypass public signup and admin self-service flows
+//
+// Who can access:
+// - SuperAdmin only
+//
+// Supported roles:
+// - admin
+// - storeManager
+//
+// Rules:
+// - role must be explicitly provided
+// - Password must be at least 8 characters
+// - userName and email must be unique
+// - Credentials are stored securely (hashed password)
+//
+// Ownership rules:
+// - Admin → createdByAdminId is set to SuperAdmin ID
+// - StoreManager → no restaurant or admin assigned at creation
+//
+// Side effects:
+// - Audit log recorded (CREATE action)
+//
+// Real-world usage:
+// - Internal onboarding
+// - Emergency admin creation
+// - Platform-level user provisioning
+//
+// ===============================================================================
 
 export const createUserBySuperAdmin = async (req, res, next) => {
   try {

@@ -4,10 +4,34 @@ import { errorHandler } from "../utils/error.js";
 import jwt from "jsonwebtoken";
 import { logAudit } from "../utils/auditLogger.js";
 
-// ===============================================
-// signup module
-// ===============================================
-
+// ===============================================================================
+// 🔷 POST /api/auth/signup — User registration
+// ===============================================================================
+// Purpose:
+// - Register a new end user into the system
+// - Public-facing self-service signup
+//
+// Who can access:
+// - Public (no authentication required)
+//
+// Rules:
+// - userName must be lowercase, min 3 characters, no spaces
+// - Email must be valid and unique
+// - Password must be strong (min 8 chars, 1 uppercase, 1 number)
+// - Default role assigned: "user"
+//
+// Security:
+// - Password is hashed before storage
+// - Duplicate checks are performed before DB insert
+//
+// Side effects:
+// - Audit log recorded (CREATE action)
+//
+// Real-world usage:
+// - User onboarding
+// - Customer account creation
+//
+// ===============================================================================
 export const signup = async (req, res, next) => {
   try {
     const { userName, email, password } = req.body;
@@ -113,9 +137,34 @@ export const signup = async (req, res, next) => {
   }
 };
 
-// ================================================
-// signin module
-// ================================================
+// ===============================================================================
+// 🔷 POST /api/auth/signin — User login
+// ===============================================================================
+// Purpose:
+// - Authenticate a user using email and password
+//
+// Who can access:
+// - Public
+//
+// Rules:
+// - Email and password are required
+// - Email must exist
+// - Password must match hashed value
+//
+// Security:
+// - JWT token issued on success
+// - Token stored in HTTP-only cookie
+// - Password never returned in response
+//
+// Audit logging:
+// - LOGIN → on success
+// - LOGIN_FAILED → on failure (invalid email or password)
+//
+// Real-world usage:
+// - Login screen
+// - Session creation
+//
+// ===============================================================================
 
 export const signin = async (req, res, next) => {
   try {
@@ -217,9 +266,34 @@ export const signin = async (req, res, next) => {
   }
 };
 
-// ================================================
-// google oauth module
-// ================================================
+// ===============================================================================
+// 🔷 POST /api/auth/google — Google OAuth login / signup
+// ===============================================================================
+// Purpose:
+// - Allow users to authenticate using Google OAuth
+// - Auto-create account if user does not exist
+//
+// Who can access:
+// - Public
+//
+// Behavior:
+// - Existing user → login flow
+// - New user → auto signup with generated credentials
+//
+// Rules:
+// - Default role assigned: "user"
+// - Password auto-generated and hashed
+// - Google profile picture stored
+//
+// Security:
+// - JWT token issued
+// - Stored in HTTP-only cookie
+//
+// Real-world usage:
+// - Social login
+// - Faster onboarding
+//
+// ===============================================================================
 
 export const google = async (req, res, next) => {
   try {
@@ -271,9 +345,24 @@ export const google = async (req, res, next) => {
   }
 };
 
-// ======================================
-// signout - API
-// ======================================
+// ===============================================================================
+// 🔷 POST /api/auth/signout — User logout
+// ===============================================================================
+// Purpose:
+// - Terminate user session
+//
+// Who can access:
+// - Authenticated users only
+//
+// Behavior:
+// - Clears JWT cookie
+// - Records logout action in audit log
+//
+// Real-world usage:
+// - Logout button
+// - Session termination
+//
+// ===============================================================================
 
 export const signout = async (req, res, next) => {
   try {

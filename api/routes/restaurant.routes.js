@@ -14,12 +14,9 @@ import {
   getFeaturedRestaurants,
   getTrendingRestaurants,
   getRestaurantDetails,
-  // publishRestaurant,
-  // blockRestaurant,
-  // unpublishRestaurant,
-  // restoreBlockedRestaurant,
   getAdminRestaurantSummary,
   updateRestaurantStatus,
+  restoreRestaurant,
 } from "../controllers/restaurant.controller.js";
 
 import { verifyToken } from "../utils/verifyUser.js";
@@ -45,59 +42,73 @@ router.get("/trending", getTrendingRestaurants);
 // PUBLIC DETAILS
 // =======================
 router.get("/slug/:slug", getRestaurantBySlug);
-router.get("/:slug/details", getRestaurantDetails);
+router.get("/slug/:slug/details", getRestaurantDetails);
 
 // =======================
 // PROTECTED ACTIONS
 // =======================
+
+//create
 router.post("/", verifyToken, verifyAdminOrSuperAdmin, create); // create new restaurant - done
 
 // admin
 router.get("/me", verifyToken, verifyAdmin, getMyRestaurant);
-
 router.get("/me/summary", verifyToken, verifyAdmin, getAdminRestaurantSummary);
 
 router.get("/all", verifyToken, verifySuperAdmin, getAllRestaurants); // get all restaurant - done
 
-// =======================
-// STATE MANAGEMENT
-// =======================
-// router.put("/:id/publish", verifyToken, publishRestaurant);
-// router.patch("/:id/unpublish", verifyToken, unpublishRestaurant);
-// router.put("/:id/block", verifyToken, blockRestaurant);
-// router.patch("/:id/restore", verifyToken, restoreBlockedRestaurant);
-router.patch(
-  "/:id/status",
+// get restaurant by id
+router.get(
+  "/id/:id",
   verifyToken,
-  verifySuperAdmin,
-  updateRestaurantStatus,
+  verifyAdminOrSuperAdmin,
+  verifyRestaurantOwner,
+  getRestaurantById,
 );
 
 // =======================
 // admin/superAdmin
 // =======================
 router.patch(
-  "/:id",
+  "/id/:id",
   verifyToken,
   verifyAdminOrSuperAdmin,
   verifyRestaurantOwner,
   updateRestaurant,
 ); // update restaurant by id - done
 
+// soft delete
 router.delete(
-  "/:id",
+  "/id/:id",
   verifyToken,
   verifyAdminOrSuperAdmin,
   verifyRestaurantOwner,
   deleteRestaurant,
-); //delete restaurant by id - done
+); //delete restaurant
+
+// =======================
+// STATE MANAGEMENT
+// =======================
+router.patch(
+  "/id/:id/status",
+  verifyToken,
+  verifySuperAdmin,
+  updateRestaurantStatus,
+);
+
+// Restore
+router.patch(
+  "/id/:id/restore",
+  verifyToken,
+  verifySuperAdmin,
+  restoreRestaurant,
+); // restore from soft delete
 
 router.patch(
-  "/:id/admin",
+  "/id/:id/admin",
   verifyToken,
   verifySuperAdmin,
   reassignRestaurantAdmin,
 ); // reassign restaurant from superAdmin to admin
-router.get("/:id", verifyToken, getRestaurantById); // get restaurant by id - done
 
 export default router;
