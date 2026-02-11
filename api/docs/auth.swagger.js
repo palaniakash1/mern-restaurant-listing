@@ -12,7 +12,7 @@
 
 /**
  * @swagger
- * /api/auth/signup:
+ * /auth/signup:
  *   post:
  *     tags: [Auth]
  *     summary: User signup
@@ -39,8 +39,24 @@
  *     responses:
  *       201:
  *         description: User registered successfully
+ *         content:
+ *               application/json:
+ *                 schema:
+ *                   type: object
+ *                   properties:
+ *                     success:
+ *                       type: boolean
+ *                       example: true
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
  *       400:
  *         description: Validation error
+ *         content:
+ *              application/json:
+ *                schema:
+ *                  $ref: '#/components/schemas/Error'
  */
 
 // ===========================================================================================
@@ -50,7 +66,7 @@
 
 /**
  * @swagger
- * /api/auth/signin:
+ * /auth/signin:
  *   post:
  *     tags: [Auth]
  *     summary: User login
@@ -72,10 +88,30 @@
  *     responses:
  *       200:
  *         description: Login successful
+ *         content:
+ *               application/json:
+ *                 schema:
+ *                   type: object
+ *                   properties:
+ *                     success:
+ *                       type: boolean
+ *                       example: true
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
  *       401:
  *         description: Invalid credentials
+ *         content:
+ *              application/json:
+ *                schema:
+ *                  $ref: '#/components/schemas/Error'
  *       404:
  *         description: User not found
+ *         content:
+ *              application/json:
+ *                schema:
+ *                  $ref: '#/components/schemas/Error'
  */
 
 // ==============================================================================================
@@ -85,7 +121,7 @@
 
 /**
  * @swagger
- * /api/auth/google:
+ * /auth/google:
  *   post:
  *     tags: [Auth]
  *     summary: Google OAuth login
@@ -107,6 +143,18 @@
  *     responses:
  *       200:
  *         description: Login successful
+ *         content:
+ *               application/json:
+ *                 schema:
+ *                   type: object
+ *                   properties:
+ *                     success:
+ *                       type: boolean
+ *                       example: true
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
  */
 
 // ==================================================================================================
@@ -116,7 +164,7 @@
 
 /**
  * @swagger
- * /api/auth/signout:
+ * /auth/signout:
  *   post:
  *     tags: [Auth]
  *     summary: User logout
@@ -126,4 +174,16 @@
  *     responses:
  *       200:
  *         description: Signed out successfully
+ *         content:
+ *               application/json:
+ *                 schema:
+ *                   type: object
+ *                   properties:
+ *                     success:
+ *                       type: boolean
+ *                       example: true
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
  */

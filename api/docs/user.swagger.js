@@ -38,8 +38,24 @@
  *     responses:
  *       200:
  *         description: Users fetched successfully
+ *         content:
+ *               application/json:
+ *                 schema:
+ *                   type: object
+ *                   properties:
+ *                     success:
+ *                       type: boolean
+ *                       example: true
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
  *       403:
  *         description: Access denied
+ *         content:
+ *              application/json:
+ *                schema:
+ *                  $ref: '#/components/schemas/Error'
  */
 
 // ================================================================================================
@@ -81,10 +97,30 @@
  *     responses:
  *       200:
  *         description: User updated successfully
+ *         content:
+ *               application/json:
+ *                 schema:
+ *                   type: object
+ *                   properties:
+ *                     success:
+ *                       type: boolean
+ *                       example: true
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
  *       403:
  *         description: Not authorized
+ *         content:
+ *              application/json:
+ *                schema:
+ *                  $ref: '#/components/schemas/Error'
  *       404:
  *         description: User not found
+ *         content:
+ *              application/json:
+ *                schema:
+ *                  $ref: '#/components/schemas/Error'
  */
 
 // ================================================================================================
@@ -112,10 +148,30 @@
  *     responses:
  *       200:
  *         description: User deleted successfully
+ *         content:
+ *               application/json:
+ *                 schema:
+ *                   type: object
+ *                   properties:
+ *                     success:
+ *                       type: boolean
+ *                       example: true
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
  *       403:
  *         description: Not authorized
+ *         content:
+ *              application/json:
+ *                schema:
+ *                  $ref: '#/components/schemas/Error'
  *       404:
  *         description: User not found
+ *         content:
+ *              application/json:
+ *                schema:
+ *                  $ref: '#/components/schemas/Error'
  */
 
 // ================================================================================================
@@ -140,8 +196,24 @@
  *     responses:
  *       200:
  *         description: User deactivated
+ *         content:
+ *               application/json:
+ *                 schema:
+ *                   type: object
+ *                   properties:
+ *                     success:
+ *                       type: boolean
+ *                       example: true
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
  *       403:
  *         description: Not authorized
+ *         content:
+ *              application/json:
+ *                schema:
+ *                  $ref: '#/components/schemas/Error'
  */
 
 // ================================================================================================
@@ -166,8 +238,24 @@
  *     responses:
  *       200:
  *         description: User restored
+ *         content:
+ *               application/json:
+ *                 schema:
+ *                   type: object
+ *                   properties:
+ *                     success:
+ *                       type: boolean
+ *                       example: true
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
  *       403:
  *         description: SuperAdmin only
+ *         content:
+ *              application/json:
+ *                schema:
+ *                  $ref: '#/components/schemas/Error'
  */
 
 // ===============================================================================================================
@@ -203,6 +291,10 @@
  *         description: StoreManager created
  *       409:
  *         description: User already exists
+ *         content:
+ *              application/json:
+ *                schema:
+ *                  $ref: '#/components/schemas/Error'
  */
 
 // ===========================================================================================================
@@ -215,7 +307,7 @@
  * /users/{id}/restaurant:
  *   patch:
  *     tags: [Users]
- *     summary: Assign store manager to restaurant 
+ *     summary: Assign store manager to restaurant
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -237,6 +329,22 @@
  *     responses:
  *       200:
  *         description: StoreManager assigned
+ *         content:
+ *               application/json:
+ *                 schema:
+ *                   type: object
+ *                   properties:
+ *                     success:
+ *                       type: boolean
+ *                       example: true
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
  *       403:
  *         description: Not authorized
+ *         content:
+ *              application/json:
+ *                schema:
+ *                  $ref: '#/components/schemas/Error'
  */

@@ -12,7 +12,7 @@
 
 /**
  * @swagger
- * /api/admin/users:
+ * /admin/users:
  *   post:
  *     tags: [Admin]
  *     summary: Create admin or storeManager
@@ -62,8 +62,20 @@
  *                       type: string
  *       400:
  *         description: Validation error
+ *         content:
+ *              application/json:
+ *                schema:
+ *                  $ref: '#/components/schemas/Error'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *              application/json:
+ *                schema:
+ *                  $ref: '#/components/schemas/Error'
  *       403:
  *         description: Forbidden (not SuperAdmin)
+ *         content:
+ *              application/json:
+ *                schema:
+ *                  $ref: '#/components/schemas/Error'
  */

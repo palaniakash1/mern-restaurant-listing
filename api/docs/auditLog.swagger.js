@@ -8,7 +8,7 @@
 
 /**
  * @swagger
- * /api/auditlogs:
+ * /auditlogs:
  *   get:
  *     tags: [AuditLogs]
  *     summary: Get audit logs
@@ -31,7 +31,23 @@
  *     responses:
  *       200:
  *         description: Audit logs fetched
+ *         content:
+ *               application/json:
+ *                 schema:
+ *                   type: object
+ *                   properties:
+ *                     success:
+ *                       type: boolean
+ *                       example: true
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
  *       403:
  *         description: Access denied
+ *         content:
+ *              application/json:
+ *                schema:
+ *                  $ref: '#/components/schemas/Error'
  *
  */

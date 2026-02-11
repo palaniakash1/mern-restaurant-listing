@@ -99,16 +99,21 @@ const restaurantSchema = new mongoose.Schema(
       default: true,
       index: true,
     },
+
+    searchText: {
+      type: String,
+      index: true,
+    },
   },
   { timestamps: true },
 );
 
-restaurantSchema.index({
-  "address.location": "2dsphere",
-});
-
-restaurantSchema.index({ status: 1, isActive: 1 });
+restaurantSchema.index({ "address.location": "2dsphere" });
+restaurantSchema.index({ status: 1, isActive: 1, isFeatured: 1 });
+restaurantSchema.index({ status: 1, isActive: 1, isTrending: 1 });
 restaurantSchema.index({ "address.city": 1 });
 restaurantSchema.index({ categories: 1 });
+restaurantSchema.index({ createdAt: -1 });
+restaurantSchema.index({ searchText: "text" });
 
 export default mongoose.model("Restaurant", restaurantSchema);

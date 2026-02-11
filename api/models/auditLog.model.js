@@ -28,6 +28,8 @@ const auditLogSchema = new mongoose.Schema(
         "UPDATE",
         "DELETE",
         "STATUS_CHANGE",
+        "RESTORE",
+        "REASSIGN",
         // ✅ AUTH EVENTS
         "LOGIN",
         "LOGIN_FAILED",
