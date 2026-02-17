@@ -1,7 +1,4 @@
-# MERN Restaurant
-
 ```
-
 mern-restaurant
 ├─ api
 │  ├─ controllers
@@ -12,6 +9,16 @@ mern-restaurant
 │  │  ├─ menu.controller.js
 │  │  ├─ restaurant.controller.js
 │  │  └─ user.controller.js
+│  ├─ docs
+│  │  ├─ admin.swagger.js
+│  │  ├─ auditLog.swagger.js
+│  │  ├─ auth.swagger.js
+│  │  ├─ category.swagger.js
+│  │  ├─ components.js
+│  │  ├─ menu.swagger.js
+│  │  ├─ restaurant.swagger.js
+│  │  ├─ swagger.js
+│  │  └─ user.swagger.js
 │  ├─ index.js
 │  ├─ models
 │  │  ├─ auditLog.model.js
@@ -19,6 +26,7 @@ mern-restaurant
 │  │  ├─ menu.model.js
 │  │  ├─ restaurant.model.js
 │  │  └─ user.model.js
+│  ├─ notes.md
 │  ├─ routes
 │  │  ├─ admin.route.js
 │  │  ├─ auditLog.routes.js
@@ -28,13 +36,17 @@ mern-restaurant
 │  │  ├─ restaurant.routes.js
 │  │  └─ user.route.js
 │  └─ utils
+│     ├─ auditLogger.js
 │     ├─ diff.js
 │     ├─ error.js
 │     ├─ geocode.js
 │     ├─ openNow.js
 │     ├─ paginate.js
-│     ├─ restaurantGuards.js
+│     ├─ permissions.js
+│     ├─ policy.js
 │     ├─ restaurantVisibility.js
+│     ├─ roleGuards.js
+│     ├─ sanitizeAuditData.js
 │     ├─ verifySuperAdmin.js
 │     ├─ verifyUser.js
 │     └─ withTransaction.js
@@ -86,6 +98,7 @@ mern-restaurant
 │  ├─ tailwind.config.js
 │  └─ vite.config.js
 ├─ package-lock.json
-└─ package.json
+├─ package.json
+└─ README.md
 
 ```

@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { softDeleteRestorePlugin } from "../utils/plugins/softDelete.plugin.js";
 
 const openingHourSchema = new mongoose.Schema(
   {
@@ -115,5 +116,6 @@ restaurantSchema.index({ "address.city": 1 });
 restaurantSchema.index({ categories: 1 });
 restaurantSchema.index({ createdAt: -1 });
 restaurantSchema.index({ searchText: "text" });
+restaurantSchema.plugin(softDeleteRestorePlugin);
 
 export default mongoose.model("Restaurant", restaurantSchema);

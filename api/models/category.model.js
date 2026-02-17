@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { softDeleteRestorePlugin } from "../utils/plugins/softDelete.plugin.js";
 
 const categorySchema = new mongoose.Schema(
   {
@@ -41,16 +42,33 @@ const categorySchema = new mongoose.Schema(
       type: Number,
       default: 0, // display order
     },
-    
+
+    status: {
+      type: String,
+      enum: ["draft", "blocked", "published"],
+      default: "draft",
+      index: true,
+    },
+
     isActive: {
       type: Boolean,
       default: true,
+      index: true,
     },
   },
   { timestamps: true },
 );
 
 // Prevent duplicate categories per restaurant
-categorySchema.index({ name: 1, restaurantId: 1 }, { unique: true });
+categorySchema.index({ slug: 1, restaurantId: 1 });
+
+categorySchema.index(
+  { name: 1, restaurantId: 1 },
+  { unique: true, partialFilterExpression: { isActive: true } },
+);
+
+categorySchema.index({ restaurantId: 1, isActive: 1, status: 1 });
+
+categorySchema.plugin(softDeleteRestorePlugin);
 
 export default mongoose.model("Category", categorySchema);
