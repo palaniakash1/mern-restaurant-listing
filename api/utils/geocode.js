@@ -1,5 +1,4 @@
 import axios from "axios";
-import { response } from "express";
 import { errorHandler } from "./error.js";
 
 export const geocodeAddress = async ({

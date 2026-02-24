@@ -1,23 +1,33 @@
 import Restaurant from "../models/restaurant.model.js";
 import { errorHandler } from "./error.js";
+import mongoose from "mongoose";
 
-export const verifyRestaurantOwner = (req, res, next) => {
-  if (!req.user) {
-    return next(errorHandler(401, "Unauthorized"));
+export const verifyRestaurantOwner = async (req, res, next) => {
+  try {
+    if (!req.user) {
+      return next(errorHandler(401, "Unauthorized"));
+    }
+
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return next(errorHandler(400, "Invalid restaurant ID format"));
+    }
+
+    const restaurant = await Restaurant.findById(id).select("adminId");
+    if (!restaurant) return next(errorHandler(404, "Restaurant Not Found"));
+
+    if (
+      req.user.role !== "superAdmin" &&
+      restaurant.adminId?.toString() !== req.user.id
+    ) {
+      return next(errorHandler(403, "Access denied!"));
+    }
+
+    req.restaurant = restaurant;
+    next();
+  } catch (error) {
+    next(error);
   }
-
-  const restaurant = Restaurant.findById(req.params.id);
-  if (!restaurant) return next(errorHandler(404, "Restaurant Not Found"));
-
-  if (
-    req.user.role !== "superAdmin" &&
-    restaurant.adminId.toString() !== req.user.id
-  ) {
-    return next(errorHandler(403, "Access denied!"));
-  }
-
-  req.restaurant = restaurant;
-  next();
 };
 
 export const verifyAdminOrSuperAdmin = (req, res, next) => {

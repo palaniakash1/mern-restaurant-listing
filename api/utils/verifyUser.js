@@ -28,10 +28,13 @@ export const verifyToken = async (req, res, next) => {
 
     // FETCH FRESH USER DATA
     const user = await User.findById(decoded.id).select(
-      "_id role restaurantId",
+      "_id role restaurantId isActive",
     );
     if (!user) {
       return next(errorHandler(401, "User not found"));
+    }
+    if (!user.isActive) {
+      return next(errorHandler(403, "User account is inactive"));
     }
 
     // Attach FULL auth context
