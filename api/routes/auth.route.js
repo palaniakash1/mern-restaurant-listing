@@ -1,13 +1,31 @@
 import express from "express";
 import {
+  changePassword,
+  getSession,
   google,
   signin,
   signup,
   signout,
 } from "../controllers/auth.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
+import { createRateLimit } from "../utils/rateLimit.js";
 
 const router = express.Router();
+const signupLimiter = createRateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  keyPrefix: "auth_signup",
+});
+const signinLimiter = createRateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  keyPrefix: "auth_signin",
+});
+const googleLimiter = createRateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  keyPrefix: "auth_google",
+});
 
 // ===============================================================================
 // 🔐 Auth Routes
@@ -38,21 +56,23 @@ const router = express.Router();
 // 🔷 POST /api/auth/signup
 // ===============================================================================
 
-router.post("/signup", signup);
+router.post("/signup", signupLimiter, signup);
 
 // ===============================================================================
 // 🔷 POST /api/auth/signin
 // ===============================================================================
-router.post("/signin", signin);
+router.post("/signin", signinLimiter, signin);
 
 // ===============================================================================
 // 🔷 POST /api/auth/google
 // ===============================================================================
-router.post("/google", google);
+router.post("/google", googleLimiter, google);
 
 // ===============================================================================
 // 🔷 POST /api/auth/signout
 // ===============================================================================
 router.post("/signout", verifyToken, signout);
+router.get("/session", verifyToken, getSession);
+router.post("/change-password", verifyToken, changePassword);
 
 export default router;
