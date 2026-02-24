@@ -1,8 +1,7 @@
 import AuditLog from "../models/auditLog.model.js";
 import User from "../models/user.model.js";
-// import Restaurant from "../models/restaurant.model.js";
-// import Menu from "../models/menu.model.js";
-// import Category from "../models/category.model.js";
+import Menu from "../models/menu.model.js";
+import Category from "../models/category.model.js";
 import { errorHandler } from "../utils/error.js";
 import { paginate } from "../utils/paginate.js";
 
@@ -57,6 +56,12 @@ export const getAuditLogs = async (req, res, next) => {
         role: "storeManager",
         restaurantId,
       }).distinct("_id");
+      const menuIds = await Menu.find({ restaurantId })
+        .setOptions({ includeInactive: true })
+        .distinct("_id");
+      const categoryIds = await Category.find({ restaurantId })
+        .setOptions({ includeInactive: true })
+        .distinct("_id");
 
       filter.$or = [
         // Admin’s own actions
@@ -76,7 +81,7 @@ export const getAuditLogs = async (req, res, next) => {
         // Menu & category actions belonging to this restaurant
         {
           entityType: { $in: ["menu", "category"] },
-          entityId: restaurantId,
+          entityId: { $in: [...menuIds, ...categoryIds] },
         },
       ];
 
