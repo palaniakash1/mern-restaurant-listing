@@ -80,8 +80,12 @@ export const getAuditLogs = async (req, res, next) => {
         },
         // Menu & category actions belonging to this restaurant
         {
-          entityType: { $in: ["menu", "category"] },
-          entityId: { $in: [...menuIds, ...categoryIds] },
+          entityType: "menu",
+          entityId: { $in: menuIds },
+        },
+        {
+          entityType: "category",
+          entityId: { $in: categoryIds },
         },
       ];
 
