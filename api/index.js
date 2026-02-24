@@ -22,8 +22,50 @@ mongoose
   });
 
 const app = express();
-app.use(express.json());
+app.set("trust proxy", 1);
+app.disable("x-powered-by");
+
+const allowedOrigins = (process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (
+    origin &&
+    (allowedOrigins.length === 0 || allowedOrigins.includes(origin))
+  ) {
+    res.header("Access-Control-Allow-Origin", origin);
+    res.header("Vary", "Origin");
+  }
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+  );
+  res.header("X-Content-Type-Options", "nosniff");
+  res.header("Referrer-Policy", "no-referrer");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+  next();
+});
+
+app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
+
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ success: true, status: "ok" });
+});
+
+app.get("/api/ready", (req, res) => {
+  const mongoReady = mongoose.connection.readyState === 1;
+  return res
+    .status(mongoReady ? 200 : 503)
+    .json({ success: mongoReady, mongoReady });
+});
 
 app.listen(3000, () => {
   console.log("Server is running on port 3000!");
