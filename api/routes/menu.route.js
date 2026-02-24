@@ -2,9 +2,7 @@ import express from "express";
 import { verifyToken } from "../utils/verifyUser.js";
 
 import {
-  verifyAdmin,
   verifyAdminOrSuperAdmin,
-  verifySuperAdmin,
 } from "../utils/roleGuards.js";
 
 import {
