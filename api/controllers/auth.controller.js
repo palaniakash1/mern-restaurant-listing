@@ -210,6 +210,19 @@ export const signin = async (req, res, next) => {
         errorHandler(404, `User with this email ${lowerCasedEmail} not found`),
       );
     }
+    if (!validUser.isActive) {
+      await logAudit({
+        actorId: validUser._id,
+        actorRole: validUser.role,
+        entityType: "auth",
+        entityId: validUser._id,
+        action: "LOGIN_FAILED",
+        before: { email: validUser.email, reason: "inactive_account" },
+        after: null,
+        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+      });
+      return next(errorHandler(403, "User account is inactive"));
+    }
 
     const validPassword = bcryptjs.compareSync(password, validUser.password);
     if (!validPassword) {
@@ -257,8 +270,14 @@ export const signin = async (req, res, next) => {
       ipAddress: req.headers["x-forwarded-for"] || req.ip,
     });
 
+    const cookieOptions = {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    };
+
     res
-      .cookie("access_token", token, { httpOnly: true })
+      .cookie("access_token", token, cookieOptions)
       .status(200)
       .json(rest);
   } catch (error) {
@@ -298,8 +317,16 @@ export const signin = async (req, res, next) => {
 export const google = async (req, res, next) => {
   try {
     const { name, email, googlePhotoUrl } = req.body;
+    const cookieOptions = {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    };
     const user = await User.findOne({ email });
     if (user) {
+      if (!user.isActive) {
+        return next(errorHandler(403, "User account is inactive"));
+      }
       const token = jwt.sign(
         { id: user._id, role: user.role },
         process.env.JWT_SECRET,
@@ -309,7 +336,7 @@ export const google = async (req, res, next) => {
 
       res
         .status(200)
-        .cookie("access_token", token, { httpOnly: true })
+        .cookie("access_token", token, cookieOptions)
         .json(rest);
     } else {
       const generatedPassword =
@@ -335,9 +362,7 @@ export const google = async (req, res, next) => {
       const { password, ...rest } = newUser._doc;
       res
         .status(200)
-        .cookie("access_token", token, {
-          httpOnly: true,
-        })
+        .cookie("access_token", token, cookieOptions)
         .json(rest);
     }
   } catch (error) {
@@ -378,7 +403,14 @@ export const signout = async (req, res, next) => {
         ipAddress: req.headers["x-forwarded-for"] || req.ip,
       });
     }
-    res.clearCookie("access_token").status(200).json({
+    res
+      .clearCookie("access_token", {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+      })
+      .status(200)
+      .json({
       success: true,
       message: "signed out successfully",
     });
