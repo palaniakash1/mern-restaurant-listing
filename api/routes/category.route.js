@@ -19,6 +19,11 @@ import {
   getAllCategories,
   hardDeleteCategory,
   bulkUpdateCategoryStatus,
+  getCategoryAuditLogs,
+  checkCategorySlug,
+  exportCategories,
+  bulkReorderCategories,
+  getDeletedCategories,
 } from "../controllers/category.controller.js";
 
 const router = express.Router();
@@ -32,12 +37,26 @@ router.get("/my", verifyToken, verifyAdmin, getMyCategories);
 // SUPERADMIN FULL VIEW
 router.get("/all", verifyToken, verifySuperAdmin, getAllCategories);
 
+// SUPERADMIN DELETED VIEW
+router.get("/deleted", verifyToken, verifySuperAdmin, getDeletedCategories);
+
+// SUPERADMIN EXPORT
+router.get("/export", verifyToken, verifySuperAdmin, exportCategories);
+
 // BULK STATUS UPDATE
 router.patch(
   "/bulk-status",
   verifyToken,
   verifySuperAdmin,
   bulkUpdateCategoryStatus,
+);
+
+// BULK REORDER WITH IDEMPOTENCY KEY
+router.patch(
+  "/bulk-reorder",
+  verifyToken,
+  verifyAdminOrSuperAdmin,
+  bulkReorderCategories,
 );
 
 // REORDER category
@@ -47,6 +66,9 @@ router.patch(
   verifyAdminOrSuperAdmin,
   reorderCategories,
 );
+
+// Check slug availability
+router.post("/check-slug", verifyToken, verifyAdminOrSuperAdmin, checkCategorySlug);
 
 // Create new generic or restaurant category
 router.post("/", verifyToken, verifyAdminOrSuperAdmin, createCategory);
@@ -64,6 +86,9 @@ router.patch("/:id/restore", verifyToken, verifySuperAdmin, restoreCategory);
 
 // HARD DELETE
 router.delete("/:id/hard", verifyToken, verifySuperAdmin, hardDeleteCategory);
+
+// category audit logs
+router.get("/:id/audit", verifyToken, verifyAdminOrSuperAdmin, getCategoryAuditLogs);
 
 // GET Retrieve category by ID
 router.get("/:id", verifyToken, verifyAdminOrSuperAdmin, getCategoryById);
