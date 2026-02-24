@@ -15,7 +15,6 @@ import {
 } from "../controllers/user.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
 import {
-  verifyAdmin,
   verifyAdminOrSuperAdmin,
   verifySuperAdmin,
 } from "../utils/roleGuards.js";
@@ -32,7 +31,12 @@ router.get("/test", verifyToken, verifySuperAdmin, test);
 // =================================
 router.get("/", verifyToken, verifySuperAdmin, getAllUsers);
 router.get("/admins", verifyToken, verifySuperAdmin, getAvailableAdmins);
-router.get("/store-managers", verifyToken, verifyAdmin, getStoreManagers);
+router.get(
+  "/store-managers",
+  verifyToken,
+  verifyAdminOrSuperAdmin,
+  getStoreManagers,
+);
 
 // =================================
 // POST endpoints (ACTIONS)
