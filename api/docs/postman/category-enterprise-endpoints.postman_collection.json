@@ -1,0 +1,295 @@
+{
+  "info": {
+    "_postman_id": "4b4b805f-11f2-4e66-81f0-59d3ed9f4379",
+    "name": "MERN Restaurant - Category Enterprise Endpoints",
+    "description": "Postman collection entries for enterprise category endpoints: audit trail, slug check, export, idempotent bulk reorder, and deleted category listing.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Categories - Enterprise",
+      "item": [
+        {
+          "name": "Get Category Audit Logs",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories/{{categoryId}}/audit?page=1&limit=20&sort=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "{{categoryId}}",
+                "audit"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": "Returns audit trail for one category with pagination and optional filtering."
+          },
+          "response": []
+        },
+        {
+          "name": "Check Category Slug",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Main Course\",\n  \"isGeneric\": false,\n  \"restaurantId\": \"{{restaurantId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/categories/check-slug",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "check-slug"
+              ]
+            },
+            "description": "Validates slug uniqueness before create or update."
+          },
+          "response": []
+        },
+        {
+          "name": "Export Categories (JSON)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories/export?format=json&includeInactive=true&limit=200",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "export"
+              ],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "json"
+                },
+                {
+                  "key": "includeInactive",
+                  "value": "true"
+                },
+                {
+                  "key": "limit",
+                  "value": "200"
+                }
+              ]
+            },
+            "description": "Exports category data in JSON (superAdmin endpoint)."
+          },
+          "response": []
+        },
+        {
+          "name": "Export Categories (CSV)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories/export?format=csv&includeInactive=true&limit=200",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "export"
+              ],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "csv"
+                },
+                {
+                  "key": "includeInactive",
+                  "value": "true"
+                },
+                {
+                  "key": "limit",
+                  "value": "200"
+                }
+              ]
+            },
+            "description": "Exports category data in CSV (download response)."
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Reorder Categories (Idempotent)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-idempotency-key",
+                "value": "{{idempotencyKey}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"id\": \"{{categoryId}}\", \"order\": 1 },\n    { \"id\": \"{{categoryId2}}\", \"order\": 2 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/categories/bulk-reorder",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "bulk-reorder"
+              ]
+            },
+            "description": "Reorders categories atomically. Repeat same request with same idempotency key for replay-safe behavior."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Deleted Categories",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories/deleted?page=1&limit=20&search=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "deleted"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Lists soft-deleted categories for restore workflows (superAdmin endpoint)."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "restaurantId",
+      "value": ""
+    },
+    {
+      "key": "categoryId",
+      "value": ""
+    },
+    {
+      "key": "categoryId2",
+      "value": ""
+    },
+    {
+      "key": "idempotencyKey",
+      "value": "bulk-reorder-001"
+    }
+  ]
+}
