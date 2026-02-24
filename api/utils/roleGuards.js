@@ -7,12 +7,13 @@ export const verifyRestaurantOwner = async (req, res, next) => {
     if (!req.user) {
       return next(errorHandler(401, "Unauthorized"));
     }
-
+    // Validate restaurant ID format
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return next(errorHandler(400, "Invalid restaurant ID format"));
     }
 
+    // Fetch restaurant and check ownership
     const restaurant = await Restaurant.findById(id).select("adminId");
     if (!restaurant) return next(errorHandler(404, "Restaurant Not Found"));
 
