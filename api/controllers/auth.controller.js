@@ -269,7 +269,7 @@ export const signin = async (req, res, next) => {
       },
       ipAddress: req.headers["x-forwarded-for"] || req.ip,
     });
-
+// Set token in HTTP-only cookie
     const cookieOptions = {
       httpOnly: true,
       sameSite: "lax",
