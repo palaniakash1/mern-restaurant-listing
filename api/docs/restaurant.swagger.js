@@ -181,25 +181,25 @@
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       401:
  *         description: Authentication required
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: Forbidden – role restrictions
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       409:
  *         description: Restaurant already exists
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  */
 
 // ================================================================================================
@@ -317,13 +317,13 @@
  *         content:
  *            application/json:
  *              schema:
- *                $ref: '#/components/schemas/Error'
+ *                $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: Server error
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  */
 
 // ===============================================================================
@@ -422,19 +422,19 @@
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: Forbidden – superAdmin only
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: Server error
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  */
 
 // ================================================================================================
@@ -520,13 +520,13 @@
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: Server error
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  */
 
 // ===============================================================================
@@ -583,25 +583,25 @@
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: Forbidden – superAdmin only
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: Restaurant not found
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: Server error
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  */
 
 // ===============================================================================
@@ -648,13 +648,13 @@
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: Server error
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  */
 
 // ===============================================================================
@@ -706,13 +706,13 @@
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: Server error
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  */
 
 // ===============================================================================
@@ -780,31 +780,31 @@
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       401:
  *         description: Authentication required
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: Only superAdmin can change restaurant status
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: Restaurant not found
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: Server error
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  */
 
 // ===============================================================================
@@ -926,31 +926,31 @@
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       401:
  *         description: Authentication required
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: Forbidden field update or not restaurant owner
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: Restaurant not found
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: Server error
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  */
 
 // ===============================================================================
@@ -1021,31 +1021,31 @@
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       401:
  *         description: Authentication required
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: Forbidden – not owner or insufficient role
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: Restaurant not found
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: Server error
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  */
 
 // ===============================================================================
@@ -1104,31 +1104,31 @@
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       401:
  *         description: Authentication required
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: Forbidden – superAdmin only
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: Restaurant not found
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: Server error
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  */
 
 // ======================================================================
@@ -1198,7 +1198,7 @@
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 // ======================================================================
@@ -1265,7 +1265,7 @@
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 // ===============================================================================
@@ -1307,25 +1307,25 @@
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: Only admin can access this endpoint
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: No restaurant assigned
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: Server error
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  */
 
 // ===============================================================================
@@ -1381,19 +1381,19 @@
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: Admin only
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: Server error
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  */
 
 // ===============================================================================
@@ -1464,29 +1464,30 @@
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       401:
  *         description: Authentication required
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: SuperAdmin only
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: Restaurant not found
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: Server error
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  */
+

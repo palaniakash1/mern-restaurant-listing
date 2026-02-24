@@ -1,8 +1,8 @@
 /**
  * @swagger
  * tags:
- *   name: Auth
- *   description: Authentication & authorization
+ *   - name: Auth
+ *     description: Authentication and authorization endpoints
  */
 
 // =========================================================================
@@ -56,7 +56,7 @@
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  */
 
 // ===========================================================================================
@@ -105,13 +105,13 @@
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: User not found
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  */
 
 // ==============================================================================================
@@ -187,3 +187,4 @@
  *                       items:
  *                         type: object
  */
+

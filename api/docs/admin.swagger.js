@@ -1,8 +1,8 @@
 /**
  * @swagger
  * tags:
- *   name: Admin
- *   description: SuperAdmin administrative operations creation of admin and storeManager users
+ *   - name: Admin
+ *     description: SuperAdmin administrative user-management operations
  */
 
 // =================================================================================================================
@@ -65,17 +65,18 @@
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       401:
  *         description: Unauthorized
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: Forbidden (not SuperAdmin)
  *         content:
  *              application/json:
  *                schema:
- *                  $ref: '#/components/schemas/Error'
+ *                  $ref: '#/components/schemas/ErrorResponse'
  */
+
