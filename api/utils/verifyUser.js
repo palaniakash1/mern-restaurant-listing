@@ -46,6 +46,9 @@ export const verifyToken = async (req, res, next) => {
 
     next();
   } catch (error) {
+    if (error?.name === "JsonWebTokenError" || error?.name === "TokenExpiredError") {
+      return next(errorHandler(401, "Invalid or expired authentication token"));
+    }
     next(error);
   }
 };
