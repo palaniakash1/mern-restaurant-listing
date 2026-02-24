@@ -4,74 +4,43 @@ import { errorHandler } from "../utils/error.js";
 import jwt from "jsonwebtoken";
 import { logAudit } from "../utils/auditLogger.js";
 
-// ===============================================================================
-// 🔷 POST /api/auth/signup — User registration
-// ===============================================================================
-// Purpose:
-// - Register a new end user into the system
-// - Public-facing self-service signup
-//
-// Who can access:
-// - Public (no authentication required)
-//
-// Rules:
-// - userName must be lowercase, min 3 characters, no spaces
-// - Email must be valid and unique
-// - Password must be strong (min 8 chars, 1 uppercase, 1 number)
-// - Default role assigned: "user"
-//
-// Security:
-// - Password is hashed before storage
-// - Duplicate checks are performed before DB insert
-//
-// Side effects:
-// - Audit log recorded (CREATE action)
-//
-// Real-world usage:
-// - User onboarding
-// - Customer account creation
-//
-// ===============================================================================
+const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9]).{8,}$/;
+
+const buildCookieOptions = () => ({
+  httpOnly: true,
+  sameSite: "lax",
+  secure: process.env.NODE_ENV === "production",
+});
+
 export const signup = async (req, res, next) => {
   try {
     const { userName, email, password } = req.body;
 
-    // 🔍 1. Manual Validations
-    // user name validation ---------------- empty name
     if (!userName || userName.trim() === "") {
       return next(errorHandler(400, "Please provide a valid username"));
     }
-    // --------------------------------------length check
     if (userName.length < 3) {
       return next(
         errorHandler(400, "Username must be at least 3 characters long"),
       );
     }
-    if (req.body.userName !== req.body.userName.toLowerCase()) {
-      return next(errorHandler(400, " UserName must be lowercase"));
+    if (userName !== userName.toLowerCase()) {
+      return next(errorHandler(400, "UserName must be lowercase"));
     }
 
-    // simple email validation using regex
-    // --------------------------------------empty email check
     if (!email || email.trim() === "") {
       return next(errorHandler(400, "Please enter an email"));
     }
 
-    // --------------------------------------email format check
-    // simple email validation using regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return next(errorHandler(400, "Please enter a valid email address"));
     }
 
-    // password validation ---------------- empty password
     if (!password || password.trim() === "") {
       return next(errorHandler(400, "Please enter a password"));
     }
-    // --------------------------------------password strength check
-    // simple password validation using regex
-    const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9]).{8,}$/;
-    if (!passwordRegex.test(password)) {
+    if (!PASSWORD_REGEX.test(password)) {
       return next(
         errorHandler(
           400,
@@ -80,42 +49,40 @@ export const signup = async (req, res, next) => {
       );
     }
 
-    // 🔍 2. Check duplicates manually (faster than catching Mongo error)
-    const existingUserName = await User.findOne({ userName });
+    const normalizedUserName = userName.toLowerCase();
+    const normalizedEmail = email.toLowerCase();
+
+    const existingUserName = await User.findOne({ userName: normalizedUserName });
     if (existingUserName) {
       return next(
         errorHandler(
-          400,
-          `Username '${existingUserName}' already exists, try login instead`,
+          409,
+          `Username '${normalizedUserName}' already exists, try login instead`,
         ),
       );
     }
 
-    const existingEmail = await User.findOne({ email });
+    const existingEmail = await User.findOne({ email: normalizedEmail });
     if (existingEmail) {
       return next(
         errorHandler(
-          400,
-          `Email '${existingEmail}' already exists, try login instead`,
+          409,
+          `Email '${normalizedEmail}' already exists, try login instead`,
         ),
       );
     }
 
-    // previous codes
     const hashedPassword = bcryptjs.hashSync(password, 10);
-    const lowerCasedEmail = email.toLowerCase();
 
-    // Here, you would typically add logic to save the user to your database
     const newUser = new User({
-      userName,
-      email: lowerCasedEmail,
+      userName: normalizedUserName,
+      email: normalizedEmail,
       password: hashedPassword,
-      role: "user", // ⬅️ Explicitly set the default role here
+      role: "user",
     });
 
     await newUser.save();
 
-    // AUDIT LOG — SIGNUP
     await logAudit({
       actorId: newUser._id,
       actorRole: "user",
@@ -131,66 +98,32 @@ export const signup = async (req, res, next) => {
       ipAddress: req.headers["x-forwarded-for"] || req.ip,
     });
 
-    res.status(201).json("User registered successfully");
+    res.status(201).json({ success: true, message: "User registered successfully" });
   } catch (error) {
     next(error);
   }
 };
 
-// ===============================================================================
-// 🔷 POST /api/auth/signin — User login
-// ===============================================================================
-// Purpose:
-// - Authenticate a user using email and password
-//
-// Who can access:
-// - Public
-//
-// Rules:
-// - Email and password are required
-// - Email must exist
-// - Password must match hashed value
-//
-// Security:
-// - JWT token issued on success
-// - Token stored in HTTP-only cookie
-// - Password never returned in response
-//
-// Audit logging:
-// - LOGIN → on success
-// - LOGIN_FAILED → on failure (invalid email or password)
-//
-// Real-world usage:
-// - Login screen
-// - Session creation
-//
-// ===============================================================================
-
 export const signin = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    // simple email validation using regex
-    // --------------------------------------empty email check
     if (!email || email.trim() === "") {
       return next(errorHandler(400, "Please enter an email"));
     }
 
-    // --------------------------------------email format check
-    // simple email validation using regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return next(errorHandler(400, "Please enter a valid email address"));
     }
 
-    // password validation ---------------- empty password
     if (!password || password.trim() === "") {
       return next(errorHandler(400, "Please enter a password"));
     }
 
-    const lowerCasedEmail = email.toLowerCase();
+    const normalizedEmail = email.toLowerCase();
 
-    const validUser = await User.findOne({ email: lowerCasedEmail }).select(
+    const validUser = await User.findOne({ email: normalizedEmail }).select(
       "+password",
     );
 
@@ -201,15 +134,16 @@ export const signin = async (req, res, next) => {
         entityType: "auth",
         entityId: null,
         action: "LOGIN_FAILED",
-        before: { email: lowerCasedEmail },
+        before: { email: normalizedEmail },
         after: null,
         ipAddress: req.headers["x-forwarded-for"] || req.ip,
       });
 
       return next(
-        errorHandler(404, `User with this email ${lowerCasedEmail} not found`),
+        errorHandler(404, `User with this email ${normalizedEmail} not found`),
       );
     }
+
     if (!validUser.isActive) {
       await logAudit({
         actorId: validUser._id,
@@ -240,12 +174,11 @@ export const signin = async (req, res, next) => {
       return next(
         errorHandler(
           401,
-          `Password does not match for email ${lowerCasedEmail}`,
+          `Password does not match for email ${normalizedEmail}`,
         ),
       );
     }
 
-    // Generate JWT token
     const token = jwt.sign(
       {
         id: validUser._id,
@@ -254,9 +187,8 @@ export const signin = async (req, res, next) => {
       process.env.JWT_SECRET,
       { expiresIn: "7d" },
     );
-    const { password: pass, ...rest } = validUser._doc; // Exclude password from user data
+    const { password: pass, ...rest } = validUser._doc;
 
-    // after successful login
     await logAudit({
       actorId: validUser._id,
       actorRole: validUser.role,
@@ -269,15 +201,9 @@ export const signin = async (req, res, next) => {
       },
       ipAddress: req.headers["x-forwarded-for"] || req.ip,
     });
-// Set token in HTTP-only cookie
-    const cookieOptions = {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-    };
 
     res
-      .cookie("access_token", token, cookieOptions)
+      .cookie("access_token", token, buildCookieOptions())
       .status(200)
       .json(rest);
   } catch (error) {
@@ -285,44 +211,17 @@ export const signin = async (req, res, next) => {
   }
 };
 
-// ===============================================================================
-// 🔷 POST /api/auth/google — Google OAuth login / signup
-// ===============================================================================
-// Purpose:
-// - Allow users to authenticate using Google OAuth
-// - Auto-create account if user does not exist
-//
-// Who can access:
-// - Public
-//
-// Behavior:
-// - Existing user → login flow
-// - New user → auto signup with generated credentials
-//
-// Rules:
-// - Default role assigned: "user"
-// - Password auto-generated and hashed
-// - Google profile picture stored
-//
-// Security:
-// - JWT token issued
-// - Stored in HTTP-only cookie
-//
-// Real-world usage:
-// - Social login
-// - Faster onboarding
-//
-// ===============================================================================
-
 export const google = async (req, res, next) => {
   try {
     const { name, email, googlePhotoUrl } = req.body;
-    const cookieOptions = {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-    };
-    const user = await User.findOne({ email });
+
+    if (!email) {
+      return next(errorHandler(400, "Email is required"));
+    }
+
+    const normalizedEmail = email.toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
+
     if (user) {
       if (!user.isActive) {
         return next(errorHandler(403, "User account is inactive"));
@@ -334,60 +233,44 @@ export const google = async (req, res, next) => {
       );
       const { password, ...rest } = user._doc;
 
-      res
+      return res
         .status(200)
-        .cookie("access_token", token, cookieOptions)
-        .json(rest);
-    } else {
-      const generatedPassword =
-        Math.random().toString(36).slice(-8) +
-        Math.random().toString(36).slice(-8);
-      const hashedPassword = bcryptjs.hashSync(generatedPassword, 10);
-
-      const newUser = new User({
-        userName:
-          name.toLowerCase().split(" ").join("") +
-          Math.random().toString(9).slice(-4),
-        email,
-        password: hashedPassword,
-        profilePicture: googlePhotoUrl,
-        role: "user",
-      });
-      await newUser.save();
-      const token = jwt.sign(
-        { id: newUser._id, role: newUser.role },
-        process.env.JWT_SECRET,
-        { expiresIn: "7d" },
-      );
-      const { password, ...rest } = newUser._doc;
-      res
-        .status(200)
-        .cookie("access_token", token, cookieOptions)
+        .cookie("access_token", token, buildCookieOptions())
         .json(rest);
     }
+
+    const generatedPassword =
+      Math.random().toString(36).slice(-8) +
+      Math.random().toString(36).slice(-8);
+    const hashedPassword = bcryptjs.hashSync(generatedPassword, 10);
+
+    const newUser = new User({
+      userName:
+        (name || "user").toLowerCase().split(" ").join("") +
+        Math.random().toString(9).slice(-4),
+      email: normalizedEmail,
+      password: hashedPassword,
+      profilePicture: googlePhotoUrl,
+      role: "user",
+    });
+
+    await newUser.save();
+
+    const token = jwt.sign(
+      { id: newUser._id, role: newUser.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" },
+    );
+    const { password, ...rest } = newUser._doc;
+
+    return res
+      .status(200)
+      .cookie("access_token", token, buildCookieOptions())
+      .json(rest);
   } catch (error) {
     next(error);
   }
 };
-
-// ===============================================================================
-// 🔷 POST /api/auth/signout — User logout
-// ===============================================================================
-// Purpose:
-// - Terminate user session
-//
-// Who can access:
-// - Authenticated users only
-//
-// Behavior:
-// - Clears JWT cookie
-// - Records logout action in audit log
-//
-// Real-world usage:
-// - Logout button
-// - Session termination
-//
-// ===============================================================================
 
 export const signout = async (req, res, next) => {
   try {
@@ -403,16 +286,98 @@ export const signout = async (req, res, next) => {
         ipAddress: req.headers["x-forwarded-for"] || req.ip,
       });
     }
+
     res
-      .clearCookie("access_token", {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-      })
+      .clearCookie("access_token", buildCookieOptions())
       .status(200)
       .json({
+        success: true,
+        message: "signed out successfully",
+      });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getSession = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id).select(
+      "_id userName email role restaurantId profilePicture isActive",
+    );
+    if (!user) {
+      return next(errorHandler(404, "User not found"));
+    }
+
+    res.status(200).json({
       success: true,
-      message: "signed out successfully",
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return next(errorHandler(400, "currentPassword and newPassword are required"));
+    }
+
+    if (!PASSWORD_REGEX.test(newPassword)) {
+      return next(
+        errorHandler(
+          400,
+          "Minimum 8 characters total. Must contain at least 1 capital letter (A-Z). Must contain at least 1 number (0-9).",
+        ),
+      );
+    }
+
+    const user = await User.findById(req.user.id).select("+password");
+    if (!user) {
+      return next(errorHandler(404, "User not found"));
+    }
+
+    if (!user.isActive) {
+      return next(errorHandler(403, "User account is inactive"));
+    }
+
+    const validCurrentPassword = bcryptjs.compareSync(
+      currentPassword,
+      user.password,
+    );
+    if (!validCurrentPassword) {
+      await logAudit({
+        actorId: user._id,
+        actorRole: user.role,
+        entityType: "auth",
+        entityId: user._id,
+        action: "LOGIN_FAILED",
+        before: { reason: "invalid_current_password" },
+        after: null,
+        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+      });
+      return next(errorHandler(401, "Current password is invalid"));
+    }
+
+    user.password = bcryptjs.hashSync(newPassword, 10);
+    await user.save();
+
+    await logAudit({
+      actorId: user._id,
+      actorRole: user.role,
+      entityType: "user",
+      entityId: user._id,
+      action: "UPDATE",
+      before: null,
+      after: { passwordChanged: true },
+      ipAddress: req.headers["x-forwarded-for"] || req.ip,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Password updated successfully",
     });
   } catch (error) {
     next(error);
