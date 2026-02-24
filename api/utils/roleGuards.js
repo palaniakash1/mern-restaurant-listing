@@ -1,12 +1,12 @@
 import Restaurant from "../models/restaurant.model.js";
 import { errorHandler } from "./error.js";
 
-export const verifyRestaurantOwner = async (req, res, next) => {
+export const verifyRestaurantOwner = (req, res, next) => {
   if (!req.user) {
     return next(errorHandler(401, "Unauthorized"));
   }
 
-  const restaurant = await Restaurant.findById(req.params.id);
+  const restaurant = Restaurant.findById(req.params.id);
   if (!restaurant) return next(errorHandler(404, "Restaurant Not Found"));
 
   if (
@@ -20,7 +20,7 @@ export const verifyRestaurantOwner = async (req, res, next) => {
   next();
 };
 
-export const verifyAdminOrSuperAdmin = async (req, res, next) => {
+export const verifyAdminOrSuperAdmin = (req, res, next) => {
   if (!req.user) {
     return next(errorHandler(401, "Unauthorized"));
   }
@@ -37,12 +37,12 @@ export const verifySuperAdmin = (req, res, next) => {
   next();
 };
 
-export const verifyAdmin = async (req, res, next) => {
+export const verifyAdmin = (req, res, next) => {
   if (!req.user) {
     return next(errorHandler(401, "Unauthorized"));
   }
   if (req.user.role !== "admin") {
-    next(errorHandler(403, "Only admin"));
+    return next(errorHandler(403, "Only admin"));
   }
   next();
 };

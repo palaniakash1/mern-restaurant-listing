@@ -22,7 +22,7 @@ export const geocodeAddress = async ({
   );
 
   if (!response.data.results.length) {
-    throw errorHandler("Unable to geocode address");
+    throw errorHandler(400, "Unable to geocode address");
   }
 
   const location = response.data.results[0].geometry.location;

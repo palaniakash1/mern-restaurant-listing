@@ -1,5 +1,88 @@
 import mongoose from "mongoose";
+import { softDeleteRestorePlugin } from "../utils/plugins/softDeleteRestore.plugin.js";
 
+// Ingredient schema (critical)
+const ingredientSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+    },
+
+    allergens: [
+      {
+        type: String,
+        enum: [
+          "gluten",
+          "egg",
+          "fish",
+          "crustaceans",
+          "molluscs",
+          "milk",
+          "peanut",
+          "tree_nuts",
+          "sesame",
+          "soya",
+          "celery",
+          "mustard",
+          "sulphites",
+          "lupin",
+        ],
+      },
+    ],
+
+    strict: {
+      type: Boolean, // cannot be removed
+      default: false,
+    },
+
+    removable: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  { _id: false },
+);
+
+// Nutrition schema (with levels)
+const nutritionValueSchema = new mongoose.Schema(
+  {
+    value: Number,
+    level: {
+      type: String,
+      enum: ["green", "amber", "red"],
+    },
+  },
+  { _id: false },
+);
+
+const nutritionSchema = new mongoose.Schema(
+  {
+    calories: nutritionValueSchema,
+    fat: nutritionValueSchema,
+    saturates: nutritionValueSchema,
+    sugar: nutritionValueSchema,
+    salt: nutritionValueSchema,
+  },
+  { _id: false },
+);
+
+// Upsell schema
+const upsellSchema = new mongoose.Schema(
+  {
+    label: {
+      type: String,
+      required: true,
+    },
+    price: {
+      type: Number,
+      required: true,
+    },
+  },
+  { _id: false },
+);
+
+// Menu Item schema (core)
 const menuItemSchema = new mongoose.Schema(
   {
     name: {
@@ -8,57 +91,27 @@ const menuItemSchema = new mongoose.Schema(
       trim: true,
     },
 
-    description: {
-      type: String,
-    },
+    description: String,
 
-    image: {
-      type: String,
-    },
+    image: String,
 
     price: {
-      type: Number, // display only
+      type: Number,
+      required: true,
     },
 
-    // 🥗 Dietary filters (top row in screenshot)
     dietary: {
-      isVegetarian: { type: Boolean, default: false },
-      isVegan: { type: Boolean, default: false },
+      vegetarian: { type: Boolean, default: false },
+      vegan: { type: Boolean, default: false },
     },
 
-    // ⚠️ Allergen filters (chips in screenshot)
-    allergens: [
-      {
-        type: String,
-        enum: [
-          "gluten",
-          "milk",
-          "nuts",
-          "soy",
-          "fish",
-          "eggs",
-          "celery",
-          "mustard",
-        ],
-      },
-    ],
+    ingredients: [ingredientSchema],
 
-    // 🍎 Expandable nutrition panel
-    nutrition: {
-      energyKcal: Number,
-      fat: Number,
-      saturates: Number,
-      sugars: Number,
-      salt: Number,
-    },
+    nutrition: nutritionSchema,
 
-    // ⭐ UI flags
-    isPopular: {
-      type: Boolean,
-      default: false,
-    },
+    upsells: [upsellSchema],
 
-    isRecommended: {
+    isMeal: {
       type: Boolean,
       default: false,
     },
@@ -68,14 +121,22 @@ const menuItemSchema = new mongoose.Schema(
       default: true,
     },
 
-    // 🔢 Item ordering inside category
     order: {
       type: Number,
       default: 0,
     },
+
+    isActive: { type: Boolean, default: true },
+    deletedAt: Date,
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
   },
-  { _id: false }
+  { _id: true },
 );
+
+// Menu schema (per category per restaurant)
 const menuSchema = new mongoose.Schema(
   {
     restaurantId: {
@@ -93,7 +154,25 @@ const menuSchema = new mongoose.Schema(
     },
 
     items: [menuItemSchema],
+
+    isActive: {
+      type: Boolean,
+      default: true,
+      index: true,
+    },
+
+    status: {
+      type: String,
+      enum: ["draft", "blocked", "published"],
+      default: "draft",
+      index: true,
+    },
   },
-  { timestamps: true }
+  { timestamps: true, optimisticConcurrency: true },
 );
+
+menuSchema.index({ status: 1, isActive: 1 });
+menuSchema.index({ restaurantId: 1, categoryId: 1 }, { unique: true });
+menuSchema.plugin(softDeleteRestorePlugin);
+
 export default mongoose.model("Menu", menuSchema);

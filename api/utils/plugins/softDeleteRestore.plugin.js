@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 export const softDeleteRestorePlugin = (schema) => {
   if (!schema.path("isActive")) {
     schema.add({
@@ -19,13 +21,10 @@ export const softDeleteRestorePlugin = (schema) => {
     });
   }
 
-  schema.pre(/^find/, function (next) {
-    if (!this.getQuery().includeInactive) {
+  schema.pre(["find", "findOne", "countDocuments"], function () {
+    if (!this.getOptions().includeInactive) {
       this.where({ isActive: true });
     }
-
-    delete this.getQuery().includeInactive;
-    next();
   });
 
   schema.methods.softDelete = async function (session = null, actorId = null) {

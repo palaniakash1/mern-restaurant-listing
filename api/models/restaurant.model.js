@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { softDeleteRestorePlugin } from "../utils/plugins/softDelete.plugin.js";
+import { softDeleteRestorePlugin } from "../utils/plugins/softDeleteRestore.plugin.js";
 
 const openingHourSchema = new mongoose.Schema(
   {
