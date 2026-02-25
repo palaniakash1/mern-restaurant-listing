@@ -4,6 +4,7 @@ import { verifyAdminOrSuperAdmin } from "../utils/roleGuards.js";
 import {
   createReview,
   deleteReview,
+  getReviewById,
   getMyReviews,
   getRestaurantReviewSummary,
   listRestaurantReviews,
@@ -17,6 +18,7 @@ router.get("/restaurant/:restaurantId", listRestaurantReviews);
 router.get("/restaurant/:restaurantId/summary", getRestaurantReviewSummary);
 
 router.get("/my", verifyToken, getMyReviews);
+router.get("/:id", verifyToken, getReviewById);
 router.post("/restaurant/:restaurantId", verifyToken, createReview);
 router.patch("/:id", verifyToken, updateReview);
 router.delete("/:id", verifyToken, deleteReview);

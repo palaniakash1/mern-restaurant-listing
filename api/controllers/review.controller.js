@@ -56,6 +56,24 @@ const assertReviewOwnershipOrSuperAdmin = (req, review) => {
   }
 };
 
+const assertCanReadReview = (req, review) => {
+  if (req.user.role === "superAdmin") return;
+
+  if (req.user.role === "user" && review.userId.toString() === req.user.id) {
+    return;
+  }
+
+  if (
+    ["admin", "storeManager"].includes(req.user.role) &&
+    req.user.restaurantId &&
+    review.restaurantId.toString() === req.user.restaurantId
+  ) {
+    return;
+  }
+
+  throw errorHandler(403, "Not allowed");
+};
+
 export const createReview = async (req, res, next) => {
   try {
     assertPublicUser(req);
@@ -167,6 +185,30 @@ export const getMyReviews = async (req, res, next) => {
       .lean();
 
     res.status(200).json({ success: true, ...pagination, data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getReviewById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) {
+      throw errorHandler(400, "Invalid review ID format");
+    }
+
+    const review = await Review.findById(id)
+      .populate("userId", "userName profilePicture")
+      .populate("restaurantId", "name slug")
+      .lean();
+
+    if (!review || !review.isActive) {
+      throw errorHandler(404, "Review not found");
+    }
+
+    assertCanReadReview(req, review);
+
+    res.status(200).json({ success: true, data: review });
   } catch (error) {
     next(error);
   }
