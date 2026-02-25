@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-
 /**
  * Runs a MongoDB transaction safely.
  *

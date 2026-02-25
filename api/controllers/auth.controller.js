@@ -5,6 +5,10 @@ import jwt from "jsonwebtoken";
 import { logAudit } from "../utils/auditLogger.js";
 
 const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9]).{8,}$/;
+const INVALID_CREDENTIALS_MESSAGE = "Invalid email or password";
+// Precomputed bcrypt hash for the string "password" to keep signin timing consistent.
+const DUMMY_PASSWORD_HASH =
+  "$2b$10$CwTycUXWue0Thq9StjUM0uJ8s7Qw6vY.fQ0M9f8Q5lHppZArYrusW";
 
 const buildCookieOptions = () => ({
   httpOnly: true,
@@ -128,6 +132,7 @@ export const signin = async (req, res, next) => {
     );
 
     if (!validUser) {
+      bcryptjs.compareSync(password, DUMMY_PASSWORD_HASH);
       await logAudit({
         actorId: null,
         actorRole: "anonymous",
@@ -139,9 +144,7 @@ export const signin = async (req, res, next) => {
         ipAddress: req.headers["x-forwarded-for"] || req.ip,
       });
 
-      return next(
-        errorHandler(404, `User with this email ${normalizedEmail} not found`),
-      );
+      return next(errorHandler(401, INVALID_CREDENTIALS_MESSAGE));
     }
 
     if (!validUser.isActive) {
@@ -171,12 +174,7 @@ export const signin = async (req, res, next) => {
         ipAddress: req.headers["x-forwarded-for"] || req.ip,
       });
 
-      return next(
-        errorHandler(
-          401,
-          `Password does not match for email ${normalizedEmail}`,
-        ),
-      );
+      return next(errorHandler(401, INVALID_CREDENTIALS_MESSAGE));
     }
 
     const token = jwt.sign(

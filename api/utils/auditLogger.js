@@ -10,9 +10,10 @@ export const logAudit = async ({
   before = null,
   after = null,
   ipAddress = null,
+  session = null,
 }) => {
   try {
-    await AuditLog.create({
+    const payload = {
       actorId,
       actorRole,
       entityType,
@@ -21,10 +22,16 @@ export const logAudit = async ({
       before: sanitizeAuditData(before),
       after: sanitizeAuditData(after),
       ipAddress,
-    });
-    
+    };
+
+    if (session) {
+      await AuditLog.create([payload], { session });
+      return;
+    }
+
+    await AuditLog.create(payload);
   } catch (error) {
-    // DO NOT throw — audit logs must never break business logic
+    // DO NOT throw - audit logs must never break business logic.
     console.error("Audit log failed:", error.message);
   }
 };

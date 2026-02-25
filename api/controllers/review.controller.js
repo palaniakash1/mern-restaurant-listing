@@ -109,6 +109,7 @@ export const createReview = async (req, res, next) => {
         before: null,
         after: { restaurantId, rating },
         ipAddress: normalizeIp(req),
+        session,
       });
 
       return review;
@@ -207,6 +208,7 @@ export const updateReview = async (req, res, next) => {
         before,
         after: { rating: review.rating, comment: review.comment },
         ipAddress: normalizeIp(req),
+        session,
       });
 
       return review;
@@ -249,6 +251,7 @@ export const deleteReview = async (req, res, next) => {
         before: { isActive: true },
         after: { isActive: false },
         ipAddress: normalizeIp(req),
+        session,
       });
     });
 
@@ -300,6 +303,7 @@ export const moderateReview = async (req, res, next) => {
         before,
         after: { isActive },
         ipAddress: normalizeIp(req),
+        session,
       });
 
       return review;
