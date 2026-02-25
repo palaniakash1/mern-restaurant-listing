@@ -188,3 +188,61 @@
  *                         type: object
  */
 
+/**
+ * @swagger
+ * /auth/session:
+ *   get:
+ *     tags: [Auth]
+ *     summary: Get current authenticated session
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Session resolved
+ *       401:
+ *         description: Missing or invalid token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
+/**
+ * @swagger
+ * /auth/change-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Change password for current authenticated user
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [currentPassword, newPassword]
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *                 format: password
+ *               newPassword:
+ *                 type: string
+ *                 format: password
+ *     responses:
+ *       200:
+ *         description: Password updated successfully
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Current password invalid or not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
