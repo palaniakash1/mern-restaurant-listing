@@ -57,16 +57,25 @@ const assertReviewOwnershipOrSuperAdmin = (req, review) => {
 };
 
 const assertCanReadReview = (req, review) => {
+  const reviewUserId =
+    typeof review.userId === "object" && review.userId !== null
+      ? review.userId._id?.toString() || review.userId.toString()
+      : review.userId?.toString();
+  const reviewRestaurantId =
+    typeof review.restaurantId === "object" && review.restaurantId !== null
+      ? review.restaurantId._id?.toString() || review.restaurantId.toString()
+      : review.restaurantId?.toString();
+
   if (req.user.role === "superAdmin") return;
 
-  if (req.user.role === "user" && review.userId.toString() === req.user.id) {
+  if (req.user.role === "user" && reviewUserId === req.user.id) {
     return;
   }
 
   if (
     ["admin", "storeManager"].includes(req.user.role) &&
     req.user.restaurantId &&
-    review.restaurantId.toString() === req.user.restaurantId
+    reviewRestaurantId === req.user.restaurantId
   ) {
     return;
   }
