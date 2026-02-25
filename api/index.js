@@ -1,6 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import crypto from "crypto";
 import userRouter from "./routes/user.route.js";
 import authRouter from "./routes/auth.route.js";
 import adminRouter from "./routes/admin.route.js";
@@ -31,6 +32,8 @@ const allowedOrigins = (process.env.CORS_ORIGINS || "")
   .filter(Boolean);
 
 app.use((req, res, next) => {
+  req.requestId = req.headers["x-request-id"] || crypto.randomUUID();
+  res.setHeader("X-Request-Id", req.requestId);
   const origin = req.headers.origin;
   if (
     origin &&
@@ -86,6 +89,7 @@ app.use((err, req, res, next) => {
 
   return res.status(statusCode).json({
     success: false,
+    requestId: req.requestId,
     statusCode,
     message,
   });
