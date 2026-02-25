@@ -2,6 +2,7 @@ import AuditLog from "../models/auditLog.model.js";
 import User from "../models/user.model.js";
 import Menu from "../models/menu.model.js";
 import Category from "../models/category.model.js";
+import Review from "../models/review.model.js";
 import { errorHandler } from "../utils/error.js";
 import { paginate } from "../utils/paginate.js";
 
@@ -62,6 +63,7 @@ export const getAuditLogs = async (req, res, next) => {
       const categoryIds = await Category.find({ restaurantId })
         .setOptions({ includeInactive: true })
         .distinct("_id");
+      const reviewIds = await Review.find({ restaurantId }).distinct("_id");
 
       filter.$or = [
         // Admin’s own actions
@@ -86,6 +88,10 @@ export const getAuditLogs = async (req, res, next) => {
         {
           entityType: "category",
           entityId: { $in: categoryIds },
+        },
+        {
+          entityType: "review",
+          entityId: { $in: reviewIds },
         },
       ];
 

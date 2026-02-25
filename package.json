@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "npx nodemon api/index.js",
-    "start": "node api/index.js"
+    "start": "node api/index.js",
+    "test": "node --test api/tests/**/*.test.js"
   },
   "keywords": [],
   "author": "",
@@ -25,6 +26,8 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
+    "mongodb-memory-server": "^10.3.0",
+    "supertest": "^7.1.4",
     "tailwind-scrollbar": "^4.0.2"
   }
 }
