@@ -15,7 +15,7 @@
  * /users:
  *   get:
  *     tags: [Users]
- *     summary: Get all users
+ *     summary: Get all users - 1
  *     description: SuperAdmin can view all users with pagination and search
  *     security:
  *       - bearerAuth: []
@@ -68,7 +68,7 @@
  * /users/{id}:
  *   patch:
  *     tags: [Users]
- *     summary: Update user profile
+ *     summary: Update user profile - 2
  *     description: User can update their own profile. SuperAdmin can update any user.
  *     security:
  *       - bearerAuth: []
@@ -135,7 +135,7 @@
  * /users/{id}:
  *   delete:
  *     tags: [Users]
- *     summary: Delete user
+ *     summary: Delete user - 3
  *     description: User can delete self. SuperAdmin can delete any user.
  *     security:
  *       - bearerAuth: []
@@ -184,7 +184,7 @@
  * /users/{id}/deactivate:
  *   patch:
  *     tags: [Users]
- *     summary: Deactivate user account
+ *     summary: Deactivate user account - 4
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -226,7 +226,7 @@
  * /users/{id}/restore:
  *   patch:
  *     tags: [Users]
- *     summary: Restore deactivated user - using superAdmin
+ *     summary: Restore deactivated user - using superAdmin - 5
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -268,7 +268,7 @@
  * /users:
  *   post:
  *     tags: [Users]
- *     summary: Create store manager
+ *     summary: Create store manager    - 6
  *     description:  Admin or SuperAdmin can create a storeManager.
  *     security:
  *       - bearerAuth: []
@@ -307,7 +307,7 @@
  * /users/{id}/restaurant:
  *   patch:
  *     tags: [Users]
- *     summary: Assign store manager to restaurant
+ *     summary: Assign store manager to restaurant - 7
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -349,3 +349,128 @@
  *                  $ref: '#/components/schemas/ErrorResponse'
  */
 
+/**
+ * @swagger
+ * /users/{id}/restaurant:
+ *   delete:
+ *     tags: [Users]
+ *     summary: Unassign store manager from restaurant  - 8
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: StoreManager unassigned
+ *       403:
+ *         description: Not authorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
+/**
+ * @swagger
+ * /users/{id}/owner:
+ *   patch:
+ *     tags: [Users]
+ *     summary: Change store manager owner (superAdmin only) - 9
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [newAdminId]
+ *             properties:
+ *               newAdminId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Ownership transferred
+ *       400:
+ *         description: Invalid payload
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: SuperAdmin only
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
+/**
+ * @swagger
+ * /users/admins:
+ *   get:
+ *     tags: [Users]
+ *     summary: Get available admins - 10
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Available admins listed
+ *       403:
+ *         description: SuperAdmin only
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
+/**
+ * @swagger
+ * /users/store-managers:
+ *   get:
+ *     tags: [Users]
+ *     summary: Get store managers - 11
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: StoreManagers listed
+ *       403:
+ *         description: Admin/SuperAdmin only
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
