@@ -10,6 +10,12 @@ import { diffObject } from "../utils/diff.js";
 import { paginate } from "../utils/paginate.js";
 import Restaurant from "../models/restaurant.model.js";
 
+const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9]).{8,}$/;
+const INVALID_CREDENTIALS_MESSAGE = "Invalid email or password";
+// Precomputed bcrypt hash for the string "password" to keep signin timing consistent.
+const DUMMY_PASSWORD_HASH =
+  "$2b$10$CwTycUXWue0Thq9StjUM0uJ8s7Qw6vY.fQ0M9f8Q5lHppZArYrusW";
+
 // ===============================================================================
 // 🔷 GET /api/users/test — Test / health-check endpoint
 // ===============================================================================
@@ -504,23 +510,70 @@ export const createStoreManager = async (req, res, next) => {
   try {
     const { userName, email, password } = req.body;
 
-    if (!userName || !email || !password) {
-      throw errorHandler(400, "All fields are required");
+    if (!userName || userName.trim() === "") {
+      return next(errorHandler(400, "Please provide a valid username"));
+    }
+    if (userName.length < 3) {
+      return next(
+        errorHandler(400, "Username must be at least 3 characters long"),
+      );
+    }
+    if (userName !== userName.toLowerCase()) {
+      return next(errorHandler(400, "UserName must be lowercase"));
     }
 
-    const existing = await User.findOne({
-      $or: [{ email }, { userName }],
-    });
+    if (!email || email.trim() === "") {
+      return next(errorHandler(400, "Please enter an email"));
+    }
 
-    if (existing) throw errorHandler(409, "User already exists");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return next(errorHandler(400, "Please enter a valid email address"));
+    }
+
+    if (!password || password.trim() === "") {
+      return next(errorHandler(400, "Please enter a password"));
+    }
+    if (!PASSWORD_REGEX.test(password)) {
+      return next(
+        errorHandler(
+          400,
+          "Minimum 8 characters total. Must contain at least 1 capital letter (A-Z). Must contain at least 1 number (0-9).",
+        ),
+      );
+    }
+
+    const normalizedUserName = userName.toLowerCase();
+    const normalizedEmail = email.toLowerCase();
+
+    const existingUserName = await User.findOne({
+      userName: normalizedUserName,
+    });
+    if (existingUserName) {
+      return next(
+        errorHandler(
+          409,
+          `Username '${normalizedUserName}' already exists, try login instead`,
+        ),
+      );
+    }
+
+    const existingEmail = await User.findOne({ email: normalizedEmail });
+    if (existingEmail) {
+      return next(
+        errorHandler(
+          409,
+          `Email '${normalizedEmail}' already exists, try login instead`,
+        ),
+      );
+    }
 
     const hashedPassword = bcryptjs.hashSync(password, 10);
-
     // const createdByAdminId = req.user.role === "admin" ? req.user.id : null;
 
     const storeManager = await User.create({
-      userName: userName.toLowerCase(),
-      email: email.toLowerCase(),
+      userName: normalizedUserName,
+      email: normalizedEmail,
       password: hashedPassword,
       role: "storeManager",
       createdByAdminId: req.user.role === "admin" ? req.user.id : null,
