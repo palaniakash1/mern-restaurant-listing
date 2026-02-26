@@ -176,7 +176,10 @@ export const addMenuItems = async (req, res, next) => {
         );
       }
 
-      const menu = await Menu.findById(menuId).session(session).select("-__v");
+      const menu = await Menu.findById(menuId)
+        .setOptions({ includeInactive: true })
+        .session(session)
+        .select("-__v");
       if (!menu || !menu.isActive) {
         throw errorHandler(404, "Menu not found");
       }

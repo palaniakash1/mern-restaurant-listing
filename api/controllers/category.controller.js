@@ -284,7 +284,9 @@ export const updateCategory = async (req, res, next) => {
       }
 
       // fetch the category
-      const category = await Category.findById(req.params.id).session(session);
+      const category = await Category.findById(req.params.id)
+        .setOptions({ includeInactive: true })
+        .session(session);
       if (!category) {
         throw errorHandler(404, "Category not found");
       }
