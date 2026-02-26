@@ -157,6 +157,12 @@ describe("Platform core integration", { concurrency: false }, () => {
     assert.equal(createCategoryRes.status, 201);
     const categoryId = createCategoryRes.body.data._id;
 
+    const publishCategoryRes = await request(app)
+      .patch("/api/categories/bulk-status")
+      .set("Authorization", `Bearer ${tokens.superAdmin}`)
+      .send({ ids: [categoryId], status: "published" });
+    assert.equal(publishCategoryRes.status, 200);
+
     const ownershipViolationRes = await request(app)
       .patch(`/api/categories/${categoryId}`)
       .set("Authorization", `Bearer ${tokens.adminB}`)
@@ -421,11 +427,18 @@ describe("Platform core integration", { concurrency: false }, () => {
       .set("Authorization", `Bearer ${tokens.adminA}`)
       .send({ name: "Sides", isGeneric: false, restaurantId });
     assert.equal(categoryRes.status, 201);
+    const categoryId = categoryRes.body.data._id;
+
+    const publishCategoryRes = await request(app)
+      .patch("/api/categories/bulk-status")
+      .set("Authorization", `Bearer ${tokens.superAdmin}`)
+      .send({ ids: [categoryId], status: "published" });
+    assert.equal(publishCategoryRes.status, 200);
 
     const menuRes = await request(app)
       .post("/api/menus")
       .set("Authorization", `Bearer ${tokens.adminA}`)
-      .send({ restaurantId, categoryId: categoryRes.body.data._id });
+      .send({ restaurantId, categoryId });
     assert.equal(menuRes.status, 201);
     const menuId = menuRes.body.data._id;
 
