@@ -3,28 +3,43 @@ import mongoose from "mongoose";
 const forbiddenFields = ["password", "tokens", "access_token"];
 
 export const sanitizeAuditData = (data) => {
-  // null / primitive
-  if (!data || typeof data !== "object") {
-    return data;
-  }
+  const seen = new WeakSet();
 
-  // ObjectId → string
-  if (data instanceof mongoose.Types.ObjectId) {
-    return data.toString();
-  }
+  const sanitize = (value) => {
+    if (value === null || value === undefined || typeof value !== "object") {
+      return value;
+    }
 
-  // Array
-  if (Array.isArray(data)) {
-    return data.map(sanitizeAuditData);
-  }
+    if (value instanceof Date) {
+      return value.toISOString();
+    }
 
-  // Plain object
-  const sanitized = {};
-  for (const [key, value] of Object.entries(data)) {
-    if (forbiddenFields.includes(key)) continue; // drop sensitive field
+    if (value instanceof mongoose.Types.ObjectId) {
+      return value.toString();
+    }
 
-    sanitized[key] = sanitizeAuditData(value);
-  }
+    if (seen.has(value)) {
+      return "[circular]";
+    }
+    seen.add(value);
 
-  return sanitized;
+    if (Array.isArray(value)) {
+      return value.map(sanitize);
+    }
+
+    if (typeof value.toObject === "function") {
+      return sanitize(
+        value.toObject({ getters: false, virtuals: false, depopulate: true }),
+      );
+    }
+
+    const sanitized = {};
+    for (const [key, nested] of Object.entries(value)) {
+      if (forbiddenFields.includes(key)) continue;
+      sanitized[key] = sanitize(nested);
+    }
+    return sanitized;
+  };
+
+  return sanitize(data);
 };
