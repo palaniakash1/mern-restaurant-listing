@@ -18,29 +18,29 @@ Legend:
 
 ## Auth
 
-| Method | Endpoint                    | Guard         | Coverage | Test File                  |
-| ------ | --------------------------- | ------------- | -------- | -------------------------- |
-| POST   | `/api/auth/signup`          | Public        | P,V      | `auth.integration.test.js` |
-| POST   | `/api/auth/signin`          | Public        | P,V      | `auth.integration.test.js` |
-| POST   | `/api/auth/google`          | Public        | Gap      | -                          |
-| POST   | `/api/auth/signout`         | Authenticated | P        | `auth.integration.test.js` |
-| GET    | `/api/auth/session`         | Authenticated | P        | `auth.integration.test.js` |
-| POST   | `/api/auth/change-password` | Authenticated | P,V      | `auth.integration.test.js` |
+| Method | Endpoint                    | Guard         | Coverage | Test File                         |
+| ------ | --------------------------- | ------------- | -------- | --------------------------------- |
+| POST   | `/api/auth/signup`          | Public        | P,V      | `auth.integration.test.js`        |
+| POST   | `/api/auth/signin`          | Public        | P,V      | `auth.integration.test.js`        |
+| POST   | `/api/auth/google`          | Public        | P,V      | `gap-closure.integration.test.js` |
+| POST   | `/api/auth/signout`         | Authenticated | P        | `auth.integration.test.js`        |
+| GET    | `/api/auth/session`         | Authenticated | P        | `auth.integration.test.js`        |
+| POST   | `/api/auth/change-password` | Authenticated | P,V      | `auth.integration.test.js`        |
 
 ## Users
 
 | Method | Endpoint                    | Guard            | Coverage | Test File                               |
 | ------ | --------------------------- | ---------------- | -------- | --------------------------------------- |
-| GET    | `/api/users/test`           | superAdmin       | Gap      | -                                       |
+| GET    | `/api/users/test`           | superAdmin       | P,A      | `gap-closure.integration.test.js`       |
 | GET    | `/api/users`                | superAdmin       | P,A      | `platform-core.integration.test.js`     |
 | GET    | `/api/users/admins`         | superAdmin       | P        | `roles-and-reviews.integration.test.js` |
 | GET    | `/api/users/store-managers` | admin/superAdmin | P,A      | `roles-and-reviews.integration.test.js` |
-| POST   | `/api/users`                | admin/superAdmin | Gap      | -                                       |
-| PATCH  | `/api/users/:id`            | self/superAdmin  | Gap      | -                                       |
-| DELETE | `/api/users/:id`            | self/superAdmin  | Gap      | -                                       |
-| PATCH  | `/api/users/:id/deactivate` | self/superAdmin  | Gap      | -                                       |
-| PATCH  | `/api/users/:id/restore`    | superAdmin       | Gap      | -                                       |
-| PATCH  | `/api/users/:id/restaurant` | admin/superAdmin | Gap      | -                                       |
+| POST   | `/api/users`                | admin/superAdmin | P,A,V    | `gap-closure.integration.test.js`       |
+| PATCH  | `/api/users/:id`            | self/superAdmin  | P,A      | `gap-closure.integration.test.js`       |
+| DELETE | `/api/users/:id`            | self/superAdmin  | P,A      | `gap-closure.integration.test.js`       |
+| PATCH  | `/api/users/:id/deactivate` | self/superAdmin  | P,A      | `gap-closure.integration.test.js`       |
+| PATCH  | `/api/users/:id/restore`    | superAdmin       | P,A      | `gap-closure.integration.test.js`       |
+| PATCH  | `/api/users/:id/restaurant` | admin/superAdmin | P,A,O    | `gap-closure.integration.test.js`       |
 | PATCH  | `/api/users/:id/owner`      | superAdmin       | P        | `roles-and-reviews.integration.test.js` |
 | DELETE | `/api/users/:id/restaurant` | admin/superAdmin | P,O      | `roles-and-reviews.integration.test.js` |
 
@@ -61,14 +61,14 @@ Legend:
 | Method | Endpoint                              | Guard            | Coverage | Test File                           |
 | ------ | ------------------------------------- | ---------------- | -------- | ----------------------------------- |
 | GET    | `/api/restaurants`                    | Public           | P        | `platform-core.integration.test.js` |
-| GET    | `/api/restaurants/nearby`             | Public           | Gap      | -                                   |
-| GET    | `/api/restaurants/featured`           | Public           | Gap      | -                                   |
-| GET    | `/api/restaurants/trending`           | Public           | Gap      | -                                   |
+| GET    | `/api/restaurants/nearby`             | Public           | P,V      | `gap-closure.integration.test.js`   |
+| GET    | `/api/restaurants/featured`           | Public           | P        | `gap-closure.integration.test.js`   |
+| GET    | `/api/restaurants/trending`           | Public           | P        | `gap-closure.integration.test.js`   |
 | GET    | `/api/restaurants/slug/:slug`         | Public           | P        | `platform-core.integration.test.js` |
-| GET    | `/api/restaurants/slug/:slug/details` | Public           | Gap      | -                                   |
+| GET    | `/api/restaurants/slug/:slug/details` | Public           | P        | `gap-closure.integration.test.js`   |
 | POST   | `/api/restaurants`                    | admin/superAdmin | P,A      | `platform-core.integration.test.js` |
 | GET    | `/api/restaurants/me`                 | admin            | P        | `platform-core.integration.test.js` |
-| GET    | `/api/restaurants/me/summary`         | admin            | Gap      | -                                   |
+| GET    | `/api/restaurants/me/summary`         | admin            | P,A      | `gap-closure.integration.test.js`   |
 | GET    | `/api/restaurants/all`                | superAdmin       | P,A      | `platform-core.integration.test.js` |
 | GET    | `/api/restaurants/id/:id`             | owner/superAdmin | P,O      | `platform-core.integration.test.js` |
 | PATCH  | `/api/restaurants/id/:id`             | owner/superAdmin | P,O      | `platform-core.integration.test.js` |
@@ -82,22 +82,22 @@ Legend:
 | Method | Endpoint                       | Guard            | Coverage | Test File                           |
 | ------ | ------------------------------ | ---------------- | -------- | ----------------------------------- |
 | GET    | `/api/categories`              | Public           | P        | `platform-core.integration.test.js` |
-| GET    | `/api/categories/my`           | admin            | Gap      | -                                   |
+| GET    | `/api/categories/my`           | admin            | P,A      | `gap-closure.integration.test.js`   |
 | GET    | `/api/categories/all`          | superAdmin       | P,A      | `platform-core.integration.test.js` |
-| GET    | `/api/categories/deleted`      | superAdmin       | Gap      | -                                   |
-| GET    | `/api/categories/export`       | superAdmin       | Gap      | -                                   |
+| GET    | `/api/categories/deleted`      | superAdmin       | P,A      | `gap-closure.integration.test.js`   |
+| GET    | `/api/categories/export`       | superAdmin       | P,A      | `gap-closure.integration.test.js`   |
 | PATCH  | `/api/categories/bulk-status`  | superAdmin       | P,A,V    | `platform-core.integration.test.js` |
-| PATCH  | `/api/categories/bulk-reorder` | admin/superAdmin | Gap      | -                                   |
-| PATCH  | `/api/categories/reorder`      | admin/superAdmin | Gap      | -                                   |
+| PATCH  | `/api/categories/bulk-reorder` | admin/superAdmin | P,A,V,O  | `gap-closure.integration.test.js`   |
+| PATCH  | `/api/categories/reorder`      | admin/superAdmin | P,A,V,O  | `gap-closure.integration.test.js`   |
 | POST   | `/api/categories/check-slug`   | admin/superAdmin | P,O      | `platform-core.integration.test.js` |
 | POST   | `/api/categories`              | admin/superAdmin | P,A      | `platform-core.integration.test.js` |
-| PATCH  | `/api/categories/:id/status`   | admin/superAdmin | Gap      | -                                   |
-| PATCH  | `/api/categories/:id/restore`  | superAdmin       | Gap      | -                                   |
+| PATCH  | `/api/categories/:id/status`   | admin/superAdmin | P,A,V,O  | `gap-closure.integration.test.js`   |
+| PATCH  | `/api/categories/:id/restore`  | superAdmin       | P,A      | `gap-closure.integration.test.js`   |
 | DELETE | `/api/categories/:id/hard`     | superAdmin       | P        | `platform-core.integration.test.js` |
-| GET    | `/api/categories/:id/audit`    | admin/superAdmin | Gap      | -                                   |
-| GET    | `/api/categories/:id`          | admin/superAdmin | Gap      | -                                   |
+| GET    | `/api/categories/:id/audit`    | admin/superAdmin | P,A,O    | `gap-closure.integration.test.js`   |
+| GET    | `/api/categories/:id`          | admin/superAdmin | P,A,O    | `gap-closure.integration.test.js`   |
 | PATCH  | `/api/categories/:id`          | admin/superAdmin | A,O      | `platform-core.integration.test.js` |
-| DELETE | `/api/categories/:id`          | admin/superAdmin | Gap      | -                                   |
+| DELETE | `/api/categories/:id`          | admin/superAdmin | P,A,O    | `gap-closure.integration.test.js`   |
 
 ## Menus
 
@@ -112,8 +112,8 @@ Legend:
 | PATCH  | `/api/menus/:menuId/items/:itemId/availability` | authenticated | P        | `platform-core.integration.test.js` |
 | PATCH  | `/api/menus/:menuId/status`                     | authenticated | P        | `platform-core.integration.test.js` |
 | PUT    | `/api/menus/:menuId/reorder`                    | authenticated | P        | `platform-core.integration.test.js` |
-| PATCH  | `/api/menus/:menuId/restore`                    | authenticated | Gap      | -                                   |
-| GET    | `/api/menus/:menuId/audit`                      | authenticated | Gap      | -                                   |
+| PATCH  | `/api/menus/:menuId/restore`                    | authenticated | P,A,O    | `gap-closure.integration.test.js`   |
+| GET    | `/api/menus/:menuId/audit`                      | authenticated | P,A,O    | `gap-closure.integration.test.js`   |
 | DELETE | `/api/menus/:menuId/hard`                       | superAdmin    | P,A      | `platform-core.integration.test.js` |
 | GET    | `/api/menus/:menuId`                            | authenticated | P        | `platform-core.integration.test.js` |
 | DELETE | `/api/menus/:menuId`                            | authenticated | P        | `platform-core.integration.test.js` |
@@ -124,9 +124,9 @@ Legend:
 | ------ | ----------------------------------------------- | ------------------------------- | -------- | --------------------------------------- |
 | GET    | `/api/reviews/restaurant/:restaurantId`         | Public                          | P        | `roles-and-reviews.integration.test.js` |
 | GET    | `/api/reviews/restaurant/:restaurantId/summary` | Public                          | P        | `roles-and-reviews.integration.test.js` |
-| GET    | `/api/reviews/my`                               | authenticated user              | Gap      | -                                       |
+| GET    | `/api/reviews/my`                               | authenticated user              | P,A      | `gap-closure.integration.test.js`       |
 | GET    | `/api/reviews/:id`                              | scoped (owner/admin/superAdmin) | P,O      | `roles-and-reviews.integration.test.js` |
 | POST   | `/api/reviews/restaurant/:restaurantId`         | authenticated user              | P,A,V    | `roles-and-reviews.integration.test.js` |
 | PATCH  | `/api/reviews/:id`                              | owner/superAdmin                | P,O      | `roles-and-reviews.integration.test.js` |
-| DELETE | `/api/reviews/:id`                              | owner/superAdmin                | Gap      | -                                       |
+| DELETE | `/api/reviews/:id`                              | owner/superAdmin                | P,A,O    | `gap-closure.integration.test.js`       |
 | PATCH  | `/api/reviews/:id/moderate`                     | admin/superAdmin                | P,O      | `roles-and-reviews.integration.test.js` |
