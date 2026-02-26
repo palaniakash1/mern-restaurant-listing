@@ -20,12 +20,10 @@ import {
 } from "../controllers/restaurant.controller.js";
 
 import { verifyToken } from "../utils/verifyUser.js";
+import { can, canAny } from "../utils/policy.js";
 
 import {
   verifyRestaurantOwner,
-  verifyAdminOrSuperAdmin,
-  verifyAdmin,
-  verifySuperAdmin,
 } from "../utils/roleGuards.js";
 
 const router = express.Router();
@@ -49,19 +47,24 @@ router.get("/slug/:slug/details", getRestaurantDetails);
 // =======================
 
 //create
-router.post("/", verifyToken, verifyAdminOrSuperAdmin, create); // create new restaurant - done
+router.post("/", verifyToken, can("create", "restaurant"), create); // create new restaurant - done
 
 // admin
-router.get("/me", verifyToken, verifyAdmin, getMyRestaurant);
-router.get("/me/summary", verifyToken, verifyAdmin, getAdminRestaurantSummary);
+router.get("/me", verifyToken, can("readMine", "restaurant"), getMyRestaurant);
+router.get(
+  "/me/summary",
+  verifyToken,
+  can("readMineSummary", "restaurant"),
+  getAdminRestaurantSummary,
+);
 
-router.get("/all", verifyToken, verifySuperAdmin, getAllRestaurants); // get all restaurant - done
+router.get("/all", verifyToken, can("listAll", "restaurant"), getAllRestaurants); // get all restaurant - done
 
 // get restaurant by id
 router.get(
   "/id/:id",
   verifyToken,
-  verifyAdminOrSuperAdmin,
+  canAny(["readById"], "restaurant"),
   verifyRestaurantOwner,
   getRestaurantById,
 );
@@ -72,7 +75,7 @@ router.get(
 router.patch(
   "/id/:id",
   verifyToken,
-  verifyAdminOrSuperAdmin,
+  canAny(["updateById"], "restaurant"),
   verifyRestaurantOwner,
   updateRestaurant,
 ); // update restaurant by id - done
@@ -81,7 +84,7 @@ router.patch(
 router.delete(
   "/id/:id",
   verifyToken,
-  verifyAdminOrSuperAdmin,
+  canAny(["deleteById"], "restaurant"),
   verifyRestaurantOwner,
   deleteRestaurant,
 ); //delete restaurant
@@ -92,7 +95,7 @@ router.delete(
 router.patch(
   "/id/:id/status",
   verifyToken,
-  verifySuperAdmin,
+  can("updateStatus", "restaurant"),
   updateRestaurantStatus,
 );
 
@@ -100,14 +103,14 @@ router.patch(
 router.patch(
   "/id/:id/restore",
   verifyToken,
-  verifySuperAdmin,
+  can("restore", "restaurant"),
   restoreRestaurant,
 ); // restore from soft delete
 
 router.patch(
   "/id/:id/admin",
   verifyToken,
-  verifySuperAdmin,
+  can("reassignAdmin", "restaurant"),
   reassignRestaurantAdmin,
 ); // reassign restaurant from superAdmin to admin
 

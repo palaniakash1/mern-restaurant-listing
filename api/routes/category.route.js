@@ -1,10 +1,6 @@
 import express from "express";
 import { verifyToken } from "../utils/verifyUser.js";
-import {
-  verifyAdmin,
-  verifyAdminOrSuperAdmin,
-  verifySuperAdmin,
-} from "../utils/roleGuards.js";
+import { can } from "../utils/policy.js";
 
 import {
   createCategory,
@@ -32,22 +28,22 @@ const router = express.Router();
 router.get("/", getCategories);
 
 // GET MY category
-router.get("/my", verifyToken, verifyAdmin, getMyCategories);
+router.get("/my", verifyToken, can("readMine", "category"), getMyCategories);
 
 // SUPERADMIN FULL VIEW
-router.get("/all", verifyToken, verifySuperAdmin, getAllCategories);
+router.get("/all", verifyToken, can("readAll", "category"), getAllCategories);
 
 // SUPERADMIN DELETED VIEW
-router.get("/deleted", verifyToken, verifySuperAdmin, getDeletedCategories);
+router.get("/deleted", verifyToken, can("readDeleted", "category"), getDeletedCategories);
 
 // SUPERADMIN EXPORT
-router.get("/export", verifyToken, verifySuperAdmin, exportCategories);
+router.get("/export", verifyToken, can("export", "category"), exportCategories);
 
 // BULK STATUS UPDATE
 router.patch(
   "/bulk-status",
   verifyToken,
-  verifySuperAdmin,
+  can("bulkStatus", "category"),
   bulkUpdateCategoryStatus,
 );
 
@@ -55,7 +51,7 @@ router.patch(
 router.patch(
   "/bulk-reorder",
   verifyToken,
-  verifyAdminOrSuperAdmin,
+  can("bulkReorder", "category"),
   bulkReorderCategories,
 );
 
@@ -63,40 +59,40 @@ router.patch(
 router.patch(
   "/reorder",
   verifyToken,
-  verifyAdminOrSuperAdmin,
+  can("reorder", "category"),
   reorderCategories,
 );
 
 // Check slug availability
-router.post("/check-slug", verifyToken, verifyAdminOrSuperAdmin, checkCategorySlug);
+router.post("/check-slug", verifyToken, can("checkSlug", "category"), checkCategorySlug);
 
 // Create new generic or restaurant category
-router.post("/", verifyToken, verifyAdminOrSuperAdmin, createCategory);
+router.post("/", verifyToken, can("create", "category"), createCategory);
 
 // UPATE category status
 router.patch(
   "/:id/status",
   verifyToken,
-  verifyAdminOrSuperAdmin,
+  can("updateStatus", "category"),
   updateCategoryStatus,
 );
 
 // Restore soft-deleted category
-router.patch("/:id/restore", verifyToken, verifySuperAdmin, restoreCategory);
+router.patch("/:id/restore", verifyToken, can("restore", "category"), restoreCategory);
 
 // HARD DELETE
-router.delete("/:id/hard", verifyToken, verifySuperAdmin, hardDeleteCategory);
+router.delete("/:id/hard", verifyToken, can("hardDelete", "category"), hardDeleteCategory);
 
 // category audit logs
-router.get("/:id/audit", verifyToken, verifyAdminOrSuperAdmin, getCategoryAuditLogs);
+router.get("/:id/audit", verifyToken, can("readAudit", "category"), getCategoryAuditLogs);
 
 // GET Retrieve category by ID
-router.get("/:id", verifyToken, verifyAdminOrSuperAdmin, getCategoryById);
+router.get("/:id", verifyToken, can("readById", "category"), getCategoryById);
 
 // UPATE category
-router.patch("/:id", verifyToken, verifyAdminOrSuperAdmin, updateCategory);
+router.patch("/:id", verifyToken, can("update", "category"), updateCategory);
 
 // DELETE category
-router.delete("/:id", verifyToken, verifyAdminOrSuperAdmin, deleteCategory);
+router.delete("/:id", verifyToken, can("delete", "category"), deleteCategory);
 
 export default router;

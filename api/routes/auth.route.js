@@ -9,6 +9,7 @@ import {
 } from "../controllers/auth.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
 import { createRateLimit } from "../utils/rateLimit.js";
+import { can } from "../utils/policy.js";
 
 const router = express.Router();
 const signupLimiter = createRateLimit({
@@ -71,8 +72,13 @@ router.post("/google", googleLimiter, google);
 // ===============================================================================
 // 🔷 POST /api/auth/signout
 // ===============================================================================
-router.post("/signout", verifyToken, signout);
-router.get("/session", verifyToken, getSession);
-router.post("/change-password", verifyToken, changePassword);
+router.post("/signout", verifyToken, can("signout", "auth"), signout);
+router.get("/session", verifyToken, can("session", "auth"), getSession);
+router.post(
+  "/change-password",
+  verifyToken,
+  can("changePassword", "auth"),
+  changePassword,
+);
 
 export default router;
