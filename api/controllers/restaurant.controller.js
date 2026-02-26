@@ -731,6 +731,7 @@ export const restoreRestaurant = async (req, res, next) => {
   try {
     const result = await withTransaction(async (session) => {
       const restaurant = await Restaurant.findById(req.params.id)
+        .setOptions({ includeInactive: true })
         .session(session)
         .lean();
 
@@ -749,7 +750,9 @@ export const restoreRestaurant = async (req, res, next) => {
           isActive: false,
         },
         { new: true, session },
-      ).lean();
+      )
+        .setOptions({ includeInactive: true })
+        .lean();
 
       await logAudit({
         actorId: req.user.id,
