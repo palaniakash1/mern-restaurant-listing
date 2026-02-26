@@ -39,6 +39,11 @@ import { logAudit } from "../utils/auditLogger.js";
 
 export const createUserBySuperAdmin = async (req, res, next) => {
   try {
+    // Defense-in-depth: Verify superAdmin role at controller level
+    if (req.user.role !== "superAdmin") {
+      return next(errorHandler(403, "Only superAdmin can perform this action"));
+    }
+
     const { userName, email, password, role } = req.body;
 
     if (!["admin", "storeManager"].includes(role)) {
