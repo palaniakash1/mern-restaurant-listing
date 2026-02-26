@@ -10,6 +10,8 @@ import {
 import { verifyToken } from "../utils/verifyUser.js";
 import { createRateLimit } from "../utils/rateLimit.js";
 import { can } from "../utils/policy.js";
+import { validate } from "../middlewares/validate.js";
+import { authValidators } from "../validators/index.js";
 
 const router = express.Router();
 const signupLimiter = createRateLimit({
@@ -57,17 +59,32 @@ const googleLimiter = createRateLimit({
 // 🔷 POST /api/auth/signup
 // ===============================================================================
 
-router.post("/signup", signupLimiter, signup);
+router.post(
+  "/signup",
+  signupLimiter,
+  validate(authValidators.signup),
+  signup,
+);
 
 // ===============================================================================
 // 🔷 POST /api/auth/signin
 // ===============================================================================
-router.post("/signin", signinLimiter, signin);
+router.post(
+  "/signin",
+  signinLimiter,
+  validate(authValidators.signin),
+  signin,
+);
 
 // ===============================================================================
 // 🔷 POST /api/auth/google
 // ===============================================================================
-router.post("/google", googleLimiter, google);
+router.post(
+  "/google",
+  googleLimiter,
+  validate(authValidators.google),
+  google,
+);
 
 // ===============================================================================
 // 🔷 POST /api/auth/signout
@@ -78,6 +95,7 @@ router.post(
   "/change-password",
   verifyToken,
   can("changePassword", "auth"),
+  validate(authValidators.changePassword),
   changePassword,
 );
 
