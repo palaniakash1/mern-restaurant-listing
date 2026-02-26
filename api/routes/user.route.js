@@ -14,77 +14,63 @@ import {
   changeStoreManagerOwner,
 } from "../controllers/user.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
-import {
-  verifyAdminOrSuperAdmin,
-  verifySuperAdmin,
-} from "../utils/roleGuards.js";
+import { can, canAny } from "../utils/policy.js";
 
 const router = express.Router();
 
-// =================================
-// test endpoint
-// =================================
-router.get("/test", verifyToken, verifySuperAdmin, test);
+router.get("/test", verifyToken, can("test", "user"), test);
 
-// =================================
-// GET endpoints (LISTING)
-// =================================
-router.get("/", verifyToken, verifySuperAdmin, getAllUsers);
-router.get("/admins", verifyToken, verifySuperAdmin, getAvailableAdmins);
+router.get("/", verifyToken, can("listAll", "user"), getAllUsers);
+router.get("/admins", verifyToken, can("listAdmins", "user"), getAvailableAdmins);
 router.get(
   "/store-managers",
   verifyToken,
-  verifyAdminOrSuperAdmin,
+  can("listStoreManagers", "user"),
   getStoreManagers,
 );
 
-// =================================
-// POST endpoints (ACTIONS)
-// =================================
-// (admin / superAdmin creates storeManager)
-router.post("/", verifyToken, verifyAdminOrSuperAdmin, createStoreManager);
+router.post("/", verifyToken, can("createStoreManager", "user"), createStoreManager);
 
-// =================================
-// PUT endpoints (UPDATE)
-// =================================
-router.patch("/:id", verifyToken, updateUser);
-// (hard delete – superAdmin or self)
-router.delete("/:id", verifyToken, deleteUser);
+router.patch(
+  "/:id",
+  verifyToken,
+  canAny(["updateAny", "updateSelf"], "user"),
+  updateUser,
+);
+router.delete(
+  "/:id",
+  verifyToken,
+  canAny(["deleteAny", "deleteSelf"], "user"),
+  deleteUser,
+);
 
-// =================================
-// PATCH endpoints (USER STATE)
-// =================================
+router.patch(
+  "/:id/deactivate",
+  verifyToken,
+  canAny(["deactivateAny", "deactivateSelf"], "user"),
+  deactivateUser,
+);
 
-router.patch("/:id/deactivate", verifyToken, deactivateUser);
+router.patch("/:id/restore", verifyToken, can("restoreAny", "user"), restoreUser);
 
-router.patch("/:id/restore", verifyToken, verifySuperAdmin, restoreUser);
-
-// PATCH /api/users/:id/restaurant
 router.patch(
   "/:id/restaurant",
   verifyToken,
-  verifyAdminOrSuperAdmin,
+  can("assignStoreManager", "user"),
   assignStoreManagerToRestaurant,
 );
 router.patch(
   "/:id/owner",
   verifyToken,
-  verifySuperAdmin,
+  can("changeStoreManagerOwner", "user"),
   changeStoreManagerOwner,
 );
 
-// =================================
-// DELETE endpoints
-// =================================
-
-// DELETE /api/users/:id/restaurant
 router.delete(
   "/:id/restaurant",
   verifyToken,
-  verifyAdminOrSuperAdmin,
+  can("unassignStoreManager", "user"),
   unassignStoreManager,
 );
-// (hard delete – superAdmin or self)
-// router.delete("/:id", verifyToken, deleteUser);
 
 export default router;

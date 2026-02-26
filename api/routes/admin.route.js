@@ -1,6 +1,6 @@
 import express from "express";
 import { verifyToken } from "../utils/verifyUser.js";
-import { verifySuperAdmin } from "../utils/roleGuards.js";
+import { can } from "../utils/policy.js";
 import { createUserBySuperAdmin } from "../controllers/admin.controller.js";
 
 const router = express.Router();
@@ -30,5 +30,10 @@ const router = express.Router();
 //
 // ===============================================================================
 
-router.post("/users", verifyToken, verifySuperAdmin, createUserBySuperAdmin);
+router.post(
+  "/users",
+  verifyToken,
+  can("createPrivilegedUser", "admin"),
+  createUserBySuperAdmin,
+);
 export default router;
