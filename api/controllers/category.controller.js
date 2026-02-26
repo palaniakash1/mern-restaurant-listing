@@ -284,7 +284,7 @@ export const updateCategory = async (req, res, next) => {
       }
 
       // fetch the category
-      const category = await Category.findById(req.params.id)
+      const category = await Category.findOne({ _id: req.params.id })
         .setOptions({ includeInactive: true })
         .session(session);
       if (!category) {
@@ -1269,16 +1269,34 @@ export const restoreCategory = async (req, res, next) => {
         throw errorHandler(400, "Invalid ID format");
       }
 
-      const category = await Category.findById(req.params.id).session(session);
-      if (!category) {
+      const categoryId = new mongoose.Types.ObjectId(req.params.id);
+      const existing = await Category.collection.findOne(
+        { _id: categoryId },
+        { session },
+      );
+      if (!existing) {
         throw errorHandler(404, "category not found");
       }
-      if (category.isActive) {
+      if (existing.isActive) {
         throw errorHandler(400, "category already active");
       }
 
-      const before = { isActive: category.isActive };
-      await category.restore(session, req.user.id);
+      await Category.collection.updateOne(
+        { _id: categoryId },
+        {
+          $set: {
+            isActive: true,
+            restoredAt: new Date(),
+            restoredBy: new mongoose.Types.ObjectId(req.user.id),
+          },
+        },
+        { session },
+      );
+
+      const category = await Category.findById(categoryId)
+        .session(session)
+        .select("-__v");
+      const before = { isActive: false };
 
       await logAudit({
         actorId: req.user.id,

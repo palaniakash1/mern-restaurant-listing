@@ -176,7 +176,7 @@ export const addMenuItems = async (req, res, next) => {
         );
       }
 
-      const menu = await Menu.findById(menuId)
+      const menu = await Menu.findOne({ _id: menuId })
         .setOptions({ includeInactive: true })
         .session(session)
         .select("-__v");
@@ -648,14 +648,18 @@ export const restoreMenu = async (req, res, next) => {
         throw errorHandler(400, "Invalid ID format");
       }
 
-      const menu = await Menu.findById(menuId).session(session).select("-__v");
-      if (!menu) throw errorHandler(404, "Menu not found");
+      const menuObjectId = new mongoose.Types.ObjectId(menuId);
+      const existing = await Menu.collection.findOne(
+        { _id: menuObjectId },
+        { session },
+      );
+      if (!existing) throw errorHandler(404, "Menu not found");
 
-      if (menu.isActive) {
+      if (existing.isActive) {
         throw errorHandler(400, "Menu already active");
       }
-      if (!menu.isActive) {
-        const restaurant = await Restaurant.findById(menu.restaurantId)
+      if (!existing.isActive) {
+        const restaurant = await Restaurant.findById(existing.restaurantId)
           .session(session)
           .select("-__v");
 
@@ -667,11 +671,23 @@ export const restoreMenu = async (req, res, next) => {
         }
       }
 
-      if (!canManageMenu(req.user, menu.restaurantId)) {
+      if (!canManageMenu(req.user, existing.restaurantId)) {
         throw errorHandler(403, "Not allowed");
       }
 
-      await menu.restore(session, req.user.id);
+      await Menu.collection.updateOne(
+        { _id: menuObjectId },
+        {
+          $set: {
+            isActive: true,
+            restoredAt: new Date(),
+            restoredBy: new mongoose.Types.ObjectId(req.user.id),
+          },
+        },
+        { session },
+      );
+
+      const menu = await Menu.findById(menuObjectId).session(session).select("-__v");
 
       await logAudit({
         actorId: req.user.id,
