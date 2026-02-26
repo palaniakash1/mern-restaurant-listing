@@ -5,6 +5,22 @@
  *     description: User management endpoints
  */
 
+/**
+ * @swagger
+ * /users/test:
+ *   get:
+ *     tags: [Users]
+ *     summary: Test protected user endpoint
+ *     description: Basic authenticated check for user module wiring.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User route is reachable
+ *       401:
+ *         description: Unauthorized
+ */
+
 // ================================================================================================
 // router.get("/", verifyToken, verifySuperAdmin, getAllUsers);
 // 🔹 1️⃣ GET /api/users – Get all users
