@@ -22,15 +22,21 @@ describe("Route policy contract", { concurrency: false }, () => {
     for (const fileName of routeFiles) {
       const fullPath = path.join(routesDir, fileName);
       const content = fs.readFileSync(fullPath, "utf8");
-      const lines = content.split(/\r?\n/);
+      const routeCalls = [...content.matchAll(/router\.(get|post|put|patch|delete)\(([\s\S]*?)\);/g)];
 
-      lines.forEach((line, idx) => {
-        const hasVerifyToken = line.includes("verifyToken");
-        const hasPolicy = line.includes("can(") || line.includes("canAny(");
-        const usesAllowedOwnershipGuard = line.includes("verifyRestaurantOwner");
+      routeCalls.forEach((match) => {
+        const routeBlock = match[0];
+        const hasVerifyToken = routeBlock.includes("verifyToken");
+        if (!hasVerifyToken) return;
 
-        if (hasVerifyToken && !hasPolicy && !usesAllowedOwnershipGuard) {
-          violations.push(`${fileName}:${idx + 1}:${line.trim()}`);
+        const hasPolicy = routeBlock.includes("can(") || routeBlock.includes("canAny(");
+        const usesAllowedOwnershipGuard = routeBlock.includes("verifyRestaurantOwner");
+
+        if (!hasPolicy && !usesAllowedOwnershipGuard) {
+          const startLine = content.slice(0, match.index).split(/\r?\n/).length;
+          violations.push(
+            `${fileName}:${startLine}:${routeBlock.replace(/\s+/g, " ").trim()}`,
+          );
         }
       });
     }
