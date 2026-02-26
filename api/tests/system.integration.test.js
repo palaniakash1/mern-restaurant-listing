@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import request from "supertest";
 import app from "../app.js";
 
-describe("System endpoints integration", () => {
+describe("System endpoints integration", { concurrency: false }, () => {
   it("GET /api/health should return readiness status", async () => {
     const res = await request(app).get("/api/health");
     assert.equal(res.status, 200);

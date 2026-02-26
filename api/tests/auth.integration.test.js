@@ -6,7 +6,7 @@ import app from "../app.js";
 import User from "../models/user.model.js";
 import { clearTestDb, setupTestDb, teardownTestDb } from "./helpers/testDb.js";
 
-describe("Auth integration", () => {
+describe("Auth integration", { concurrency: false }, () => {
   before(async () => {
     await setupTestDb();
   });

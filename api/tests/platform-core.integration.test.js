@@ -76,7 +76,7 @@ const createBaseActors = async () => {
   };
 };
 
-describe("Platform core integration", () => {
+describe("Platform core integration", { concurrency: false }, () => {
   before(async () => {
     await setupTestDb();
   });

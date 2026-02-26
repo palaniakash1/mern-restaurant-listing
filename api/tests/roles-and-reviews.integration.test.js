@@ -32,7 +32,7 @@ const createRestaurantPayload = (adminId) => ({
   isActive: true,
 });
 
-describe("Role access and review integration", () => {
+describe("Role access and review integration", { concurrency: false }, () => {
   before(async () => {
     await setupTestDb();
   });
