@@ -449,4 +449,149 @@ describe("Platform core integration", () => {
       .send({ name: "Bad Update" });
     assert.equal(crossOwnerUpdateRes.status, 403);
   });
+
+  it("restaurant internal listing and id endpoint should enforce role and ownership", async () => {
+    const { tokens } = await createBaseActors();
+
+    const createRestaurantRes = await request(app)
+      .post("/api/restaurants")
+      .set("Authorization", `Bearer ${tokens.adminA}`)
+      .send(buildRestaurantPayload("Internal View Diner"));
+    assert.equal(createRestaurantRes.status, 201);
+    const restaurantId = createRestaurantRes.body.data._id;
+
+    const allAsAdminRes = await request(app)
+      .get("/api/restaurants/all")
+      .set("Authorization", `Bearer ${tokens.adminA}`);
+    assert.equal(allAsAdminRes.status, 403);
+
+    const allAsSuperAdminRes = await request(app)
+      .get("/api/restaurants/all")
+      .set("Authorization", `Bearer ${tokens.superAdmin}`);
+    assert.equal(allAsSuperAdminRes.status, 200);
+
+    const idAsOwnerRes = await request(app)
+      .get(`/api/restaurants/id/${restaurantId}`)
+      .set("Authorization", `Bearer ${tokens.adminA}`);
+    assert.equal(idAsOwnerRes.status, 200);
+
+    const idAsOtherAdminRes = await request(app)
+      .get(`/api/restaurants/id/${restaurantId}`)
+      .set("Authorization", `Bearer ${tokens.adminB}`);
+    assert.equal(idAsOtherAdminRes.status, 403);
+  });
+
+  it("category slug checks should enforce scope and ownership", async () => {
+    const { tokens } = await createBaseActors();
+
+    const createRestaurantRes = await request(app)
+      .post("/api/restaurants")
+      .set("Authorization", `Bearer ${tokens.adminA}`)
+      .send(buildRestaurantPayload("Slug Diner"));
+    assert.equal(createRestaurantRes.status, 201);
+    const restaurantId = createRestaurantRes.body.data._id;
+
+    await request(app)
+      .patch(`/api/restaurants/id/${restaurantId}/status`)
+      .set("Authorization", `Bearer ${tokens.superAdmin}`)
+      .send({ status: "published" });
+
+    const ownRestaurantCheckRes = await request(app)
+      .post("/api/categories/check-slug")
+      .set("Authorization", `Bearer ${tokens.adminA}`)
+      .send({
+        name: "Shared Starters",
+        isGeneric: false,
+        restaurantId,
+      });
+    assert.equal(ownRestaurantCheckRes.status, 200);
+
+    const foreignRestaurantCheckRes = await request(app)
+      .post("/api/categories/check-slug")
+      .set("Authorization", `Bearer ${tokens.adminB}`)
+      .send({
+        name: "Shared Starters",
+        isGeneric: false,
+        restaurantId,
+      });
+    assert.equal(foreignRestaurantCheckRes.status, 403);
+
+    const genericCheckRes = await request(app)
+      .post("/api/categories/check-slug")
+      .set("Authorization", `Bearer ${tokens.superAdmin}`)
+      .send({
+        name: "Platform Beverages",
+        isGeneric: true,
+      });
+    assert.equal(genericCheckRes.status, 200);
+  });
+
+  it("menu lifecycle endpoints should support status, read, reorder and availability", async () => {
+    const { tokens } = await createBaseActors();
+
+    const restaurantRes = await request(app)
+      .post("/api/restaurants")
+      .set("Authorization", `Bearer ${tokens.adminA}`)
+      .send(buildRestaurantPayload("Menu Lifecycle Diner"));
+    assert.equal(restaurantRes.status, 201);
+    const restaurantId = restaurantRes.body.data._id;
+
+    await request(app)
+      .patch(`/api/restaurants/id/${restaurantId}/status`)
+      .set("Authorization", `Bearer ${tokens.superAdmin}`)
+      .send({ status: "published" });
+
+    const categoryRes = await request(app)
+      .post("/api/categories")
+      .set("Authorization", `Bearer ${tokens.adminA}`)
+      .send({ name: "Lunch", isGeneric: false, restaurantId });
+    assert.equal(categoryRes.status, 201);
+    const categoryId = categoryRes.body.data._id;
+
+    await request(app)
+      .patch("/api/categories/bulk-status")
+      .set("Authorization", `Bearer ${tokens.superAdmin}`)
+      .send({ ids: [categoryId], status: "published" });
+
+    const menuRes = await request(app)
+      .post("/api/menus")
+      .set("Authorization", `Bearer ${tokens.adminA}`)
+      .send({ restaurantId, categoryId });
+    assert.equal(menuRes.status, 201);
+    const menuId = menuRes.body.data._id;
+
+    const itemRes = await request(app)
+      .post(`/api/menus/${menuId}/items`)
+      .set("Authorization", `Bearer ${tokens.adminA}`)
+      .send({ name: "Chicken Wrap", price: 10 });
+    assert.equal(itemRes.status, 201);
+    const itemId = itemRes.body.data[0]._id;
+
+    const publishMenuRes = await request(app)
+      .patch(`/api/menus/${menuId}/status`)
+      .set("Authorization", `Bearer ${tokens.adminA}`)
+      .send({ status: "published" });
+    assert.equal(publishMenuRes.status, 200);
+
+    const getMenuRes = await request(app)
+      .get(`/api/menus/${menuId}`)
+      .set("Authorization", `Bearer ${tokens.adminA}`);
+    assert.equal(getMenuRes.status, 200);
+
+    const reorderRes = await request(app)
+      .put(`/api/menus/${menuId}/reorder`)
+      .set("Authorization", `Bearer ${tokens.adminA}`)
+      .send({ order: [{ itemId, order: 1 }] });
+    assert.equal(reorderRes.status, 200);
+
+    const toggleAvailabilityRes = await request(app)
+      .patch(`/api/menus/${menuId}/items/${itemId}/availability`)
+      .set("Authorization", `Bearer ${tokens.adminA}`);
+    assert.equal(toggleAvailabilityRes.status, 200);
+
+    const deleteItemRes = await request(app)
+      .delete(`/api/menus/${menuId}/items/${itemId}`)
+      .set("Authorization", `Bearer ${tokens.adminA}`);
+    assert.equal(deleteItemRes.status, 200);
+  });
 });
