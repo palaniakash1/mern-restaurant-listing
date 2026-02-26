@@ -777,7 +777,7 @@ export const changeStoreManagerOwner = async (req, res, next) => {
         throw errorHandler(400, "Invalid admin");
       }
 
-      const storeManager = await User.findById(id);
+      const storeManager = await User.findById(id).session(session);
       if (!storeManager || storeManager.role !== "storeManager") {
         throw errorHandler(404, "StoreManager not found");
       }

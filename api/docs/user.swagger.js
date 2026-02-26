@@ -354,7 +354,7 @@
  * /users/{id}/restaurant:
  *   delete:
  *     tags: [Users]
- *     summary: Unassign store manager from restaurant  - 8
+ *     summary: Unassign store manager from restaurant
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -379,7 +379,7 @@
  * /users/{id}/owner:
  *   patch:
  *     tags: [Users]
- *     summary: Change store manager owner (superAdmin only) - 9
+ *     summary: Change store manager owner (superAdmin only)
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -420,7 +420,7 @@
  * /users/admins:
  *   get:
  *     tags: [Users]
- *     summary: Get available admins - 10
+ *     summary: Get available admins
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -452,7 +452,7 @@
  * /users/store-managers:
  *   get:
  *     tags: [Users]
- *     summary: Get store managers - 11
+ *     summary: Get store managers
  *     security:
  *       - bearerAuth: []
  *     parameters:

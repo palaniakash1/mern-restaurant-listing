@@ -10,7 +10,7 @@
  * /reviews/restaurant/{restaurantId}:
  *   get:
  *     tags: [Reviews]
- *     summary: List active reviews for a restaurant -1
+ *     summary: List active reviews for a restaurant
  *     parameters:
  *       - in: path
  *         name: restaurantId
@@ -32,7 +32,7 @@
  *           enum: [asc, desc]
  *   post:
  *     tags: [Reviews]
- *     summary: Create review for restaurant (public user only) - 2
+ *     summary: Create review for restaurant (public user only)
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -67,7 +67,7 @@
  * /reviews/restaurant/{restaurantId}/summary:
  *   get:
  *     tags: [Reviews]
- *     summary: Get rating summary for a restaurant - 3
+ *     summary: Get rating summary for a restaurant
  *     parameters:
  *       - in: path
  *         name: restaurantId
@@ -84,7 +84,7 @@
  * /reviews/my:
  *   get:
  *     tags: [Reviews]
- *     summary: Get current user's active reviews - 4
+ *     summary: Get current user's active reviews
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -99,7 +99,7 @@
  * /reviews/{id}:
  *   get:
  *     tags: [Reviews]
- *     summary: Get a single active review by ID - 5
+ *     summary: Get a single active review by ID
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -115,7 +115,7 @@
  *         description: Not authorized to view this review
  *   patch:
  *     tags: [Reviews]
- *     summary: Update review (owner or superAdmin) - 6
+ *     summary: Update review (owner or superAdmin)
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -142,7 +142,7 @@
  *         description: Review updated
  *   delete:
  *     tags: [Reviews]
- *     summary: Soft delete review (owner or superAdmin) - 7
+ *     summary: Soft delete review (owner or superAdmin)
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -161,7 +161,7 @@
  * /reviews/{id}/moderate:
  *   patch:
  *     tags: [Reviews]
- *     summary: Moderate review status (admin for own restaurant or superAdmin) - 8
+ *     summary: Moderate review status (admin for own restaurant or superAdmin)
  *     security:
  *       - bearerAuth: []
  *     parameters:
