@@ -13,6 +13,7 @@ import { diffObject } from "../utils/diff.js";
 import mongoose from "mongoose";
 import { logAudit } from "../utils/auditLogger.js";
 import { getClientIp } from "../utils/controllerHelpers.js";
+import { getOrFetch } from "../utils/redisCache.js";
 
 
 // ===============================================================================
@@ -871,19 +872,12 @@ export const getRestaurantDetails = async (req, res, next) => {
 };
 
 // ===============================================================================
-// 🔷 GET /api/restaurants/featured — Featured restaurants
+// 🔷 GET /api/restaurants/featured — Featured restaurants (with caching)
 // ===============================================================================
 
 export const getFeaturedRestaurants = async (req, res, next) => {
   try {
     const { page = 1, limit = 10 } = req.query;
-    const filter = {
-      isFeatured: true,
-      ...publicRestaurantFilter,
-    };
-
-    const total = await Restaurant.countDocuments(filter);
-
     const pageNum = Number(page);
     const limitNum = Number(limit);
 
@@ -891,25 +885,39 @@ export const getFeaturedRestaurants = async (req, res, next) => {
       throw errorHandler(400, "Invalid pagination values");
     }
 
-    const pagination = paginate({
-      page: pageNum,
-      limit: limitNum,
-      total,
-    });
+    // Use Redis cache for public endpoint
+    const cacheKey = `restaurants:featured:${pageNum}:${limitNum}`;
+    const cachedData = await getOrFetch(
+      cacheKey,
+      async () => {
+        const filter = {
+          isFeatured: true,
+          ...publicRestaurantFilter,
+        };
 
-    const restaurant = await Restaurant.find(filter)
-      .skip(pagination.skip)
-      .limit(pagination.limit)
-      .sort({ createdAt: -1 })
-      .lean();
+        const total = await Restaurant.countDocuments(filter);
+        const pagination = paginate({ page: pageNum, limit: limitNum, total });
+
+        const restaurant = await Restaurant.find(filter)
+          .skip(pagination.skip)
+          .limit(pagination.limit)
+          .sort({ createdAt: -1 })
+          .lean();
+
+        return {
+          ...pagination,
+          data: restaurant.map((r) => ({
+            ...r,
+            isOpenNow: isRestaurantOpen(r.openingHours),
+          })),
+        };
+      },
+      300 // Cache for 5 minutes
+    );
 
     res.json({
       success: true,
-      ...pagination,
-      data: restaurant.map((r) => ({
-        ...r,
-        isOpenNow: isRestaurantOpen(r.openingHours),
-      })),
+      ...cachedData,
     });
 
   } catch (error) {

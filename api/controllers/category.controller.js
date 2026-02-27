@@ -18,6 +18,7 @@ import {
   getClientIp,
   escapeRegex,
 } from "../utils/controllerHelpers.js";
+import { getOrFetch } from "../utils/redisCache.js";
 
 const IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000;
 const bulkReorderIdempotencyStore = new Map();
@@ -964,60 +965,63 @@ export const getCategories = async (req, res, next) => {
       sort = "desc",
     } = req.query;
 
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
     const sortDirection = sort === "asc" ? 1 : -1;
+    
     if (restaurantId && !isValidObjectId(restaurantId)) {
       throw errorHandler(400, "Invalid restaurantId format");
     }
     const safeSearch = String(search).trim().slice(0, MAX_SEARCH_LENGTH);
 
-    // ---------------------------
-    // Base filter (business rule)
-    // ---------------------------
-    const filter = {
-      isActive: true,
-      ...(restaurantId
-        ? { $or: [{ isGeneric: true }, { restaurantId }] }
-        : { isGeneric: true }),
-    };
+    // Cache key based on request params
+    const cacheKey = `categories:${restaurantId || 'generic'}:${pageNum}:${limitNum}:${safeSearch}:${sort}`;
 
-    // ---------------------------
-    // Search filter
-    // ---------------------------
+    const cachedData = await getOrFetch(
+      cacheKey,
+      async () => {
+        // Base filter (business rule)
+        const filter = {
+          isActive: true,
+          ...(restaurantId
+            ? { $or: [{ isGeneric: true }, { restaurantId }] }
+            : { isGeneric: true }),
+        };
 
-    if (safeSearch) {
-      const searchRegex = escapeRegex(safeSearch);
-      filter.$and = [
-        {
-          $or: [
-            { name: { $regex: searchRegex, $options: "i" } },
-            { slug: { $regex: searchRegex, $options: "i" } },
-          ],
-        },
-      ];
-    }
+        // Search filter
+        if (safeSearch) {
+          const searchRegex = escapeRegex(safeSearch);
+          filter.$and = [
+            {
+              $or: [
+                { name: { $regex: searchRegex, $options: "i" } },
+                { slug: { $regex: searchRegex, $options: "i" } },
+              ],
+            },
+          ];
+        }
 
-    // ---------------------------
-    // Total count
-    // ---------------------------
-    const total = await Category.countDocuments(filter);
-    const pagination = paginate({ page, limit, total });
+        const total = await Category.countDocuments(filter);
+        const pagination = paginate({ page: pageNum, limit: limitNum, total });
 
-    // ---------------------------
-    // Data query
-    // ---------------------------
-    const categories = await Category.find(filter)
-      .select("-__v")
-      .skip(pagination.skip)
-      .limit(pagination.limit)
-      .sort({ updatedAt: sortDirection })
-      .lean();
+        const categories = await Category.find(filter)
+          .select("-__v")
+          .skip(pagination.skip)
+          .limit(pagination.limit)
+          .sort({ updatedAt: sortDirection })
+          .lean();
 
-    res.status(200).json({
-      success: true,
-      message: "viewing all categories",
-      ...pagination,
-      data: categories,
-    });
+        return {
+          success: true,
+          message: "viewing all categories",
+          ...pagination,
+          data: categories,
+        };
+      },
+      300 // Cache for 5 minutes
+    );
+
+    res.status(200).json(cachedData);
   } catch (error) {
     next(error);
   }

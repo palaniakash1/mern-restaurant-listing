@@ -8,6 +8,7 @@ import { withTransaction } from "../utils/withTransaction.js";
 import { logAudit } from "../utils/auditLogger.js";
 
 import { isValidObjectId, normalizeIp } from "../utils/controllerHelpers.js";
+import { getOrFetch } from "../utils/redisCache.js";
 
 
 const recomputeRestaurantRating = async (restaurantId, session = null) => {
@@ -154,19 +155,33 @@ export const listRestaurantReviews = async (req, res, next) => {
       throw errorHandler(400, "Invalid restaurant ID format");
     }
 
-    const filter = { restaurantId, isActive: true };
-    const total = await Review.countDocuments(filter);
-    const pagination = paginate({ page, limit, total });
-    const direction = sort === "asc" ? 1 : -1;
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
 
-    const data = await Review.find(filter)
-      .populate("userId", "userName profilePicture")
-      .sort({ createdAt: direction })
-      .skip(pagination.skip)
-      .limit(pagination.limit)
-      .lean();
+    // Cache key based on request params
+    const cacheKey = `reviews:restaurant:${restaurantId}:${pageNum}:${limitNum}:${sort}`;
 
-    res.status(200).json({ success: true, ...pagination, data });
+    const cachedData = await getOrFetch(
+      cacheKey,
+      async () => {
+        const filter = { restaurantId, isActive: true };
+        const total = await Review.countDocuments(filter);
+        const pagination = paginate({ page: pageNum, limit: limitNum, total });
+        const direction = sort === "asc" ? 1 : -1;
+
+        const data = await Review.find(filter)
+          .populate("userId", "userName profilePicture")
+          .sort({ createdAt: direction })
+          .skip(pagination.skip)
+          .limit(pagination.limit)
+          .lean();
+
+        return { success: true, ...pagination, data };
+      },
+      300 // Cache for 5 minutes
+    );
+
+    res.status(200).json(cachedData);
   } catch (error) {
     next(error);
   }
@@ -367,52 +382,63 @@ export const getRestaurantReviewSummary = async (req, res, next) => {
       throw errorHandler(400, "Invalid restaurant ID format");
     }
 
-    const [summary] = await Review.aggregate([
-      { $match: { restaurantId: new mongoose.Types.ObjectId(restaurantId), isActive: true } },
-      {
-        $group: {
-          _id: "$restaurantId",
-          averageRating: { $avg: "$rating" },
-          totalReviews: { $sum: 1 },
-          one: {
-            $sum: { $cond: [{ $eq: ["$rating", 1] }, 1, 0] },
-          },
-          two: {
-            $sum: { $cond: [{ $eq: ["$rating", 2] }, 1, 0] },
-          },
-          three: {
-            $sum: { $cond: [{ $eq: ["$rating", 3] }, 1, 0] },
-          },
-          four: {
-            $sum: { $cond: [{ $eq: ["$rating", 4] }, 1, 0] },
-          },
-          five: {
-            $sum: { $cond: [{ $eq: ["$rating", 5] }, 1, 0] },
-          },
-        },
-      },
-    ]);
+    // Cache key based on restaurantId
+    const cacheKey = `reviews:summary:${restaurantId}`;
 
-    res.status(200).json({
-      success: true,
-      data: summary
-        ? {
-            averageRating: Number(summary.averageRating.toFixed(2)),
-            totalReviews: summary.totalReviews,
-            distribution: {
-              1: summary.one,
-              2: summary.two,
-              3: summary.three,
-              4: summary.four,
-              5: summary.five,
+    const cachedData = await getOrFetch(
+      cacheKey,
+      async () => {
+        const [summary] = await Review.aggregate([
+          { $match: { restaurantId: new mongoose.Types.ObjectId(restaurantId), isActive: true } },
+          {
+            $group: {
+              _id: "$restaurantId",
+              averageRating: { $avg: "$rating" },
+              totalReviews: { $sum: 1 },
+              one: {
+                $sum: { $cond: [{ $eq: ["$rating", 1] }, 1, 0] },
+              },
+              two: {
+                $sum: { $cond: [{ $eq: ["$rating", 2] }, 1, 0] },
+              },
+              three: {
+                $sum: { $cond: [{ $eq: ["$rating", 3] }, 1, 0] },
+              },
+              four: {
+                $sum: { $cond: [{ $eq: ["$rating", 4] }, 1, 0] },
+              },
+              five: {
+                $sum: { $cond: [{ $eq: ["$rating", 5] }, 1, 0] },
+              },
             },
-          }
-        : {
-            averageRating: 0,
-            totalReviews: 0,
-            distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
           },
-    });
+        ]);
+
+        return {
+          success: true,
+          data: summary
+            ? {
+                averageRating: Number(summary.averageRating.toFixed(2)),
+                totalReviews: summary.totalReviews,
+                distribution: {
+                  1: summary.one,
+                  2: summary.two,
+                  3: summary.three,
+                  4: summary.four,
+                  5: summary.five,
+                },
+              }
+            : {
+                averageRating: 0,
+                totalReviews: 0,
+                distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+              },
+        };
+      },
+      300 // Cache for 5 minutes
+    );
+
+    res.status(200).json(cachedData);
   } catch (error) {
     next(error);
   }

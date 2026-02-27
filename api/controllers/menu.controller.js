@@ -16,6 +16,7 @@ import {
   getClientIp,
   escapeRegex,
 } from "../utils/controllerHelpers.js";
+import { getOrFetch } from "../utils/redisCache.js";
 
 
 // ======================================
@@ -887,64 +888,68 @@ export const hardDeleteMenu = async (req, res, next) => {
 };
 
 // ==============================================
-// PUBLIC MENU (published + active only)
+// PUBLIC MENU (published + active only) - with caching
 // ==============================================
 
 export const getMenuByRestaurant = async (req, res, next) => {
   try {
     const { restaurantId } = req.params;
     const { page = 1, limit = 10, search = "", sort = "desc" } = req.query;
+    
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
     const sortDirection = sort === "asc" ? 1 : -1;
+    
     if (!isValidObjectId(restaurantId)) {
       throw errorHandler(400, "Invalid restaurantId format");
     }
     const safeSearch = String(search).trim().slice(0, MAX_SEARCH_LENGTH);
 
-    const filter = {
-      restaurantId,
-      isActive: true,
-      status: "published",
-    };
+    // Cache key based on request params
+    const cacheKey = `menu:restaurant:${restaurantId}:${pageNum}:${limitNum}:${safeSearch}:${sort}`;
 
-    // ---------------------------
-    // Search filter
-    // ---------------------------
+    const cachedData = await getOrFetch(
+      cacheKey,
+      async () => {
+        const filter = {
+          restaurantId,
+          isActive: true,
+          status: "published",
+        };
 
-    if (safeSearch) {
-      filter["items.name"] = { $regex: escapeRegex(safeSearch), $options: "i" };
-    }
+        if (safeSearch) {
+          filter["items.name"] = { $regex: escapeRegex(safeSearch), $options: "i" };
+        }
 
-    // ---------------------------
-    // Total count
-    // ---------------------------
-    const total = await Menu.countDocuments(filter);
-    const pagination = paginate({ page, limit, total });
+        const total = await Menu.countDocuments(filter);
+        const pagination = paginate({ page: pageNum, limit: limitNum, total });
 
-    // ---------------------------
-    // Data query
-    // ---------------------------
+        const menus = await Menu.find(filter)
+          .populate("categoryId", "name slug item")
+          .select("-__v")
+          .skip(pagination.skip)
+          .limit(pagination.limit)
+          .sort({ updatedAt: sortDirection })
+          .lean();
 
-    const menus = await Menu.find(filter)
-      .populate("categoryId", "name slug item")
-      .select("-__v")
-      .skip(pagination.skip)
-      .limit(pagination.limit)
-      .sort({ updatedAt: sortDirection })
-      .lean();
+        menus.forEach((menu) => {
+          menu.items = menu.items
+            .filter((i) => i.isActive && i.isAvailable)
+            .sort((a, b) => a.order - b.order);
+        });
 
-    menus.forEach((menu) => {
-      menu.items = menu.items
-        .filter((i) => i.isActive && i.isAvailable)
-        .sort((a, b) => a.order - b.order);
-    });
+        return {
+          success: true,
+          message: "viewing menu",
+          ...pagination,
+          total,
+          data: menus,
+        };
+      },
+      300 // Cache for 5 minutes
+    );
 
-    res.status(200).json({
-      success: true,
-      message: "viewing menu",
-      ...pagination,
-      total,
-      data: menus,
-    });
+    res.status(200).json(cachedData);
   } catch (error) {
     next(error);
   }
