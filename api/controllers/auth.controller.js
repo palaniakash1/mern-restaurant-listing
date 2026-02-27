@@ -3,8 +3,10 @@ import bcryptjs from "bcryptjs";
 import { errorHandler } from "../utils/error.js";
 import jwt from "jsonwebtoken";
 import { logAudit } from "../utils/auditLogger.js";
+import { getClientIp } from "../utils/controllerHelpers.js";
 
 const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9]).{8,}$/;
+
 const INVALID_CREDENTIALS_MESSAGE = "Invalid email or password";
 // Precomputed bcrypt hash for the string "password" to keep signin timing consistent.
 const DUMMY_PASSWORD_HASH =
@@ -99,10 +101,11 @@ export const signup = async (req, res, next) => {
         email: newUser.email,
         role: newUser.role,
       },
-      ipAddress: req.headers["x-forwarded-for"] || req.ip,
+      ipAddress: getClientIp(req),
     });
 
     res.status(201).json({ success: true, message: "User registered successfully" });
+
   } catch (error) {
     next(error);
   }
@@ -141,7 +144,7 @@ export const signin = async (req, res, next) => {
         action: "LOGIN_FAILED",
         before: { email: normalizedEmail },
         after: null,
-        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+        ipAddress: getClientIp(req),
       });
 
       return next(errorHandler(401, INVALID_CREDENTIALS_MESSAGE));
@@ -156,7 +159,7 @@ export const signin = async (req, res, next) => {
         action: "LOGIN_FAILED",
         before: { email: validUser.email, reason: "inactive_account" },
         after: null,
-        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+        ipAddress: getClientIp(req),
       });
       return next(errorHandler(403, "User account is inactive"));
     }
@@ -171,7 +174,7 @@ export const signin = async (req, res, next) => {
         action: "LOGIN_FAILED",
         before: { email: validUser.email },
         after: null,
-        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+        ipAddress: getClientIp(req),
       });
 
       return next(errorHandler(401, INVALID_CREDENTIALS_MESSAGE));
@@ -197,8 +200,9 @@ export const signin = async (req, res, next) => {
       after: {
         email: validUser.email,
       },
-      ipAddress: req.headers["x-forwarded-for"] || req.ip,
+      ipAddress: getClientIp(req),
     });
+
 
     res
       .cookie("access_token", token, buildCookieOptions())
@@ -281,7 +285,7 @@ export const signout = async (req, res, next) => {
         action: "LOGOUT",
         before: "login",
         after: null,
-        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+        ipAddress: getClientIp(req),
       });
     }
 
@@ -292,6 +296,7 @@ export const signout = async (req, res, next) => {
         success: true,
         message: "signed out successfully",
       });
+
   } catch (error) {
     next(error);
   }
@@ -354,7 +359,7 @@ export const changePassword = async (req, res, next) => {
         action: "LOGIN_FAILED",
         before: { reason: "invalid_current_password" },
         after: null,
-        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+        ipAddress: getClientIp(req),
       });
       return next(errorHandler(401, "Current password is invalid"));
     }
@@ -370,8 +375,9 @@ export const changePassword = async (req, res, next) => {
       action: "UPDATE",
       before: null,
       after: { passwordChanged: true },
-      ipAddress: req.headers["x-forwarded-for"] || req.ip,
+      ipAddress: getClientIp(req),
     });
+
 
     res.status(200).json({
       success: true,

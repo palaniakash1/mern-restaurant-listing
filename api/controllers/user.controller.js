@@ -9,6 +9,16 @@ import { logAudit } from "../utils/auditLogger.js";
 import { diffObject } from "../utils/diff.js";
 import { paginate } from "../utils/paginate.js";
 import Restaurant from "../models/restaurant.model.js";
+import {
+  getClientIp,
+  isValidObjectId,
+  toIdString,
+  escapeRegex,
+  sanitizeSearch,
+  MAX_SEARCH_LENGTH,
+} from "../utils/controllerHelpers.js";
+import mongoose from "mongoose";
+
 
 const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9]).{8,}$/;
 const INVALID_CREDENTIALS_MESSAGE = "Invalid email or password";
@@ -155,9 +165,10 @@ export const updateUser = async (req, res, next) => {
           action: "UPDATE",
           before: diff,
           after: null,
-          ipAddress: req.headers["x-forwarded-for"] || req.ip,
+          ipAddress: getClientIp(req),
         });
       }
+
 
       return updatedUser;
     });
@@ -230,8 +241,9 @@ export const deleteUser = async (req, res, next) => {
         entityId: oldUser._id,
         action: "DELETE",
         before: sanitizeAuditData(oldUser),
-        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+        ipAddress: getClientIp(req),
       });
+
       return {
         deletedid: oldUser._id,
         deletedName: oldUser.userName,
@@ -312,10 +324,11 @@ export const deactivateUser = async (req, res, next) => {
         action: "STATUS_CHANGE",
         before: { isActive: true },
         after: { isActive: false },
-        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+        ipAddress: getClientIp(req),
       });
       return {
         userId: oldUser._id,
+
         userName: oldUser.userName,
         deactivatedBy: req.user.id,
       };
@@ -373,9 +386,10 @@ export const restoreUser = async (req, res, next) => {
         action: "STATUS_CHANGE",
         before: { isActive: false },
         after: { isActive: true },
-        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+        ipAddress: getClientIp(req),
       });
       return { restoredUserId: user._id };
+
     });
 
     res.json({ success: true, message: "user restored now!" });
@@ -600,10 +614,11 @@ export const createStoreManager = async (req, res, next) => {
         role: "storeManager",
         email: storeManager.email,
       },
-      ipAddress: req.headers["x-forwarded-for"] || req.ip,
+      ipAddress: getClientIp(req),
     });
 
     res.status(201).json({
+
       success: true,
       message: "storeManager created successfully",
       data: {
@@ -695,7 +710,7 @@ export const assignStoreManagerToRestaurant = async (req, res, next) => {
         entityId: storeManager._id,
         action: "UPDATE",
         after: { restaurantId },
-        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+        ipAddress: getClientIp(req),
       });
     });
 
@@ -703,6 +718,7 @@ export const assignStoreManagerToRestaurant = async (req, res, next) => {
       success: true,
       message: "StoreManager assigned to restaurant",
     });
+
   } catch (error) {
     next(error);
   }
@@ -805,11 +821,12 @@ export const unassignStoreManager = async (req, res, next) => {
         entityId: storeManager._id,
         action: "UPDATE",
         after: { restaurantId: null },
-        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+        ipAddress: getClientIp(req),
       });
     });
 
     res.json({ success: true, message: "StoreManager unassigned" });
+
   } catch (error) {
     next(error);
   }
@@ -855,10 +872,11 @@ export const changeStoreManagerOwner = async (req, res, next) => {
         entityId: storeManager._id,
         action: "UPDATE",
         after: { createdByAdminId: newAdminId },
-        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+        ipAddress: getClientIp(req),
       });
     });
     res.json({ success: true, message: "Transferred successfully" });
+
   } catch (error) {
     next(error);
   }

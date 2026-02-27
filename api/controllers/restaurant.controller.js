@@ -12,6 +12,8 @@ import { withTransaction } from "../utils/withTransaction.js";
 import { diffObject } from "../utils/diff.js";
 import mongoose from "mongoose";
 import { logAudit } from "../utils/auditLogger.js";
+import { getClientIp } from "../utils/controllerHelpers.js";
+
 
 // ===============================================================================
 // 🔷 POST /api/restaurants — Create a new restaurant
@@ -202,7 +204,7 @@ export const create = async (req, res, next) => {
         action: "CREATE",
         before: null,
         after: createdRestaurant,
-        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+        ipAddress: getClientIp(req),
       });
 
       return createdRestaurant;
@@ -217,6 +219,7 @@ export const create = async (req, res, next) => {
       message: "Restaurant created successfully",
       data: restaurant,
     });
+
   } catch (error) {
     if (error.code === 11000) {
       return next(errorHandler(409, "Restaurant slug already exists"));
@@ -447,13 +450,14 @@ export const updateRestaurantStatus = async (req, res, next) => {
         action: "STATUS_CHANGE",
         before: { status: restaurant.status },
         after: { status },
-        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+        ipAddress: getClientIp(req),
       });
 
       return updated;
     });
 
     res.status(200).json({
+
       success: true,
       message: `Restaurant status updated to '${result.status}'`,
       data: result,
@@ -602,7 +606,7 @@ export const updateRestaurant = async (req, res, next) => {
           action: "UPDATE",
           before: diff,
           after: null,
-          ipAddress: req.headers["x-forwarded-for"] || req.ip,
+          ipAddress: getClientIp(req),
         });
       }
 
@@ -612,6 +616,7 @@ export const updateRestaurant = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: "Restaurant Updated Successfully",
+
       data: result,
     });
   } catch (error) {
@@ -694,13 +699,14 @@ export const deleteRestaurant = async (req, res, next) => {
         action: "DELETE",
         before: restaurant,
         after: { status: "blocked", isActive: false },
-        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+        ipAddress: getClientIp(req),
       });
     });
 
     res.status(200).json({
       success: true,
       message: "Restaurant deleted successfully",
+
       data: softDeleted,
     });
   } catch (error) {
@@ -762,7 +768,7 @@ export const restoreRestaurant = async (req, res, next) => {
         action: "RESTORE",
         before: { status: "blocked", isActive: false },
         after: { status: "draft", isActive: false },
-        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+        ipAddress: getClientIp(req),
       });
 
       return restored;
@@ -771,6 +777,7 @@ export const restoreRestaurant = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: "Restaurant restored successfully",
+
       data: result,
     });
   } catch (error) {
@@ -868,7 +875,7 @@ export const reassignRestaurantAdmin = async (req, res, next) => {
         action: "REASSIGN",
         before: { adminId: restaurant.adminId },
         after: { adminId: newAdmin._id },
-        ipAddress: req.headers["x-forwarded-for"] || req.ip,
+        ipAddress: getClientIp(req),
       });
 
       return {
@@ -881,6 +888,7 @@ export const reassignRestaurantAdmin = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: `Restaurant ownership reassigned successfully `,
+
       data: result,
     });
   } catch (error) {

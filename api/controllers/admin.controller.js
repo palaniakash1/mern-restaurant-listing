@@ -2,6 +2,8 @@ import User from "../models/user.model.js";
 import bcryptjs from "bcryptjs";
 import { errorHandler } from "../utils/error.js";
 import { logAudit } from "../utils/auditLogger.js";
+import { getClientIp } from "../utils/controllerHelpers.js";
+
 
 // ===============================================================================
 // 🔷 POST /api/admin/users — Create user (Admin / StoreManager)
@@ -89,10 +91,11 @@ export const createUserBySuperAdmin = async (req, res, next) => {
         role: newUser.role,
         email: newUser.email,
       },
-      ipAddress: req.headers["x-forwarded-for"] || req.ip,
+      ipAddress: getClientIp(req),
     });
 
     res.status(201).json({
+
       message: `${role} created successfully`,
       user: {
         id: newUser._id,
