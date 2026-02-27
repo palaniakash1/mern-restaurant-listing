@@ -46,7 +46,7 @@ const restaurantCreateBody = Joi.object({
   tagline: Joi.string().allow(""),
   description: Joi.string().allow(""),
   address: addressSchema.required(),
-  openingHours: openingHoursSchema.required(),
+  openingHours: openingHoursSchema,
   contactNumber: Joi.string().allow(""),
   email: Joi.string().email().allow(""),
   website: Joi.string().uri().allow(""),
@@ -55,6 +55,15 @@ const restaurantCreateBody = Joi.object({
   categories: Joi.array().items(objectId).max(50),
   adminId: objectId,
   timezone: Joi.string().trim().default("UTC"),
+  status: Joi.string().valid("draft", "published", "blocked"),
+  isActive: Joi.boolean(),
+  isFeatured: Joi.boolean(),
+  isTrending: Joi.boolean(),
+  // Location at top level - controller uses lat/lng directly instead of geocoding
+  location: Joi.object({
+    lat: Joi.number().required(),
+    lng: Joi.number().required(),
+  }),
 }).unknown(false);
 
 const restaurantUpdateBody = Joi.object({

@@ -21,7 +21,8 @@ export const validate =
       );
     }
 
-    if (assign) {
+    // Don't assign back to req.query as it's a getter-only property in newer Node.js
+    if (assign && source !== "query" && source !== "headers") {
       req[source] = value;
     }
     return next();

@@ -31,6 +31,15 @@ const restaurantPayload = (name, adminId, extras = {}) => ({
       coordinates: [-0.1276, 51.5072],
     },
   },
+  openingHours: {
+    monday: { open: "09:00", close: "22:00", isClosed: false },
+    tuesday: { open: "09:00", close: "22:00", isClosed: false },
+    wednesday: { open: "09:00", close: "22:00", isClosed: false },
+    thursday: { open: "09:00", close: "22:00", isClosed: false },
+    friday: { open: "09:00", close: "22:00", isClosed: false },
+    saturday: { open: "09:00", close: "22:00", isClosed: false },
+    sunday: { open: "09:00", close: "22:00", isClosed: false },
+  },
   adminId,
   status: "published",
   isActive: true,
@@ -226,7 +235,7 @@ describe("Gap closure integration", { concurrency: false }, () => {
   it("should cover remaining category endpoints", async () => {
     const { admin, tokens } = await createActors();
     const restaurant = await Restaurant.create(
-      restaurantPayload("Gap Category Restaurant", admin._id),
+      restaurantPayload("Gap Category Restaurant", admin._id, { status: "published" }),
     );
     await User.findByIdAndUpdate(admin._id, { restaurantId: restaurant._id });
 

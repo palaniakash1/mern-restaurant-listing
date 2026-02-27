@@ -27,7 +27,21 @@ const buildRestaurantPayload = (name = "Test Diner") => ({
     postcode: "SW1A 1AA",
     country: "United Kingdom",
   },
-  location: { lat: 51.5072, lng: -0.1276 },
+  // Location at TOP LEVEL - controller will use these coords directly
+  // instead of trying to geocode (which requires Google Maps API key)
+  location: {
+    lat: 51.5072,
+    lng: -0.1276,
+  },
+  openingHours: {
+    monday: { open: "09:00", close: "22:00", isClosed: false },
+    tuesday: { open: "09:00", close: "22:00", isClosed: false },
+    wednesday: { open: "09:00", close: "22:00", isClosed: false },
+    thursday: { open: "09:00", close: "22:00", isClosed: false },
+    friday: { open: "09:00", close: "22:00", isClosed: false },
+    saturday: { open: "09:00", close: "22:00", isClosed: false },
+    sunday: { open: "09:00", close: "22:00", isClosed: false },
+  },
   contactNumber: "+44-20-5555-5555",
   email: "owner@example.com",
 });
