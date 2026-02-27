@@ -19,7 +19,6 @@ import { swaggerSpec, swaggerUiHandler } from "./docs/swagger.js";
 
 // Import new middlewares
 import createRequestLogger from "./middlewares/requestLogger.js";
-import { createCsrfMiddleware } from "./middlewares/csrfProtection.js";
 import { createErrorHandler, createNotFoundHandler } from "./middlewares/errorHandler.js";
 import { createHealthCheck, createLivenessProbe, createReadinessProbe } from "./middlewares/healthCheck.js";
 
@@ -29,9 +28,6 @@ app.disable("x-powered-by");
 
 // Request logging middleware (at the top)
 app.use(createRequestLogger());
-
-// CSRF Protection middleware (for state-changing operations)
-app.use(createCsrfMiddleware());
 
 const allowedOrigins = (process.env.CORS_ORIGINS || "")
   .split(",")
