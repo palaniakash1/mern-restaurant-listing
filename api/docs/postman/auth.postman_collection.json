@@ -1,0 +1,117 @@
+{
+  "info": {
+    "name": "MERN Restaurant - Auth API",
+    "description": "Authentication endpoints for user signup, signin, and session management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    },
+    {
+      "key": "authToken",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Public - Signup",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/auth/signup",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userName\": \"testuser\",\n  \"email\": \"testuser@example.com\",\n  \"password\": \"password123\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Public - Signin",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/auth/signin",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"testuser@example.com\",\n  \"password\": \"password123\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Public - Google OAuth",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/auth/google",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"idToken\": \"mock-google-id-token\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Auth - Signout",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/auth/signout",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Auth - Get Session",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/auth/session",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Auth - Change Password",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/auth/change-password",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"currentPassword\": \"password123\",\n  \"newPassword\": \"newpassword123\"\n}"
+        }
+      }
+    }
+  ]
+}

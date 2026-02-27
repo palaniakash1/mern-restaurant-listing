@@ -1,0 +1,67 @@
+{
+  "info": {
+    "name": "MERN Restaurant - Menu API",
+    "description": "Menu and menu item management endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:3000/api"},
+    {"key": "adminToken", "value": ""},
+    {"key": "superAdminToken", "value": ""},
+    {"key": "menuId", "value": ""},
+    {"key": "restaurantId", "value": ""}
+  ],
+  "item": [
+    {"name": "Public - Get Menu by Restaurant",
+      "request": {"method": "GET", "url": "{{baseUrl}}/menus/restaurant/:restaurantId"}},
+    {"name": "Auth - Get Deleted Menus",
+      "request": {"method": "GET", "url": "{{baseUrl}}/menus/deleted", "header": [{"key": "Authorization", "value": "Bearer {{adminToken}}"}]}},
+    {"name": "Admin - Create Menu",
+      "request": {
+        "method": "POST", "url": "{{baseUrl}}/menus",
+        "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{adminToken}}"}],
+        "body": {"mode": "raw", "raw": "{\"name\": \"Main Menu\", \"restaurantId\": \"{{restaurantId}}\", \"description\": \"Main menu for the restaurant\"}"}}},
+    {"name": "Auth - Get Menu by ID",
+      "request": {"method": "GET", "url": "{{baseUrl}}/menus/:menuId", "header": [{"key": "Authorization", "value": "Bearer {{adminToken}}"}]}},
+    {"name": "Auth - Update Menu",
+      "request": {
+        "method": "PUT", "url": "{{baseUrl}}/menus/:menuId",
+        "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{adminToken}}"}],
+        "body": {"mode": "raw", "raw": "{\"name\": \"Updated Menu Name\"}"}}},
+    {"name": "Auth - Update Menu Status",
+      "request": {
+        "method": "PATCH", "url": "{{baseUrl}}/menus/:menuId/status",
+        "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{adminToken}}"}],
+        "body": {"mode": "raw", "raw": "{\"isActive\": true}"}}},
+    {"name": "Auth - Reorder Menu Items",
+      "request": {
+        "method": "PUT", "url": "{{baseUrl}}/menus/:menuId/reorder",
+        "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{adminToken}}"}],
+        "body": {"mode": "raw", "raw": "{\"itemIds\": [\"item1\", \"item2\"]}"}}},
+    {"name": "Auth - Delete Menu",
+      "request": {"method": "DELETE", "url": "{{baseUrl}}/menus/:menuId", "header": [{"key": "Authorization", "value": "Bearer {{adminToken}}"}]}},
+    {"name": "Auth - Restore Menu",
+      "request": {"method": "PATCH", "url": "{{baseUrl}}/menus/:menuId/restore", "header": [{"key": "Authorization", "value": "Bearer {{adminToken}}"}]}},
+    {"name": "Auth - Get Menu Audit",
+      "request": {"method": "GET", "url": "{{baseUrl}}/menus/:menuId/audit", "header": [{"key": "Authorization", "value": "Bearer {{adminToken}}"}]}},
+    {"name": "SuperAdmin - Hard Delete Menu",
+      "request": {"method": "DELETE", "url": "{{baseUrl}}/menus/:menuId/hard", "header": [{"key": "Authorization", "value": "Bearer {{superAdminToken}}"}]}},
+    {"name": "Admin - Add Menu Item",
+      "request": {
+        "method": "POST", "url": "{{baseUrl}}/menus/:menuId/items",
+        "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{adminToken}}"}],
+        "body": {"mode": "raw", "raw": "{\"name\": \"Burger\", \"description\": \"Delicious burger\", \"price\": 9.99, \"categoryId\": \"cat-id\"}"}}},
+    {"name": "Admin - Update Menu Item",
+      "request": {
+        "method": "PUT", "url": "{{baseUrl}}/menus/:menuId/items/:itemId",
+        "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{adminToken}}"}],
+        "body": {"mode": "raw", "raw": "{\"name\": \"Updated Burger\", \"price\": 12.99}"}}},
+    {"name": "Admin - Delete Menu Item",
+      "request": {"method": "DELETE", "url": "{{baseUrl}}/menus/:menuId/items/:itemId", "header": [{"key": "Authorization", "value": "Bearer {{adminToken}}"}]}},
+    {"name": "Admin - Toggle Item Availability",
+      "request": {
+        "method": "PATCH", "url": "{{baseUrl}}/menus/:menuId/items/:itemId/availability",
+        "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{adminToken}}"}],
+        "body": {"mode": "raw", "raw": "{\"isAvailable\": true}"}}}
+  ]
+}

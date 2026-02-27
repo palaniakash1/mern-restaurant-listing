@@ -1,0 +1,30 @@
+{
+  "info": {
+    "name": "MERN Restaurant - Admin & Audit API",
+    "description": "Admin and audit log endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:3000/api"},
+    {"key": "superAdminToken", "value": ""}
+  ],
+  "item": [
+    {
+      "name": "Admin",
+      "item": [
+        {"name": "SuperAdmin - Create User",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/admin/users",
+            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{superAdminToken}}"}],
+            "body": {"mode": "raw", "raw": "{\"userName\": \"newadmin\", \"email\": \"newadmin@example.com\", \"password\": \"pass123\", \"role\": \"admin\"}"}}}
+      ]
+    },
+    {
+      "name": "Audit Logs",
+      "item": [
+        {"name": "Admin - Get Audit Logs",
+          "request": {"method": "GET", "url": "{{baseUrl}}/auditlogs", "header": [{"key": "Authorization", "value": "Bearer {{superAdminToken}}"}]}}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,144 @@
+{
+  "info": {
+    "name": "MERN Restaurant - Restaurants API",
+    "description": "Restaurant management endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:3000/api"},
+    {"key": "adminToken", "value": ""},
+    {"key": "superAdminToken", "value": ""},
+    {"key": "restaurantId", "value": ""}
+  ],
+  "item": [
+    {
+      "name": "Public - Get All Restaurants",
+      "request": {
+        "method": "GET",
+        "url": {"raw": "{{baseUrl}}/restaurants?page=1&limit=10", "query": [{"key": "page", "value": "1"}, {"key": "limit", "value": "10"}]}
+      }
+    },
+    {
+      "name": "Public - Get Nearby Restaurants",
+      "request": {
+        "method": "GET",
+        "url": {"raw": "{{baseUrl}}/restaurants/nearby?lat=40.7128&lng=-74.0060&radius=10", "query": [{"key": "lat", "value": "40.7128"}, {"key": "lng", "value": "-74.006"}, {"key": "radius", "value": "10"}]}
+      }
+    },
+    {
+      "name": "Public - Get Featured Restaurants",
+      "request": {"method": "GET", "url": "{{baseUrl}}/restaurants/featured"}
+    },
+    {
+      "name": "Public - Get Trending Restaurants",
+      "request": {"method": "GET", "url": "{{baseUrl}}/restaurants/trending"}
+    },
+    {
+      "name": "Public - Get by Slug",
+      "request": {"method": "GET", "url": "{{baseUrl}}/restaurants/slug/my-restaurant"}
+    },
+    {
+      "name": "Public - Get Details by Slug",
+      "request": {"method": "GET", "url": "{{baseUrl}}/restaurants/slug/my-restaurant/details"}
+    },
+    {
+      "name": "Admin - Create Restaurant",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"My Restaurant\",\n  \"description\": \"A great place to eat\",\n  \"cuisineType\": \"Italian\",\n  \"address\": {\n    \"street\": \"123 Main St\",\n    \"city\": \"New York\",\n    \"state\": \"NY\",\n    \"zipCode\": \"10001\",\n    \"country\": \"USA\"\n  },\n  \"phone\": \"+1234567890\",\n  \"email\": \"info@myrestaurant.com\",\n  \"priceRange\": \"$$\",\n  \"openingHours\": [\n    {\"day\": \"Monday\", \"open\": \"09:00\", \"close\": \"22:00\"},\n    {\"day\": \"Tuesday\", \"open\": \"09:00\", \"close\": \"22:00\"},\n    {\"day\": \"Wednesday\", \"open\": \"09:00\", \"close\": \"22:00\"},\n    {\"day\": \"Thursday\", \"open\": \"09:00\", \"close\": \"22:00\"},\n    {\"day\": \"Friday\", \"open\": \"09:00\", \"close\": \"23:00\"},\n    {\"day\": \"Saturday\", \"open\": \"10:00\", \"close\": \"23:00\"},\n    {\"day\": \"Sunday\", \"open\": \"10:00\", \"close\": \"21:00\"}\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "Admin - Get My Restaurant",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/restaurants/me",
+        "header": [{"key": "Authorization", "value": "Bearer {{adminToken}}"}]
+      }
+    },
+    {
+      "name": "Admin - Get My Restaurant Summary",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/restaurants/me/summary",
+        "header": [{"key": "Authorization", "value": "Bearer {{adminToken}}"}]
+      }
+    },
+    {
+      "name": "SuperAdmin - Get All Restaurants",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/restaurants/all",
+        "header": [{"key": "Authorization", "value": "Bearer {{superAdminToken}}"}]
+      }
+    },
+    {
+      "name": "Owner - Get Restaurant by ID",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/restaurants/id/:id",
+        "header": [{"key": "Authorization", "value": "Bearer {{adminToken}}"}]
+      }
+    },
+    {
+      "name": "Owner - Update Restaurant",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/restaurants/id/:id",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {"mode": "raw", "raw": "{\n  \"name\": \"Updated Restaurant Name\",\n  \"description\": \"Updated description\"\n}"}
+      }
+    },
+    {
+      "name": "Owner - Delete Restaurant",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/restaurants/id/:id",
+        "header": [{"key": "Authorization", "value": "Bearer {{adminToken}}"}]
+      }
+    },
+    {
+      "name": "SuperAdmin - Update Status",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/restaurants/id/:id/status",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{superAdminToken}}"}
+        ],
+        "body": {"mode": "raw", "raw": "{\n  \"isActive\": true\n}"}
+      }
+    },
+    {
+      "name": "SuperAdmin - Restore Restaurant",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/restaurants/id/:id/restore",
+        "header": [{"key": "Authorization", "value": "Bearer {{superAdminToken}}"}]
+      }
+    },
+    {
+      "name": "SuperAdmin - Change Admin",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/restaurants/id/:id/admin",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{superAdminToken}}"}
+        ],
+        "body": {"mode": "raw", "raw": "{\n  \"newAdminId\": \"new-admin-user-id\"\n}"}
+      }
+    }
+  ]
+}
