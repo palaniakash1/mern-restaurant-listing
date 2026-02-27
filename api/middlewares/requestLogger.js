@@ -1,9 +1,11 @@
 /**
  * Request Logging Middleware
  * Logs all incoming HTTP requests with relevant details
+ * Uses fileLogger for persistent storage with 500 log stack
  */
 
 import crypto from "crypto";
+import { logRequest, logResponse, logError } from "../utils/fileLogger.js";
 
 /**
  * Creates a request logger middleware
@@ -13,7 +15,7 @@ import crypto from "crypto";
  * @returns {Function} Express middleware
  */
 export const createRequestLogger = (options = {}) => {
-  const { logBody = false, logResponse = false } = options;
+  const { logBody = false, shouldLogResponse = false } = options;
 
   return (req, res, next) => {
     // Generate request ID if not already present
@@ -26,22 +28,19 @@ export const createRequestLogger = (options = {}) => {
     const clientIp = headers["x-forwarded-for"] || ip;
     const userAgent = headers["user-agent"] || "unknown";
 
-    // Log incoming request
-    console.log(JSON.stringify({
-      type: "request",
+    // Log incoming request using fileLogger
+    logRequest({
       requestId,
-      timestamp: new Date().toISOString(),
       method,
       url,
       clientIp,
       userAgent: userAgent.substring(0, 100),
       contentLength: headers["content-length"] || 0,
       ...(logBody && req.body && { body: req.body }),
-    }));
+    });
 
     // Capture original end to log response
     const originalEnd = res.end;
-    const chunks = [];
 
     res.end = function (chunk, encoding) {
       res.end = originalEnd;
@@ -51,9 +50,7 @@ export const createRequestLogger = (options = {}) => {
       const responseSize = res.getHeader("content-length") || (chunk ? chunk.length : 0);
 
       const logEntry = {
-        type: "response",
         requestId,
-        timestamp: new Date().toISOString(),
         method,
         url,
         clientIp,
@@ -63,21 +60,22 @@ export const createRequestLogger = (options = {}) => {
       };
 
       // Log response body for errors (sanitized)
-      if (logResponse && chunk) {
+      if (shouldLogResponse && chunk) {
         try {
           const parsed = JSON.parse(chunk.toString());
           logEntry.response = parsed;
         } catch {
-          logResponse.response = chunk.toString();
+          logEntry.response = chunk.toString();
         }
       }
 
       // Add error info for 5xx responses
       if (res.statusCode >= 500) {
         logEntry.error = true;
+        logError(logEntry);
+      } else {
+        logResponse(logEntry);
       }
-
-      console.log(JSON.stringify(logEntry));
     };
 
     next();
@@ -85,3 +83,5 @@ export const createRequestLogger = (options = {}) => {
 };
 
 export default createRequestLogger;
+
+
