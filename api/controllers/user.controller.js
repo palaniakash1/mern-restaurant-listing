@@ -406,6 +406,11 @@ export const restoreUser = async (req, res, next) => {
 
 export const getAllUsers = async (req, res, next) => {
   try {
+    // Defense-in-depth: Verify superAdmin role at controller level
+    if (req.user.role !== "superAdmin") {
+      return next(errorHandler(403, "Only superAdmin can access all users"));
+    }
+
     const { page, limit, q } = req.query;
     const sortDirection = req.query.order === "asc" ? 1 : -1;
 
@@ -456,6 +461,11 @@ export const getAllUsers = async (req, res, next) => {
 
 export const getAvailableAdmins = async (req, res, next) => {
   try {
+    // Defense-in-depth: Verify superAdmin role at controller level
+    if (req.user.role !== "superAdmin") {
+      return next(errorHandler(403, "Only superAdmin can access available admins"));
+    }
+
     const { page, limit, q } = req.query;
 
     // admins who do not have restaurant linked
