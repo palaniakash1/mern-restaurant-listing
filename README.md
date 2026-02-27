@@ -239,13 +239,13 @@ Import these JSON files from `api/docs/postman/`:
 - ✅ Request Logging
 - ✅ File Rotation Logging
 - ✅ Retry & Circuit Breaker
+- ✅ Redis Caching
 - ✅ CI/CD Pipeline
 
 ### Coming Soon
 
-- 🔄 Redis Caching
 - 🔄 Real-time Notifications
-- 🔄 Payment Integration
+- 🔄 Payment Integrationf
 
 ---
 
@@ -256,11 +256,47 @@ Import these JSON files from `api/docs/postman/`:
 | Runtime        | Node.js 18+                |
 | Framework      | Express.js                 |
 | Database       | MongoDB + Mongoose         |
+| Cache          | Redis + In-memory fallback |
 | Authentication | JWT + bcrypt               |
 | Validation     | Joi + Zod                  |
 | Documentation  | Swagger (OpenAPI 3.0)      |
 | Testing        | Node.js native test runner |
 | CI/CD          | GitHub Actions             |
+
+---
+
+## Redis Caching
+
+### Overview
+
+The API uses Redis for caching public read endpoints to improve performance. If Redis is unavailable, the system automatically falls back to in-memory caching.
+
+### Cached Endpoints
+
+| Endpoint                                  | Description               |
+| ----------------------------------------- | ------------------------- |
+| `GET /api/restaurants/featured`           | Featured restaurants list |
+| `GET /api/categories`                     | Public categories list    |
+| `GET /api/menus/restaurant/:id`           | Restaurant menu items     |
+| `GET /api/reviews/restaurant/:id`         | Restaurant reviews        |
+| `GET /api/reviews/restaurant/:id/summary` | Review ratings summary    |
+
+### Configuration
+
+Add Redis URL to your `.env` file:
+
+```env
+REDIS_URL=redis://localhost:6379
+```
+
+### Cache TTL
+
+- Default: 300 seconds (5 minutes)
+- Configurable via `CACHE_TTL` env variable
+
+### Without Redis
+
+If Redis is not available, the API automatically uses in-memory caching. No configuration needed!
 
 ---
 
