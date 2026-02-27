@@ -1,0 +1,833 @@
+{
+  "info": {
+    "name": "MERN Restaurant API - Complete Test Data",
+    "description": "Complete JSON payloads for testing all 78+ API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "01. AUTH",
+      "item": [
+        {
+          "name": "1. Signup - User",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/signup",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"johnuser123\",\n  \"email\": \"johnuser@example.com\",\n  \"password\": \"Password123!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "2. Signin - User",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/signin",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"johnuser@example.com\",\n  \"password\": \"Password123!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "3. Signup - Admin",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/signup",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"adminrestaurant\",\n  \"email\": \"admin@restaurant.com\",\n  \"password\": \"Admin123!\",\n  \"role\": \"admin\"\n}"
+            }
+          }
+        },
+        {
+          "name": "4. Signin - Admin",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/signin",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@restaurant.com\",\n  \"password\": \"Admin123!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "5. Get Session",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/auth/session",
+            "header": []
+          }
+        },
+        {
+          "name": "6. Change Password",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/change-password",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Password123!\",\n  \"newPassword\": \"NewPassword123!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "7. Signout",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/signout",
+            "header": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "02. USERS",
+      "item": [
+        {
+          "name": "1. Create User (Admin)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/users",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"newmanager\",\n  \"email\": \"manager@example.com\",\n  \"password\": \"Manager123!\",\n  \"role\": \"storeManager\"\n}"
+            }
+          }
+        },
+        {
+          "name": "2. List All Users (SuperAdmin)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/users",
+            "header": []
+          }
+        },
+        {
+          "name": "3. List Admins (SuperAdmin)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/users/admins",
+            "header": []
+          }
+        },
+        {
+          "name": "4. List Store Managers (Admin)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/users/store-managers",
+            "header": []
+          }
+        },
+        {
+          "name": "5. Get User by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/users/:id",
+            "header": []
+          }
+        },
+        {
+          "name": "6. Update User",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/users/:id",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"updateduser\"\n}"
+            }
+          }
+        },
+        {
+          "name": "7. Deactivate User",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/users/:id/deactivate",
+            "header": []
+          }
+        },
+        {
+          "name": "8. Restore User (SuperAdmin)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/users/:id/restore",
+            "header": []
+          }
+        },
+        {
+          "name": "9. Assign Restaurant to User",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/users/:id/restaurant",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"restaurantId\": \"REPLACE_WITH_RESTAURANT_ID\"\n}"
+            }
+          }
+        },
+        {
+          "name": "10. Unassign Restaurant",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/users/:id/restaurant",
+            "header": []
+          }
+        },
+        {
+          "name": "11. Change Owner (SuperAdmin)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/users/:id/owner",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newOwnerId\": \"REPLACE_WITH_USER_ID\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03. RESTAURANTS",
+      "item": [
+        {
+          "name": "1. Create Restaurant",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/restaurants",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"The Golden Fork\",\n  \"tagline\": \"Best dining experience\",\n  \"description\": \"A fine dining restaurant serving authentic cuisine\",\n  \"address\": {\n    \"addressLine1\": \"123 Main Street\",\n    \"addressLine2\": \"Suite 100\",\n    \"city\": \"New York\",\n    \"state\": \"NY\",\n    \"country\": \"USA\",\n    \"zipCode\": \"10001\"\n  },\n  \"contactNumber\": \"+1-555-123-4567\",\n  \"email\": \"contact@goldenfork.com\",\n  \"website\": \"https://goldenfork.com\",\n  \"openingHours\": {\n    \"monday\": { \"open\": \"09:00\", \"close\": \"22:00\" },\n    \"tuesday\": { \"open\": \"09:00\", \"close\": \"22:00\" },\n    \"wednesday\": { \"open\": \"09:00\", \"close\": \"22:00\" },\n    \"thursday\": { \"open\": \"09:00\", \"close\": \"23:00\" },\n    \"friday\": { \"open\": \"09:00\", \"close\": \"23:00\" },\n    \"saturday\": { \"open\": \"10:00\", \"close\": \"23:00\" },\n    \"sunday\": { \"open\": \"10:00\", \"close\": \"21:00\" }\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "2. List Restaurants (Public)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/restaurants",
+            "header": []
+          }
+        },
+        {
+          "name": "3. Get All Restaurants (Internal)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/restaurants/all",
+            "header": []
+          }
+        },
+        {
+          "name": "4. Get Restaurant by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/restaurants/id/:id",
+            "header": []
+          }
+        },
+        {
+          "name": "5. Get Restaurant by Slug",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/restaurants/slug/the-golden-fork",
+            "header": []
+          }
+        },
+        {
+          "name": "6. Get Featured Restaurants",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/restaurants/featured",
+            "header": []
+          }
+        },
+        {
+          "name": "7. Get Trending Restaurants",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/restaurants/trending",
+            "header": []
+          }
+        },
+        {
+          "name": "8. Get Nearby Restaurants",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/restaurants/nearby?lat=40.7128&lng=-74.0060&radius=5000",
+            "header": []
+          }
+        },
+        {
+          "name": "9. Get Restaurant Details",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/restaurants/the-golden-fork/details",
+            "header": []
+          }
+        },
+        {
+          "name": "10. Get My Restaurant (Admin)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/restaurants/me",
+            "header": []
+          }
+        },
+        {
+          "name": "11. Get Admin Restaurant Summary",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/restaurants/me/summary",
+            "header": []
+          }
+        },
+        {
+          "name": "12. Update Restaurant",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/restaurants/id/:id",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"The Golden Fork - Updated\",\n  \"tagline\": \"Now with more flavor!\",\n  \"description\": \"Updated description\",\n  \"contactNumber\": \"+1-555-999-9999\"\n}"
+            }
+          }
+        },
+        {
+          "name": "13. Update Restaurant Status",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/restaurants/id/:id/status",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"published\"\n}"
+            }
+          }
+        },
+        {
+          "name": "14. Reassign Restaurant Admin",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/restaurants/id/:id/admin",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newAdminId\": \"REPLACE_WITH_ADMIN_USER_ID\"\n}"
+            }
+          }
+        },
+        {
+          "name": "15. Restore Restaurant",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/restaurants/id/:id/restore",
+            "header": []
+          }
+        },
+        {
+          "name": "16. Delete Restaurant",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/restaurants/id/:id",
+            "header": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "04. CATEGORIES",
+      "item": [
+        {
+          "name": "1. Create Category",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/categories",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Main Course\",\n  \"isGeneric\": false,\n  \"restaurantId\": \"REPLACE_WITH_RESTAURANT_ID\",\n  \"order\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "2. Create Generic Category (SuperAdmin)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/categories",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Beverages\",\n  \"isGeneric\": true,\n  \"order\": 0\n}"
+            }
+          }
+        },
+        {
+          "name": "3. List Categories (Public)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/categories",
+            "header": []
+          }
+        },
+        {
+          "name": "4. List Categories by Restaurant",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/categories?restaurantId=REPLACE_WITH_RESTAURANT_ID",
+            "header": []
+          }
+        },
+        {
+          "name": "5. Get My Categories (Admin)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/categories/my",
+            "header": []
+          }
+        },
+        {
+          "name": "6. Get All Categories (SuperAdmin)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/categories/all",
+            "header": []
+          }
+        },
+        {
+          "name": "7. Get Category by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/categories/:id",
+            "header": []
+          }
+        },
+        {
+          "name": "8. Check Category Slug",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/categories/check-slug",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Desserts\",\n  \"isGeneric\": false,\n  \"restaurantId\": \"REPLACE_WITH_RESTAURANT_ID\"\n}"
+            }
+          }
+        },
+        {
+          "name": "9. Update Category",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/categories/:id",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Appetizers Updated\",\n  \"order\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "10. Update Category Status",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/categories/:id/status",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "11. Reorder Categories",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/categories/reorder",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  { \"id\": \"CATEGORY_ID_1\", \"order\": 1 },\n  { \"id\": \"CATEGORY_ID_2\", \"order\": 2 },\n  { \"id\": \"CATEGORY_ID_3\", \"order\": 3 }\n]"
+            }
+          }
+        },
+        {
+          "name": "12. Bulk Reorder Categories",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/categories/bulk-reorder",
+            "header": [
+              { "key": "x-idempotency-key", "value": "unique-key-123" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"id\": \"CATEGORY_ID_1\", \"order\": 1 },\n    { \"id\": \"CATEGORY_ID_2\", \"order\": 2 },\n    { \"id\": \"CATEGORY_ID_3\", \"order\": 3 }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "13. Delete Category (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/categories/:id",
+            "header": []
+          }
+        },
+        {
+          "name": "14. Restore Category",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/categories/:id/restore",
+            "header": []
+          }
+        },
+        {
+          "name": "15. Get Deleted Categories",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/categories/deleted",
+            "header": []
+          }
+        },
+        {
+          "name": "16. Bulk Update Category Status",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/categories/bulk-status",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [\"CATEGORY_ID_1\", \"CATEGORY_ID_2\"],\n  \"status\": \"published\"\n}"
+            }
+          }
+        },
+        {
+          "name": "17. Export Categories",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/categories/export?format=json&limit=100",
+            "header": []
+          }
+        },
+        {
+          "name": "18. Get Category Audit Logs",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/categories/:id/audit-logs",
+            "header": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "05. MENUS",
+      "item": [
+        {
+          "name": "1. Create Menu",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/menus",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"restaurantId\": \"REPLACE_WITH_RESTAURANT_ID\",\n  \"categoryId\": \"REPLACE_WITH_CATEGORY_ID\"\n}"
+            }
+          }
+        },
+        {
+          "name": "2. Get Menu by Restaurant (Public)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/menus/restaurant/REPLACE_WITH_RESTAURANT_ID",
+            "header": []
+          }
+        },
+        {
+          "name": "3. Get Menu by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/menus/:id",
+            "header": []
+          }
+        },
+        {
+          "name": "4. Add Menu Item",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/menus/:id/items",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Grilled Salmon\",\n  \"description\": \"Fresh Atlantic salmon with herbs\",\n  \"price\": 24.99,\n  \"image\": \"https://example.com/salmon.jpg\",\n  \"isAvailable\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "5. Update Menu Item",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/menus/:menuId/items/:itemId",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Grilled Salmon - Deluxe\",\n  \"description\": \"Fresh Atlantic salmon with herbs and lemon butter\",\n  \"price\": 27.99\n}"
+            }
+          }
+        },
+        {
+          "name": "6. Delete Menu Item (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/menus/:menuId/items/:itemId",
+            "header": []
+          }
+        },
+        {
+          "name": "7. Toggle Item Availability",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/menus/:menuId/items/:itemId/availability",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isAvailable\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "8. Reorder Menu Items",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/menus/:id/reorder",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order\": [\n    { \"itemId\": \"ITEM_ID_1\", \"order\": 1 },\n    { \"itemId\": \"ITEM_ID_2\", \"order\": 2 },\n    { \"itemId\": \"ITEM_ID_3\", \"order\": 3 }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "9. Update Menu Status",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/menus/:id/status",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"published\"\n}"
+            }
+          }
+        },
+        {
+          "name": "10. Delete Menu (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/menus/:id",
+            "header": []
+          }
+        },
+        {
+          "name": "11. Restore Menu",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/menus/:id/restore",
+            "header": []
+          }
+        },
+        {
+          "name": "12. Get Deleted Menus",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/menus/deleted",
+            "header": []
+          }
+        },
+        {
+          "name": "13. Get Menu Audit Logs",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/menus/:id/audit-logs",
+            "header": []
+          }
+        },
+        {
+          "name": "14. Hard Delete Menu",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/menus/:id/hard",
+            "header": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "06. REVIEWS",
+      "item": [
+        {
+          "name": "1. Create Review",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/reviews/restaurant/REPLACE_WITH_RESTAURANT_ID",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Amazing food and excellent service! Will definitely come back.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "2. List Restaurant Reviews",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/reviews/restaurant/REPLACE_WITH_RESTAURANT_ID",
+            "header": []
+          }
+        },
+        {
+          "name": "3. Get Review Summary",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/reviews/restaurant/REPLACE_WITH_RESTAURANT_ID/summary",
+            "header": []
+          }
+        },
+        {
+          "name": "4. Get My Reviews",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/reviews/my",
+            "header": []
+          }
+        },
+        {
+          "name": "5. Get Review by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/reviews/:id",
+            "header": []
+          }
+        },
+        {
+          "name": "6. Update Review",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/reviews/:id",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 4,\n  \"comment\": \"Updated comment - the food was great but service was slow.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "7. Delete Review (User)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/reviews/:id",
+            "header": []
+          }
+        },
+        {
+          "name": "8. Moderate Review (Admin)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/reviews/:id/moderate",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07. ADMIN",
+      "item": [
+        {
+          "name": "1. Create Admin User (SuperAdmin)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/admin/users",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"newadmin\",\n  \"email\": \"newadmin@restaurant.com\",\n  \"password\": \"Admin123!\",\n  \"role\": \"admin\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "08. AUDIT LOGS",
+      "item": [
+        {
+          "name": "1. Get Audit Logs",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/auditlogs?page=1&limit=20",
+            "header": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "09. SYSTEM",
+      "item": [
+        {
+          "name": "1. Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health",
+            "header": []
+          }
+        },
+        {
+          "name": "2. Liveness Probe",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/live",
+            "header": []
+          }
+        },
+        {
+          "name": "3. Readiness Probe",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/ready",
+            "header": []
+          }
+        }
+      ]
+    }
+  ]
+}
