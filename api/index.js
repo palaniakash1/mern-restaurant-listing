@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import app from "./app.js";
+import { initRedis } from "./utils/redisCache.js";
 
 dotenv.config();
 
@@ -19,6 +20,11 @@ mongoose
   .catch((err) => {
     console.log(err);
   });
+
+// Initialize Redis (skip in test environment)
+if (process.env.NODE_ENV !== "test") {
+  initRedis().catch((err) => console.warn("Redis init failed:", err.message));
+}
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {

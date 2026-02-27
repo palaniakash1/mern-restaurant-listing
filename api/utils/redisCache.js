@@ -14,6 +14,7 @@ import Redis from "ioredis";
 
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 const CACHE_TTL = parseInt(process.env.CACHE_TTL || "300", 10); // 5 minutes default
+const REDIS_CONNECT_TIMEOUT = 2000; // 2 second timeout for Redis connection
 
 // In-memory fallback cache
 const memoryCache = new Map();
@@ -27,28 +28,50 @@ let redisClient = null;
 let isRedisAvailable = false;
 
 /**
- * Initialize Redis connection
+ * Initialize Redis connection with timeout
  */
 export const initRedis = async () => {
+  // If no Redis URL configured, skip Redis entirely
+  if (!REDIS_URL || REDIS_URL.trim() === "") {
+    console.log("ℹ️ Redis URL not configured, using in-memory cache");
+    isRedisAvailable = false;
+    return false;
+  }
+
   try {
     redisClient = new Redis(REDIS_URL, {
-      maxRetriesPerRequest: 3,
-      retryDelayOnFailover: 100,
+      maxRetriesPerRequest: 1,
+      retryStrategy: () => null, // Don't retry, fail fast
+      connectTimeout: REDIS_CONNECT_TIMEOUT,
+      commandTimeout: REDIS_CONNECT_TIMEOUT,
       lazyConnect: true,
+      enableOfflineQueue: false, // Fail immediately if not connected
     });
 
-    await redisClient.connect();
+    // Set up connection timeout
+    const connectionPromise = redisClient.connect();
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Redis connection timeout')), REDIS_CONNECT_TIMEOUT)
+    );
+
+    await Promise.race([connectionPromise, timeoutPromise]);
+    
     isRedisAvailable = true;
     console.log("✅ Redis connected successfully");
-
+    
     redisClient.on("error", (err) => {
-      console.error("Redis error:", err.message);
+      console.warn("Redis error:", err.message);
       isRedisAvailable = false;
     });
-
+    
+    redisClient.on("close", () => {
+      isRedisAvailable = false;
+      console.log("Redis connection closed");
+    });
+    
     return true;
   } catch (error) {
-    console.warn("⚠️ Redis not available, using in-memory cache");
+    console.warn(`⚠️ Redis not available: ${error.message}, using in-memory cache`);
     isRedisAvailable = false;
     return false;
   }
@@ -73,10 +96,17 @@ export const get = async (key) => {
 
   if (isRedisAvailable && redisClient) {
     try {
-      const value = await redisClient.get(cacheKey);
+      // Add timeout for Redis operations
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Redis get timeout')), 1000)
+      );
+      const getPromise = redisClient.get(cacheKey);
+      
+      const value = await Promise.race([getPromise, timeoutPromise]);
       return value ? JSON.parse(value) : null;
     } catch (error) {
-      console.error("Redis get error:", error.message);
+      console.warn("Redis get error:", error.message);
+      isRedisAvailable = false;
     }
   }
 
@@ -103,10 +133,17 @@ export const set = async (key, value, ttl = CACHE_TTL) => {
 
   if (isRedisAvailable && redisClient) {
     try {
-      await redisClient.setex(cacheKey, ttl, serialized);
+      // Add timeout for Redis operations
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Redis set timeout')), 1000)
+      );
+      const setPromise = redisClient.setex(cacheKey, ttl, serialized);
+      
+      await Promise.race([setPromise, timeoutPromise]);
       return true;
     } catch (error) {
-      console.error("Redis set error:", error.message);
+      console.warn("Redis set error:", error.message);
+      isRedisAvailable = false;
     }
   }
 
@@ -139,7 +176,7 @@ export const del = async (key) => {
     try {
       await redisClient.del(cacheKey);
     } catch (error) {
-      console.error("Redis delete error:", error.message);
+      console.warn("Redis delete error:", error.message);
     }
   }
 
@@ -160,7 +197,7 @@ export const clear = async () => {
         await redisClient.del(...keys);
       }
     } catch (error) {
-      console.error("Redis clear error:", error.message);
+      console.warn("Redis clear error:", error.message);
     }
   }
 
@@ -179,16 +216,20 @@ export const clear = async () => {
  */
 export const getOrFetch = async (key, fetcher, ttl = CACHE_TTL) => {
   // Try to get from cache
-  const cached = await get(key);
-  if (cached !== null) {
-    return cached;
+  try {
+    const cached = await get(key);
+    if (cached !== null) {
+      return cached;
+    }
+  } catch (error) {
+    console.warn("Cache get error, falling back to fetcher:", error.message);
   }
 
   // Fetch fresh data
   const data = await fetcher();
 
-  // Store in cache
-  await set(key, data, ttl);
+  // Store in cache (don't await, fire and forget)
+  set(key, data, ttl).catch(err => console.warn("Cache set error:", err.message));
 
   return data;
 };
@@ -211,13 +252,14 @@ export const invalidatePattern = async (pattern) => {
         await redisClient.del(...keys);
       }
     } catch (error) {
-      console.error("Redis invalidate error:", error.message);
+      console.warn("Redis invalidate error:", error.message);
     }
   }
 
   // Also clean memory cache
+  const patternStr = pattern.replace("*", "");
   for (const key of memoryCache.keys()) {
-    if (key.includes(pattern.replace("*", ""))) {
+    if (key.includes(patternStr)) {
       memoryCache.delete(key);
       memoryCacheTTL.delete(key);
     }
