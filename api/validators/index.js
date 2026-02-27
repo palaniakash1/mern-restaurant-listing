@@ -4,7 +4,37 @@ const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9]).{8,}$/;
 const objectIdRegex = /^[0-9a-fA-F]{24}$/;
 const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-const objectId = Joi.string().pattern(objectIdRegex);
+// Custom error messages for better user experience
+const messages = {
+  string: {
+    required: '{{#label}} is required',
+    empty: '{{#label}} cannot be empty',
+    min: '{{#label}} must be at least {{#limit}} characters',
+    max: '{{#label}} cannot exceed {{#limit}} characters',
+  },
+  stringemail: {
+    email: 'Please enter a valid email address',
+  },
+  number: {
+    min: '{{#label}} must be at least {{#limit}}',
+    max: '{{#label}} cannot exceed {{#limit}}',
+    integer: '{{#label}} must be a whole number',
+  },
+  any: {
+    required: '{{#label}} is required',
+    empty: '{{#label}} cannot be empty',
+  },
+  array: {
+    min: '{{#label}} must contain at least {{#limit}} item(s)',
+    max: '{{#label}} cannot contain more than {{#limit}} items',
+  },
+  objectId: 'Invalid ID format. Please provide a valid 24-character hex string',
+  pattern: {
+    objectId: 'Invalid ID format. Please provide a valid 24-character hex string (e.g., "507f1f77bcf86cd799439011")',
+  },
+};
+
+const objectId = Joi.string().pattern(objectIdRegex).messages(messages.pattern);
 const sortOrder = Joi.string().valid("asc", "desc");
 const pagination = {
   page: Joi.number().integer().min(1),
