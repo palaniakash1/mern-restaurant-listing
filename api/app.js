@@ -11,9 +11,17 @@ import auditLogRoutes from "./routes/auditLog.routes.js";
 import reviewRoutes from "./routes/review.route.js";
 import { swaggerSpec, swaggerUiHandler } from "./docs/swagger.js";
 
+// Import new middlewares
+import createRequestLogger from "./middlewares/requestLogger.js";
+import { createErrorHandler, createNotFoundHandler } from "./middlewares/errorHandler.js";
+import { createHealthCheck, createLivenessProbe, createReadinessProbe } from "./middlewares/healthCheck.js";
+
 const app = express();
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
+
+// Request logging middleware (at the top)
+app.use(createRequestLogger());
 
 const allowedOrigins = (process.env.CORS_ORIGINS || "")
   .split(",")
@@ -48,13 +56,10 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 
-app.get("/api/health", (req, res) => {
-  res.status(200).json({ success: true, status: "ok" });
-});
-
-app.get("/api/live", (req, res) => {
-  res.status(200).json({ success: true, status: "alive" });
-});
+// Health check endpoints
+app.get("/api/health", createHealthCheck());
+app.get("/api/live", createLivenessProbe());
+app.get("/api/ready", createReadinessProbe());
 
 app.use("/api/users", userRouter);
 app.use("/api/auth", authRouter);
@@ -70,16 +75,10 @@ app.use(
   swaggerUiHandler.setup(swaggerSpec),
 );
 
-app.use((err, req, res, next) => {
-  const statusCode = err.statusCode || 500;
-  const message = err.message || "internal server error";
+// 404 handler
+app.use(createNotFoundHandler());
 
-  return res.status(statusCode).json({
-    success: false,
-    requestId: req.requestId,
-    statusCode,
-    message,
-  });
-});
+// Centralized error handler
+app.use(createErrorHandler());
 
 export default app;

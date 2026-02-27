@@ -20,13 +20,6 @@ mongoose
     console.log(err);
   });
 
-app.get("/api/ready", (req, res) => {
-  const mongoReady = mongoose.connection.readyState === 1;
-  return res
-    .status(mongoReady ? 200 : 503)
-    .json({ success: mongoReady, mongoReady });
-});
-
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}!`);
