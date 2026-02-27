@@ -16,12 +16,16 @@ const options = {
     },
     servers: [
       {
-        url: "http://localhost:3000/api",
-        description: "Local development",
+        url: "http://localhost:3000/api/v1",
+        description: "Local development (v1)",
       },
       {
-        url: "https://api.example.com/api",
-        description: "Production",
+        url: "https://api.example.com/api/v1",
+        description: "Production (v1)",
+      },
+      {
+        url: "http://localhost:3000/api",
+        description: "Legacy (no version)",
       },
     ],
     components,
