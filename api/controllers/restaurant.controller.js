@@ -18,30 +18,9 @@ import { getClientIp } from "../utils/controllerHelpers.js";
 // ===============================================================================
 // 🔷 POST /api/restaurants — Create a new restaurant
 // ===============================================================================
-// Purpose:
-// - Allows an Admin to create their own restaurant (one per admin)
-// - Allows SuperAdmin to create a restaurant and optionally assign an Admin
-//
-// Who can access:
-// - Admin
-// - SuperAdmin
-//
-// Key Rules:
-// - Slug is auto-generated from name
-// - Admin can own ONLY one restaurant
-// - SuperAdmin can assign ownership to another admin
-// - Status, isActive, isFeatured, isTrending are restricted on creation
-//
-// Real-world usage:
-// - Admin onboarding flow
-// - SuperAdmin manual restaurant setup
-//
-// ===============================================================================
 
 export const create = async (req, res, next) => {
   try {
-    // BASIC VALIDATIONS (NO DB MUTATION)
-
     if (!req.body || Object.keys(req.body).length === 0) {
       return next(errorHandler(400, "Request body is missing"));
     }
@@ -67,7 +46,6 @@ export const create = async (req, res, next) => {
       return next(errorHandler(400, "All required fields must be filled"));
     }
 
-    // check for valid address
     if (!address?.city || !address?.addressLine1) {
       throw errorHandler(400, "Invalid address");
     }
@@ -76,7 +54,6 @@ export const create = async (req, res, next) => {
       throw errorHandler(400, "Invalid email format");
     }
 
-    // Slug generation (clean)
     const slug = name
       .trim()
       .toLowerCase()
@@ -85,15 +62,12 @@ export const create = async (req, res, next) => {
 
     let geoLocation;
 
-    // ✅ CASE A: frontend already sent lat/lng
     if (location?.lat !== undefined && location?.lng !== undefined) {
       geoLocation = {
         type: "Point",
         coordinates: [location.lng, location.lat],
       };
-    }
-    // 🔁 CASE B: fallback geocoding
-    else {
+    } else {
       geoLocation = await geocodeAddress(address);
     }
     const forbiddenOnCreate = [
@@ -109,7 +83,6 @@ export const create = async (req, res, next) => {
       }
     }
     const restaurant = await withTransaction(async (session) => {
-      //  Slug uniqueness check (DB dependent) if exists lets create +1
       let baseSlug = slug;
       let counter = 1;
 
@@ -119,7 +92,6 @@ export const create = async (req, res, next) => {
 
       let assignedAdminId = req.user.id;
 
-      // Admin → only one restaurant
       if (req.user.role === "admin") {
         const adminUser = await User.findById(req.user.id).session(session);
         if (adminUser.restaurantId) {
@@ -127,7 +99,6 @@ export const create = async (req, res, next) => {
         }
       }
 
-      // SuperAdmin assigning ownership
       if (req.user.role === "superAdmin" && adminId) {
         const adminExists = await User.findById(adminId).session(session);
 
@@ -171,7 +142,6 @@ export const create = async (req, res, next) => {
         adminId: assignedAdminId,
       };
 
-      // 🔐 Role-based fields
       if (req.user.role === "superAdmin") {
         restaurantPayload.isFeatured = isFeatured;
         restaurantPayload.isTrending = isTrending;
@@ -183,19 +153,16 @@ export const create = async (req, res, next) => {
         address,
       });
 
-      // 🏗 Create restaurant
       const [createdRestaurant] = await Restaurant.create([restaurantPayload], {
         session,
       });
 
-      // 🔗 Link restaurant to admin
       await User.findByIdAndUpdate(
         assignedAdminId,
         { restaurantId: createdRestaurant._id },
         { session },
       );
 
-      // 🧾 Audit log
       await logAudit({
         actorId: req.user.id,
         actorRole: req.user.role,
@@ -209,10 +176,6 @@ export const create = async (req, res, next) => {
 
       return createdRestaurant;
     });
-
-    /* ---------------------------------------------------
-       5️⃣ RESPONSE
-    --------------------------------------------------- */
 
     res.status(201).json({
       success: true,
@@ -232,23 +195,7 @@ export const create = async (req, res, next) => {
 // ===============================================================================
 // 🔷 GET /api/restaurants/all — Get all restaurants (internal view)
 // ===============================================================================
-// Purpose:
-// - Fetch ALL restaurants in the system (including draft / blocked)
-//
-// Who can access:
-// - SuperAdmin only
-//
-// Supports:
-// - Pagination
-// - Full-text search
-// - Sorting
-//
-// Real-world usage:
-// - SuperAdmin dashboard
-// - Moderation panel
-// - Audit & management screens
-//
-// ===============================================================================
+
 export const getAllRestaurants = async (req, res, next) => {
   try {
     const { page = 1, limit = 10, q } = req.query;
@@ -297,24 +244,7 @@ export const getAllRestaurants = async (req, res, next) => {
 };
 
 // ===============================================================================
-// 🔷 GET /api/restaurants/id/{id} — Get restaurant by ID (internal/system view)
-// ===============================================================================
-// Purpose:
-// - Fetch the complete internal record of a restaurant using DB ID
-//
-// Who can access:
-// - SuperAdmin → any restaurant
-// - Admin → only their assigned restaurant (ownership enforced)
-//
-// Why ID-based:
-// - IDs never change
-// - Used for admin tooling, audits, updates, reassignment
-//
-// Real-world usage:
-// - Admin edit restaurant form
-// - SuperAdmin moderation & audits
-// - Status updates, restore, reassignment
-//
+// 🔷 GET /api/restaurants/id/{id} — Get restaurant by ID
 // ===============================================================================
 
 export const getRestaurantById = async (req, res, next) => {
@@ -335,29 +265,7 @@ export const getRestaurantById = async (req, res, next) => {
 };
 
 // ===============================================================================
-// 🔷 GET /api/restaurants/slug/{slug} — Get restaurant by slug (public-safe)
-// ===============================================================================
-// Purpose:
-// - Fetch restaurant data intended for public visibility
-//
-// Visibility rules:
-// - Only published & active restaurants
-// - Uses publicRestaurantFilter
-//
-// Who can access:
-// - Public users
-// - Frontend clients
-// - Admins (via public preview, NOT internal data)
-//
-// Why slug-based:
-// - SEO-friendly
-// - Human-readable URLs
-//
-// Real-world usage:
-// - Restaurant preview pages
-// - SEO landing pages
-// - Admin "Preview restaurant" feature
-//
+// 🔷 GET /api/restaurants/slug/{slug} — Get restaurant by slug
 // ===============================================================================
 
 export const getRestaurantBySlug = async (req, res, next) => {
@@ -383,26 +291,6 @@ export const getRestaurantBySlug = async (req, res, next) => {
 // ===============================================================================
 // 🔷 PATCH /api/restaurants/id/{id}/status — Update restaurant status
 // ===============================================================================
-// Purpose:
-// - Control publication state of restaurant
-//
-// Allowed statuses:
-// - published
-// - draft
-// - blocked
-//
-// Who can access:
-// - SuperAdmin only
-//
-// Side effects:
-// - isActive derived from status
-// - Audit log recorded
-//
-// Real-world usage:
-// - Moderation
-// - Approval workflows
-//
-// ===============================================================================
 
 export const updateRestaurantStatus = async (req, res, next) => {
   try {
@@ -414,7 +302,6 @@ export const updateRestaurantStatus = async (req, res, next) => {
       throw errorHandler(400, "Invalid restaurant status");
 
     const result = await withTransaction(async (session) => {
-      // 📄 Fetch current state
       const restaurant = await Restaurant.findById(req.params.id)
         .session(session)
         .lean();
@@ -423,15 +310,12 @@ export const updateRestaurantStatus = async (req, res, next) => {
         throw errorHandler(404, "Restaurant not found");
       }
 
-      // ⛔ No-op protection
       if (restaurant.status === status) {
         throw errorHandler(400, `Restaurant already in '${status}' status`);
       }
 
-      // 🧠 Derive isActive from status (single source of truth)
       const isActive = status === "published";
 
-      // 🔁 Update
       const updated = await Restaurant.findByIdAndUpdate(
         req.params.id,
         {
@@ -441,7 +325,6 @@ export const updateRestaurantStatus = async (req, res, next) => {
         { new: true, session },
       ).lean();
 
-      // 🧾 Audit log
       await logAudit({
         actorId: req.user.id,
         actorRole: req.user.role,
@@ -457,7 +340,6 @@ export const updateRestaurantStatus = async (req, res, next) => {
     });
 
     res.status(200).json({
-
       success: true,
       message: `Restaurant status updated to '${result.status}'`,
       data: result,
@@ -470,34 +352,10 @@ export const updateRestaurantStatus = async (req, res, next) => {
 // ===============================================================================
 // 🔷 PATCH /api/restaurants/id/{id} — Update restaurant details
 // ===============================================================================
-// Purpose:
-// - Update editable restaurant information
-//
-// Who can access:
-// - Admin (own restaurant only)
-// - SuperAdmin
-//
-// Restricted fields:
-// - slug
-// - status
-// - isActive
-// - isFeatured
-// - isTrending
-// - adminId
-//
-// Notes:
-// - Uses transaction
-// - Audit logs are recorded
-//
-// Real-world usage:
-// - Admin editing restaurant profile
-//
-// ===============================================================================
 
 export const updateRestaurant = async (req, res, next) => {
   try {
     const result = await withTransaction(async (session) => {
-      // Fetch old snapshot for audit
       const oldRestaurant = await Restaurant.findById(req.params.id)
         .session(session)
         .lean();
@@ -517,7 +375,6 @@ export const updateRestaurant = async (req, res, next) => {
           .join(" ")
           .toLowerCase();
 
-      // Forbidden Fields
       const forbiddenFields = [
         "slug",
         "status",
@@ -533,7 +390,6 @@ export const updateRestaurant = async (req, res, next) => {
         }
       }
 
-      // Allowlisted updates
       const allowedUpdates = [
         "name",
         "tagline",
@@ -560,13 +416,11 @@ export const updateRestaurant = async (req, res, next) => {
         throw errorHandler(400, "No valid fields provided");
       }
 
-      // Recompute geo if address changes
       if (updates.address) {
         const geo = await geocodeAddress(updates.address);
         updates.address.location = geo;
       }
 
-      // validation of categories array
       if (updates.categories) {
         const validCategories = await Category.countDocuments({
           _id: { $in: updates.categories },
@@ -583,7 +437,6 @@ export const updateRestaurant = async (req, res, next) => {
         address: updates.address ?? oldRestaurant.address,
       });
 
-      // Perform update
       const updatedRestaurant = await Restaurant.findByIdAndUpdate(
         req.params.id,
         { $set: updates },
@@ -596,7 +449,6 @@ export const updateRestaurant = async (req, res, next) => {
 
       const diff = diffObject(oldRestaurant, updatedRestaurant, allowedUpdates);
 
-      // Audit log AFTER success
       if (diff && Object.keys(diff).length) {
         await logAudit({
           actorId: req.user.id,
@@ -616,7 +468,6 @@ export const updateRestaurant = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: "Restaurant Updated Successfully",
-
       data: result,
     });
   } catch (error) {
@@ -627,34 +478,12 @@ export const updateRestaurant = async (req, res, next) => {
 // ===============================================================================
 // 🔷 DELETE /api/restaurants/id/{id} — Soft delete restaurant
 // ===============================================================================
-// Purpose:
-// - Soft delete a restaurant (no hard delete)
-//
-// What happens:
-// - status → blocked
-// - isActive → false
-// - Admin ownership detached
-//
-// Who can access:
-// - Admin (own restaurant)
-// - SuperAdmin
-//
-// Notes:
-// - Transactional
-// - Audit logged
-//
-// Real-world usage:
-// - Admin closing restaurant
-// - SuperAdmin enforcement
-//
-// ===============================================================================
 
 export const deleteRestaurant = async (req, res, next) => {
   try {
     let deletedRestaurantId;
     let softDeleted;
     await withTransaction(async (session) => {
-      // Fetch snapshot BEFORE deletion
       const restaurant = await Restaurant.findById(req.params.id)
         .session(session)
         .lean();
@@ -665,12 +494,9 @@ export const deleteRestaurant = async (req, res, next) => {
 
       deletedRestaurantId = restaurant._id;
 
-      // ⛔ Prevent double-delete
       if (!restaurant.isActive && restaurant.status === "blocked") {
         throw errorHandler(400, "Restaurant already deleted");
       }
-
-      // 🔒 Soft delete restaurant
 
       softDeleted = await Restaurant.findByIdAndUpdate(
         req.params.id,
@@ -678,7 +504,6 @@ export const deleteRestaurant = async (req, res, next) => {
         { new: true, session },
       ).lean();
 
-      // 🔓 Detach admin ownership (optional but recommended)
       if (restaurant.adminId) {
         await User.findByIdAndUpdate(
           restaurant.adminId,
@@ -687,10 +512,6 @@ export const deleteRestaurant = async (req, res, next) => {
         );
       }
 
-      // delete menus
-      // await Menu.deleteMany({ restaurantId: restaurant._id }, { session });
-
-      // AUDIT LOG (DELETE)
       await logAudit({
         actorId: req.user.id,
         actorRole: req.user.role,
@@ -706,7 +527,6 @@ export const deleteRestaurant = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: "Restaurant deleted successfully",
-
       data: softDeleted,
     });
   } catch (error) {
@@ -715,22 +535,7 @@ export const deleteRestaurant = async (req, res, next) => {
 };
 
 // ===============================================================================
-// 🔷 PATCH /api/restaurants/id/{id}/restore — Restore soft-deleted restaurant
-// ===============================================================================
-// Purpose:
-// - Restore a previously blocked restaurant
-//
-// Rules:
-// - Only blocked restaurants can be restored
-// - Restored to draft state
-//
-// Who can access:
-// - SuperAdmin only
-//
-// Real-world usage:
-// - Appeals
-// - Admin mistake recovery
-//
+// 🔷 PATCH /api/restaurants/id/{id}/restore — Restore restaurant
 // ===============================================================================
 
 export const restoreRestaurant = async (req, res, next) => {
@@ -777,7 +582,6 @@ export const restoreRestaurant = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: "Restaurant restored successfully",
-
       data: result,
     });
   } catch (error) {
@@ -786,61 +590,38 @@ export const restoreRestaurant = async (req, res, next) => {
 };
 
 // ===============================================================================
-// 🔷 PATCH /api/restaurants/id/{id}/admin — Reassign restaurant ownership
-// ===============================================================================
-// Purpose:
-// - Transfer restaurant ownership to another admin
-//
-// Who can access:
-// - SuperAdmin only
-//
-// Side effects:
-// - Old admin detached
-// - New admin assigned
-// - Audit log recorded
-//
-// Real-world usage:
-// - Staff changes
-// - Admin replacement
-//
+// 🔷 PATCH /api/restaurants/id/{id}/admin — Reassign ownership
 // ===============================================================================
 
 export const reassignRestaurantAdmin = async (req, res, next) => {
   try {
     const result = await withTransaction(async (session) => {
-      //
       const { id } = req.params;
       const { newAdminId } = req.body;
 
       if (!newAdminId) {
         throw errorHandler(400, "New admin ID is required");
       }
-      // Fetch restaurant (LEAN snapshot)
       const restaurant = await Restaurant.findById(id).session(session).lean();
 
       if (!restaurant) {
         throw errorHandler(404, "Restaurant Not Found");
       }
 
-      // Fetch admins
       const oldAdmin = await User.findById(restaurant.adminId).session(session);
       if (!oldAdmin) {
         throw errorHandler(500, "Original admin not found");
       }
 
       const newAdmin = await User.findById(newAdminId).session(session);
-      // const newAdmin = await User.findById(newAdminId);
       if (!newAdmin || newAdmin.role !== "admin") {
         throw errorHandler(400, `Invalid admin selected`);
       }
 
-      // check if admin already exists
       if (newAdmin.restaurantId) {
         throw errorHandler(403, "Selected admin already owns a restaurant");
       }
 
-      // Perform reassignment
-      // remove restaurant from old admin
       await User.findByIdAndUpdate(
         oldAdmin._id,
         {
@@ -849,7 +630,6 @@ export const reassignRestaurantAdmin = async (req, res, next) => {
         { session },
       );
 
-      // Assign new admin
       await Restaurant.findByIdAndUpdate(
         id,
         {
@@ -866,7 +646,6 @@ export const reassignRestaurantAdmin = async (req, res, next) => {
         { session },
       );
 
-      // AUDIT LOG (STATUS_CHANGE)
       await logAudit({
         actorId: req.user.id,
         actorRole: req.user.role,
@@ -888,7 +667,6 @@ export const reassignRestaurantAdmin = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: `Restaurant ownership reassigned successfully `,
-
       data: result,
     });
   } catch (error) {
@@ -897,31 +675,15 @@ export const reassignRestaurantAdmin = async (req, res, next) => {
 };
 
 // ===============================================================================
-// 🔷 GET /api/restaurants/me — Get logged-in admin’s restaurant
-// ===============================================================================
-// Purpose:
-// - Fetch the restaurant owned by the currently logged-in admin
-//
-// Who can access:
-// - Admin only
-//
-// Rules:
-// - Admin can only see their own restaurant
-//
-// Real-world usage:
-// - Admin dashboard
-// - Restaurant management panel
-//
+// 🔷 GET /api/restaurants/me — Get logged-in admin's restaurant
 // ===============================================================================
 
 export const getMyRestaurant = async (req, res, next) => {
   try {
-    // Admin must have restaurantId assigned
     if (!req.user.restaurantId) {
       return next(errorHandler(404, "No restaurant assigned to this admin"));
     }
 
-    // 🔎 Fetch restaurant by ID
     const restaurant = await Restaurant.findById(req.user.restaurantId).select(
       "-__v",
     );
@@ -930,7 +692,6 @@ export const getMyRestaurant = async (req, res, next) => {
       return next(errorHandler(404, "Restaurant not found"));
     }
 
-    // 🚨 Cross-check ownership consistency
     if (restaurant.adminId.toString() !== req.user.id) {
       return next(
         errorHandler(403, "Ownership mismatch detected. Contact superAdmin."),
@@ -948,22 +709,6 @@ export const getMyRestaurant = async (req, res, next) => {
 
 // ===============================================================================
 // 🔷 GET /api/restaurants/nearby — Nearby restaurants
-// ===============================================================================
-// Purpose:
-// - Find restaurants near user location
-//
-// Query params:
-// - lat (required)
-// - lng (required)
-// - radius (optional, meters)
-//
-// Visibility:
-// - Only public & active restaurants
-//
-// Real-world usage:
-// - Location-based discovery
-// - Maps & proximity search
-//
 // ===============================================================================
 
 export const getNearByRestaurants = async (req, res, next) => {
@@ -1007,28 +752,7 @@ export const getNearByRestaurants = async (req, res, next) => {
 };
 
 // ===============================================================================
-// 🔷 GET /api/restaurants — Public restaurant listing & filters
-// ===============================================================================
-// Purpose:
-// - List restaurants for customers with filters
-//
-// Supported filters:
-// - city
-// - categories
-// - isFeatured
-// - isTrending
-// - openNow
-// - search (q)
-// - pagination
-//
-// Visibility:
-// - Only public & active restaurants
-//
-// Real-world usage:
-// - Homepage listings
-// - Search results
-// - Discovery pages
-//
+// 🔷 GET /api/restaurants — Public restaurant listing
 // ===============================================================================
 
 export const listRestaurants = async (req, res, next) => {
@@ -1039,7 +763,7 @@ export const listRestaurants = async (req, res, next) => {
       isFeatured,
       isTrending,
       isOpenNow,
-      q, // q=search
+      q,
       sortBy,
       page = 1,
       limit = 10,
@@ -1115,24 +839,7 @@ export const listRestaurants = async (req, res, next) => {
 };
 
 // ===============================================================================
-// 🔷 GET /api/restaurants/{slug}/details — Full restaurant public page
-// ===============================================================================
-// Purpose:
-// - Serve the complete restaurant detail page for customers
-//
-// Includes:
-// - Restaurant info
-// - Categories
-// - Menu items
-// - Open/closed status
-//
-// Visibility rules:
-// - Only public & active restaurants
-//
-// Real-world usage:
-// - Customer restaurant page
-// - Food ordering / browsing experience
-//
+// 🔷 GET /api/restaurants/{slug}/details — Full restaurant details
 // ===============================================================================
 
 export const getRestaurantDetails = async (req, res, next) => {
@@ -1166,20 +873,6 @@ export const getRestaurantDetails = async (req, res, next) => {
 // ===============================================================================
 // 🔷 GET /api/restaurants/featured — Featured restaurants
 // ===============================================================================
-// Purpose:
-// - Highlight curated restaurants
-//
-// Visibility:
-// - Only public & active restaurants
-//
-// Supports:
-// - Pagination
-//
-// Real-world usage:
-// - Homepage sections
-// - Marketing campaigns
-//
-// ===============================================================================
 
 export const getFeaturedRestaurants = async (req, res, next) => {
   try {
@@ -1189,7 +882,6 @@ export const getFeaturedRestaurants = async (req, res, next) => {
       ...publicRestaurantFilter,
     };
 
-    // total count
     const total = await Restaurant.countDocuments(filter);
 
     const pageNum = Number(page);
@@ -1205,7 +897,6 @@ export const getFeaturedRestaurants = async (req, res, next) => {
       total,
     });
 
-    // query
     const restaurant = await Restaurant.find(filter)
       .skip(pagination.skip)
       .limit(pagination.limit)
@@ -1229,20 +920,6 @@ export const getFeaturedRestaurants = async (req, res, next) => {
 // ===============================================================================
 // 🔷 GET /api/restaurants/trending — Trending restaurants
 // ===============================================================================
-// Purpose:
-// - Highlight curated restaurants
-//
-// Visibility:
-// - Only public & active restaurants
-//
-// Supports:
-// - Pagination
-//
-// Real-world usage:
-// - Homepage sections
-// - Marketing campaigns
-//
-// ===============================================================================
 
 export const getTrendingRestaurants = async (req, res, next) => {
   try {
@@ -1250,7 +927,6 @@ export const getTrendingRestaurants = async (req, res, next) => {
 
     const filter = { isTrending: true, ...publicRestaurantFilter };
 
-    // total count
     const total = await Restaurant.countDocuments(filter);
 
     const pageNum = Number(page);
@@ -1266,7 +942,6 @@ export const getTrendingRestaurants = async (req, res, next) => {
       total,
     });
 
-    // query
     const restaurant = await Restaurant.find(filter)
       .skip(pagination.skip)
       .limit(pagination.limit)
@@ -1288,21 +963,6 @@ export const getTrendingRestaurants = async (req, res, next) => {
 
 // ===============================================================================
 // 🔷 GET /api/restaurants/me/summary — Admin restaurant summary
-// ===============================================================================
-// Purpose:
-// - Provide quick metrics for admin dashboard
-//
-// Includes:
-// - Menu count
-// - Category count
-// - Store manager count
-//
-// Who can access:
-// - Admin only
-//
-// Real-world usage:
-// - Admin dashboard widgets
-//
 // ===============================================================================
 
 export const getAdminRestaurantSummary = async (req, res, next) => {
