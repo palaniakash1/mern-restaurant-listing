@@ -7,14 +7,8 @@ import { paginate } from "../utils/paginate.js";
 import { withTransaction } from "../utils/withTransaction.js";
 import { logAudit } from "../utils/auditLogger.js";
 
-const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
+import { isValidObjectId, normalizeIp } from "../utils/controllerHelpers.js";
 
-const normalizeIp = (req) => {
-  const forwardedFor = req.headers["x-forwarded-for"];
-  if (Array.isArray(forwardedFor)) return forwardedFor[0];
-  if (typeof forwardedFor === "string") return forwardedFor.split(",")[0].trim();
-  return req.ip;
-};
 
 const recomputeRestaurantRating = async (restaurantId, session = null) => {
   const stats = await Review.aggregate([

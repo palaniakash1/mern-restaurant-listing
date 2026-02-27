@@ -9,24 +9,14 @@ import { paginate } from "../utils/paginate.js";
 import { logAudit } from "../utils/auditLogger.js";
 import mongoose from "mongoose";
 
-const MAX_SEARCH_LENGTH = 100;
+import {
+  MAX_SEARCH_LENGTH,
+  isValidObjectId,
+  toIdString,
+  getClientIp,
+  escapeRegex,
+} from "../utils/controllerHelpers.js";
 
-const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
-
-const toIdString = (value) => {
-  if (!value) return "";
-  return typeof value === "string" ? value : value.toString();
-};
-
-const getClientIp = (req) => {
-  const forwardedFor = req.headers["x-forwarded-for"];
-  if (Array.isArray(forwardedFor)) return forwardedFor[0];
-  if (typeof forwardedFor === "string")
-    return forwardedFor.split(",")[0].trim();
-  return req.ip;
-};
-
-const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // ======================================
 // Helper: role + ownership guard

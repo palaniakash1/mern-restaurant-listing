@@ -10,26 +10,18 @@ import { withTransaction } from "../utils/withTransaction.js";
 import mongoose from "mongoose";
 import { generateUniqueSlug } from "../utils/generateUniqueSlug.js";
 
-const MAX_SEARCH_LENGTH = 100;
-const MAX_EXPORT_LIMIT = 1000;
+import {
+  MAX_SEARCH_LENGTH,
+  MAX_EXPORT_LIMIT,
+  toIdString,
+  isValidObjectId,
+  getClientIp,
+  escapeRegex,
+} from "../utils/controllerHelpers.js";
+
 const IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000;
 const bulkReorderIdempotencyStore = new Map();
 
-const toIdString = (value) => {
-  if (!value) return "";
-  return typeof value === "string" ? value : value.toString();
-};
-
-const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
-
-const getClientIp = (req) => {
-  const forwardedFor = req.headers["x-forwarded-for"];
-  if (Array.isArray(forwardedFor)) return forwardedFor[0];
-  if (typeof forwardedFor === "string") return forwardedFor.split(",")[0].trim();
-  return req.ip;
-};
-
-const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const buildScopedSlugForUpdate = async ({ category, name, session }) => {
   const baseSlug = name
