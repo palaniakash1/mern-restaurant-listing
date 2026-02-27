@@ -933,7 +933,6 @@ export const getMyRestaurant = async (req, res, next) => {
       success: true,
       data: restaurant,
     });
-    // console.log(`restaurant: ${restaurant}`);
   } catch (error) {
     next(error);
   }
@@ -994,8 +993,6 @@ export const getNearByRestaurants = async (req, res, next) => {
       count: enriched.length,
       data: enriched,
     });
-    // console.log(`enriched:  ${enriched}`);
-    // console.log(`restaurants: ${restaurants}`);
   } catch (error) {
     next(error);
   }
@@ -1104,8 +1101,6 @@ export const listRestaurants = async (req, res, next) => {
       hasPrev: pagination.hasPrev,
       data: result,
     });
-    // console.log(result);
-    // console.log(`restaurants ${restaurants}`);
   } catch (error) {
     next(error);
   }
@@ -1155,8 +1150,6 @@ export const getRestaurantDetails = async (req, res, next) => {
         menu,
       },
     });
-    // console.log(`restaurant ${restaurant}`);
-    // console.log(`menu ${menu}`);
   } catch (error) {
     next(error);
   }
@@ -1220,8 +1213,6 @@ export const getFeaturedRestaurants = async (req, res, next) => {
       })),
     });
 
-    // console.log("restaurants:", restaurant.length);
-    // console.log("total:", total);
   } catch (error) {
     next(error);
   }
@@ -1282,8 +1273,6 @@ export const getTrendingRestaurants = async (req, res, next) => {
         isOpenNow: isRestaurantOpen(r.openingHours),
       })),
     });
-    // console.log("restaurants:", restaurant.length);
-    // console.log("total:", total);
   } catch (error) {
     next(error);
   }
