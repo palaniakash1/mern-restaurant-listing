@@ -25,7 +25,7 @@ jobs:
 
     # Environment variables
     env:
-      NODE_VERSION: '20'
+      NODE_VERSION: "20"
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
@@ -39,7 +39,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       # 3. Install dependencies
       - name: Install dependencies
@@ -56,9 +56,7 @@ jobs:
 
       # 5. Run tests
       - name: Run tests
-        run: |
-          cd api
-          npm test
+        run: npm run test --prefix api
 
   # ===================================================================
   # JOB 2: Lint and Build Frontend
@@ -76,8 +74,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       # 3. Install dependencies
       - name: Install dependencies
@@ -106,8 +104,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -140,7 +138,7 @@ jobs:
           echo "Deploying to production server..."
           # Add your deployment commands here
           # Example: rsync, scp, or use deployment actions
-          
+
       - name: Notify deployment
         if: always()
         run: |
