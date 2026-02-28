@@ -22,7 +22,7 @@ import createRequestLogger from "./middlewares/requestLogger.js";
 import { createErrorHandler, createNotFoundHandler } from "./middlewares/errorHandler.js";
 import { createHealthCheck, createLivenessProbe, createReadinessProbe } from "./middlewares/healthCheck.js";
 import { metricsMiddleware, createMetricsEndpoint } from "./middlewares/metrics.js";
-import { createIdempotencyMiddleware } from "./utils/idempotency.js";
+import idempotentMiddleware from "./middlewares/idempotency.js";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -69,7 +69,7 @@ app.get("/api/health", createHealthCheck());
 app.get("/api/live", createLivenessProbe());
 app.get("/api/ready", createReadinessProbe());
 
-// Metrics endpoint (Prometheus-style)
+// Metrics endpoint
 app.use(metricsMiddleware);
 app.get("/api/metrics", createMetricsEndpoint());
 

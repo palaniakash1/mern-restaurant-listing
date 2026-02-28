@@ -1,103 +1,78 @@
 # ===================================================================
-# Enterprise-Grade CI/CD Pipeline
-# ===================================================================
-# This workflow includes all enterprise-grade features:
-# It builds, tests, and can deploy your application
+# Enterprise CI/CD Pipeline
 # ===================================================================
 
-name: EatWisely CI/CD Pipeline
+name: CI/CD Pipeline
 
-# Triggers: Run on push to main/master and on pull requests
 on:
   push:
     branches: [main, master]
   pull_request:
     branches: [main, master]
 
-# Jobs to run
+env:
+  NODE_VERSION: "20"
+
 jobs:
   # ===================================================================
-  # JOB 1: Lint and Test Backend
+  # JOB 1: Install & Lint
   # ===================================================================
-  backend-test:
-    name: Backend Test
+  install-and-lint:
+    name: Install & Lint
     runs-on: ubuntu-latest
-
-    # Environment variables
-    env:
-      NODE_VERSION: "20"
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
-
+    
     steps:
-      # 1. Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
 
-      # 3. Install dependencies
       - name: Install dependencies
         run: npm ci
 
-      # 3.1 Debug: Print working directory
-      - name: Show directory structure
-        run: |
-          pwd
-          ls -la
-
-      # 4. Run linter (ESLint)
-      - name: Run ESLint
+      - name: Run linter
         run: npm run lint || true
         continue-on-error: true
 
-      # 5. Run tests
+  # ===================================================================
+  # JOB 2: Run Tests
+  # ===================================================================
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: install-and-lint
+    
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Run tests
         run: npm test
 
   # ===================================================================
-  # JOB 2: Lint and Build Frontend
-  # ===================================================================
-  frontend-build:
-    name: Frontend Build
-    runs-on: ubuntu-latest
-
-    steps:
-      # 1. Checkout code
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # 2. Setup Node.js
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      # 3. Install dependencies
-      - name: Install dependencies
-        run: npm ci
-
-      # 4. Run linter
-      - name: Run ESLint
-        run: npm run lint || true
-        continue-on-error: true
-
-      # 5. Build the application
-      - name: Build
-        run: npm run build
-
-  # ===================================================================
   # JOB 3: Security Audit
   # ===================================================================
-  security-audit:
+  security:
     name: Security Audit
     runs-on: ubuntu-latest
+    needs: test
 
     steps:
       - name: Checkout code
@@ -106,42 +81,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
 
       - name: Install dependencies
         run: npm ci
 
-      # Run security audit (npm audit)
-      - name: Security audit
+      - name: Audit dependencies
         run: npm audit --audit-level=high
         continue-on-error: true
-
-  # ===================================================================
-  # JOB 4: Deploy to Production (only on main branch)
-  # ===================================================================
-  deploy:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    # Only run when main branch is updated
-    if: github.ref == 'refs/heads/main'
-    needs: [backend-test, frontend-build, security-audit]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to server
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
-          SSH_KEY: ${{ secrets.SSH_KEY }}
-        run: |
-          echo "Deploying to production server..."
-          # Add your deployment commands here
-          # Example: rsync, scp, or use deployment actions
-
-      - name: Notify deployment
-        if: always()
-        run: |
-          echo "Deployment completed with status: ${{ job.status }}"
