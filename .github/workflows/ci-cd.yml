@@ -43,20 +43,16 @@ jobs:
 
       # 3. Install dependencies
       - name: Install dependencies
-        run: |
-          cd api
-          npm ci
+        run: npm ci
 
       # 4. Run linter (ESLint)
       - name: Run ESLint
-        run: |
-          cd api
-          npm run lint || true
+        run: npm run lint || true
         continue-on-error: true
 
       # 5. Run tests
       - name: Run tests
-        run: npm run test --prefix api
+        run: npm run test
 
   # ===================================================================
   # JOB 2: Lint and Build Frontend
