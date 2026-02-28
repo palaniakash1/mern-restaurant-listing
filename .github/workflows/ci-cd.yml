@@ -65,12 +65,21 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_COMMENTS: "false"
 
-      - name: Run TruffleHog
+      - name: Run TruffleHog for Pull Requests
         if: github.event_name == 'pull_request'
         uses: trufflesecurity/trufflehog@main
         with:
           base: ${{ github.event.pull_request.base.sha }}
           head: ${{ github.event.pull_request.head.sha }}
+        continue-on-error: true
+
+      - name: Run TruffleHog for Push
+        if: github.event_name == 'push'
+        uses: trufflesecurity/trufflehog@main
+        with:
+          base: ${{ github.event.before }}
+          head: ${{ github.event.after }}
+        continue-on-error: true
 
       - id: scan
         run: echo "passed=true" >> $GITHUB_OUTPUT
