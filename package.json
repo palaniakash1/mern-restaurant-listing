@@ -7,7 +7,11 @@
   "scripts": {
     "dev": "npx nodemon api/index.js",
     "start": "node api/index.js",
-    "test": "node --test --test-concurrency=1 api/tests/*.test.js"
+    "test": "node --test --test-concurrency=1 api/tests/*.test.js",
+    "migrate": "node api/migrations/migrate.js migrate",
+    "migrate:rollback": "node api/migrations/migrate.js migrate:rollback",
+    "migrate:status": "node api/migrations/migrate.js migrate:status",
+    "seed": "node api/migrations/migrate.js seed"
   },
   "keywords": [],
   "author": "",
