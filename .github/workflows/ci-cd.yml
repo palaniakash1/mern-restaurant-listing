@@ -45,6 +45,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # 3.1 Debug: Print working directory
+      - name: Show directory structure
+        run: |
+          pwd
+          ls -la
+
       # 4. Run linter (ESLint)
       - name: Run ESLint
         run: npm run lint || true
@@ -52,7 +58,7 @@ jobs:
 
       # 5. Run tests
       - name: Run tests
-        run: npm run test
+        run: npm test
 
   # ===================================================================
   # JOB 2: Lint and Build Frontend
