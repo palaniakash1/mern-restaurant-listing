@@ -2,178 +2,102 @@
 # Enterprise-Grade CI/CD Pipeline
 # ===================================================================
 # This workflow includes all enterprise-grade features:
-# - Coverage enforcement
-# - Runtime environment testing  
-# - API contract protection
-# - Migration safety
-# - Deploy rollback
-# - Health validation
-# - Secret scanning
-# - Performance regression checks
-# - Idempotency replay tests
-# - Observability readiness
-# - Supply chain validation
-# - Governance enforcement
+# It builds, tests, and can deploy your application
 # ===================================================================
 
-name: Enterprise CI/CD Pipeline
+name: EatWisely CI/CD Pipeline
 
-# Triggers: Run on every push and pull request
+# Triggers: Run on push to main/master and on pull requests
 on:
   push:
-    branches: [main, master, develop]
+    branches: [main, master]
   pull_request:
     branches: [main, master]
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Deployment environment'
-        required: true
-        default: 'staging'
 
-# ===================================================================
-# ENVIRONMENT CONFIGURATIONS
-# ===================================================================
-env:
-  NODE_VERSION: "20"
-  COVERAGE_THRESHOLD: 80
-  BACKEND_PORT: 3000
-  HEALTH_CHECK_TIMEOUT: 30
-  HEALTH_CHECK_RETRIES: 3
-
-# ===================================================================
-# JOBS
-# ===================================================================
+# Jobs to run
 jobs:
   # ===================================================================
-  # JOB 1: SECRET SCANNING
+  # JOB 1: Lint and Test Backend
   # ===================================================================
-  secret-scanning:
-    name: Secret Scanning
+  backend-test:
+    name: Backend Test
     runs-on: ubuntu-latest
-    outputs:
-      passed: ${{ steps.scan.outputs.passed }}
+
+    # Environment variables
+    env:
+      NODE_VERSION: "20"
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Run GitLeaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_ENABLE_COMMENTS: "false"
-
-      - name: Run TruffleHog for Pull Requests
-        if: github.event_name == 'pull_request'
-        uses: trufflesecurity/trufflehog@main
-        with:
-          base: ${{ github.event.pull_request.base.sha }}
-          head: ${{ github.event.pull_request.head.sha }}
-        continue-on-error: true
-
-      - name: Run TruffleHog for Push
-        if: github.event_name == 'push'
-        uses: trufflesecurity/trufflehog@main
-        with:
-          base: ${{ github.event.before }}
-          head: ${{ github.event.after }}
-        continue-on-error: true
-
-      - id: scan
-        run: echo "passed=true" >> $GITHUB_OUTPUT
-
-  # ===================================================================
-  # JOB 2: SUPPLY CHAIN VALIDATION
-  # ===================================================================
-  supply-chain:
-    name: Supply Chain Security
-    runs-on: ubuntu-latest
-    steps:
+      # 1. Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2. Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
 
+      # 3. Install dependencies
       - name: Install dependencies
         run: npm ci
 
-      - name: Audit dependencies
-        run: npm audit --audit-level=high
-        continue-on-error: true
-
-      - name: Check for vulnerabilities
+      # 3.1 Debug: Print working directory
+      - name: Show directory structure
         run: |
-          npm audit --json > audit-report.json
-          echo "Audit complete"
+          pwd
+          ls -la
 
-      - name: Verify package integrity
-        run: npm ping
-
-      - name: Check for outdated packages
-        run: npm outdated --depth=0 || true
-
-  # ===================================================================
-  # JOB 3: CODE QUALITY & GOVERNANCE
-  # ===================================================================
-  code-quality:
-    name: Code Quality & Governance
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Check code formatting
-        run: npm run format:check || true
-        continue-on-error: true
-
-      - name: Run linter
+      # 4. Run linter (ESLint)
+      - name: Run ESLint
         run: npm run lint || true
         continue-on-error: true
 
-      - name: Check for dangerous patterns
-        run: |
-          echo "Checking for dangerous patterns..."
-          # Check for hardcoded secrets
-          grep -r "password\s*=\s*['\"]" --include="*.js" || true
-          grep -r "apiKey\s*=\s*['\"]" --include="*.js" || true
-          grep -r "secret\s*=\s*['\"]" --include="*.js" || true
-
-      - name: Enforce branch protection
-        run: |
-          echo "Verifying commit history..."
-          # Check if commits are signed
-          git log --oneline -10 || true
+      # 5. Run tests
+      - name: Run tests
+        run: npm test
 
   # ===================================================================
-  # JOB 4: UNIT TESTS & COVERAGE
+  # JOB 2: Lint and Build Frontend
   # ===================================================================
-  backend-test:
-    name: Backend Tests & Coverage
+  frontend-build:
+    name: Frontend Build
     runs-on: ubuntu-latest
-    needs: [secret-scanning, supply-chain, code-quality]
-    
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
-      JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
-      REDIS_URL: ${{ secrets.REDIS_URL }}
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Run linter
+      - name: Run ESLint
+        run: npm run lint || true
+        continue-on-error: true
+
+      # 5. Build the application
+      - name: Build
+        run: npm run build
+
+  # ===================================================================
+  # JOB 3: Security Audit
+  # ===================================================================
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
@@ -182,344 +106,42 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: "20"
           cache: "npm"
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests with coverage
-        run: |
-          npm test -- --coverage
+      # Run security audit (npm audit)
+      - name: Security audit
+        run: npm audit --audit-level=high
         continue-on-error: true
 
-      - name: Upload coverage reports
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage/lcov.info
-          fail_ci_if_error: false
-
-      - name: Check coverage threshold
-        run: |
-          echo "Checking coverage threshold: ${{ env.COVERAGE_THRESHOLD }}%"
-          # Add coverage check logic here
-          echo "Coverage enforcement complete"
-
   # ===================================================================
-  # JOB 5: API CONTRACT & IDEMPOTENCY TESTS
+  # JOB 4: Deploy to Production (only on main branch)
   # ===================================================================
-  api-contract:
-    name: API Contract & Idempotency
-    runs-on: ubuntu-latest
-    needs: [backend-test]
-    
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Start server for contract tests
-        run: |
-          npm run dev &
-          sleep 10
-          echo "Server started"
-
-      - name: Run API contract tests
-        run: |
-          echo "Testing API contract compliance..."
-          # Add contract testing logic
-          echo "Contract tests passed"
-
-      - name: Run Idempotency tests
-        run: |
-          echo "Testing idempotency..."
-          # Test that same request produces same result
-          echo "Idempotency tests passed"
-
-      - name: Stop server
-        run: pkill -f "node api/index.js" || true
-
-  # ===================================================================
-  # JOB 6: PERFORMANCE REGRESSION
-  # ===================================================================
-  performance:
-    name: Performance Regression Tests
-    runs-on: ubuntu-latest
-    needs: [api-contract]
-    
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run performance tests
-        run: |
-          echo "Running performance benchmarks..."
-          # Test response times
-          # Test database query times
-          # Test memory usage
-          echo "Performance tests complete"
-
-      - name: Check for memory leaks
-        run: |
-          echo "Checking for memory leaks..."
-          echo "Memory check complete"
-
-  # ===================================================================
-  # JOB 7: RUNTIME ENVIRONMENT TESTING
-  # ===================================================================
-  runtime-test:
-    name: Runtime Environment Tests
-    runs-on: ubuntu-latest
-    needs: [performance]
-    
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
-      NODE_ENV: test
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Test with different Node versions
-        run: |
-          echo "Testing with Node.js ${{ env.NODE_VERSION }}"
-          node --version
-          npm test
-
-      - name: Test database connectivity
-        run: |
-          echo "Testing database connection..."
-          # Verify MongoDB connection
-          echo "Database connection verified"
-
-      - name: Test Redis connectivity
-        run: |
-          echo "Testing Redis connection..."
-          # Verify Redis connection
-          echo "Redis connection verified"
-
-  # ===================================================================
-  # JOB 8: MIGRATION SAFETY
-  # ===================================================================
-  migration-safety:
-    name: Migration Safety Checks
-    runs-on: ubuntu-latest
-    needs: [runtime-test]
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Check for migrations
-        run: |
-          echo "Checking migration files..."
-          ls -la api/migrations/ || echo "No migrations directory"
-
-      - name: Validate migration scripts
-        run: |
-          echo "Validating migration scripts..."
-          # Check for backup scripts
-          # Check for rollback scripts
-          echo "Migration validation complete"
-
-      - name: Database rollback test
-        run: |
-          echo "Testing database rollback capability..."
-          echo "Rollback test complete"
-
-  # ===================================================================
-  # JOB 9: BUILD & DEPLOY TO STAGING
-  # ===================================================================
-  build:
-    name: Build Application
-    runs-on: ubuntu-latest
-    needs: [migration-safety]
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build backend
-        run: npm run build:backend || echo "No backend build script"
-
-      - name: Build frontend
-        run: |
-          cd client
-          npm ci
-          npm run build
-        continue-on-error: true
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: build-artifacts
-          path: |
-            api/dist
-            client/dist
-
-  # ===================================================================
-  # JOB 10: DEPLOY TO STAGING
-  # ===================================================================
-  deploy-staging:
-    name: Deploy to Staging
-    runs-on: ubuntu-latest
-    needs: [build]
-    if: github.ref == 'refs/heads/develop'
-    environment:
-      name: staging
-      url: https://staging.yourdomain.com
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: build-artifacts
-
-      - name: Deploy to staging
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST_STAGING }}
-          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
-          SSH_KEY: ${{ secrets.SSH_KEY_STAGING }}
-        run: |
-          echo "Deploying to staging environment..."
-          # Add staging deployment commands
-          echo "Deployed to staging"
-
-      - name: Health check staging
-        run: |
-          echo "Running health checks..."
-          curl -f https://staging.yourdomain.com/api/health || exit 1
-
-  # ===================================================================
-  # JOB 11: DEPLOY TO PRODUCTION
-  # ===================================================================
-  deploy-production:
+  deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: [deploy-staging]
+    # Only run when main branch is updated
     if: github.ref == 'refs/heads/main'
-    environment:
-      name: production
-      url: https://yourdomain.com
-    
+    needs: [backend-test, frontend-build, security-audit]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: build-artifacts
-
-      - name: Create backup
+      - name: Deploy to server
         env:
-          SSH_HOST: ${{ secrets.SSH_HOST_PROD }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
-          SSH_KEY: ${{ secrets.SSH_KEY_PROD }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
         run: |
-          echo "Creating production backup..."
-          # Backup current version
-          echo "Backup created"
+          echo "Deploying to production server..."
+          # Add your deployment commands here
+          # Example: rsync, scp, or use deployment actions
 
-      - name: Deploy to production
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST_PROD }}
-          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
-          SSH_KEY: ${{ secrets.SSH_KEY_PROD }}
-        run: |
-          echo "Deploying to production..."
-          # Deploy new version
-          echo "Deployed to production"
-
-      - name: Health check production
-        run: |
-          echo "Running production health checks..."
-          for i in {1..${{ env.HEALTH_CHECK_RETRIES }}}; do
-            curl -f https://yourdomain.com/api/health && break
-            echo "Health check attempt $i failed"
-            sleep 5
-          done
-
-      - name: Verify observability
-        run: |
-          echo "Checking observability endpoints..."
-          curl -f https://yourdomain.com/api/metrics || echo "Metrics endpoint not configured"
-          curl -f https://yourdomain.com/api/health || exit 1
-
-  # ===================================================================
-  # JOB 12: ROLLBACK (on failure)
-  # ===================================================================
-  rollback:
-    name: Rollback Deployment
-    runs-on: ubuntu-latest
-    needs: [deploy-production]
-    if: failure() && github.ref == 'refs/heads/main'
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Rollback production
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST_PROD }}
-          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
-          SSH_KEY: ${{ secrets.SSH_KEY_PROD }}
-        run: |
-          echo "Rolling back production..."
-          # Restore previous version
-          echo "Rollback complete"
-
-      - name: Notify failure
+      - name: Notify deployment
         if: always()
         run: |
-          echo "Deployment failed! Rollback initiated."
-          # Send notification
+          echo "Deployment completed with status: ${{ job.status }}"
