@@ -34,6 +34,6 @@ router.use("/categories", categoryRoutes);
 router.use("/menu", menuRoutes);
 router.use("/reviews", reviewRoutes);
 router.use("/admin", adminRoutes);
-router.use("/audit-logs", auditLogRoutes);
+router.use("/auditlogs", auditLogRoutes);
 
 export default router;
