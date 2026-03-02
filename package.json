@@ -8,6 +8,7 @@
     "dev": "npx nodemon api/index.js",
     "start": "node api/index.js",
     "test": "node --test --test-concurrency=1 api/tests/*.test.js",
+    "test:coverage": "nyc --reporter=text --reporter=html --reporter=json node --test --test-concurrency=1 api/tests/*.test.js",
     "migrate": "node api/migrations/migrate.js migrate",
     "migrate:rollback": "node api/migrations/migrate.js migrate:rollback",
     "migrate:status": "node api/migrations/migrate.js migrate:status",
@@ -35,6 +36,7 @@
   },
   "devDependencies": {
     "mongodb-memory-server": "^10.3.0",
+    "nyc": "^18.0.0",
     "supertest": "^7.1.4",
     "tailwind-scrollbar": "^4.0.2"
   }

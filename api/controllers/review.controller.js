@@ -80,6 +80,11 @@ const assertCanReadReview = (req, review) => {
 
 export const createReview = async (req, res, next) => {
   try {
+    console.log("=== CREATE REVIEW DEBUG ===");
+    console.log("User:", req.user);
+    console.log("Restaurant ID:", req.params.restaurantId);
+    console.log("Request body:", req.body);
+    
     assertPublicUser(req);
     const { restaurantId } = req.params;
     const { rating, comment = "" } = req.body;
@@ -91,23 +96,31 @@ export const createReview = async (req, res, next) => {
       throw errorHandler(400, "rating must be between 1 and 5");
     }
 
+    console.log("Starting transaction...");
     const result = await withTransaction(async (session) => {
+      console.log("Finding restaurant...");
       const restaurant = await Restaurant.findById(restaurantId)
         .session(session)
         .lean();
+      console.log("Restaurant found:", restaurant);
+      
       if (!restaurant || !restaurant.isActive || restaurant.status !== "published") {
         throw errorHandler(404, "Restaurant not available for reviews");
       }
 
+      console.log("Checking for existing review...");
       const existing = await Review.findOne({
         restaurantId,
         userId: req.user.id,
         isActive: true,
       }).session(session);
+      console.log("Existing review:", existing);
+      
       if (existing) {
         throw errorHandler(409, "You already reviewed this restaurant");
       }
 
+      console.log("Creating new review...");
       const [review] = await Review.create(
         [
           {
@@ -119,9 +132,12 @@ export const createReview = async (req, res, next) => {
         ],
         { session },
       );
+      console.log("Review created:", review);
 
+      console.log("Recomputing restaurant rating...");
       await recomputeRestaurantRating(restaurantId, session);
 
+      console.log("Logging audit...");
       await logAudit({
         actorId: req.user.id,
         actorRole: req.user.role,
@@ -137,8 +153,10 @@ export const createReview = async (req, res, next) => {
       return review;
     });
 
+    console.log("Sending response...");
     res.status(201).json({ success: true, data: result });
   } catch (error) {
+    console.log("ERROR in createReview:", error);
     if (error.code === 11000) {
       return next(errorHandler(409, "You already reviewed this restaurant"));
     }
