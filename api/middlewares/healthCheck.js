@@ -111,6 +111,24 @@ export const createHealthCheck = (options = {}) => {
       details.system = checkSystem();
     }
     
+    // Enhanced environment validation
+    if (include.includes("environment")) {
+      const envHealth = validateEnvironment();
+      details.environment = envHealth;
+      if (!envHealth.valid) {
+        overallStatus = "error";
+      }
+    }
+    
+    // Enhanced dependency health checks
+    if (include.includes("dependencies")) {
+      const depsHealth = await checkDependencies();
+      details.dependencies = depsHealth;
+      if (!depsHealth.healthy) {
+        overallStatus = "error";
+      }
+    }
+    
     health.checks = details;
     health.status = overallStatus;
     
@@ -120,6 +138,85 @@ export const createHealthCheck = (options = {}) => {
       ...health,
     });
   };
+};
+
+// New functions for enhanced environment testing
+const validateEnvironment = () => {
+  const requiredEnvVars = [
+    "NODE_ENV",
+    "DATABASE_URL",
+    "PORT",
+    "JWT_SECRET",
+    "APP_NAME",
+    "APP_VERSION"
+  ];
+  
+  const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+  const warnings = [];
+  
+  // Check for common issues
+  if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
+    warnings.push("JWT_SECRET is required in production");
+  }
+  
+  if (process.env.NODE_ENV === "development" && process.env.NODE_ENV === "test") {
+    warnings.push("NODE_ENV should not be both development and test");
+  }
+  
+  return {
+    valid: missingVars.length === 0,
+    missing: missingVars,
+    warnings,
+    nodeEnv: process.env.NODE_ENV,
+    warningsCount: warnings.length
+  };
+};
+
+const checkDependencies = async () => {
+  const startTime = Date.now();
+  const results = {
+    healthy: true,
+    checks: {},
+    latency: 0
+  };
+  
+  // Check Redis (if configured)
+  if (process.env.REDIS_URL) {
+    try {
+      const redis = require("redis");
+      const client = redis.createClient({ url: process.env.REDIS_URL });
+      await client.connect();
+      await client.ping();
+      await client.quit();
+      results.checks.redis = { status: "healthy", latency: Date.now() - startTime };
+    } catch (error) {
+      results.checks.redis = { status: "unhealthy", error: error.message };
+      results.healthy = false;
+    }
+  }
+  
+  // Check external services (example: email service)
+  if (process.env.EMAIL_SERVICE_URL) {
+    try {
+      const response = await fetch(process.env.EMAIL_SERVICE_URL, {
+        method: "HEAD",
+        timeout: 3000
+      });
+      results.checks.emailService = { 
+        status: response.ok ? "healthy" : "unhealthy",
+        latency: Date.now() - startTime
+      };
+    } catch (error) {
+      results.checks.emailService = { 
+        status: "unhealthy", 
+        error: error.message 
+      };
+      results.healthy = false;
+    }
+  }
+  
+  results.latency = Date.now() - startTime;
+  return results;
 };
 
 /**

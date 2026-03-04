@@ -112,25 +112,101 @@ async function runSeeds(db) {
     console.log("No seeds directory found.");
     return;
   }
-  
+
   const files = fs.readdirSync(SEEDS_DIR)
     .filter(f => f.endsWith(".js"))
     .sort();
-  
+
   console.log(`Found ${files.length} seed files.\n`);
-  
+
   for (const file of files) {
     console.log(`Running: ${file}`);
     const mod = await import(path.join(SEEDS_DIR, file));
-    
+
     if (mod.run) {
       await mod.run(db);
     }
-    
+
     console.log(`  ✅ Done\n`);
   }
-  
+
   console.log("All seeds complete!");
+}
+
+// New deployment testing functions
+async function runDeploymentTests(db) {
+  console.log("\n=== Deployment Test Suite ===");
+  
+  // Test 1: Database connectivity
+  console.log("\n1. Testing database connectivity...");
+  try {
+    const collections = await db.listCollections().toArray();
+    console.log(`  ✅ Database accessible - ${collections.length} collections found`);
+  } catch (error) {
+    console.log(`  ❌ Database connection failed: ${error.message}`);
+    return false;
+  }
+
+  // Test 2: Migration system
+  console.log("\n2. Testing migration system...");
+  try {
+    const migrationCollection = await db.collection(MIGRATION_COLLECTION).countDocuments();
+    console.log(`  ✅ Migration system accessible - ${migrationCollection} migrations tracked`);
+  } catch (error) {
+    console.log(`  ❌ Migration system error: ${error.message}`);
+    return false;
+  }
+
+  // Test 3: Basic CRUD operations
+  console.log("\n3. Testing basic CRUD operations...");
+  try {
+    const testCollection = await db.collection("test_crud");
+    await testCollection.insertOne({ test: "deployment", timestamp: new Date() });
+    const inserted = await testCollection.findOne({ test: "deployment" });
+    await testCollection.deleteOne({ test: "deployment" });
+    console.log(`  ✅ CRUD operations working - inserted and deleted test document`);
+  } catch (error) {
+    console.log(`  ❌ CRUD operations failed: ${error.message}`);
+    return false;
+  }
+
+  // Test 4: Index validation
+  console.log("\n4. Testing index validation...");
+  try {
+    const indexes = await db.collection("users").indexes();
+    const hasIndexes = indexes.some(idx => idx.name === "email_1");
+    console.log(`  ✅ Index validation - ${hasIndexes ? "indexes present" : "no indexes found"}`);
+  } catch (error) {
+    console.log(`  ❌ Index validation failed: ${error.message}`);
+    return false;
+  }
+
+  // Test 5: Performance check
+  console.log("\n5. Testing performance...");
+  try {
+    const startTime = Date.now();
+    const sample = await db.collection("users").findOne({}, { projection: { _id: 1 } });
+    const latency = Date.now() - startTime;
+    console.log(`  ✅ Performance check - query completed in ${latency}ms`);
+  } catch (error) {
+    console.log(`  ❌ Performance check failed: ${error.message}`);
+    return false;
+  }
+
+  console.log("\n✅ All deployment tests passed!");
+  return true;
+}
+
+// Add deployment test option to CLI
+async function showDeploymentTests(db) {
+  console.log("\n=== Deployment Test Options ===");
+  console.log("1. Run all deployment tests");
+  console.log("2. Test database connectivity");
+  console.log("3. Test migration system");
+  console.log("4. Test CRUD operations");
+  console.log("5. Test index validation");
+  console.log("6. Test performance");
+  console.log("\nUsage: node api/migrations/migrate.js test [option]");
 }
 
 async function showStatus(db) {

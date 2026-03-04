@@ -49,6 +49,12 @@ export const createMetricsEndpoint = () => {
       ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
       : 0;
     
+    // Performance regression detection
+    const baselineResponseTime = 100; // Baseline in ms (can be configured)
+    const regressionThreshold = 1.5; // 50% increase threshold
+    
+    const hasPerformanceRegression = avgResponseTime > (baselineResponseTime * regressionThreshold);
+    
     res.json({
       timestamp: new Date().toISOString(),
       requests: {
@@ -58,6 +64,9 @@ export const createMetricsEndpoint = () => {
       performance: {
         avgResponseTimeMs: Math.round(avgResponseTime * 100) / 100,
         sampleSize: responseTimes.length,
+        baselineResponseTimeMs: baselineResponseTime,
+        hasPerformanceRegression: hasPerformanceRegression,
+        regressionThreshold: regressionThreshold,
       },
       connections: {
         active: activeConnections,

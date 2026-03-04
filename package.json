@@ -12,7 +12,8 @@
     "migrate": "node api/migrations/migrate.js migrate",
     "migrate:rollback": "node api/migrations/migrate.js migrate:rollback",
     "migrate:status": "node api/migrations/migrate.js migrate:status",
-    "seed": "node api/migrations/migrate.js seed"
+    "seed": "node api/migrations/migrate.js seed",
+    "lint": "eslint api/**/*.js"
   },
   "keywords": [],
   "author": "",
@@ -22,6 +23,7 @@
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.2.3",
+    "eslint": "^10.0.2",
     "express": "^5.2.1",
     "ioredis": "^5.9.3",
     "joi": "^18.0.2",
