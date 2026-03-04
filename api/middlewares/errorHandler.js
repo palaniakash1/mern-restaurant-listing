@@ -3,11 +3,11 @@
  * Catches all unhandled errors and returns consistent error responses
  */
 
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 /**
  * Determines if the error is a operational error (expected)
- * @param {Error} error 
+ * @param {Error} error
  * @returns {boolean}
  */
 const isOperationalError = (error) => {
@@ -19,46 +19,46 @@ const isOperationalError = (error) => {
 
 /**
  * Sanitize error message to prevent leaking sensitive information
- * @param {Error} error 
+ * @param {Error} error
  * @returns {string}
  */
 const sanitizeErrorMessage = (error) => {
   // Don't expose internal error details in production
-  if (process.env.NODE_ENV === "production") {
+  if (process.env.NODE_ENV === 'production') {
     // Keep custom error messages
     if (error.isOperational) {
       return error.message;
     }
-    return "Internal server error";
+    return 'Internal server error';
   }
   return error.message;
 };
 
 /**
  * Gets a human-readable error type
- * @param {Error} error 
+ * @param {Error} error
  * @returns {string}
  */
 const getErrorType = (error) => {
   if (error instanceof mongoose.Error.ValidationError) {
-    return "ValidationError";
+    return 'ValidationError';
   }
   if (error instanceof mongoose.Error.CastError) {
-    return "CastError";
+    return 'CastError';
   }
-  if (error.name === "JsonWebTokenError") {
-    return "JsonWebTokenError";
+  if (error.name === 'JsonWebTokenError') {
+    return 'JsonWebTokenError';
   }
-  if (error.name === "TokenExpiredError") {
-    return "TokenExpiredError";
+  if (error.name === 'TokenExpiredError') {
+    return 'TokenExpiredError';
   }
   if (error.code === 11000) {
-    return "DuplicateKeyError";
+    return 'DuplicateKeyError';
   }
-  if (error.name === "MongoServerError") {
-    return "MongoServerError";
+  if (error.name === 'MongoServerError') {
+    return 'MongoServerError';
   }
-  return error.name || "Error";
+  return error.name || 'Error';
 };
 
 /**
@@ -76,23 +76,23 @@ export const createErrorHandler = (options = {}) => {
       return next(err);
     }
 
-    const requestId = req.requestId || "unknown";
+    const requestId = req.requestId || 'unknown';
     const errorType = getErrorType(err);
-    
+
     // Log error in development
     if (logErrors) {
-      const logLevel = err.statusCode >= 500 ? "error" : "warn";
+      const logLevel = err.statusCode >= 500 ? 'error' : 'warn';
       console[logLevel](JSON.stringify({
-        type: "error",
+        type: 'error',
         requestId,
         timestamp: new Date().toISOString(),
         errorType,
         message: err.message,
-        stack: process.env.NODE_ENV !== "production" ? err.stack : undefined,
+        stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined,
         path: req.path,
         method: req.method,
         statusCode: err.statusCode || 500,
-        isOperational: isOperationalError(err),
+        isOperational: isOperationalError(err)
       }));
     }
 
@@ -103,8 +103,8 @@ export const createErrorHandler = (options = {}) => {
         success: false,
         requestId,
         statusCode: 400,
-        error: "ValidationError",
-        message: messages.join(", "),
+        error: 'ValidationError',
+        message: messages.join(', ')
       });
     }
 
@@ -114,8 +114,8 @@ export const createErrorHandler = (options = {}) => {
         success: false,
         requestId,
         statusCode: 400,
-        error: "CastError",
-        message: `Invalid ${err.path}: ${err.value}`,
+        error: 'CastError',
+        message: `Invalid ${err.path}: ${err.value}`
       });
     }
 
@@ -126,40 +126,40 @@ export const createErrorHandler = (options = {}) => {
         success: false,
         requestId,
         statusCode: 409,
-        error: "DuplicateKeyError",
-        message: `Duplicate field value: ${field}. Please use a different value.`,
+        error: 'DuplicateKeyError',
+        message: `Duplicate field value: ${field}. Please use a different value.`
       });
     }
 
     // Handle JWT errors
-    if (err.name === "JsonWebTokenError") {
+    if (err.name === 'JsonWebTokenError') {
       return res.status(401).json({
         success: false,
         requestId,
         statusCode: 401,
-        error: "JsonWebTokenError",
-        message: "Invalid authentication token",
+        error: 'JsonWebTokenError',
+        message: 'Invalid authentication token'
       });
     }
 
-    if (err.name === "TokenExpiredError") {
+    if (err.name === 'TokenExpiredError') {
       return res.status(401).json({
         success: false,
         requestId,
         statusCode: 401,
-        error: "TokenExpiredError",
-        message: "Authentication token has expired",
+        error: 'TokenExpiredError',
+        message: 'Authentication token has expired'
       });
     }
 
     // Handle multer/file upload errors
-    if (err.name === "MulterError") {
+    if (err.name === 'MulterError') {
       return res.status(400).json({
         success: false,
         requestId,
         statusCode: 400,
-        error: "MulterError",
-        message: err.message,
+        error: 'MulterError',
+        message: err.message
       });
     }
 
@@ -173,7 +173,7 @@ export const createErrorHandler = (options = {}) => {
       statusCode,
       error: errorType,
       message,
-      ...(process.env.NODE_ENV !== "production" && { stack: err.stack }),
+      ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
     });
   };
 };

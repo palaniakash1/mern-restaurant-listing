@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { Table } from "flowbite-react";
+import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { Table } from 'flowbite-react';
 
 export default function DashCategories() {
   const { currentUser } = useSelector((state) => state.user);
@@ -17,7 +17,7 @@ export default function DashCategories() {
         const res = await fetch(
           `/api/user/all-users?page=${page}&limit=${limit}`,
           {
-            credentials: "include",
+            credentials: 'include'
           }
         );
         const data = await res.json();
@@ -32,7 +32,7 @@ export default function DashCategories() {
         setLoading(false);
       }
     };
-    if (currentUser.role === "superAdmin") {
+    if (currentUser.role === 'superAdmin') {
       fetchUsers();
     }
   }, [currentUser?.role, page, limit]);
@@ -118,8 +118,8 @@ export default function DashCategories() {
         transition-all
         ${
           page === 1
-            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-            : "bg-red-600 text-white hover:bg-[#CC0001]"
+            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            : 'bg-red-600 text-white hover:bg-[#CC0001]'
         }
       `}
             >
@@ -145,8 +145,8 @@ export default function DashCategories() {
               text-sm font-semibold transition-all
               ${
                 page === p
-                  ? "bg-emerald-600 text-white shadow-md"
-                  : "bg-white border hover:bg-gray-100"
+                  ? 'bg-emerald-600 text-white shadow-md'
+                  : 'bg-white border hover:bg-gray-100'
               }
             `}
                   >
@@ -165,8 +165,8 @@ export default function DashCategories() {
         transition-all
         ${
           page === totalPages
-            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-            : "bg-red-600 text-white hover:bg-[#CC0001]"
+            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            : 'bg-red-600 text-white hover:bg-[#CC0001]'
         }
       `}
             >
@@ -226,8 +226,8 @@ export default function DashCategories() {
                   onClick={() => setPage(pageNumber)}
                   className={`px-3 py-1 border rounded ${
                     page === pageNumber
-                      ? "bg-emerald-500 text-white"
-                      : "bg-white"
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-white'
                   }`}
                 >
                   {pageNumber}

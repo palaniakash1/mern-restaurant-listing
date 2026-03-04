@@ -1,30 +1,22 @@
-import { errorHandler } from "../utils/error.js";
-import bcryptjs from "bcryptjs";
-import User from "../models/user.model.js";
-import { withTransaction } from "../utils/withTransaction.js";
-import { sanitizeAuditData } from "../utils/sanitizeAuditData.js";
+import { errorHandler } from '../utils/error.js';
+import bcryptjs from 'bcryptjs';
+import User from '../models/user.model.js';
+import { withTransaction } from '../utils/withTransaction.js';
+import { sanitizeAuditData } from '../utils/sanitizeAuditData.js';
 
-import { logAudit } from "../utils/auditLogger.js";
+import { logAudit } from '../utils/auditLogger.js';
 
-import { diffObject } from "../utils/diff.js";
-import { paginate } from "../utils/paginate.js";
-import Restaurant from "../models/restaurant.model.js";
-import {
-  getClientIp,
-  isValidObjectId,
-  toIdString,
-  escapeRegex,
-  sanitizeSearch,
-  MAX_SEARCH_LENGTH,
-} from "../utils/controllerHelpers.js";
-import mongoose from "mongoose";
-
+import { diffObject } from '../utils/diff.js';
+import { paginate } from '../utils/paginate.js';
+import Restaurant from '../models/restaurant.model.js';
+import { getClientIp } from '../utils/controllerHelpers.js';
+// import mongoose from 'mongoose';
 
 const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9]).{8,}$/;
-const INVALID_CREDENTIALS_MESSAGE = "Invalid email or password";
+// const INVALID_CREDENTIALS_MESSAGE = 'Invalid email or password';
 // Precomputed bcrypt hash for the string "password" to keep signin timing consistent.
-const DUMMY_PASSWORD_HASH =
-  "$2b$10$CwTycUXWue0Thq9StjUM0uJ8s7Qw6vY.fQ0M9f8Q5lHppZArYrusW";
+// const DUMMY_PASSWORD_HASH =
+//   '$2b$10$CwTycUXWue0Thq9StjUM0uJ8s7Qw6vY.fQ0M9f8Q5lHppZArYrusW';
 
 // ===============================================================================
 // 🔷 GET /api/users/test — Test / health-check endpoint
@@ -43,7 +35,7 @@ const DUMMY_PASSWORD_HASH =
 // ===============================================================================
 
 export const test = (req, res) => {
-  res.json({ message: "API test message is displaying" });
+  res.json({ message: 'API test message is displaying' });
 };
 
 // ===============================================================================
@@ -81,14 +73,14 @@ export const updateUser = async (req, res, next) => {
     const result = await withTransaction(async (session) => {
       const { id } = req.params;
 
-      if (req.user.role !== "superAdmin" && req.user.id !== id) {
-        throw errorHandler(403, "you are not allowed to update the user");
+      if (req.user.role !== 'superAdmin' && req.user.id !== id) {
+        throw errorHandler(403, 'you are not allowed to update the user');
       }
 
       const oldUser = await User.findById(id).session(session).lean();
-      if (!oldUser) throw errorHandler(404, "User Not Found!");
+      if (!oldUser) throw errorHandler(404, 'User Not Found!');
 
-      const allowedFields = ["userName", "password", "profilePicture", "email"];
+      const allowedFields = ['userName', 'password', 'profilePicture', 'email'];
       const updates = {};
 
       for (const field of allowedFields) {
@@ -100,7 +92,7 @@ export const updateUser = async (req, res, next) => {
       // password
       if (updates.password) {
         if (updates.password.length < 8) {
-          throw errorHandler(400, "password must be atleast 8 characters");
+          throw errorHandler(400, 'password must be atleast 8 characters');
         }
         updates.password = bcryptjs.hashSync(updates.password, 10);
       }
@@ -110,21 +102,21 @@ export const updateUser = async (req, res, next) => {
         if (updates.userName.length < 3 || updates.userName.length > 30) {
           throw errorHandler(
             400,
-            "userName must be between 3 and 30 characters",
+            'userName must be between 3 and 30 characters'
           );
         }
 
-        if (updates.userName.includes(" ")) {
-          throw errorHandler(400, "userName should not contain spaces");
+        if (updates.userName.includes(' ')) {
+          throw errorHandler(400, 'userName should not contain spaces');
         }
 
         if (updates.userName !== updates.userName.toLowerCase()) {
-          throw errorHandler(400, " UserName must be lowercase");
+          throw errorHandler(400, ' UserName must be lowercase');
         }
         if (!updates.userName.match(/^[a-z0-9]+$/)) {
           throw errorHandler(
             400,
-            "UserName can only contain lowercase  letters and numbers",
+            'UserName can only contain lowercase  letters and numbers'
           );
         }
       }
@@ -132,9 +124,9 @@ export const updateUser = async (req, res, next) => {
       if (updates.email) {
         const exists = await User.findOne({
           email: updates.email,
-          _id: { $ne: id },
+          _id: { $ne: id }
         });
-        if (exists) throw errorHandler(409, "Email already in use");
+        if (exists) throw errorHandler(409, 'Email already in use');
       }
 
       if (updates.email) {
@@ -144,13 +136,13 @@ export const updateUser = async (req, res, next) => {
       const updatedUser = await User.findByIdAndUpdate(
         id,
         { $set: updates },
-        { new: true, session },
+        { new: true, session }
       )
-        .select("-password")
+        .select('-password')
         .lean();
 
       if (!updatedUser) {
-        throw errorHandler(404, "User not found after update");
+        throw errorHandler(404, 'User not found after update');
       }
       // DIFF
       const diff = diffObject(oldUser, updatedUser, allowedFields);
@@ -160,23 +152,22 @@ export const updateUser = async (req, res, next) => {
         await logAudit({
           actorId: req.user.id,
           actorRole: req.user.role,
-          entityType: "user",
+          entityType: 'user',
           entityId: updatedUser._id,
-          action: "UPDATE",
+          action: 'UPDATE',
           before: diff,
           after: null,
-          ipAddress: getClientIp(req),
+          ipAddress: getClientIp(req)
         });
       }
-
 
       return updatedUser;
     });
 
     res.status(200).json({
       success: true,
-      message: "user updated successfully",
-      data: result,
+      message: 'user updated successfully',
+      data: result
     });
   } catch (error) {
     next(error);
@@ -210,55 +201,55 @@ export const deleteUser = async (req, res, next) => {
 
       // 1️⃣ Must be authenticated
       if (!req.user) {
-        throw errorHandler(401, "Unauthorized");
+        throw errorHandler(401, 'Unauthorized');
       }
 
       // Fetch snapshot BEFORE delete.
       const oldUser = await User.findById(id).session(session).lean();
 
-      if (!oldUser) throw errorHandler(404, "user not found");
+      if (!oldUser) throw errorHandler(404, 'user not found');
 
       // Authorization rules
-      const isSuperAdmin = req.user.role === "superAdmin";
+      const isSuperAdmin = req.user.role === 'superAdmin';
       const isSelfDelete = req.user.id === id;
 
       if (!isSuperAdmin && !isSelfDelete) {
-        throw errorHandler(403, "You are not allowed to delete this user");
+        throw errorHandler(403, 'You are not allowed to delete this user');
       }
 
       //  Delete user
       const deleted = await User.findByIdAndDelete(id, { session });
 
       if (!deleted) {
-        throw errorHandler(404, "User not found");
+        throw errorHandler(404, 'User not found');
       }
 
       // Audit log
       await logAudit({
         actorId: req.user.id,
         actorRole: req.user.role,
-        entityType: "user",
+        entityType: 'user',
         entityId: oldUser._id,
-        action: "DELETE",
+        action: 'DELETE',
         before: sanitizeAuditData(oldUser),
-        ipAddress: getClientIp(req),
+        ipAddress: getClientIp(req)
       });
 
       return {
         deletedid: oldUser._id,
         deletedName: oldUser.userName,
         deletedBy: req.user.id,
-        deletedByName: req.user.name,
+        deletedByName: req.user.name
       };
     });
 
     res.status(200).json({
       success: true,
       message:
-        req.user.role === "superAdmin"
-          ? "User deleted successfully"
-          : "Account deleted successfully",
-      data: result,
+        req.user.role === 'superAdmin'
+          ? 'User deleted successfully'
+          : 'Account deleted successfully',
+      data: result
     });
   } catch (error) {
     next(error);
@@ -292,23 +283,23 @@ export const deactivateUser = async (req, res, next) => {
 
       // 1️⃣ Must be authenticated
       if (!req.user) {
-        throw errorHandler(401, "Unauthorized");
+        throw errorHandler(401, 'Unauthorized');
       }
 
       // Fetch snapshot BEFORE delete.
       const oldUser = await User.findById(id).session(session);
-      if (!oldUser) throw errorHandler(404, "user not found");
+      if (!oldUser) throw errorHandler(404, 'user not found');
 
       if (!oldUser.isActive) {
-        throw errorHandler(400, "already deactivated");
+        throw errorHandler(400, 'already deactivated');
       }
 
       // Authorization rules
-      const isSuperAdmin = req.user.role === "superAdmin";
+      const isSuperAdmin = req.user.role === 'superAdmin';
       const isSelfDelete = req.user.id === id;
 
       if (!isSuperAdmin && !isSelfDelete) {
-        throw errorHandler(403, "You are not allowed to disable this user");
+        throw errorHandler(403, 'You are not allowed to disable this user');
       }
 
       //  Delete user
@@ -319,28 +310,28 @@ export const deactivateUser = async (req, res, next) => {
       await logAudit({
         actorId: req.user.id,
         actorRole: req.user.role,
-        entityType: "user",
+        entityType: 'user',
         entityId: oldUser._id,
-        action: "STATUS_CHANGE",
+        action: 'STATUS_CHANGE',
         before: { isActive: true },
         after: { isActive: false },
-        ipAddress: getClientIp(req),
+        ipAddress: getClientIp(req)
       });
       return {
         userId: oldUser._id,
 
         userName: oldUser.userName,
-        deactivatedBy: req.user.id,
+        deactivatedBy: req.user.id
       };
     });
 
     res.status(200).json({
       success: true,
       message:
-        req.user.role === "superAdmin"
-          ? "User deactivated successfully"
-          : "Account deactivated successfully",
-      data: result,
+        req.user.role === 'superAdmin'
+          ? 'User deactivated successfully'
+          : 'Account deactivated successfully',
+      data: result
     });
   } catch (error) {
     next(error);
@@ -369,10 +360,10 @@ export const restoreUser = async (req, res, next) => {
   try {
     await withTransaction(async (session) => {
       const user = await User.findById(req.params.id).session(session);
-      if (!user) throw errorHandler(404, "user not found");
+      if (!user) throw errorHandler(404, 'user not found');
 
       if (user.isActive !== false) {
-        throw errorHandler(400, "User already active");
+        throw errorHandler(400, 'User already active');
       }
 
       user.isActive = true;
@@ -381,18 +372,17 @@ export const restoreUser = async (req, res, next) => {
       await logAudit({
         actorId: req.user.id,
         actorRole: req.user.role,
-        entityType: "user",
+        entityType: 'user',
         entityId: user._id,
-        action: "STATUS_CHANGE",
+        action: 'STATUS_CHANGE',
         before: { isActive: false },
         after: { isActive: true },
-        ipAddress: getClientIp(req),
+        ipAddress: getClientIp(req)
       });
       return { restoredUserId: user._id };
-
     });
 
-    res.json({ success: true, message: "user restored now!" });
+    res.json({ success: true, message: 'user restored now!' });
   } catch (error) {
     next(error);
   }
@@ -421,28 +411,28 @@ export const restoreUser = async (req, res, next) => {
 export const getAllUsers = async (req, res, next) => {
   try {
     // Defense-in-depth: Verify superAdmin role at controller level
-    if (req.user.role !== "superAdmin") {
-      return next(errorHandler(403, "Only superAdmin can access all users"));
+    if (req.user.role !== 'superAdmin') {
+      return next(errorHandler(403, 'Only superAdmin can access all users'));
     }
 
     const { page, limit, q } = req.query;
-    const sortDirection = req.query.order === "asc" ? 1 : -1;
+    const sortDirection = req.query.order === 'asc' ? 1 : -1;
 
     const filter = q
       ? {
-          $or: [
-            { userName: { $regex: q, $options: "i" } },
-            { email: { $regex: q, $options: "i" } },
-            { role: { $regex: q, $options: "i" } },
-          ],
-        }
+        $or: [
+          { userName: { $regex: q, $options: 'i' } },
+          { email: { $regex: q, $options: 'i' } },
+          { role: { $regex: q, $options: 'i' } }
+        ]
+      }
       : {};
 
     const total = await User.countDocuments(filter);
     const pagination = paginate({ page, limit, total });
 
     const users = await User.find(filter)
-      .select("-password")
+      .select('-password')
       .skip(pagination.skip)
       .limit(pagination.limit)
       .sort({ updatedAt: sortDirection })
@@ -451,7 +441,7 @@ export const getAllUsers = async (req, res, next) => {
     res.status(200).json({
       success: true,
       ...pagination,
-      data: users,
+      data: users
     });
   } catch (error) {
     next(error);
@@ -476,33 +466,35 @@ export const getAllUsers = async (req, res, next) => {
 export const getAvailableAdmins = async (req, res, next) => {
   try {
     // Defense-in-depth: Verify superAdmin role at controller level
-    if (req.user.role !== "superAdmin") {
-      return next(errorHandler(403, "Only superAdmin can access available admins"));
+    if (req.user.role !== 'superAdmin') {
+      return next(
+        errorHandler(403, 'Only superAdmin can access available admins')
+      );
     }
 
     const { page, limit, q } = req.query;
 
     // admins who do not have restaurant linked
     const filter = {
-      role: "admin",
+      role: 'admin',
       restaurantId: { $in: [null, undefined] },
-      userName: { $regex: q || "", $options: "i" },
+      userName: { $regex: q || '', $options: 'i' }
     };
 
     const total = await User.countDocuments(filter);
     const pagination = paginate({ page, limit, total });
 
     const admins = await User.find(filter)
-      .select("_id userName email")
+      .select('_id userName email')
       .skip(pagination.skip)
       .limit(pagination.limit)
       .lean();
 
     res.status(200).json({
       success: true,
-      message: "showing available admins",
+      message: 'showing available admins',
       ...pagination,
-      data: admins,
+      data: admins
     });
   } catch (error) {
     next(error);
@@ -534,36 +526,36 @@ export const createStoreManager = async (req, res, next) => {
   try {
     const { userName, email, password } = req.body;
 
-    if (!userName || userName.trim() === "") {
-      return next(errorHandler(400, "Please provide a valid username"));
+    if (!userName || userName.trim() === '') {
+      return next(errorHandler(400, 'Please provide a valid username'));
     }
     if (userName.length < 3) {
       return next(
-        errorHandler(400, "Username must be at least 3 characters long"),
+        errorHandler(400, 'Username must be at least 3 characters long')
       );
     }
     if (userName !== userName.toLowerCase()) {
-      return next(errorHandler(400, "UserName must be lowercase"));
+      return next(errorHandler(400, 'UserName must be lowercase'));
     }
 
-    if (!email || email.trim() === "") {
-      return next(errorHandler(400, "Please enter an email"));
+    if (!email || email.trim() === '') {
+      return next(errorHandler(400, 'Please enter an email'));
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return next(errorHandler(400, "Please enter a valid email address"));
+      return next(errorHandler(400, 'Please enter a valid email address'));
     }
 
-    if (!password || password.trim() === "") {
-      return next(errorHandler(400, "Please enter a password"));
+    if (!password || password.trim() === '') {
+      return next(errorHandler(400, 'Please enter a password'));
     }
     if (!PASSWORD_REGEX.test(password)) {
       return next(
         errorHandler(
           400,
-          "Minimum 8 characters total. Must contain at least 1 capital letter (A-Z). Must contain at least 1 number (0-9).",
-        ),
+          'Minimum 8 characters total. Must contain at least 1 capital letter (A-Z). Must contain at least 1 number (0-9).'
+        )
       );
     }
 
@@ -571,14 +563,14 @@ export const createStoreManager = async (req, res, next) => {
     const normalizedEmail = email.toLowerCase();
 
     const existingUserName = await User.findOne({
-      userName: normalizedUserName,
+      userName: normalizedUserName
     });
     if (existingUserName) {
       return next(
         errorHandler(
           409,
-          `Username '${normalizedUserName}' already exists, try login instead`,
-        ),
+          `Username '${normalizedUserName}' already exists, try login instead`
+        )
       );
     }
 
@@ -587,8 +579,8 @@ export const createStoreManager = async (req, res, next) => {
       return next(
         errorHandler(
           409,
-          `Email '${normalizedEmail}' already exists, try login instead`,
-        ),
+          `Email '${normalizedEmail}' already exists, try login instead`
+        )
       );
     }
 
@@ -599,33 +591,32 @@ export const createStoreManager = async (req, res, next) => {
       userName: normalizedUserName,
       email: normalizedEmail,
       password: hashedPassword,
-      role: "storeManager",
-      createdByAdminId: req.user.role === "admin" ? req.user.id : null,
+      role: 'storeManager',
+      createdByAdminId: req.user.role === 'admin' ? req.user.id : null
     });
 
     await logAudit({
       actorId: req.user.id,
       actorRole: req.user.role,
-      entityType: "user",
+      entityType: 'user',
       entityId: storeManager._id,
-      action: "CREATE",
+      action: 'CREATE',
       before: null,
       after: {
-        role: "storeManager",
-        email: storeManager.email,
+        role: 'storeManager',
+        email: storeManager.email
       },
-      ipAddress: getClientIp(req),
+      ipAddress: getClientIp(req)
     });
 
     res.status(201).json({
-
       success: true,
-      message: "storeManager created successfully",
+      message: 'storeManager created successfully',
       data: {
         id: storeManager._id,
         userName: storeManager.userName,
-        email: storeManager.email,
-      },
+        email: storeManager.email
+      }
     });
   } catch (error) {
     next(error);
@@ -659,43 +650,43 @@ export const assignStoreManagerToRestaurant = async (req, res, next) => {
       const { id } = req.params;
       const { restaurantId } = req.body;
 
-      if (!restaurantId) throw errorHandler(400, "restaurantId required");
+      if (!restaurantId) throw errorHandler(400, 'restaurantId required');
 
       // fetch storeManager
       const storeManager = await User.findById(id).session(session);
-      if (!storeManager || storeManager.role !== "storeManager") {
-        throw errorHandler(404, "StoreManager not found");
+      if (!storeManager || storeManager.role !== 'storeManager') {
+        throw errorHandler(404, 'StoreManager not found');
       }
 
       // prevent accidental reassignment
       if (storeManager.restaurantId) {
         throw errorHandler(
           409,
-          "StoreManager already assigned to a restaurant",
+          'StoreManager already assigned to a restaurant'
         );
       }
 
       // admin can only manage storeManagers they created
       if (
-        req.user.role === "admin" &&
+        req.user.role === 'admin' &&
         storeManager.createdByAdminId?.toString() !== req.user.id
       ) {
-        throw errorHandler(403, "Not your storeManager");
+        throw errorHandler(403, 'Not your storeManager');
       }
 
       // check restaurant exists
       const restaurant =
         await Restaurant.findById(restaurantId).session(session);
       if (!restaurant) {
-        throw errorHandler(404, "Restaurant not found");
+        throw errorHandler(404, 'Restaurant not found');
       }
 
       // ownership rules
       if (
-        req.user.role === "admin" &&
+        req.user.role === 'admin' &&
         req.user.restaurantId?.toString() !== restaurantId
       ) {
-        throw errorHandler(403, "Not your restaurant");
+        throw errorHandler(403, 'Not your restaurant');
       }
 
       // assign
@@ -706,19 +697,18 @@ export const assignStoreManagerToRestaurant = async (req, res, next) => {
       await logAudit({
         actorId: req.user.id,
         actorRole: req.user.role,
-        entityType: "user",
+        entityType: 'user',
         entityId: storeManager._id,
-        action: "UPDATE",
+        action: 'UPDATE',
         after: { restaurantId },
-        ipAddress: getClientIp(req),
+        ipAddress: getClientIp(req)
       });
     });
 
     res.json({
       success: true,
-      message: "StoreManager assigned to restaurant",
+      message: 'StoreManager assigned to restaurant'
     });
-
   } catch (error) {
     next(error);
   }
@@ -745,10 +735,10 @@ export const assignStoreManagerToRestaurant = async (req, res, next) => {
 export const getStoreManagers = async (req, res, next) => {
   try {
     const { page, limit } = req.query;
-    const filter = { role: "storeManager" };
+    const filter = { role: 'storeManager' };
 
     // admin → only their created storeManagers
-    if (req.user.role === "admin") {
+    if (req.user.role === 'admin') {
       filter.createdByAdminId = req.user.id;
     }
 
@@ -759,7 +749,7 @@ export const getStoreManagers = async (req, res, next) => {
     const pagination = paginate({ page, limit, total });
 
     const storeManagers = await User.find(filter)
-      .select("-password")
+      .select('-password')
       .skip(pagination.skip)
       .limit(pagination.limit)
       .sort({ createdAt: -1 })
@@ -768,7 +758,7 @@ export const getStoreManagers = async (req, res, next) => {
     res.json({
       success: true,
       ...pagination,
-      data: storeManagers,
+      data: storeManagers
     });
   } catch (error) {
     next(error);
@@ -797,19 +787,19 @@ export const unassignStoreManager = async (req, res, next) => {
       const { id } = req.params;
 
       const storeManager = await User.findById(id).session(session);
-      if (!storeManager || storeManager.role !== "storeManager") {
-        throw errorHandler(404, "StoreManager not found");
+      if (!storeManager || storeManager.role !== 'storeManager') {
+        throw errorHandler(404, 'StoreManager not found');
       }
 
       if (
-        req.user.role === "admin" &&
+        req.user.role === 'admin' &&
         storeManager.createdByAdminId?.toString() !== req.user.id
       ) {
-        throw errorHandler(403, "Not your storeManager");
+        throw errorHandler(403, 'Not your storeManager');
       }
 
       if (!storeManager.restaurantId) {
-        throw errorHandler(400, "StoreManager is not assigned");
+        throw errorHandler(400, 'StoreManager is not assigned');
       }
       storeManager.restaurantId = null;
       await storeManager.save({ session });
@@ -817,16 +807,15 @@ export const unassignStoreManager = async (req, res, next) => {
       await logAudit({
         actorId: req.user.id,
         actorRole: req.user.role,
-        entityType: "user",
+        entityType: 'user',
         entityId: storeManager._id,
-        action: "UPDATE",
+        action: 'UPDATE',
         after: { restaurantId: null },
-        ipAddress: getClientIp(req),
+        ipAddress: getClientIp(req)
       });
     });
 
-    res.json({ success: true, message: "StoreManager unassigned" });
-
+    res.json({ success: true, message: 'StoreManager unassigned' });
   } catch (error) {
     next(error);
   }
@@ -853,13 +842,13 @@ export const changeStoreManagerOwner = async (req, res, next) => {
     const { newAdminId } = req.body;
     await withTransaction(async (session) => {
       const newAdmin = await User.findById(newAdminId).session(session);
-      if (!newAdmin || newAdmin.role !== "admin") {
-        throw errorHandler(400, "Invalid admin");
+      if (!newAdmin || newAdmin.role !== 'admin') {
+        throw errorHandler(400, 'Invalid admin');
       }
 
       const storeManager = await User.findById(id).session(session);
-      if (!storeManager || storeManager.role !== "storeManager") {
-        throw errorHandler(404, "StoreManager not found");
+      if (!storeManager || storeManager.role !== 'storeManager') {
+        throw errorHandler(404, 'StoreManager not found');
       }
 
       storeManager.createdByAdminId = newAdminId;
@@ -867,16 +856,15 @@ export const changeStoreManagerOwner = async (req, res, next) => {
 
       await logAudit({
         actorId: req.user.id,
-        actorRole: "superAdmin",
-        entityType: "user",
+        actorRole: 'superAdmin',
+        entityType: 'user',
         entityId: storeManager._id,
-        action: "UPDATE",
+        action: 'UPDATE',
         after: { createdByAdminId: newAdminId },
-        ipAddress: getClientIp(req),
+        ipAddress: getClientIp(req)
       });
     });
-    res.json({ success: true, message: "Transferred successfully" });
-
+    res.json({ success: true, message: 'Transferred successfully' });
   } catch (error) {
     next(error);
   }

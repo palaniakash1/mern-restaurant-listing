@@ -3,7 +3,7 @@
  * These helpers provide consistent implementations across all controllers
  */
 
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 // ===========================================
 // Constants
@@ -29,8 +29,8 @@ export const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
  * @returns {string} - String representation or empty string
  */
 export const toIdString = (value) => {
-  if (!value) return "";
-  return typeof value === "string" ? value : value.toString();
+  if (!value) return '';
+  return typeof value === 'string' ? value : value.toString();
 };
 
 // ===========================================
@@ -44,10 +44,10 @@ export const toIdString = (value) => {
  * @returns {string} - Client IP address
  */
 export const getClientIp = (req) => {
-  const forwardedFor = req.headers["x-forwarded-for"];
+  const forwardedFor = req.headers['x-forwarded-for'];
   if (Array.isArray(forwardedFor)) return forwardedFor[0];
-  if (typeof forwardedFor === "string")
-    return forwardedFor.split(",")[0].trim();
+  if (typeof forwardedFor === 'string')
+    return forwardedFor.split(',')[0].trim();
   return req.ip;
 };
 
@@ -67,7 +67,7 @@ export const normalizeIp = getClientIp;
  * @returns {string} - Escaped string safe for regex
  */
 export const escapeRegex = (value) =>
-  value?.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") || "";
+  value?.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') || '';
 
 /**
  * Creates a safe search query by limiting length and trimming
@@ -75,7 +75,9 @@ export const escapeRegex = (value) =>
  * @returns {string} - Sanitized search string (max 100 chars)
  */
 export const sanitizeSearch = (search) =>
-  String(search || "").trim().slice(0, MAX_SEARCH_LENGTH);
+  String(search || '')
+    .trim()
+    .slice(0, MAX_SEARCH_LENGTH);
 
 // ===========================================
 // Pagination Helpers
@@ -90,7 +92,7 @@ export const normalizePagination = (query) => {
   const { page, limit } = query;
   return {
     page: Math.max(1, parseInt(page, 10) || 1),
-    limit: Math.min(100, Math.max(1, parseInt(limit, 10) || 10)),
+    limit: Math.min(100, Math.max(1, parseInt(limit, 10) || 10))
   };
 };
 
@@ -100,6 +102,9 @@ export const normalizePagination = (query) => {
  * @param {string} defaultDirection - Default direction if not provided
  * @returns {number} - 1 for asc, -1 for desc
  */
-export const normalizeSortDirection = (sortParam, defaultDirection = "desc") => {
-  return sortParam === "asc" ? 1 : -1;
+export const normalizeSortDirection = (
+  sortParam,
+  defaultDirection = 'desc'
+) => {
+  return sortParam === 'asc' ? 1 : -1;
 };

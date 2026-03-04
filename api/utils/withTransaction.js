@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const MAX_TRANSACTION_RETRIES = 3;
 
@@ -9,17 +9,17 @@ const isRetryableTransactionError = (error) => {
 
   const labels = Array.isArray(error.errorLabels) ? error.errorLabels : [];
   if (
-    labels.includes("TransientTransactionError") ||
-    labels.includes("UnknownTransactionCommitResult")
+    labels.includes('TransientTransactionError') ||
+    labels.includes('UnknownTransactionCommitResult')
   ) {
     return true;
   }
 
-  const message = String(error.message || "");
+  const message = String(error.message || '');
   return (
-    message.includes("Unable to acquire IX lock") ||
-    message.includes("WriteConflict") ||
-    message.includes("NoSuchTransaction")
+    message.includes('Unable to acquire IX lock') ||
+    message.includes('WriteConflict') ||
+    message.includes('NoSuchTransaction')
   );
 };
 /**

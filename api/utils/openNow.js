@@ -3,7 +3,7 @@ export const isRestaurantOpen = (openingHours) => {
 
   const now = new Date();
   const day = now
-    .toLocaleDateString("en-us", { weekday: "long" })
+    .toLocaleDateString('en-us', { weekday: 'long' })
     .toLowerCase();
 
   const today = openingHours[day];
@@ -11,9 +11,9 @@ export const isRestaurantOpen = (openingHours) => {
   if (!today || today.isClosed) return false;
 
   const currentTime =
-    now.getHours().toString().padStart(2, "0") +
-    ":" +
-    now.getMinutes().toString().padStart(2, "0");
+    now.getHours().toString().padStart(2, '0') +
+    ':' +
+    now.getMinutes().toString().padStart(2, '0');
 
   return currentTime >= today.open && currentTime <= today.close;
 };

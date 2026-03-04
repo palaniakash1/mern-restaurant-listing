@@ -1,8 +1,8 @@
-import express from "express";
-import { verifyToken } from "../utils/verifyUser.js";
-import { can } from "../utils/policy.js";
-import { validate } from "../middlewares/validate.js";
-import { menuValidators } from "../validators/index.js";
+import express from 'express';
+import { verifyToken } from '../utils/verifyUser.js';
+import { can } from '../utils/policy.js';
+import { validate } from '../middlewares/validate.js';
+import { menuValidators } from '../validators/index.js';
 
 import {
   createMenu,
@@ -18,8 +18,8 @@ import {
   getMenuById,
   getDeletedMenus,
   getMenuAuditLogs,
-  hardDeleteMenu,
-} from "../controllers/menu.controller.js";
+  hardDeleteMenu
+} from '../controllers/menu.controller.js';
 
 const router = express.Router();
 
@@ -27,11 +27,11 @@ const router = express.Router();
 // PROTECTED (ADMIN / MANAGER)
 // =======================
 router.post(
-  "/",
+  '/',
   verifyToken,
-  can("create", "menu"),
+  can('create', 'menu'),
   validate(menuValidators.createMenuBody),
-  createMenu,
+  createMenu
 ); // create new menu
 
 // =================================
@@ -39,52 +39,52 @@ router.post(
 // =================================
 // public
 router.get(
-  "/restaurant/:restaurantId",
-  validate(menuValidators.restaurantParam, "params"),
-  validate(menuValidators.byRestaurantQuery, "query"),
-  getMenuByRestaurant,
+  '/restaurant/:restaurantId',
+  validate(menuValidators.restaurantParam, 'params'),
+  validate(menuValidators.byRestaurantQuery, 'query'),
+  getMenuByRestaurant
 ); // get all categories
 router.get(
-  "/deleted",
+  '/deleted',
   verifyToken,
-  can("readDeleted", "menu"),
-  validate(menuValidators.deletedQuery, "query"),
-  getDeletedMenus,
+  can('readDeleted', 'menu'),
+  validate(menuValidators.deletedQuery, 'query'),
+  getDeletedMenus
 );
 
 // =======================
 // MENU ITEMS (PROTECTED)
 // =======================
 router.post(
-  "/:menuId/items",
+  '/:menuId/items',
   verifyToken,
-  can("addItem", "menu"),
-  validate(menuValidators.menuParam, "params"),
+  can('addItem', 'menu'),
+  validate(menuValidators.menuParam, 'params'),
   validate(menuValidators.addItemBody),
-  addMenuItems,
+  addMenuItems
 ); // create menu item
 router.put(
-  "/:menuId/items/:itemId",
+  '/:menuId/items/:itemId',
   verifyToken,
-  can("updateItem", "menu"),
-  validate(menuValidators.itemParam, "params"),
+  can('updateItem', 'menu'),
+  validate(menuValidators.itemParam, 'params'),
   validate(menuValidators.updateItemBody),
-  updateMenuItem,
+  updateMenuItem
 ); // udpate menu item
 router.delete(
-  "/:menuId/items/:itemId",
+  '/:menuId/items/:itemId',
   verifyToken,
-  can("deleteItem", "menu"),
-  validate(menuValidators.itemParam, "params"),
-  deleteMenuItem,
+  can('deleteItem', 'menu'),
+  validate(menuValidators.itemParam, 'params'),
+  deleteMenuItem
 ); // udpate menu item
 
 router.patch(
-  "/:menuId/items/:itemId/availability",
+  '/:menuId/items/:itemId/availability',
   verifyToken,
-  can("toggleAvailability", "menu"),
-  validate(menuValidators.itemParam, "params"),
-  toggleItemAvailability,
+  can('toggleAvailability', 'menu'),
+  validate(menuValidators.itemParam, 'params'),
+  toggleItemAvailability
 ); // toggle item availibility
 
 // =======================
@@ -92,56 +92,56 @@ router.patch(
 // =======================
 
 router.patch(
-  "/:menuId/status",
+  '/:menuId/status',
   verifyToken,
-  can("updateStatus", "menu"),
-  validate(menuValidators.menuParam, "params"),
+  can('updateStatus', 'menu'),
+  validate(menuValidators.menuParam, 'params'),
   validate(menuValidators.statusBody),
-  updateMenuStatus,
+  updateMenuStatus
 );
 router.put(
-  "/:menuId/reorder",
+  '/:menuId/reorder',
   verifyToken,
-  can("reorder", "menu"),
-  validate(menuValidators.menuParam, "params"),
+  can('reorder', 'menu'),
+  validate(menuValidators.menuParam, 'params'),
   validate(menuValidators.reorderBody),
-  reorderMenuItems,
+  reorderMenuItems
 ); // reorder menu items
 router.patch(
-  "/:menuId/restore",
+  '/:menuId/restore',
   verifyToken,
-  can("restore", "menu"),
-  validate(menuValidators.menuParam, "params"),
-  restoreMenu,
+  can('restore', 'menu'),
+  validate(menuValidators.menuParam, 'params'),
+  restoreMenu
 );
 router.get(
-  "/:menuId/audit",
+  '/:menuId/audit',
   verifyToken,
-  can("readAudit", "menu"),
-  validate(menuValidators.menuParam, "params"),
-  validate(menuValidators.auditQuery, "query"),
-  getMenuAuditLogs,
+  can('readAudit', 'menu'),
+  validate(menuValidators.menuParam, 'params'),
+  validate(menuValidators.auditQuery, 'query'),
+  getMenuAuditLogs
 );
 router.delete(
-  "/:menuId/hard",
+  '/:menuId/hard',
   verifyToken,
-  can("hardDelete", "menu"),
-  validate(menuValidators.menuParam, "params"),
-  hardDeleteMenu,
+  can('hardDelete', 'menu'),
+  validate(menuValidators.menuParam, 'params'),
+  hardDeleteMenu
 );
 router.get(
-  "/:menuId",
+  '/:menuId',
   verifyToken,
-  can("readById", "menu"),
-  validate(menuValidators.menuParam, "params"),
-  getMenuById,
+  can('readById', 'menu'),
+  validate(menuValidators.menuParam, 'params'),
+  getMenuById
 );
 router.delete(
-  "/:menuId",
+  '/:menuId',
   verifyToken,
-  can("delete", "menu"),
-  validate(menuValidators.menuParam, "params"),
-  deleteMenu,
+  can('delete', 'menu'),
+  validate(menuValidators.menuParam, 'params'),
+  deleteMenu
 ); // softdelete menu
 
 export default router;

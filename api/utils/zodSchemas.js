@@ -3,7 +3,7 @@
  * TypeScript-first schema validation for all models
  */
 
-import { z } from "zod";
+import { z } from 'zod';
 
 // ===================================================================
 // USER SCHEMAS
@@ -13,32 +13,32 @@ export const createUserSchema = z.object({
   userName: z.string().min(3).max(30),
   email: z.string().email(),
   password: z.string().min(6),
-  role: z.enum(["user", "storeManager", "admin", "superAdmin"]).optional(),
+  role: z.enum(['user', 'storeManager', 'admin', 'superAdmin']).optional()
 });
 
 export const updateUserSchema = z.object({
   userName: z.string().min(3).max(30).optional(),
   email: z.string().email().optional(),
-  profilePicture: z.string().url().optional(),
+  profilePicture: z.string().url().optional()
   // Password should be changed via change-password endpoint
 });
 
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1),
-  newPassword: z.string().min(6),
+  newPassword: z.string().min(6)
 });
 
 export const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(1),
+  password: z.string().min(1)
 });
 
 export const assignRestaurantSchema = z.object({
-  restaurantId: z.string().min(1),
+  restaurantId: z.string().min(1)
 });
 
 export const changeOwnerSchema = z.object({
-  newAdminId: z.string().min(1),
+  newAdminId: z.string().min(1)
 });
 
 // ===================================================================
@@ -54,38 +54,38 @@ export const createRestaurantSchema = z.object({
     city: z.string(),
     state: z.string().optional(),
     zipCode: z.string().optional(),
-    country: z.string().default("USA"),
+    country: z.string().default('USA'),
     coordinates: z
       .object({
         lat: z.number(),
-        lng: z.number(),
+        lng: z.number()
       })
-      .optional(),
+      .optional()
   }),
   phone: z.string().optional(),
   email: z.string().email().optional(),
   website: z.string().url().optional(),
-  priceRange: z.enum(["$", "$$", "$$$", "$$$$"]).optional(),
+  priceRange: z.enum(['$', '$$', '$$$', '$$$$']).optional(),
   openingHours: z
     .array(
       z.object({
         day: z.enum([
-          "Monday",
-          "Tuesday",
-          "Wednesday",
-          "Thursday",
-          "Friday",
-          "Saturday",
-          "Sunday",
+          'Monday',
+          'Tuesday',
+          'Wednesday',
+          'Thursday',
+          'Friday',
+          'Saturday',
+          'Sunday'
         ]),
         open: z.string(),
         close: z.string(),
-        closed: z.boolean().optional(),
+        closed: z.boolean().optional()
       })
     )
     .optional(),
   images: z.array(z.string().url()).optional(),
-  tags: z.array(z.string()).optional(),
+  tags: z.array(z.string()).optional()
 });
 
 export const updateRestaurantSchema = createRestaurantSchema.partial();
@@ -99,7 +99,7 @@ export const createCategorySchema = z.object({
   description: z.string().max(200).optional(),
   restaurantId: z.string().min(1),
   isActive: z.boolean().optional(),
-  displayOrder: z.number().int().optional(),
+  displayOrder: z.number().int().optional()
 });
 
 export const updateCategorySchema = createCategorySchema.partial();
@@ -118,11 +118,11 @@ export const createMenuItemSchema = z.object({
   preparationTime: z.number().int().positive().optional(), // in minutes
   allergens: z.array(z.string()).optional(),
   dietaryInfo: z
-    .array(z.enum(["vegetarian", "vegan", "gluten-free", "dairy-free", "nut-free"]))
+    .array(z.enum(['vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'nut-free']))
     .optional(),
   images: z.array(z.string().url()).optional(),
   isPopular: z.boolean().optional(),
-  tags: z.array(z.string()).optional(),
+  tags: z.array(z.string()).optional()
 });
 
 export const updateMenuItemSchema = createMenuItemSchema.partial();
@@ -135,14 +135,14 @@ export const createReviewSchema = z.object({
   restaurantId: z.string().min(1),
   rating: z.number().int().min(1).max(5),
   comment: z.string().max(1000).optional(),
-  photos: z.array(z.string().url()).optional(),
+  photos: z.array(z.string().url()).optional()
 });
 
 export const updateReviewSchema = z.object({
   rating: z.number().int().min(1).max(5).optional(),
   comment: z.string().max(1000).optional(),
   isHidden: z.boolean().optional(),
-  isFlagged: z.boolean().optional(),
+  isFlagged: z.boolean().optional()
 });
 
 // ===================================================================
@@ -154,11 +154,11 @@ export const paginationSchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(10),
   q: z.string().optional(),
   sortBy: z.string().optional(),
-  sortOrder: z.enum(["asc", "desc"]).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional()
 });
 
 export const idParamSchema = z.object({
-  id: z.string().min(1),
+  id: z.string().min(1)
 });
 
 // ===================================================================
@@ -187,7 +187,7 @@ export const schemas = {
   updateReview: updateReviewSchema,
   // Common
   pagination: paginationSchema,
-  idParam: idParamSchema,
+  idParam: idParamSchema
 };
 
 export default schemas;

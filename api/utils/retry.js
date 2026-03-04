@@ -35,7 +35,7 @@ export const withRetry = async (fn, options = {}) => {
     baseDelay = 100,
     maxDelay = 5000,
     retryableErrors = [],
-    onRetry = null,
+    onRetry = null
   } = options;
 
   let lastError;
@@ -47,7 +47,7 @@ export const withRetry = async (fn, options = {}) => {
       lastError = error;
 
       // Check if error is retryable
-      const isRetryable = retryableErrors.length === 0 || 
+      const isRetryable = retryableErrors.length === 0 ||
         retryableErrors.some((errType) => error instanceof errType);
 
       if (!isRetryable || attempt === maxAttempts - 1) {
@@ -72,9 +72,9 @@ export const withRetry = async (fn, options = {}) => {
  * Circuit Breaker States
  */
 const CircuitState = {
-  CLOSED: "closed",      // Normal operation
-  OPEN: "open",          // Failing, reject calls
-  HALF_OPEN: "half-open", // Testing if service recovered
+  CLOSED: 'closed',      // Normal operation
+  OPEN: 'open',          // Failing, reject calls
+  HALF_OPEN: 'half-open' // Testing if service recovered
 };
 
 /**
@@ -89,7 +89,7 @@ export class CircuitBreaker {
     this.failureThreshold = options.failureThreshold || 5;
     this.successThreshold = options.successThreshold || 2;
     this.timeout = options.timeout || 60000; // 1 minute default
-    this.name = options.name || "default";
+    this.name = options.name || 'default';
 
     this.state = CircuitState.CLOSED;
     this.failureCount = 0;
@@ -164,7 +164,7 @@ export class CircuitBreaker {
       failureCount: this.failureCount,
       successCount: this.successCount,
       nextAttempt: this.nextAttempt,
-      lastFailureTime: this.lastFailureTime,
+      lastFailureTime: this.lastFailureTime
     };
   }
 
@@ -237,5 +237,5 @@ export default {
   CircuitBreaker,
   circuitBreakerRegistry,
   getCircuitBreaker,
-  CircuitState,
+  CircuitState
 };

@@ -1,9 +1,8 @@
-import User from "../models/user.model.js";
-import bcryptjs from "bcryptjs";
-import { errorHandler } from "../utils/error.js";
-import { logAudit } from "../utils/auditLogger.js";
-import { getClientIp } from "../utils/controllerHelpers.js";
-
+import User from '../models/user.model.js';
+import bcryptjs from 'bcryptjs';
+import { errorHandler } from '../utils/error.js';
+import { logAudit } from '../utils/auditLogger.js';
+import { getClientIp } from '../utils/controllerHelpers.js';
 
 // ===============================================================================
 // 🔷 POST /api/admin/users — Create user (Admin / StoreManager)
@@ -42,30 +41,30 @@ import { getClientIp } from "../utils/controllerHelpers.js";
 export const createUserBySuperAdmin = async (req, res, next) => {
   try {
     // Defense-in-depth: Verify superAdmin role at controller level
-    if (req.user.role !== "superAdmin") {
-      return next(errorHandler(403, "Only superAdmin can perform this action"));
+    if (req.user.role !== 'superAdmin') {
+      return next(errorHandler(403, 'Only superAdmin can perform this action'));
     }
 
     const { userName, email, password, role } = req.body;
 
-    if (!["admin", "storeManager"].includes(role)) {
-      return next(errorHandler(400, "Invalid role assignment"));
+    if (!['admin', 'storeManager'].includes(role)) {
+      return next(errorHandler(400, 'Invalid role assignment'));
     }
 
     if (!userName || !email || !password) {
-      return next(errorHandler(400, "All fields are required"));
+      return next(errorHandler(400, 'All fields are required'));
     }
 
     if (password.length < 8) {
-      return next(errorHandler(400, "Password must be at least 8 characters"));
+      return next(errorHandler(400, 'Password must be at least 8 characters'));
     }
 
     const existingUser = await User.findOne({
-      $or: [{ email }, { userName }],
+      $or: [{ email }, { userName }]
     });
 
     if (existingUser) {
-      return next(errorHandler(400, "User already exists"));
+      return next(errorHandler(400, 'User already exists'));
     }
 
     const hashedPassword = bcryptjs.hashSync(password, 10);
@@ -75,7 +74,7 @@ export const createUserBySuperAdmin = async (req, res, next) => {
       email: email.toLowerCase(),
       password: hashedPassword,
       role,
-      createdByAdminId: role === "admin" ? req.user.id : null,
+      createdByAdminId: role === 'admin' ? req.user.id : null
     });
 
     await newUser.save();
@@ -83,26 +82,25 @@ export const createUserBySuperAdmin = async (req, res, next) => {
     await logAudit({
       actorId: req.user.id,
       actorRole: req.user.role,
-      entityType: "user",
+      entityType: 'user',
       entityId: newUser._id,
-      action: "CREATE",
+      action: 'CREATE',
       before: null,
       after: {
         role: newUser.role,
-        email: newUser.email,
+        email: newUser.email
       },
-      ipAddress: getClientIp(req),
+      ipAddress: getClientIp(req)
     });
 
     res.status(201).json({
-
       message: `${role} created successfully`,
       user: {
         id: newUser._id,
         userName: newUser.userName,
         email: newUser.email,
-        role: newUser.role,
-      },
+        role: newUser.role
+      }
     });
   } catch (error) {
     next(error); // prevents hanging requests

@@ -1,27 +1,27 @@
 /**
  * Secret Scanner Utility
  * Scans code for potential hardcoded secrets
- * 
+ *
  * Usage:
  * node api/utils/secretScanner.js
  */
 
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Patterns to detect secrets
 const SECRET_PATTERNS = [
-  { pattern: /password\s*=\s*['"][^'"]+['"]/gi, name: "Hardcoded password" },
-  { pattern: /apiKey\s*=\s*['"][^'"]+['"]/gi, name: "Hardcoded API key" },
-  { pattern: /secret\s*=\s*['"][^'"]+['"]/gi, name: "Hardcoded secret" },
-  { pattern: /jwtSecret\s*=\s*['"][^'"]+['"]/gi, name: "Hardcoded JWT secret" },
-  { pattern: /privateKey\s*=\s*['"][^'"]+['"]/gi, name: "Hardcoded private key" },
-  { pattern: /aws_access_key\s*=\s*['"][^'"]+['"]/gi, name: "AWS access key" },
-  { pattern: /stripe_key\s*=\s*['"][^'"]+['"]/gi, name: "Stripe key" },
+  { pattern: /password\s*=\s*['"][^'"]+['"]/gi, name: 'Hardcoded password' },
+  { pattern: /apiKey\s*=\s*['"][^'"]+['"]/gi, name: 'Hardcoded API key' },
+  { pattern: /secret\s*=\s*['"][^'"]+['"]/gi, name: 'Hardcoded secret' },
+  { pattern: /jwtSecret\s*=\s*['"][^'"]+['"]/gi, name: 'Hardcoded JWT secret' },
+  { pattern: /privateKey\s*=\s*['"][^'"]+['"]/gi, name: 'Hardcoded private key' },
+  { pattern: /aws_access_key\s*=\s*['"][^'"]+['"]/gi, name: 'AWS access key' },
+  { pattern: /stripe_key\s*=\s*['"][^'"]+['"]/gi, name: 'Stripe key' }
 ];
 
 const IGNORE_PATTERNS = [
@@ -29,11 +29,11 @@ const IGNORE_PATTERNS = [
   /\.git/,
   /package-lock\.json/,
   /\.env\.example/,
-  /secretScanner\.js/,
+  /secretScanner\.js/
 ];
 
 function scanFile(filePath) {
-  const content = fs.readFileSync(filePath, "utf-8");
+  const content = fs.readFileSync(filePath, 'utf-8');
   const issues = [];
 
   for (const { pattern, name } of SECRET_PATTERNS) {
@@ -69,24 +69,24 @@ function scanDirectory(dirPath, issues = []) {
 }
 
 function main() {
-  const apiDir = path.join(__dirname, "..");
-  
-  console.log("🔍 Scanning for secrets...\n");
-  
+  const apiDir = path.join(__dirname, '..');
+
+  console.log('🔍 Scanning for secrets...\n');
+
   const issues = scanDirectory(apiDir);
-  
+
   if (issues.length === 0) {
-    console.log("✅ No secrets found!");
+    console.log('✅ No secrets found!');
     process.exit(0);
   } else {
     console.log(`❌ Found ${issues.length} potential secret(s):\n`);
-    
+
     for (const issue of issues) {
       console.log(`  📁 ${issue.file}`);
       console.log(`     ⚠️  ${issue.name}`);
-      console.log(`     ${issue.matches.join(", ")}\n`);
+      console.log(`     ${issue.matches.join(', ')}\n`);
     }
-    
+
     process.exit(1);
   }
 }

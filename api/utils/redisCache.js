@@ -6,14 +6,14 @@
  * If Redis is not available, it falls back to in-memory cache
  */
 
-import Redis from "ioredis";
+import Redis from 'ioredis';
 
 // ===================================================================
 // CONFIGURATION
 // ===================================================================
 
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
-const CACHE_TTL = parseInt(process.env.CACHE_TTL || "300", 10); // 5 minutes default
+const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+const CACHE_TTL = parseInt(process.env.CACHE_TTL || '300', 10); // 5 minutes default
 const REDIS_CONNECT_TIMEOUT = 2000; // 2 second timeout for Redis connection
 
 // In-memory fallback cache
@@ -32,8 +32,8 @@ let isRedisAvailable = false;
  */
 export const initRedis = async () => {
   // If no Redis URL configured, skip Redis entirely
-  if (!REDIS_URL || REDIS_URL.trim() === "") {
-    console.log("ℹ️ Redis URL not configured, using in-memory cache");
+  if (!REDIS_URL || REDIS_URL.trim() === '') {
+    console.log('ℹ️ Redis URL not configured, using in-memory cache');
     isRedisAvailable = false;
     return false;
   }
@@ -45,30 +45,30 @@ export const initRedis = async () => {
       connectTimeout: REDIS_CONNECT_TIMEOUT,
       commandTimeout: REDIS_CONNECT_TIMEOUT,
       lazyConnect: true,
-      enableOfflineQueue: false, // Fail immediately if not connected
+      enableOfflineQueue: false // Fail immediately if not connected
     });
 
     // Set up connection timeout
     const connectionPromise = redisClient.connect();
-    const timeoutPromise = new Promise((_, reject) => 
+    const timeoutPromise = new Promise((_, reject) =>
       setTimeout(() => reject(new Error('Redis connection timeout')), REDIS_CONNECT_TIMEOUT)
     );
 
     await Promise.race([connectionPromise, timeoutPromise]);
-    
+
     isRedisAvailable = true;
-    console.log("✅ Redis connected successfully");
-    
-    redisClient.on("error", (err) => {
-      console.warn("Redis error:", err.message);
+    console.log('✅ Redis connected successfully');
+
+    redisClient.on('error', (err) => {
+      console.warn('Redis error:', err.message);
       isRedisAvailable = false;
     });
-    
-    redisClient.on("close", () => {
+
+    redisClient.on('close', () => {
       isRedisAvailable = false;
-      console.log("Redis connection closed");
+      console.log('Redis connection closed');
     });
-    
+
     return true;
   } catch (error) {
     console.warn(`⚠️ Redis not available: ${error.message}, using in-memory cache`);
@@ -97,15 +97,15 @@ export const get = async (key) => {
   if (isRedisAvailable && redisClient) {
     try {
       // Add timeout for Redis operations
-      const timeoutPromise = new Promise((_, reject) => 
+      const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Redis get timeout')), 1000)
       );
       const getPromise = redisClient.get(cacheKey);
-      
+
       const value = await Promise.race([getPromise, timeoutPromise]);
       return value ? JSON.parse(value) : null;
     } catch (error) {
-      console.warn("Redis get error:", error.message);
+      console.warn('Redis get error:', error.message);
       isRedisAvailable = false;
     }
   }
@@ -134,15 +134,15 @@ export const set = async (key, value, ttl = CACHE_TTL) => {
   if (isRedisAvailable && redisClient) {
     try {
       // Add timeout for Redis operations
-      const timeoutPromise = new Promise((_, reject) => 
+      const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Redis set timeout')), 1000)
       );
       const setPromise = redisClient.setex(cacheKey, ttl, serialized);
-      
+
       await Promise.race([setPromise, timeoutPromise]);
       return true;
     } catch (error) {
-      console.warn("Redis set error:", error.message);
+      console.warn('Redis set error:', error.message);
       isRedisAvailable = false;
     }
   }
@@ -176,7 +176,7 @@ export const del = async (key) => {
     try {
       await redisClient.del(cacheKey);
     } catch (error) {
-      console.warn("Redis delete error:", error.message);
+      console.warn('Redis delete error:', error.message);
     }
   }
 
@@ -192,12 +192,12 @@ export const del = async (key) => {
 export const clear = async () => {
   if (isRedisAvailable && redisClient) {
     try {
-      const keys = await redisClient.keys("cache:*");
+      const keys = await redisClient.keys('cache:*');
       if (keys.length > 0) {
         await redisClient.del(...keys);
       }
     } catch (error) {
-      console.warn("Redis clear error:", error.message);
+      console.warn('Redis clear error:', error.message);
     }
   }
 
@@ -222,14 +222,14 @@ export const getOrFetch = async (key, fetcher, ttl = CACHE_TTL) => {
       return cached;
     }
   } catch (error) {
-    console.warn("Cache get error, falling back to fetcher:", error.message);
+    console.warn('Cache get error, falling back to fetcher:', error.message);
   }
 
   // Fetch fresh data
   const data = await fetcher();
 
   // Store in cache (don't await, fire and forget)
-  set(key, data, ttl).catch(err => console.warn("Cache set error:", err.message));
+  set(key, data, ttl).catch(err => console.warn('Cache set error:', err.message));
 
   return data;
 };
@@ -252,12 +252,12 @@ export const invalidatePattern = async (pattern) => {
         await redisClient.del(...keys);
       }
     } catch (error) {
-      console.warn("Redis invalidate error:", error.message);
+      console.warn('Redis invalidate error:', error.message);
     }
   }
 
   // Also clean memory cache
-  const patternStr = pattern.replace("*", "");
+  const patternStr = pattern.replace('*', '');
   for (const key of memoryCache.keys()) {
     if (key.includes(patternStr)) {
       memoryCache.delete(key);
@@ -273,7 +273,7 @@ export const getCacheStats = () => {
   return {
     redis: isRedisAvailable,
     memorySize: memoryCache.size,
-    ttl: CACHE_TTL,
+    ttl: CACHE_TTL
   };
 };
 
@@ -286,5 +286,5 @@ export default {
   clear,
   getOrFetch,
   invalidatePattern,
-  getCacheStats,
+  getCacheStats
 };

@@ -1,6 +1,6 @@
-import jwt from "jsonwebtoken";
-import User from "../models/user.model.js";
-import { errorHandler } from "./error.js";
+import jwt from 'jsonwebtoken';
+import User from '../models/user.model.js';
+import { errorHandler } from './error.js';
 
 export const verifyToken = async (req, res, next) => {
   try {
@@ -10,9 +10,9 @@ export const verifyToken = async (req, res, next) => {
 
     if (
       req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer ")
+      req.headers.authorization.startsWith('Bearer ')
     ) {
-      token = req.headers.authorization.split(" ")[1];
+      token = req.headers.authorization.split(' ')[1];
     }
     // 2️⃣ Cookie (Browser)
     if (!token && req.cookies?.access_token) {
@@ -21,33 +21,36 @@ export const verifyToken = async (req, res, next) => {
 
     if (!token) {
       // let token = req.cookies?.access_token;
-      return next(errorHandler(401, "Authentication token missing"));
+      return next(errorHandler(401, 'Authentication token missing'));
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // FETCH FRESH USER DATA
     const user = await User.findById(decoded.id).select(
-      "_id role restaurantId isActive",
+      '_id role restaurantId isActive'
     );
     if (!user) {
-      return next(errorHandler(401, "User not found"));
+      return next(errorHandler(401, 'User not found'));
     }
     if (!user.isActive) {
-      return next(errorHandler(403, "User account is inactive"));
+      return next(errorHandler(403, 'User account is inactive'));
     }
 
     // Attach FULL auth context
     req.user = {
       id: user._id.toString(),
       role: user.role,
-      restaurantId: user.restaurantId ? user.restaurantId.toString() : null,
+      restaurantId: user.restaurantId ? user.restaurantId.toString() : null
     };
 
     next();
   } catch (error) {
-    if (error?.name === "JsonWebTokenError" || error?.name === "TokenExpiredError") {
-      return next(errorHandler(401, "Invalid or expired authentication token"));
+    if (
+      error?.name === 'JsonWebTokenError' ||
+      error?.name === 'TokenExpiredError'
+    ) {
+      return next(errorHandler(401, 'Invalid or expired authentication token'));
     }
     next(error);
   }

@@ -1,8 +1,8 @@
-import express from "express";
-import { verifyToken } from "../utils/verifyUser.js";
-import { can } from "../utils/policy.js";
-import { validate } from "../middlewares/validate.js";
-import { reviewValidators } from "../validators/index.js";
+import express from 'express';
+import { verifyToken } from '../utils/verifyUser.js';
+import { can } from '../utils/policy.js';
+import { validate } from '../middlewares/validate.js';
+import { reviewValidators } from '../validators/index.js';
 import {
   createReview,
   deleteReview,
@@ -11,74 +11,74 @@ import {
   getRestaurantReviewSummary,
   listRestaurantReviews,
   moderateReview,
-  updateReview,
-} from "../controllers/review.controller.js";
+  updateReview
+} from '../controllers/review.controller.js';
 
 const router = express.Router();
 
 // Public endpoints with validation
 router.get(
-  "/restaurant/:restaurantId",
-  validate(reviewValidators.restaurantParam, "params"),
-  validate(reviewValidators.listRestaurantQuery, "query"),
-  listRestaurantReviews,
+  '/restaurant/:restaurantId',
+  validate(reviewValidators.restaurantParam, 'params'),
+  validate(reviewValidators.listRestaurantQuery, 'query'),
+  listRestaurantReviews
 );
 router.get(
-  "/restaurant/:restaurantId/summary",
-  validate(reviewValidators.restaurantParam, "params"),
-  getRestaurantReviewSummary,
+  '/restaurant/:restaurantId/summary',
+  validate(reviewValidators.restaurantParam, 'params'),
+  getRestaurantReviewSummary
 );
 
 // Protected endpoints
 router.get(
-  "/my",
+  '/my',
   verifyToken,
-  can("readMine", "review"),
-  validate(reviewValidators.myQuery, "query"),
-  getMyReviews,
+  can('readMine', 'review'),
+  validate(reviewValidators.myQuery, 'query'),
+  getMyReviews
 );
 
 router.get(
-  "/:id",
+  '/:id',
   verifyToken,
-  can("readById", "review"),
-  validate(reviewValidators.idParam, "params"),
-  getReviewById,
+  can('readById', 'review'),
+  validate(reviewValidators.idParam, 'params'),
+  getReviewById
 );
 
 router.post(
-  "/restaurant/:restaurantId",
+  '/restaurant/:restaurantId',
   verifyToken,
-  can("create", "review"),
-  validate(reviewValidators.restaurantParam, "params"),
+  can('create', 'review'),
+  validate(reviewValidators.restaurantParam, 'params'),
   validate(reviewValidators.createBody),
-  createReview,
+  createReview
 );
 
 router.patch(
-  "/:id",
+  '/:id',
   verifyToken,
-  can("update", "review"),
-  validate(reviewValidators.idParam, "params"),
+  can('update', 'review'),
+  validate(reviewValidators.idParam, 'params'),
   validate(reviewValidators.updateBody),
-  updateReview,
+  updateReview
 );
 
 router.delete(
-  "/:id",
+  '/:id',
   verifyToken,
-  can("delete", "review"),
-  validate(reviewValidators.idParam, "params"),
-  deleteReview,
+  can('delete', 'review'),
+  validate(reviewValidators.idParam, 'params'),
+  deleteReview
 );
 
 router.patch(
-  "/:id/moderate",
+  '/:id/moderate',
   verifyToken,
-  can("moderate", "review"),
-  validate(reviewValidators.idParam, "params"),
+  can('moderate', 'review'),
+  validate(reviewValidators.idParam, 'params'),
   validate(reviewValidators.moderateBody),
-  moderateReview,
+  moderateReview
 );
 
 export default router;

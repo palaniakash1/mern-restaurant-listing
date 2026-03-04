@@ -1,4 +1,4 @@
-import express from "express";
+import express from 'express';
 import {
   test,
   createStoreManager,
@@ -11,102 +11,102 @@ import {
   getStoreManagers,
   assignStoreManagerToRestaurant,
   unassignStoreManager,
-  changeStoreManagerOwner,
-} from "../controllers/user.controller.js";
-import { verifyToken } from "../utils/verifyUser.js";
-import { can, canAny } from "../utils/policy.js";
-import { validate } from "../middlewares/validate.js";
-import { userValidators } from "../validators/index.js";
+  changeStoreManagerOwner
+} from '../controllers/user.controller.js';
+import { verifyToken } from '../utils/verifyUser.js';
+import { can, canAny } from '../utils/policy.js';
+import { validate } from '../middlewares/validate.js';
+import { userValidators } from '../validators/index.js';
 
 const router = express.Router();
 
-router.get("/test", verifyToken, can("test", "user"), test);
+router.get('/test', verifyToken, can('test', 'user'), test);
 
 router.get(
-  "/",
+  '/',
   verifyToken,
-  can("listAll", "user"),
-  validate(userValidators.listQuery, "query"),
-  getAllUsers,
+  can('listAll', 'user'),
+  validate(userValidators.listQuery, 'query'),
+  getAllUsers
 );
 router.get(
-  "/admins",
+  '/admins',
   verifyToken,
-  can("listAdmins", "user"),
-  validate(userValidators.listQuery, "query"),
-  getAvailableAdmins,
+  can('listAdmins', 'user'),
+  validate(userValidators.listQuery, 'query'),
+  getAvailableAdmins
 );
 router.get(
-  "/store-managers",
+  '/store-managers',
   verifyToken,
-  can("listStoreManagers", "user"),
-  validate(userValidators.storeManagersQuery, "query"),
-  getStoreManagers,
+  can('listStoreManagers', 'user'),
+  validate(userValidators.storeManagersQuery, 'query'),
+  getStoreManagers
 );
 
 router.post(
-  "/",
+  '/',
   verifyToken,
-  can("createStoreManager", "user"),
+  can('createStoreManager', 'user'),
   validate(userValidators.createStoreManager),
-  createStoreManager,
+  createStoreManager
 );
 
 router.patch(
-  "/:id",
+  '/:id',
   verifyToken,
-  canAny(["updateAny", "updateSelf"], "user"),
-  validate(userValidators.idParam, "params"),
+  canAny(['updateAny', 'updateSelf'], 'user'),
+  validate(userValidators.idParam, 'params'),
   validate(userValidators.updateUser),
-  updateUser,
+  updateUser
 );
 router.delete(
-  "/:id",
+  '/:id',
   verifyToken,
-  canAny(["deleteAny", "deleteSelf"], "user"),
-  validate(userValidators.idParam, "params"),
-  deleteUser,
+  canAny(['deleteAny', 'deleteSelf'], 'user'),
+  validate(userValidators.idParam, 'params'),
+  deleteUser
 );
 
 router.patch(
-  "/:id/deactivate",
+  '/:id/deactivate',
   verifyToken,
-  canAny(["deactivateAny", "deactivateSelf"], "user"),
-  validate(userValidators.idParam, "params"),
-  deactivateUser,
+  canAny(['deactivateAny', 'deactivateSelf'], 'user'),
+  validate(userValidators.idParam, 'params'),
+  deactivateUser
 );
 
 router.patch(
-  "/:id/restore",
+  '/:id/restore',
   verifyToken,
-  can("restoreAny", "user"),
-  validate(userValidators.idParam, "params"),
-  restoreUser,
+  can('restoreAny', 'user'),
+  validate(userValidators.idParam, 'params'),
+  restoreUser
 );
 
 router.patch(
-  "/:id/restaurant",
+  '/:id/restaurant',
   verifyToken,
-  can("assignStoreManager", "user"),
-  validate(userValidators.idParam, "params"),
+  can('assignStoreManager', 'user'),
+  validate(userValidators.idParam, 'params'),
   validate(userValidators.assignStoreManager),
-  assignStoreManagerToRestaurant,
+  assignStoreManagerToRestaurant
 );
 router.patch(
-  "/:id/owner",
+  '/:id/owner',
   verifyToken,
-  can("changeStoreManagerOwner", "user"),
-  validate(userValidators.idParam, "params"),
+  can('changeStoreManagerOwner', 'user'),
+  validate(userValidators.idParam, 'params'),
   validate(userValidators.changeStoreManagerOwner),
-  changeStoreManagerOwner,
+  changeStoreManagerOwner
 );
 
 router.delete(
-  "/:id/restaurant",
+  '/:id/restaurant',
   verifyToken,
-  can("unassignStoreManager", "user"),
-  validate(userValidators.idParam, "params"),
-  unassignStoreManager,
+  can('unassignStoreManager', 'user'),
+  validate(userValidators.idParam, 'params'),
+  unassignStoreManager
 );
 
 export default router;

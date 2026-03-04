@@ -1,33 +1,33 @@
-import express from "express";
+import express from 'express';
 import {
   changePassword,
   getSession,
   google,
   signin,
   signup,
-  signout,
-} from "../controllers/auth.controller.js";
-import { verifyToken } from "../utils/verifyUser.js";
-import { createRateLimit } from "../utils/rateLimit.js";
-import { can } from "../utils/policy.js";
-import { validate } from "../middlewares/validate.js";
-import { authValidators } from "../validators/index.js";
+  signout
+} from '../controllers/auth.controller.js';
+import { verifyToken } from '../utils/verifyUser.js';
+import { createRateLimit } from '../utils/rateLimit.js';
+import { can } from '../utils/policy.js';
+import { validate } from '../middlewares/validate.js';
+import { authValidators } from '../validators/index.js';
 
 const router = express.Router();
 const signupLimiter = createRateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
-  keyPrefix: "auth_signup",
+  keyPrefix: 'auth_signup'
 });
 const signinLimiter = createRateLimit({
   windowMs: 15 * 60 * 1000,
   max: 15,
-  keyPrefix: "auth_signin",
+  keyPrefix: 'auth_signin'
 });
 const googleLimiter = createRateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
-  keyPrefix: "auth_google",
+  keyPrefix: 'auth_google'
 });
 
 // ===============================================================================
@@ -60,43 +60,43 @@ const googleLimiter = createRateLimit({
 // ===============================================================================
 
 router.post(
-  "/signup",
+  '/signup',
   signupLimiter,
   validate(authValidators.signup),
-  signup,
+  signup
 );
 
 // ===============================================================================
 // 🔷 POST /api/auth/signin
 // ===============================================================================
 router.post(
-  "/signin",
+  '/signin',
   signinLimiter,
   validate(authValidators.signin),
-  signin,
+  signin
 );
 
 // ===============================================================================
 // 🔷 POST /api/auth/google
 // ===============================================================================
 router.post(
-  "/google",
+  '/google',
   googleLimiter,
   validate(authValidators.google),
-  google,
+  google
 );
 
 // ===============================================================================
 // 🔷 POST /api/auth/signout
 // ===============================================================================
-router.post("/signout", verifyToken, can("signout", "auth"), signout);
-router.get("/session", verifyToken, can("session", "auth"), getSession);
+router.post('/signout', verifyToken, can('signout', 'auth'), signout);
+router.get('/session', verifyToken, can('session', 'auth'), getSession);
 router.post(
-  "/change-password",
+  '/change-password',
   verifyToken,
-  can("changePassword", "auth"),
+  can('changePassword', 'auth'),
   validate(authValidators.changePassword),
-  changePassword,
+  changePassword
 );
 
 export default router;

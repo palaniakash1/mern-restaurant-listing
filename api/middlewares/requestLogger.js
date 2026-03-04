@@ -4,8 +4,8 @@
  * Uses fileLogger for persistent storage with 500 log stack
  */
 
-import crypto from "crypto";
-import { logRequest, logResponse, logError } from "../utils/fileLogger.js";
+import crypto from 'crypto';
+import { logRequest, logResponse, logError } from '../utils/fileLogger.js';
 
 /**
  * Creates a request logger middleware
@@ -19,14 +19,14 @@ export const createRequestLogger = (options = {}) => {
 
   return (req, res, next) => {
     // Generate request ID if not already present
-    const requestId = req.headers["x-request-id"] || crypto.randomUUID();
+    const requestId = req.headers['x-request-id'] || crypto.randomUUID();
     req.requestId = requestId;
-    res.setHeader("X-Request-Id", requestId);
+    res.setHeader('X-Request-Id', requestId);
 
     const startTime = Date.now();
     const { method, url, ip, headers } = req;
-    const clientIp = headers["x-forwarded-for"] || ip;
-    const userAgent = headers["user-agent"] || "unknown";
+    const clientIp = headers['x-forwarded-for'] || ip;
+    const userAgent = headers['user-agent'] || 'unknown';
 
     // Log incoming request using fileLogger
     logRequest({
@@ -35,8 +35,8 @@ export const createRequestLogger = (options = {}) => {
       url,
       clientIp,
       userAgent: userAgent.substring(0, 100),
-      contentLength: headers["content-length"] || 0,
-      ...(logBody && req.body && { body: req.body }),
+      contentLength: headers['content-length'] || 0,
+      ...(logBody && req.body && { body: req.body })
     });
 
     // Capture original end to log response
@@ -47,7 +47,7 @@ export const createRequestLogger = (options = {}) => {
       res.end(chunk, encoding);
 
       const duration = Date.now() - startTime;
-      const responseSize = res.getHeader("content-length") || (chunk ? chunk.length : 0);
+      const responseSize = res.getHeader('content-length') || (chunk ? chunk.length : 0);
 
       const logEntry = {
         requestId,
@@ -56,7 +56,7 @@ export const createRequestLogger = (options = {}) => {
         clientIp,
         statusCode: res.statusCode,
         duration: `${duration}ms`,
-        responseSize,
+        responseSize
       };
 
       // Log response body for errors (sanitized)

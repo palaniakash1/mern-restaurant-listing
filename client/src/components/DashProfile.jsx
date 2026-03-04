@@ -1,15 +1,15 @@
-import imageCompression from "browser-image-compression";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Button, TextInput, Modal, Select } from "flowbite-react";
-import { useSelector } from "react-redux";
+import imageCompression from 'browser-image-compression';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, Button, TextInput, Modal, Select } from 'flowbite-react';
+import { useSelector } from 'react-redux';
 import {
   getDownloadURL,
   getStorage,
   ref,
-  uploadBytesResumable,
-} from "firebase/storage";
-import { app } from "../firebase";
-import ImageCircleLoader from "../components/ImageCircleLoader";
+  uploadBytesResumable
+} from 'firebase/storage';
+import { app } from '../firebase';
+import ImageCircleLoader from '../components/ImageCircleLoader';
 import {
   updateStart,
   updateSuccess,
@@ -17,12 +17,12 @@ import {
   deleteUserStart,
   deleteUserSuccess,
   deleteUserFailure,
-  signOutSuccess,
-} from "../redux/user/userSlice";
-import { useDispatch } from "react-redux";
-import { HiOutlineExclamationCircle, HiTrash } from "react-icons/hi";
-import { Link } from "react-router-dom";
-import { VscSignOut } from "react-icons/vsc";
+  signOutSuccess
+} from '../redux/user/userSlice';
+import { useDispatch } from 'react-redux';
+import { HiOutlineExclamationCircle, HiTrash } from 'react-icons/hi';
+import { Link } from 'react-router-dom';
+import { VscSignOut } from 'react-icons/vsc';
 
 export default function DashProfile() {
   const { currentUser, error, loading } = useSelector((state) => state.user);
@@ -51,23 +51,23 @@ export default function DashProfile() {
     if (!file) return;
 
     // ❌ 1. Reject non-image files
-    if (!file.type.startsWith("image/")) {
-      setImageFileUploadingError("Only image files are allowed.");
+    if (!file.type.startsWith('image/')) {
+      setImageFileUploadingError('Only image files are allowed.');
       e.target.value = null; // reset input
       return;
     }
     // Define our 2MB limit (2 * 1024 * 1024 bytes)
     const limitInBytes = 2 * 1024 * 1024;
-    console.log((file.size / (1024 * 1024)).toFixed(2) + " MB");
+    console.log((file.size / (1024 * 1024)).toFixed(2) + ' MB');
 
     // 2. Conditional Compression
     if (file.size > limitInBytes) {
-      console.log("File is large. Starting compression...");
+      console.log('File is large. Starting compression...');
 
       const options = {
         maxSizeMB: 2,
         maxWidthOrHeight: 1920,
-        useWebWorker: true,
+        useWebWorker: true
       };
 
       try {
@@ -79,16 +79,16 @@ export default function DashProfile() {
         // Use the compressed file
         setImageFile(compressedFile);
         setImageFileUrl(URL.createObjectURL(compressedFile));
-        console.log((compressedFile.size / (1024 * 1024)).toFixed(2) + " MB");
+        console.log((compressedFile.size / (1024 * 1024)).toFixed(2) + ' MB');
       } catch (error) {
         console.error(error);
-        setImageFileUploadingError("Compression failed. Try a smaller photo.");
+        setImageFileUploadingError('Compression failed. Try a smaller photo.');
       } finally {
         setImageFileUploading(false);
       }
     } else {
       // 3. File is already small, skip compression and use original
-      console.log("File is under 2MB. Skipping compression.");
+      console.log('File is under 2MB. Skipping compression.');
       setImageFile(file);
       setImageFileUrl(URL.createObjectURL(file));
       setImageFileUploadingError(null);
@@ -97,7 +97,6 @@ export default function DashProfile() {
     setImageFileUploadingError(null);
   };
 
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const uploadImage = useCallback(() => {
     if (!imageFile) return;
     setIsUploading(true); // 👈 START upload UI
@@ -108,7 +107,7 @@ export default function DashProfile() {
     const storageRef = ref(storage, fileName);
     const uploadTask = uploadBytesResumable(storageRef, imageFile);
     uploadTask.on(
-      "state_changed",
+      'state_changed',
       (snapshot) => {
         const progress =
           (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
@@ -138,7 +137,6 @@ export default function DashProfile() {
 
   useEffect(() => {
     if (imageFile) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       uploadImage();
     }
   }, [imageFile, uploadImage]);
@@ -160,18 +158,18 @@ export default function DashProfile() {
     }
 
     if (imageFileUploading) {
-      setUpdateUserError("please wait for the image to uploaded");
+      setUpdateUserError('please wait for the image to uploaded');
       return;
     }
 
     try {
       dispatch(updateStart());
       const res = await fetch(`/api/user/update/${currentUser._id}`, {
-        method: "PUT",
+        method: 'PUT',
         headers: {
-          "content-type": "application/json",
+          'content-type': 'application/json'
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(formData)
       });
 
       const data = await res.json();
@@ -196,7 +194,7 @@ export default function DashProfile() {
     try {
       dispatch(deleteUserStart());
       const res = await fetch(`/api/user/delete/${currentUser._id}`, {
-        method: "DELETE",
+        method: 'DELETE'
       });
       const data = await res.json();
       if (!res.ok) {
@@ -212,7 +210,7 @@ export default function DashProfile() {
   const handleSignOut = async () => {
     try {
       const res = await fetch(`/api/user/signout`, {
-        method: "POST",
+        method: 'POST'
       });
       const data = await res.json();
       if (!res.ok) {
@@ -336,7 +334,7 @@ export default function DashProfile() {
                   className=" w-full lg:w-[30%] !bg-[#8fa31e] hover:!bg-[#7a8c1a] text-white !rounded-[4px] border-none"
                   disabled={loading || imageFileUploading}
                 >
-                  {loading ? "loading..." : "Update"}
+                  {loading ? 'loading...' : 'Update'}
                 </Button>
 
                 {/* DELETE + SIGN OUT */}

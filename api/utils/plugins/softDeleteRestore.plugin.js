@@ -1,27 +1,27 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 export const softDeleteRestorePlugin = (schema) => {
-  if (!schema.path("isActive")) {
+  if (!schema.path('isActive')) {
     schema.add({
       isActive: {
         type: Boolean,
         default: true,
-        index: true,
+        index: true
       },
       deletedAt: Date,
       deletedBy: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+        ref: 'User'
       },
       restoredAt: Date,
       restoredBy: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
+        ref: 'User'
+      }
     });
   }
 
-  schema.pre(["find", "findOne", "countDocuments"], function () {
+  schema.pre(['find', 'findOne', 'countDocuments'], function () {
     if (!this.getOptions().includeInactive) {
       this.where({ isActive: true });
     }

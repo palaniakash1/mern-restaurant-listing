@@ -3,8 +3,8 @@
  * Express middleware for validating requests using Zod schemas
  */
 
-import { z } from "zod";
-import { AppError } from "../utils/error.js";
+import { z } from 'zod';
+import { AppError } from '../utils/error.js';
 
 /**
  * Validate request body against a Zod schema
@@ -12,7 +12,7 @@ import { AppError } from "../utils/error.js";
  * @param {string} source - Source of data (body, query, params)
  * @returns {Function} Express middleware
  */
-export const validate = (schema, source = "body") => {
+export const validate = (schema, source = 'body') => {
   return (req, res, next) => {
     try {
       const data = req[source];
@@ -21,14 +21,14 @@ export const validate = (schema, source = "body") => {
       if (!result.success) {
         // Format Zod errors into readable messages
         const errors = result.error.errors.map((err) => ({
-          field: err.path.join("."),
-          message: err.message,
+          field: err.path.join('.'),
+          message: err.message
         }));
 
         return res.status(400).json({
           success: false,
-          message: "Validation failed",
-          errors,
+          message: 'Validation failed',
+          errors
         });
       }
 
@@ -45,19 +45,19 @@ export const validate = (schema, source = "body") => {
  * Validate request body
  * @param {z.ZodSchema} schema - Zod schema
  */
-export const validateBody = (schema) => validate(schema, "body");
+export const validateBody = (schema) => validate(schema, 'body');
 
 /**
  * Validate query parameters
  * @param {z.ZodSchema} schema - Zod schema
  */
-export const validateQuery = (schema) => validate(schema, "query");
+export const validateQuery = (schema) => validate(schema, 'query');
 
 /**
  * Validate URL parameters
  * @param {z.ZodSchema} schema - Zod schema
  */
-export const validateParams = (schema) => validate(schema, "params");
+export const validateParams = (schema) => validate(schema, 'params');
 
 /**
  * Validate multiple sources
@@ -78,14 +78,14 @@ export const validateAll = (sources) => {
 
         if (!result.success) {
           const errors = result.error.errors.map((err) => ({
-            field: err.path.join("."),
-            message: err.message,
+            field: err.path.join('.'),
+            message: err.message
           }));
 
           return res.status(400).json({
             success: false,
             message: `Validation failed in ${source}`,
-            errors,
+            errors
           });
         }
 
@@ -115,5 +115,5 @@ export default {
   validateQuery,
   validateParams,
   validateAll,
-  validatedHandler,
+  validatedHandler
 };

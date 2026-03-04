@@ -1,4 +1,4 @@
 export const publicRestaurantFilter = {
-  status: "published",
-  isActive: true,
+  status: 'published',
+  isActive: true
 };

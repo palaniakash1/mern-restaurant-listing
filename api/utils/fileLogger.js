@@ -3,9 +3,9 @@
  * Maintains last 500 logs in memory and writes to file with rotation
  */
 
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,8 +13,8 @@ const __dirname = path.dirname(__filename);
 // Configuration
 const MAX_LOGS = 500;
 const MAX_FILE_LINES = 1000; // Rotate file after this many lines
-const LOG_DIR = path.join(__dirname, "..", "logs");
-const LOG_FILE = path.join(LOG_DIR, "app.log");
+const LOG_DIR = path.join(__dirname, '..', 'logs');
+const LOG_FILE = path.join(LOG_DIR, 'app.log');
 
 // In-memory log storage
 const logStack = [];
@@ -33,18 +33,18 @@ const ensureLogDir = () => {
  * Rotate log file if too large
  */
 const rotateLogFile = () => {
-  const backupFile = path.join(LOG_DIR, "app.old.log");
-  
+  const backupFile = path.join(LOG_DIR, 'app.old.log');
+
   // If backup exists, remove it
   if (fs.existsSync(backupFile)) {
     fs.unlinkSync(backupFile);
   }
-  
+
   // Rename current to backup
   if (fs.existsSync(LOG_FILE)) {
     fs.renameSync(LOG_FILE, backupFile);
   }
-  
+
   fileLineCount = 0;
 };
 
@@ -53,8 +53,8 @@ const rotateLogFile = () => {
  */
 const countExistingLines = () => {
   if (!fs.existsSync(LOG_FILE)) return 0;
-  const content = fs.readFileSync(LOG_FILE, "utf8");
-  return content.split("\n").filter(line => line.trim()).length;
+  const content = fs.readFileSync(LOG_FILE, 'utf8');
+  return content.split('\n').filter(line => line.trim()).length;
 };
 
 /**
@@ -63,7 +63,7 @@ const countExistingLines = () => {
 const initFileLogger = () => {
   ensureLogDir();
   fileLineCount = countExistingLines();
-  
+
   // Rotate if file too large
   if (fileLineCount >= MAX_FILE_LINES) {
     rotateLogFile();
@@ -80,7 +80,7 @@ initFileLogger();
 const addToStack = (logEntry) => {
   // Add to beginning of array
   logStack.unshift(logEntry);
-  
+
   // Remove oldest logs if exceeding MAX_LOGS
   while (logStack.length > MAX_LOGS) {
     logStack.pop();
@@ -96,19 +96,19 @@ const addToStack = (logEntry) => {
 const writeToFile = (logEntry, forceWrite = false) => {
   // Only write errors to file by default (reduce I/O)
   // Or if forceWrite is true (for important logs)
-  if (!forceWrite && logEntry.type !== "error") {
+  if (!forceWrite && logEntry.type !== 'error') {
     return;
   }
-  
+
   ensureLogDir();
-  
+
   // Check if rotation needed
   if (fileLineCount >= MAX_FILE_LINES) {
     rotateLogFile();
   }
-  
-  const logLine = JSON.stringify(logEntry) + "\n";
-  fs.appendFileSync(LOG_FILE, logLine, "utf8");
+
+  const logLine = JSON.stringify(logEntry) + '\n';
+  fs.appendFileSync(LOG_FILE, logLine, 'utf8');
   fileLineCount++;
 };
 
@@ -119,21 +119,21 @@ const writeToFile = (logEntry, forceWrite = false) => {
  */
 export const log = (type, data) => {
   const timestamp = new Date().toISOString();
-  
+
   const logEntry = {
     type,
     timestamp,
-    ...data,
+    ...data
   };
-  
+
   // Add to in-memory stack (always)
   addToStack(logEntry);
-  
+
   // Write to file (only errors by default, or force for important logs)
-  writeToFile(logEntry, type === "error");
-  
+  writeToFile(logEntry, type === 'error');
+
   // Also output to console for development
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== 'production') {
     console.log(JSON.stringify(logEntry));
   }
 };
@@ -141,11 +141,11 @@ export const log = (type, data) => {
 /**
  * Convenience methods for different log types
  */
-export const logRequest = (data) => log("request", data);
-export const logResponse = (data) => log("response", data);
-export const logError = (data) => log("error", data);
-export const logInfo = (data) => log("info", data);
-export const logWarn = (data) => log("warn", data);
+export const logRequest = (data) => log('request', data);
+export const logResponse = (data) => log('response', data);
+export const logError = (data) => log('error', data);
+export const logInfo = (data) => log('info', data);
+export const logWarn = (data) => log('warn', data);
 
 /**
  * Get all logs from the stack
@@ -182,13 +182,13 @@ export const getLogStats = () => {
   const stats = {
     total: logStack.length,
     maxCapacity: MAX_LOGS,
-    byType: {},
+    byType: {}
   };
-  
+
   logStack.forEach((log) => {
     stats.byType[log.type] = (stats.byType[log.type] || 0) + 1;
   });
-  
+
   return stats;
 };
 
@@ -220,5 +220,5 @@ export default {
   getRecentLogs,
   clearLogs,
   getLogStats,
-  searchLogs,
+  searchLogs
 };

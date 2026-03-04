@@ -1,13 +1,13 @@
-import mongoose from "mongoose";
-import { softDeleteRestorePlugin } from "../utils/plugins/softDeleteRestore.plugin.js";
+import mongoose from 'mongoose';
+import { softDeleteRestorePlugin } from '../utils/plugins/softDeleteRestore.plugin.js';
 
 const openingHourSchema = new mongoose.Schema(
   {
     open: { type: String },
     close: { type: String },
-    isClosed: { type: Boolean, default: false },
+    isClosed: { type: Boolean, default: false }
   },
-  { _id: false },
+  { _id: false }
 );
 
 const restaurantSchema = new mongoose.Schema(
@@ -21,16 +21,16 @@ const restaurantSchema = new mongoose.Schema(
     categories: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Category",
+        ref: 'Category'
         // required: true,
-      },
+      }
     ],
 
     menus: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Menu",
-      },
+        ref: 'Menu'
+      }
     ],
 
     address: {
@@ -40,19 +40,19 @@ const restaurantSchema = new mongoose.Schema(
       city: { type: String, required: true },
       countyRegion: { type: String },
       postcode: { type: String, required: true },
-      country: { type: String, default: "United Kingdom" },
+      country: { type: String, default: 'United Kingdom' },
 
       location: {
         type: {
           type: String,
-          enum: ["Point"],
-          default: "Point",
+          enum: ['Point'],
+          default: 'Point'
         },
         coordinates: {
           type: [Number], // [lng, lat]
-          required: true,
-        },
-      },
+          required: true
+        }
+      }
     },
 
     openingHours: {
@@ -62,7 +62,7 @@ const restaurantSchema = new mongoose.Schema(
       thursday: openingHourSchema,
       friday: openingHourSchema,
       saturday: openingHourSchema,
-      sunday: openingHourSchema,
+      sunday: openingHourSchema
     },
 
     contactNumber: { type: String },
@@ -72,7 +72,7 @@ const restaurantSchema = new mongoose.Schema(
     imageLogo: {
       type: String,
       default:
-        "https://firebasestorage.googleapis.com/v0/b/mern-restaurant-b5fb7.firebasestorage.app/o/1766387131263eatwisely%20food%20placeholder%20(1).jpg?alt=media&token=9c262556-bbdc-4d02-8175-6c92fada6aee",
+        'https://firebasestorage.googleapis.com/v0/b/mern-restaurant-b5fb7.firebasestorage.app/o/1766387131263eatwisely%20food%20placeholder%20(1).jpg?alt=media&token=9c262556-bbdc-4d02-8175-6c92fada6aee'
     },
     gallery: [{ type: String }],
 
@@ -84,38 +84,38 @@ const restaurantSchema = new mongoose.Schema(
 
     adminId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
-      index: true,
+      index: true
     },
     status: {
       type: String,
-      enum: ["draft", "published", "blocked"],
-      default: "draft",
-      index: true,
+      enum: ['draft', 'published', 'blocked'],
+      default: 'draft',
+      index: true
     },
 
     isActive: {
       type: Boolean,
       default: true,
-      index: true,
+      index: true
     },
 
     searchText: {
       type: String,
-      index: true,
-    },
+      index: true
+    }
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
-restaurantSchema.index({ "address.location": "2dsphere" });
+restaurantSchema.index({ 'address.location': '2dsphere' });
 restaurantSchema.index({ status: 1, isActive: 1, isFeatured: 1 });
 restaurantSchema.index({ status: 1, isActive: 1, isTrending: 1 });
-restaurantSchema.index({ "address.city": 1 });
+restaurantSchema.index({ 'address.city': 1 });
 restaurantSchema.index({ categories: 1 });
 restaurantSchema.index({ createdAt: -1 });
-restaurantSchema.index({ searchText: "text" });
+restaurantSchema.index({ searchText: 'text' });
 restaurantSchema.plugin(softDeleteRestorePlugin);
 
-export default mongoose.model("Restaurant", restaurantSchema);
+export default mongoose.model('Restaurant', restaurantSchema);

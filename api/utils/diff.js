@@ -3,7 +3,7 @@ const normalize = (value) => {
     return null;
   }
 
-  if (typeof value === "object") {
+  if (typeof value === 'object') {
     return JSON.stringify(value);
   }
 
@@ -20,7 +20,7 @@ export const diffObject = (before = {}, after = {}, fields = []) => {
     if (beforeValue !== afterValue) {
       diff[field] = {
         before: before[field] ?? null,
-        after: after[field] ?? null,
+        after: after[field] ?? null
       };
     }
   }

@@ -1,8 +1,8 @@
-import express from "express";
-import { verifyToken } from "../utils/verifyUser.js";
-import { can } from "../utils/policy.js";
-import { validate } from "../middlewares/validate.js";
-import { categoryValidators } from "../validators/index.js";
+import express from 'express';
+import { verifyToken } from '../utils/verifyUser.js';
+import { can } from '../utils/policy.js';
+import { validate } from '../middlewares/validate.js';
+import { categoryValidators } from '../validators/index.js';
 
 import {
   createCategory,
@@ -21,160 +21,160 @@ import {
   checkCategorySlug,
   exportCategories,
   bulkReorderCategories,
-  getDeletedCategories,
-} from "../controllers/category.controller.js";
+  getDeletedCategories
+} from '../controllers/category.controller.js';
 
 const router = express.Router();
 
 // GET all categories
-router.get("/", validate(categoryValidators.listQuery, "query"), getCategories);
+router.get('/', validate(categoryValidators.listQuery, 'query'), getCategories);
 
 // GET MY category
 router.get(
-  "/my",
+  '/my',
   verifyToken,
-  can("readMine", "category"),
-  validate(categoryValidators.myQuery, "query"),
-  getMyCategories,
+  can('readMine', 'category'),
+  validate(categoryValidators.myQuery, 'query'),
+  getMyCategories
 );
 
 // SUPERADMIN FULL VIEW
 router.get(
-  "/all",
+  '/all',
   verifyToken,
-  can("readAll", "category"),
-  validate(categoryValidators.allQuery, "query"),
-  getAllCategories,
+  can('readAll', 'category'),
+  validate(categoryValidators.allQuery, 'query'),
+  getAllCategories
 );
 
 // SUPERADMIN DELETED VIEW
 router.get(
-  "/deleted",
+  '/deleted',
   verifyToken,
-  can("readDeleted", "category"),
-  validate(categoryValidators.deletedQuery, "query"),
-  getDeletedCategories,
+  can('readDeleted', 'category'),
+  validate(categoryValidators.deletedQuery, 'query'),
+  getDeletedCategories
 );
 
 // SUPERADMIN EXPORT
 router.get(
-  "/export",
+  '/export',
   verifyToken,
-  can("export", "category"),
-  validate(categoryValidators.exportQuery, "query"),
-  exportCategories,
+  can('export', 'category'),
+  validate(categoryValidators.exportQuery, 'query'),
+  exportCategories
 );
 
 // BULK STATUS UPDATE
 router.patch(
-  "/bulk-status",
+  '/bulk-status',
   verifyToken,
-  can("bulkStatus", "category"),
+  can('bulkStatus', 'category'),
   validate(categoryValidators.bulkStatusBody),
-  bulkUpdateCategoryStatus,
+  bulkUpdateCategoryStatus
 );
 
 // BULK REORDER WITH IDEMPOTENCY KEY
 router.patch(
-  "/bulk-reorder",
+  '/bulk-reorder',
   verifyToken,
-  can("bulkReorder", "category"),
-  validate(categoryValidators.idempotencyHeader, "headers", { assign: false }),
+  can('bulkReorder', 'category'),
+  validate(categoryValidators.idempotencyHeader, 'headers', { assign: false }),
   validate(categoryValidators.bulkReorderBody),
-  bulkReorderCategories,
+  bulkReorderCategories
 );
 
 // REORDER category
 router.patch(
-  "/reorder",
+  '/reorder',
   verifyToken,
-  can("reorder", "category"),
+  can('reorder', 'category'),
   validate(categoryValidators.reorderBody),
-  reorderCategories,
+  reorderCategories
 );
 
 // Check slug availability
 router.post(
-  "/check-slug",
+  '/check-slug',
   verifyToken,
-  can("checkSlug", "category"),
+  can('checkSlug', 'category'),
   validate(categoryValidators.checkSlugBody),
-  checkCategorySlug,
+  checkCategorySlug
 );
 
 // Create new generic or restaurant category
 router.post(
-  "/",
+  '/',
   verifyToken,
-  can("create", "category"),
+  can('create', 'category'),
   validate(categoryValidators.createBody),
-  createCategory,
+  createCategory
 );
 
 // UPATE category status
 router.patch(
-  "/:id/status",
+  '/:id/status',
   verifyToken,
-  can("updateStatus", "category"),
-  validate(categoryValidators.idParam, "params"),
+  can('updateStatus', 'category'),
+  validate(categoryValidators.idParam, 'params'),
   validate(categoryValidators.updateStatusBody),
-  updateCategoryStatus,
+  updateCategoryStatus
 );
 
 // Restore soft-deleted category
 router.patch(
-  "/:id/restore",
+  '/:id/restore',
   verifyToken,
-  can("restore", "category"),
-  validate(categoryValidators.idParam, "params"),
-  restoreCategory,
+  can('restore', 'category'),
+  validate(categoryValidators.idParam, 'params'),
+  restoreCategory
 );
 
 // HARD DELETE
 router.delete(
-  "/:id/hard",
+  '/:id/hard',
   verifyToken,
-  can("hardDelete", "category"),
-  validate(categoryValidators.idParam, "params"),
-  hardDeleteCategory,
+  can('hardDelete', 'category'),
+  validate(categoryValidators.idParam, 'params'),
+  hardDeleteCategory
 );
 
 // category audit logs
 router.get(
-  "/:id/audit",
+  '/:id/audit',
   verifyToken,
-  can("readAudit", "category"),
-  validate(categoryValidators.idParam, "params"),
-  validate(categoryValidators.auditQuery, "query"),
-  getCategoryAuditLogs,
+  can('readAudit', 'category'),
+  validate(categoryValidators.idParam, 'params'),
+  validate(categoryValidators.auditQuery, 'query'),
+  getCategoryAuditLogs
 );
 
 // GET Retrieve category by ID
 router.get(
-  "/:id",
+  '/:id',
   verifyToken,
-  can("readById", "category"),
-  validate(categoryValidators.idParam, "params"),
-  getCategoryById,
+  can('readById', 'category'),
+  validate(categoryValidators.idParam, 'params'),
+  getCategoryById
 );
 
 // UPATE category
 router.patch(
-  "/:id",
+  '/:id',
   verifyToken,
-  can("update", "category"),
-  validate(categoryValidators.idParam, "params"),
+  can('update', 'category'),
+  validate(categoryValidators.idParam, 'params'),
   validate(categoryValidators.updateBody),
-  updateCategory,
+  updateCategory
 );
 
 // DELETE category
 router.delete(
-  "/:id",
+  '/:id',
   verifyToken,
-  can("delete", "category"),
-  validate(categoryValidators.idParam, "params"),
-  deleteCategory,
+  can('delete', 'category'),
+  validate(categoryValidators.idParam, 'params'),
+  deleteCategory
 );
 
 export default router;

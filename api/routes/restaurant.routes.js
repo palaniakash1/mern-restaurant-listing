@@ -1,4 +1,4 @@
-import express from "express";
+import express from 'express';
 
 import {
   create,
@@ -16,48 +16,48 @@ import {
   getRestaurantDetails,
   getAdminRestaurantSummary,
   updateRestaurantStatus,
-  restoreRestaurant,
-} from "../controllers/restaurant.controller.js";
+  restoreRestaurant
+} from '../controllers/restaurant.controller.js';
 
-import { verifyToken } from "../utils/verifyUser.js";
-import { can, canAny } from "../utils/policy.js";
-import { validate } from "../middlewares/validate.js";
-import { restaurantValidators } from "../validators/index.js";
+import { verifyToken } from '../utils/verifyUser.js';
+import { can, canAny } from '../utils/policy.js';
+import { validate } from '../middlewares/validate.js';
+import { restaurantValidators } from '../validators/index.js';
 
 import {
-  verifyRestaurantOwner,
-} from "../utils/roleGuards.js";
+  verifyRestaurantOwner
+} from '../utils/roleGuards.js';
 
 const router = express.Router();
 
 // =======================
 // PUBLIC ROUTES (LISTING)
 // =======================
-router.get("/", validate(restaurantValidators.listQuery, "query"), listRestaurants);
-router.get("/nearby", validate(restaurantValidators.nearbyQuery, "query"), getNearByRestaurants);
+router.get('/', validate(restaurantValidators.listQuery, 'query'), listRestaurants);
+router.get('/nearby', validate(restaurantValidators.nearbyQuery, 'query'), getNearByRestaurants);
 router.get(
-  "/featured",
-  validate(restaurantValidators.featuredTrendingQuery, "query"),
-  getFeaturedRestaurants,
+  '/featured',
+  validate(restaurantValidators.featuredTrendingQuery, 'query'),
+  getFeaturedRestaurants
 );
 router.get(
-  "/trending",
-  validate(restaurantValidators.featuredTrendingQuery, "query"),
-  getTrendingRestaurants,
+  '/trending',
+  validate(restaurantValidators.featuredTrendingQuery, 'query'),
+  getTrendingRestaurants
 );
 
 // =======================
 // PUBLIC DETAILS
 // =======================
 router.get(
-  "/slug/:slug",
-  validate(restaurantValidators.slugParam, "params"),
-  getRestaurantBySlug,
+  '/slug/:slug',
+  validate(restaurantValidators.slugParam, 'params'),
+  getRestaurantBySlug
 );
 router.get(
-  "/slug/:slug/details",
-  validate(restaurantValidators.slugParam, "params"),
-  getRestaurantDetails,
+  '/slug/:slug/details',
+  validate(restaurantValidators.slugParam, 'params'),
+  getRestaurantDetails
 );
 
 // =======================
@@ -66,91 +66,91 @@ router.get(
 
 //create
 router.post(
-  "/",
+  '/',
   verifyToken,
-  can("create", "restaurant"),
+  can('create', 'restaurant'),
   validate(restaurantValidators.createBody),
-  create,
+  create
 ); // create new restaurant - done
 
 // admin
-router.get("/me", verifyToken, can("readMine", "restaurant"), getMyRestaurant);
+router.get('/me', verifyToken, can('readMine', 'restaurant'), getMyRestaurant);
 router.get(
-  "/me/summary",
+  '/me/summary',
   verifyToken,
-  can("readMineSummary", "restaurant"),
-  getAdminRestaurantSummary,
+  can('readMineSummary', 'restaurant'),
+  getAdminRestaurantSummary
 );
 
 router.get(
-  "/all",
+  '/all',
   verifyToken,
-  can("listAll", "restaurant"),
-  validate(restaurantValidators.allQuery, "query"),
-  getAllRestaurants,
+  can('listAll', 'restaurant'),
+  validate(restaurantValidators.allQuery, 'query'),
+  getAllRestaurants
 ); // get all restaurant - done
 
 // get restaurant by id
 router.get(
-  "/id/:id",
+  '/id/:id',
   verifyToken,
-  canAny(["readById"], "restaurant"),
-  validate(restaurantValidators.idParam, "params"),
+  canAny(['readById'], 'restaurant'),
+  validate(restaurantValidators.idParam, 'params'),
   verifyRestaurantOwner,
-  getRestaurantById,
+  getRestaurantById
 );
 
 // =======================
 // admin/superAdmin
 // =======================
 router.patch(
-  "/id/:id",
+  '/id/:id',
   verifyToken,
-  canAny(["updateById"], "restaurant"),
-  validate(restaurantValidators.idParam, "params"),
+  canAny(['updateById'], 'restaurant'),
+  validate(restaurantValidators.idParam, 'params'),
   validate(restaurantValidators.updateBody),
   verifyRestaurantOwner,
-  updateRestaurant,
+  updateRestaurant
 ); // update restaurant by id - done
 
 // soft delete
 router.delete(
-  "/id/:id",
+  '/id/:id',
   verifyToken,
-  canAny(["deleteById"], "restaurant"),
-  validate(restaurantValidators.idParam, "params"),
+  canAny(['deleteById'], 'restaurant'),
+  validate(restaurantValidators.idParam, 'params'),
   verifyRestaurantOwner,
-  deleteRestaurant,
+  deleteRestaurant
 ); //delete restaurant
 
 // =======================
 // STATE MANAGEMENT
 // =======================
 router.patch(
-  "/id/:id/status",
+  '/id/:id/status',
   verifyToken,
-  can("updateStatus", "restaurant"),
-  validate(restaurantValidators.idParam, "params"),
+  can('updateStatus', 'restaurant'),
+  validate(restaurantValidators.idParam, 'params'),
   validate(restaurantValidators.statusBody),
-  updateRestaurantStatus,
+  updateRestaurantStatus
 );
 
 // Restore
 router.patch(
-  "/id/:id/restore",
+  '/id/:id/restore',
   verifyToken,
-  can("restore", "restaurant"),
-  validate(restaurantValidators.idParam, "params"),
-  restoreRestaurant,
+  can('restore', 'restaurant'),
+  validate(restaurantValidators.idParam, 'params'),
+  restoreRestaurant
 ); // restore from soft delete
 
 router.patch(
-  "/id/:id/admin",
+  '/id/:id/admin',
   verifyToken,
-  can("reassignAdmin", "restaurant"),
-  validate(restaurantValidators.idParam, "params"),
+  can('reassignAdmin', 'restaurant'),
+  validate(restaurantValidators.idParam, 'params'),
   validate(restaurantValidators.reassignBody),
-  reassignRestaurantAdmin,
+  reassignRestaurantAdmin
 ); // reassign restaurant from superAdmin to admin
 
 export default router;

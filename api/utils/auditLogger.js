@@ -1,16 +1,16 @@
-import AuditLog from "../models/auditLog.model.js";
-import { sanitizeAuditData } from "./sanitizeAuditData.js";
+import AuditLog from '../models/auditLog.model.js';
+import { sanitizeAuditData } from './sanitizeAuditData.js';
 
 export const logAudit = async ({
   actorId = null,
-  actorRole = "anonymous",
+  actorRole = 'anonymous',
   entityType,
   entityId = null,
   action,
   before = null,
   after = null,
   ipAddress = null,
-  session = null,
+  session = null
 }) => {
   try {
     const payload = {
@@ -21,7 +21,7 @@ export const logAudit = async ({
       action,
       before: sanitizeAuditData(before),
       after: sanitizeAuditData(after),
-      ipAddress,
+      ipAddress
     };
 
     if (session) {
@@ -32,6 +32,6 @@ export const logAudit = async ({
     await AuditLog.create(payload);
   } catch (error) {
     // DO NOT throw - audit logs must never break business logic.
-    console.error("Audit log failed:", error.message);
+    console.error('Audit log failed:', error.message);
   }
 };

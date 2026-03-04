@@ -1,10 +1,10 @@
-import AuditLog from "../models/auditLog.model.js";
-import User from "../models/user.model.js";
-import Menu from "../models/menu.model.js";
-import Category from "../models/category.model.js";
-import Review from "../models/review.model.js";
-import { errorHandler } from "../utils/error.js";
-import { paginate } from "../utils/paginate.js";
+import AuditLog from '../models/auditLog.model.js';
+import User from '../models/user.model.js';
+import Menu from '../models/menu.model.js';
+import Category from '../models/category.model.js';
+import Review from '../models/review.model.js';
+import { errorHandler } from '../utils/error.js';
+import { paginate } from '../utils/paginate.js';
 
 // ======================================================================
 // GET AUDIT LOGS (SUPER ADMIN + ADMIN)
@@ -20,7 +20,7 @@ export const getAuditLogs = async (req, res, next) => {
       action,
       actorId,
       page = 1,
-      limit = 20,
+      limit = 20
     } = req.query;
 
     const filter = {};
@@ -28,7 +28,7 @@ export const getAuditLogs = async (req, res, next) => {
     // ----------------------------
     // SuperAdmin: full access
     // ----------------------------
-    if (role === "superAdmin") {
+    if (role === 'superAdmin') {
       if (entityType) filter.entityType = entityType;
       if (entityId) filter.entityId = entityId;
       if (action) filter.action = action;
@@ -40,7 +40,7 @@ export const getAuditLogs = async (req, res, next) => {
     // ----------------------------
     // DO NOT apply actorId filter for admins
     // Admin: never trust actorId from query
-    else if (role === "admin") {
+    else if (role === 'admin') {
       if (!restaurantId) {
         // Admin without restaurant → no audit scope
         return res.status(200).json({
@@ -48,22 +48,22 @@ export const getAuditLogs = async (req, res, next) => {
           page: 1,
           limit,
           total: 0,
-          data: [],
+          data: []
         });
       }
 
       // Find storeManagers under this restaurant
       const storeManagerIds = await User.find({
-        role: "storeManager",
-        restaurantId,
-      }).distinct("_id");
+        role: 'storeManager',
+        restaurantId
+      }).distinct('_id');
       const menuIds = await Menu.find({ restaurantId })
         .setOptions({ includeInactive: true })
-        .distinct("_id");
+        .distinct('_id');
       const categoryIds = await Category.find({ restaurantId })
         .setOptions({ includeInactive: true })
-        .distinct("_id");
-      const reviewIds = await Review.find({ restaurantId }).distinct("_id");
+        .distinct('_id');
+      const reviewIds = await Review.find({ restaurantId }).distinct('_id');
 
       filter.$or = [
         // Admin’s own actions
@@ -71,28 +71,28 @@ export const getAuditLogs = async (req, res, next) => {
 
         // Restaurant actions
         {
-          entityType: "restaurant",
-          entityId: restaurantId,
+          entityType: 'restaurant',
+          entityId: restaurantId
         },
 
         // StoreManagers under this restaurant
         {
-          entityType: "user",
-          entityId: { $in: storeManagerIds },
+          entityType: 'user',
+          entityId: { $in: storeManagerIds }
         },
         // Menu & category actions belonging to this restaurant
         {
-          entityType: "menu",
-          entityId: { $in: menuIds },
+          entityType: 'menu',
+          entityId: { $in: menuIds }
         },
         {
-          entityType: "category",
-          entityId: { $in: categoryIds },
+          entityType: 'category',
+          entityId: { $in: categoryIds }
         },
         {
-          entityType: "review",
-          entityId: { $in: reviewIds },
-        },
+          entityType: 'review',
+          entityId: { $in: reviewIds }
+        }
       ];
 
       // Optional narrowing (safe)
@@ -104,7 +104,7 @@ export const getAuditLogs = async (req, res, next) => {
     // UNAUTHORIZED ROLES
     // =========================================================
     else {
-      return next(errorHandler(403, "Access denied"));
+      return next(errorHandler(403, 'Access denied'));
     }
 
     // ----------------------------
@@ -118,7 +118,7 @@ export const getAuditLogs = async (req, res, next) => {
     // Data query
     // ----------------------------
     const logs = await AuditLog.find(filter)
-      .populate("actorId", "userName role")
+      .populate('actorId', 'userName role')
       .sort({ createdAt: -1 })
       .skip(pagination.skip)
       .limit(pagination.limit)
@@ -126,9 +126,9 @@ export const getAuditLogs = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: "Audit logs fetched successfully",
+      message: 'Audit logs fetched successfully',
       ...pagination,
-      data: logs,
+      data: logs
     });
   } catch (error) {
     next(error);

@@ -3,7 +3,7 @@
  * Provides comprehensive health checks for dependencies and system status
  */
 
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 /**
  * Checks MongoDB connection status
@@ -13,19 +13,19 @@ const checkMongoDB = async () => {
   const startTime = Date.now();
   const readyState = mongoose.connection.readyState;
   const states = {
-    0: "disconnected",
-    1: "connected",
-    2: "connecting",
-    3: "disconnecting",
+    0: 'disconnected',
+    1: 'connected',
+    2: 'connecting',
+    3: 'disconnecting'
   };
 
   // Fast path: check readyState first
   if (readyState !== 1) {
     return {
-      status: "unhealthy",
+      status: 'unhealthy',
       latency: `${Date.now() - startTime}ms`,
-      state: states[readyState] || "unknown",
-      database: mongoose.connection.name || "unknown",
+      state: states[readyState] || 'unknown',
+      database: mongoose.connection.name || 'unknown'
     };
   }
 
@@ -37,19 +37,19 @@ const checkMongoDB = async () => {
       await db.command({ ping: 1 });
     }
     const latency = Date.now() - startTime;
-    
+
     return {
-      status: "healthy",
+      status: 'healthy',
       latency: `${latency}ms`,
       state: states[readyState],
-      database: mongoose.connection.name || "unknown",
+      database: mongoose.connection.name || 'unknown'
     };
   } catch (error) {
     return {
-      status: "unhealthy",
+      status: 'unhealthy',
       latency: `${Date.now() - startTime}ms`,
-      state: states[readyState] || "unknown",
-      error: error.message,
+      state: states[readyState] || 'unknown',
+      error: error.message
     };
   }
 };
@@ -62,16 +62,16 @@ const checkSystem = () => {
   const memUsage = process.memoryUsage();
   const memUsedMB = Math.round(memUsage.heapUsed / 1024 / 1024);
   const memTotalMB = Math.round(memUsage.heapTotal / 1024 / 1024);
-  
+
   return {
     memory: {
       used: `${memUsedMB} MB`,
       total: `${memTotalMB} MB`,
-      usage: `${Math.round((memUsedMB / memTotalMB) * 100)}%`,
+      usage: `${Math.round((memUsedMB / memTotalMB) * 100)}%`
     },
     uptime: `${process.uptime().toFixed(0)}s`,
     nodeVersion: process.version,
-    platform: process.platform,
+    platform: process.platform
   };
 };
 
@@ -84,58 +84,58 @@ const checkSystem = () => {
 export const createHealthCheck = (options = {}) => {
   // Default: don't check mongo to avoid test flakiness
   // Use { include: ["mongo"] } to enable DB check
-  const { include = ["system"] } = options;
-  
+  const { include = ['system'] } = options;
+
   return async (req, res, next) => {
     const health = {
-      status: "ok",
+      status: 'ok',
       timestamp: new Date().toISOString(),
-      service: process.env.APP_NAME || "mern-restaurant",
-      version: process.env.APP_VERSION || "1.0.0",
+      service: process.env.APP_NAME || 'mern-restaurant',
+      version: process.env.APP_VERSION || '1.0.0'
     };
-    
-    let overallStatus = "ok";
+
+    let overallStatus = 'ok';
     const details = {};
-    
+
     // Check MongoDB only if explicitly requested
-    if (include.includes("mongo")) {
+    if (include.includes('mongo')) {
       const mongoHealth = await checkMongoDB();
       details.mongodb = mongoHealth;
-      if (mongoHealth.status === "unhealthy") {
-        overallStatus = "error";
+      if (mongoHealth.status === 'unhealthy') {
+        overallStatus = 'error';
       }
     }
-    
+
     // Check System - always include
-    if (include.includes("system")) {
+    if (include.includes('system')) {
       details.system = checkSystem();
     }
-    
+
     // Enhanced environment validation
-    if (include.includes("environment")) {
+    if (include.includes('environment')) {
       const envHealth = validateEnvironment();
       details.environment = envHealth;
       if (!envHealth.valid) {
-        overallStatus = "error";
+        overallStatus = 'error';
       }
     }
-    
+
     // Enhanced dependency health checks
-    if (include.includes("dependencies")) {
+    if (include.includes('dependencies')) {
       const depsHealth = await checkDependencies();
       details.dependencies = depsHealth;
       if (!depsHealth.healthy) {
-        overallStatus = "error";
+        overallStatus = 'error';
       }
     }
-    
+
     health.checks = details;
     health.status = overallStatus;
-    
-    const statusCode = overallStatus === "ok" ? 200 : 503;
+
+    const statusCode = overallStatus === 'ok' ? 200 : 503;
     res.status(statusCode).json({
-      success: overallStatus === "ok",
-      ...health,
+      success: overallStatus === 'ok',
+      ...health
     });
   };
 };
@@ -143,26 +143,26 @@ export const createHealthCheck = (options = {}) => {
 // New functions for enhanced environment testing
 const validateEnvironment = () => {
   const requiredEnvVars = [
-    "NODE_ENV",
-    "DATABASE_URL",
-    "PORT",
-    "JWT_SECRET",
-    "APP_NAME",
-    "APP_VERSION"
+    'NODE_ENV',
+    'DATABASE_URL',
+    'PORT',
+    'JWT_SECRET',
+    'APP_NAME',
+    'APP_VERSION'
   ];
-  
+
   const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
   const warnings = [];
-  
+
   // Check for common issues
-  if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
-    warnings.push("JWT_SECRET is required in production");
+  if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+    warnings.push('JWT_SECRET is required in production');
   }
-  
-  if (process.env.NODE_ENV === "development" && process.env.NODE_ENV === "test") {
-    warnings.push("NODE_ENV should not be both development and test");
+
+  if (process.env.NODE_ENV === 'development' && process.env.NODE_ENV === 'test') {
+    warnings.push('NODE_ENV should not be both development and test');
   }
-  
+
   return {
     valid: missingVars.length === 0,
     missing: missingVars,
@@ -179,42 +179,42 @@ const checkDependencies = async () => {
     checks: {},
     latency: 0
   };
-  
+
   // Check Redis (if configured)
   if (process.env.REDIS_URL) {
     try {
-      const redis = require("redis");
+      const redis = require('redis');
       const client = redis.createClient({ url: process.env.REDIS_URL });
       await client.connect();
       await client.ping();
       await client.quit();
-      results.checks.redis = { status: "healthy", latency: Date.now() - startTime };
+      results.checks.redis = { status: 'healthy', latency: Date.now() - startTime };
     } catch (error) {
-      results.checks.redis = { status: "unhealthy", error: error.message };
+      results.checks.redis = { status: 'unhealthy', error: error.message };
       results.healthy = false;
     }
   }
-  
+
   // Check external services (example: email service)
   if (process.env.EMAIL_SERVICE_URL) {
     try {
       const response = await fetch(process.env.EMAIL_SERVICE_URL, {
-        method: "HEAD",
+        method: 'HEAD',
         timeout: 3000
       });
-      results.checks.emailService = { 
-        status: response.ok ? "healthy" : "unhealthy",
+      results.checks.emailService = {
+        status: response.ok ? 'healthy' : 'unhealthy',
         latency: Date.now() - startTime
       };
     } catch (error) {
-      results.checks.emailService = { 
-        status: "unhealthy", 
-        error: error.message 
+      results.checks.emailService = {
+        status: 'unhealthy',
+        error: error.message
       };
       results.healthy = false;
     }
   }
-  
+
   results.latency = Date.now() - startTime;
   return results;
 };
@@ -227,9 +227,9 @@ export const createLivenessProbe = () => {
   return (req, res) => {
     res.status(200).json({
       success: true,
-      status: "alive",
+      status: 'alive',
       timestamp: new Date().toISOString(),
-      uptime: `${process.uptime().toFixed(0)}s`,
+      uptime: `${process.uptime().toFixed(0)}s`
     });
   };
 };
@@ -241,14 +241,14 @@ export const createLivenessProbe = () => {
 export const createReadinessProbe = () => {
   return async (req, res) => {
     const mongoHealthy = mongoose.connection.readyState === 1;
-    
+
     const statusCode = mongoHealthy ? 200 : 503;
     res.status(statusCode).json({
-      status: mongoHealthy ? "ready" : "not_ready",
+      status: mongoHealthy ? 'ready' : 'not_ready',
       timestamp: new Date().toISOString(),
       checks: {
-        database: mongoHealthy ? "connected" : "disconnected",
-      },
+        database: mongoHealthy ? 'connected' : 'disconnected'
+      }
     });
   };
 };
@@ -258,5 +258,5 @@ export default {
   createLivenessProbe,
   createReadinessProbe,
   checkMongoDB,
-  checkSystem,
+  checkSystem
 };

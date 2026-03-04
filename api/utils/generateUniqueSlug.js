@@ -4,13 +4,13 @@ export const generateUniqueSlug = async ({
   model,
   baseValue,
   scope = {},
-  session = null,
+  session = null
 }) => {
   const baseSlug = baseValue
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)+/g, "");
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '');
 
   let slug = baseSlug;
   let counter = 1;

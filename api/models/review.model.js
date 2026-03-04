@@ -1,52 +1,52 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const reviewSchema = new mongoose.Schema(
   {
     restaurantId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Restaurant",
+      ref: 'Restaurant',
       required: true,
-      index: true,
+      index: true
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
-      index: true,
+      index: true
     },
     rating: {
       type: Number,
       required: true,
       min: 1,
-      max: 5,
+      max: 5
     },
     comment: {
       type: String,
       trim: true,
-      maxlength: 1000,
+      maxlength: 1000
     },
     isActive: {
       type: Boolean,
       default: true,
-      index: true,
+      index: true
     },
     moderatedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: null,
+      ref: 'User',
+      default: null
     },
     moderatedAt: {
       type: Date,
-      default: null,
-    },
+      default: null
+    }
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 reviewSchema.index(
   { restaurantId: 1, userId: 1 },
-  { unique: true, partialFilterExpression: { isActive: true } },
+  { unique: true, partialFilterExpression: { isActive: true } }
 );
 reviewSchema.index({ restaurantId: 1, isActive: 1, createdAt: -1 });
 
-export default mongoose.model("Review", reviewSchema);
+export default mongoose.model('Review', reviewSchema);

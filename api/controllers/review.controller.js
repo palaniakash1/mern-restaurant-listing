@@ -1,31 +1,31 @@
-import mongoose from "mongoose";
-import Review from "../models/review.model.js";
-import Restaurant from "../models/restaurant.model.js";
-import User from "../models/user.model.js";
-import { errorHandler } from "../utils/error.js";
-import { paginate } from "../utils/paginate.js";
-import { withTransaction } from "../utils/withTransaction.js";
-import { logAudit } from "../utils/auditLogger.js";
+/* eslint-disable no-console */
+import mongoose from 'mongoose';
+import Review from '../models/review.model.js';
+import Restaurant from '../models/restaurant.model.js';
+import User from '../models/user.model.js';
+import { errorHandler } from '../utils/error.js';
+import { paginate } from '../utils/paginate.js';
+import { withTransaction } from '../utils/withTransaction.js';
+import { logAudit } from '../utils/auditLogger.js';
 
-import { isValidObjectId, normalizeIp } from "../utils/controllerHelpers.js";
-import { getOrFetch } from "../utils/redisCache.js";
-
+import { isValidObjectId, normalizeIp } from '../utils/controllerHelpers.js';
+import { getOrFetch } from '../utils/redisCache.js';
 
 const recomputeRestaurantRating = async (restaurantId, session = null) => {
   const stats = await Review.aggregate([
     {
       $match: {
         restaurantId: new mongoose.Types.ObjectId(restaurantId),
-        isActive: true,
-      },
+        isActive: true
+      }
     },
     {
       $group: {
-        _id: "$restaurantId",
-        average: { $avg: "$rating" },
-        total: { $sum: 1 },
-      },
-    },
+        _id: '$restaurantId',
+        average: { $avg: '$rating' },
+        total: { $sum: 1 }
+      }
+    }
   ]).session(session);
 
   const average = stats.length ? Number(stats[0].average.toFixed(2)) : 0;
@@ -34,131 +34,135 @@ const recomputeRestaurantRating = async (restaurantId, session = null) => {
   await Restaurant.findByIdAndUpdate(
     restaurantId,
     { rating: average, reviewCount: total },
-    { session },
+    { session }
   );
 };
 
 const assertPublicUser = (req) => {
-  if (req.user.role !== "user") {
-    throw errorHandler(403, "Only public users can submit reviews");
+  if (req.user.role !== 'user') {
+    throw errorHandler(403, 'Only public users can submit reviews');
   }
 };
 
 const assertReviewOwnershipOrSuperAdmin = (req, review) => {
-  if (req.user.role === "superAdmin") return;
-  if (req.user.role !== "user" || review.userId.toString() !== req.user.id) {
-    throw errorHandler(403, "Not allowed");
+  if (req.user.role === 'superAdmin') return;
+  if (req.user.role !== 'user' || review.userId.toString() !== req.user.id) {
+    throw errorHandler(403, 'Not allowed');
   }
 };
 
 const assertCanReadReview = (req, review) => {
   const reviewUserId =
-    typeof review.userId === "object" && review.userId !== null
+    typeof review.userId === 'object' && review.userId !== null
       ? review.userId._id?.toString() || review.userId.toString()
       : review.userId?.toString();
   const reviewRestaurantId =
-    typeof review.restaurantId === "object" && review.restaurantId !== null
+    typeof review.restaurantId === 'object' && review.restaurantId !== null
       ? review.restaurantId._id?.toString() || review.restaurantId.toString()
       : review.restaurantId?.toString();
 
-  if (req.user.role === "superAdmin") return;
+  if (req.user.role === 'superAdmin') return;
 
-  if (req.user.role === "user" && reviewUserId === req.user.id) {
+  if (req.user.role === 'user' && reviewUserId === req.user.id) {
     return;
   }
 
   if (
-    ["admin", "storeManager"].includes(req.user.role) &&
+    ['admin', 'storeManager'].includes(req.user.role) &&
     req.user.restaurantId &&
     reviewRestaurantId === req.user.restaurantId
   ) {
     return;
   }
 
-  throw errorHandler(403, "Not allowed");
+  throw errorHandler(403, 'Not allowed');
 };
 
 export const createReview = async (req, res, next) => {
   try {
-    console.log("=== CREATE REVIEW DEBUG ===");
-    console.log("User:", req.user);
-    console.log("Restaurant ID:", req.params.restaurantId);
-    console.log("Request body:", req.body);
-    
+    console.log('=== CREATE REVIEW DEBUG ===');
+    console.log('User:', req.user);
+    console.log('Restaurant ID:', req.params.restaurantId);
+    console.log('Request body:', req.body);
+
     assertPublicUser(req);
     const { restaurantId } = req.params;
-    const { rating, comment = "" } = req.body;
+    const { rating, comment = '' } = req.body;
 
     if (!isValidObjectId(restaurantId)) {
-      throw errorHandler(400, "Invalid restaurant ID format");
+      throw errorHandler(400, 'Invalid restaurant ID format');
     }
-    if (typeof rating !== "number" || rating < 1 || rating > 5) {
-      throw errorHandler(400, "rating must be between 1 and 5");
+    if (typeof rating !== 'number' || rating < 1 || rating > 5) {
+      throw errorHandler(400, 'rating must be between 1 and 5');
     }
 
-    console.log("Starting transaction...");
+    console.log('Starting transaction...');
     const result = await withTransaction(async (session) => {
-      console.log("Finding restaurant...");
+      console.log('Finding restaurant...');
       const restaurant = await Restaurant.findById(restaurantId)
         .session(session)
         .lean();
-      console.log("Restaurant found:", restaurant);
-      
-      if (!restaurant || !restaurant.isActive || restaurant.status !== "published") {
-        throw errorHandler(404, "Restaurant not available for reviews");
+      console.log('Restaurant found:', restaurant);
+
+      if (
+        !restaurant ||
+        !restaurant.isActive ||
+        restaurant.status !== 'published'
+      ) {
+        throw errorHandler(404, 'Restaurant not available for reviews');
       }
 
-      console.log("Checking for existing review...");
+      console.log('Checking for existing review...');
       const existing = await Review.findOne({
         restaurantId,
         userId: req.user.id,
-        isActive: true,
+        isActive: true
       }).session(session);
-      console.log("Existing review:", existing);
-      
+      console.log('Existing review:', existing);
+
       if (existing) {
-        throw errorHandler(409, "You already reviewed this restaurant");
+        throw errorHandler(409, 'You already reviewed this restaurant');
       }
 
-      console.log("Creating new review...");
+      console.log('Creating new review...');
       const [review] = await Review.create(
         [
           {
             restaurantId,
             userId: req.user.id,
             rating,
-            comment: String(comment).trim(),
-          },
+            comment: String(comment).trim()
+          }
         ],
-        { session },
+        { session }
       );
-      console.log("Review created:", review);
+      console.log('Review created:', review);
 
-      console.log("Recomputing restaurant rating...");
+      console.log('Recomputing restaurant rating...');
       await recomputeRestaurantRating(restaurantId, session);
 
-      console.log("Logging audit...");
+      console.log('Logging audit...');
       await logAudit({
         actorId: req.user.id,
         actorRole: req.user.role,
-        entityType: "review",
+        entityType: 'review',
         entityId: review._id,
-        action: "CREATE",
+        action: 'CREATE',
         before: null,
         after: { restaurantId, rating },
         ipAddress: normalizeIp(req),
-        session,
+        session
       });
 
       return review;
     });
 
-    console.log("Sending response...");
+    console.log('Sending response...');
     res.status(201).json({ success: true, data: result });
   } catch (error) {
-    console.log("ERROR in createReview:", error);
+    console.log('ERROR in createReview:', error);
     if (error.code === 11000) {
-      return next(errorHandler(409, "You already reviewed this restaurant"));
+      return next(errorHandler(409, 'You already reviewed this restaurant'));
     }
     next(error);
   }
@@ -167,10 +171,10 @@ export const createReview = async (req, res, next) => {
 export const listRestaurantReviews = async (req, res, next) => {
   try {
     const { restaurantId } = req.params;
-    const { page = 1, limit = 10, sort = "desc" } = req.query;
+    const { page = 1, limit = 10, sort = 'desc' } = req.query;
 
     if (!isValidObjectId(restaurantId)) {
-      throw errorHandler(400, "Invalid restaurant ID format");
+      throw errorHandler(400, 'Invalid restaurant ID format');
     }
 
     const pageNum = Number(page);
@@ -185,10 +189,10 @@ export const listRestaurantReviews = async (req, res, next) => {
         const filter = { restaurantId, isActive: true };
         const total = await Review.countDocuments(filter);
         const pagination = paginate({ page: pageNum, limit: limitNum, total });
-        const direction = sort === "asc" ? 1 : -1;
+        const direction = sort === 'asc' ? 1 : -1;
 
         const data = await Review.find(filter)
-          .populate("userId", "userName profilePicture")
+          .populate('userId', 'userName profilePicture')
           .sort({ createdAt: direction })
           .skip(pagination.skip)
           .limit(pagination.limit)
@@ -214,7 +218,7 @@ export const getMyReviews = async (req, res, next) => {
     const total = await Review.countDocuments(filter);
     const pagination = paginate({ page, limit, total });
     const data = await Review.find(filter)
-      .populate("restaurantId", "name slug")
+      .populate('restaurantId', 'name slug')
       .sort({ createdAt: -1 })
       .skip(pagination.skip)
       .limit(pagination.limit)
@@ -230,16 +234,16 @@ export const getReviewById = async (req, res, next) => {
   try {
     const { id } = req.params;
     if (!isValidObjectId(id)) {
-      throw errorHandler(400, "Invalid review ID format");
+      throw errorHandler(400, 'Invalid review ID format');
     }
 
     const review = await Review.findById(id)
-      .populate("userId", "userName profilePicture")
-      .populate("restaurantId", "name slug")
+      .populate('userId', 'userName profilePicture')
+      .populate('restaurantId', 'name slug')
       .lean();
 
     if (!review || !review.isActive) {
-      throw errorHandler(404, "Review not found");
+      throw errorHandler(404, 'Review not found');
     }
 
     assertCanReadReview(req, review);
@@ -256,16 +260,19 @@ export const updateReview = async (req, res, next) => {
     const { rating, comment } = req.body;
 
     if (!isValidObjectId(id)) {
-      throw errorHandler(400, "Invalid review ID format");
+      throw errorHandler(400, 'Invalid review ID format');
     }
-    if (rating !== undefined && (typeof rating !== "number" || rating < 1 || rating > 5)) {
-      throw errorHandler(400, "rating must be between 1 and 5");
+    if (
+      rating !== undefined &&
+      (typeof rating !== 'number' || rating < 1 || rating > 5)
+    ) {
+      throw errorHandler(400, 'rating must be between 1 and 5');
     }
 
     const result = await withTransaction(async (session) => {
       const review = await Review.findById(id).session(session);
       if (!review || !review.isActive) {
-        throw errorHandler(404, "Review not found");
+        throw errorHandler(404, 'Review not found');
       }
 
       assertReviewOwnershipOrSuperAdmin(req, review);
@@ -280,13 +287,13 @@ export const updateReview = async (req, res, next) => {
       await logAudit({
         actorId: req.user.id,
         actorRole: req.user.role,
-        entityType: "review",
+        entityType: 'review',
         entityId: review._id,
-        action: "UPDATE",
+        action: 'UPDATE',
         before,
         after: { rating: review.rating, comment: review.comment },
         ipAddress: normalizeIp(req),
-        session,
+        session
       });
 
       return review;
@@ -302,13 +309,13 @@ export const deleteReview = async (req, res, next) => {
   try {
     const { id } = req.params;
     if (!isValidObjectId(id)) {
-      throw errorHandler(400, "Invalid review ID format");
+      throw errorHandler(400, 'Invalid review ID format');
     }
 
     await withTransaction(async (session) => {
       const review = await Review.findById(id).session(session);
       if (!review || !review.isActive) {
-        throw errorHandler(404, "Review not found");
+        throw errorHandler(404, 'Review not found');
       }
 
       assertReviewOwnershipOrSuperAdmin(req, review);
@@ -323,31 +330,34 @@ export const deleteReview = async (req, res, next) => {
       await logAudit({
         actorId: req.user.id,
         actorRole: req.user.role,
-        entityType: "review",
+        entityType: 'review',
         entityId: review._id,
-        action: "DELETE",
+        action: 'DELETE',
         before: { isActive: true },
         after: { isActive: false },
         ipAddress: normalizeIp(req),
-        session,
+        session
       });
     });
 
-    res.status(200).json({ success: true, message: "Review deleted" });
+    res.status(200).json({ success: true, message: 'Review deleted' });
   } catch (error) {
     next(error);
   }
 };
 
 const assertCanModerate = async (req, review, session) => {
-  if (req.user.role === "superAdmin") return;
-  if (req.user.role !== "admin") {
-    throw errorHandler(403, "Not allowed");
+  if (req.user.role === 'superAdmin') return;
+  if (req.user.role !== 'admin') {
+    throw errorHandler(403, 'Not allowed');
   }
 
   const admin = await User.findById(req.user.id).session(session).lean();
-  if (!admin?.restaurantId || admin.restaurantId.toString() !== review.restaurantId.toString()) {
-    throw errorHandler(403, "Not your restaurant");
+  if (
+    !admin?.restaurantId ||
+    admin.restaurantId.toString() !== review.restaurantId.toString()
+  ) {
+    throw errorHandler(403, 'Not your restaurant');
   }
 };
 
@@ -355,12 +365,14 @@ export const moderateReview = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { isActive } = req.body;
-    if (!isValidObjectId(id)) throw errorHandler(400, "Invalid review ID format");
-    if (typeof isActive !== "boolean") throw errorHandler(400, "isActive must be boolean");
+    if (!isValidObjectId(id))
+      throw errorHandler(400, 'Invalid review ID format');
+    if (typeof isActive !== 'boolean')
+      throw errorHandler(400, 'isActive must be boolean');
 
     const result = await withTransaction(async (session) => {
       const review = await Review.findById(id).session(session);
-      if (!review) throw errorHandler(404, "Review not found");
+      if (!review) throw errorHandler(404, 'Review not found');
 
       await assertCanModerate(req, review, session);
 
@@ -375,13 +387,13 @@ export const moderateReview = async (req, res, next) => {
       await logAudit({
         actorId: req.user.id,
         actorRole: req.user.role,
-        entityType: "review",
+        entityType: 'review',
         entityId: review._id,
-        action: "STATUS_CHANGE",
+        action: 'STATUS_CHANGE',
         before,
         after: { isActive },
         ipAddress: normalizeIp(req),
-        session,
+        session
       });
 
       return review;
@@ -397,7 +409,7 @@ export const getRestaurantReviewSummary = async (req, res, next) => {
   try {
     const { restaurantId } = req.params;
     if (!isValidObjectId(restaurantId)) {
-      throw errorHandler(400, "Invalid restaurant ID format");
+      throw errorHandler(400, 'Invalid restaurant ID format');
     }
 
     // Cache key based on restaurantId
@@ -407,50 +419,55 @@ export const getRestaurantReviewSummary = async (req, res, next) => {
       cacheKey,
       async () => {
         const [summary] = await Review.aggregate([
-          { $match: { restaurantId: new mongoose.Types.ObjectId(restaurantId), isActive: true } },
+          {
+            $match: {
+              restaurantId: new mongoose.Types.ObjectId(restaurantId),
+              isActive: true
+            }
+          },
           {
             $group: {
-              _id: "$restaurantId",
-              averageRating: { $avg: "$rating" },
+              _id: '$restaurantId',
+              averageRating: { $avg: '$rating' },
               totalReviews: { $sum: 1 },
               one: {
-                $sum: { $cond: [{ $eq: ["$rating", 1] }, 1, 0] },
+                $sum: { $cond: [{ $eq: ['$rating', 1] }, 1, 0] }
               },
               two: {
-                $sum: { $cond: [{ $eq: ["$rating", 2] }, 1, 0] },
+                $sum: { $cond: [{ $eq: ['$rating', 2] }, 1, 0] }
               },
               three: {
-                $sum: { $cond: [{ $eq: ["$rating", 3] }, 1, 0] },
+                $sum: { $cond: [{ $eq: ['$rating', 3] }, 1, 0] }
               },
               four: {
-                $sum: { $cond: [{ $eq: ["$rating", 4] }, 1, 0] },
+                $sum: { $cond: [{ $eq: ['$rating', 4] }, 1, 0] }
               },
               five: {
-                $sum: { $cond: [{ $eq: ["$rating", 5] }, 1, 0] },
-              },
-            },
-          },
+                $sum: { $cond: [{ $eq: ['$rating', 5] }, 1, 0] }
+              }
+            }
+          }
         ]);
 
         return {
           success: true,
           data: summary
             ? {
-                averageRating: Number(summary.averageRating.toFixed(2)),
-                totalReviews: summary.totalReviews,
-                distribution: {
-                  1: summary.one,
-                  2: summary.two,
-                  3: summary.three,
-                  4: summary.four,
-                  5: summary.five,
-                },
+              averageRating: Number(summary.averageRating.toFixed(2)),
+              totalReviews: summary.totalReviews,
+              distribution: {
+                1: summary.one,
+                2: summary.two,
+                3: summary.three,
+                4: summary.four,
+                5: summary.five
               }
+            }
             : {
-                averageRating: 0,
-                totalReviews: 0,
-                distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-              },
+              averageRating: 0,
+              totalReviews: 0,
+              distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+            }
         };
       },
       300 // Cache for 5 minutes

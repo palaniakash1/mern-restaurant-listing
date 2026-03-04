@@ -1,14 +1,14 @@
-import { errorHandler } from "../utils/error.js";
-import Category from "../models/category.model.js";
-import Restaurant from "../models/restaurant.model.js";
-import Menu from "../models/menu.model.js";
-import AuditLog from "../models/auditLog.model.js";
-import { diffObject } from "../utils/diff.js";
-import { paginate } from "../utils/paginate.js";
-import { logAudit } from "../utils/auditLogger.js";
-import { withTransaction } from "../utils/withTransaction.js";
-import mongoose from "mongoose";
-import { generateUniqueSlug } from "../utils/generateUniqueSlug.js";
+import { errorHandler } from '../utils/error.js';
+import Category from '../models/category.model.js';
+import Restaurant from '../models/restaurant.model.js';
+import Menu from '../models/menu.model.js';
+import AuditLog from '../models/auditLog.model.js';
+import { diffObject } from '../utils/diff.js';
+import { paginate } from '../utils/paginate.js';
+import { logAudit } from '../utils/auditLogger.js';
+import { withTransaction } from '../utils/withTransaction.js';
+import mongoose from 'mongoose';
+import { generateUniqueSlug } from '../utils/generateUniqueSlug.js';
 
 import {
   MAX_SEARCH_LENGTH,
@@ -16,20 +16,19 @@ import {
   toIdString,
   isValidObjectId,
   getClientIp,
-  escapeRegex,
-} from "../utils/controllerHelpers.js";
-import { getOrFetch } from "../utils/redisCache.js";
+  escapeRegex
+} from '../utils/controllerHelpers.js';
+import { getOrFetch } from '../utils/redisCache.js';
 
 const IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000;
 const bulkReorderIdempotencyStore = new Map();
-
 
 const buildScopedSlugForUpdate = async ({ category, name, session }) => {
   const baseSlug = name
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)+/g, "");
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '');
 
   const scope = category.isGeneric
     ? { isGeneric: true }
@@ -42,7 +41,7 @@ const buildScopedSlugForUpdate = async ({ category, name, session }) => {
     const existing = await Category.findOne({
       slug,
       ...scope,
-      _id: { $ne: category._id },
+      _id: { $ne: category._id }
     })
       .session(session)
       .lean();
@@ -65,7 +64,7 @@ const cleanupIdempotencyStore = () => {
 
 const validateReorderItems = (items) => {
   if (!Array.isArray(items) || items.length === 0) {
-    throw errorHandler(400, "Invalid Payload");
+    throw errorHandler(400, 'Invalid Payload');
   }
 
   const seenIds = new Set();
@@ -78,21 +77,21 @@ const validateReorderItems = (items) => {
     ) {
       throw errorHandler(
         400,
-        "Each category must have valid id and non-negative integer order",
+        'Each category must have valid id and non-negative integer order'
       );
     }
 
     if (seenIds.has(cat.id)) {
-      throw errorHandler(400, "Duplicate category id in payload");
+      throw errorHandler(400, 'Duplicate category id in payload');
     }
     seenIds.add(cat.id);
   }
 };
 
 const toCsvValue = (value) => {
-  if (value === null || value === undefined) return "";
+  if (value === null || value === undefined) return '';
   const serialized =
-    typeof value === "object" ? JSON.stringify(value) : String(value);
+    typeof value === 'object' ? JSON.stringify(value) : String(value);
   return `"${serialized.replace(/"/g, '""')}"`;
 };
 
@@ -132,45 +131,45 @@ const toCsvValue = (value) => {
 export const createCategory = async (req, res, next) => {
   try {
     if (!req.user) {
-      return next(errorHandler(401, "Unauthorized"));
+      return next(errorHandler(401, 'Unauthorized'));
     }
 
     const { name, isGeneric, restaurantId, order = 0 } = req.body;
-    const normalizedName = String(name || "").trim();
+    const normalizedName = String(name || '').trim();
 
     if (!normalizedName) {
-      return next(errorHandler(400, "Category name is required"));
+      return next(errorHandler(400, 'Category name is required'));
     }
 
     const result = await withTransaction(async (session) => {
-      if (isGeneric && req.user.role !== "superAdmin") {
+      if (isGeneric && req.user.role !== 'superAdmin') {
         throw errorHandler(
           403,
-          "Only superAdmin can create generic categories",
+          'Only superAdmin can create generic categories'
         );
       }
 
       if (!isGeneric && !restaurantId) {
-        throw errorHandler(400, "restaurantId is required");
+        throw errorHandler(400, 'restaurantId is required');
       }
 
       if (!isGeneric) {
         if (!isValidObjectId(restaurantId)) {
-          throw errorHandler(400, "Invalid restaurantId format");
+          throw errorHandler(400, 'Invalid restaurantId format');
         }
 
         const restaurant =
           await Restaurant.findById(restaurantId).session(session);
 
-        if (!restaurant || restaurant.status !== "published") {
-          throw errorHandler(400, "Restaurant must be published");
+        if (!restaurant || restaurant.status !== 'published') {
+          throw errorHandler(400, 'Restaurant must be published');
         }
 
         if (
-          req.user.role === "admin" &&
+          req.user.role === 'admin' &&
           toIdString(req.user.restaurantId) !== toIdString(restaurantId)
         ) {
-          throw errorHandler(403, "Not your restaurant");
+          throw errorHandler(403, 'Not your restaurant');
         }
       }
 
@@ -180,7 +179,7 @@ export const createCategory = async (req, res, next) => {
         model: Category,
         baseValue: normalizedName,
         scope,
-        session,
+        session
       });
 
       const category = await Category.create(
@@ -190,21 +189,21 @@ export const createCategory = async (req, res, next) => {
             slug,
             isGeneric,
             restaurantId: isGeneric ? null : restaurantId,
-            order,
-          },
+            order
+          }
         ],
-        { session },
+        { session }
       );
 
       await logAudit({
         actorId: req.user.id,
         actorRole: req.user.role,
-        entityType: "category",
+        entityType: 'category',
         entityId: category[0]._id,
-        action: "CREATE",
+        action: 'CREATE',
         before: null,
         after: category[0].toObject(),
-        ipAddress: getClientIp(req),
+        ipAddress: getClientIp(req)
       });
 
       return category[0];
@@ -212,7 +211,7 @@ export const createCategory = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      data: result,
+      data: result
     });
   } catch (error) {
     next(error);
@@ -261,7 +260,7 @@ export const updateCategory = async (req, res, next) => {
         name === undefined ? undefined : String(name).trim();
 
       if (!isValidObjectId(req.params.id)) {
-        throw errorHandler(400, "Invalid ID format");
+        throw errorHandler(400, 'Invalid ID format');
       }
 
       // check for updates
@@ -270,10 +269,10 @@ export const updateCategory = async (req, res, next) => {
         order === undefined &&
         isActive === undefined
       ) {
-        throw errorHandler(400, "nothing to update");
+        throw errorHandler(400, 'nothing to update');
       }
       if (normalizedName !== undefined && !normalizedName) {
-        throw errorHandler(400, "Category name cannot be empty");
+        throw errorHandler(400, 'Category name cannot be empty');
       }
 
       // fetch the category
@@ -281,26 +280,26 @@ export const updateCategory = async (req, res, next) => {
         .setOptions({ includeInactive: true })
         .session(session);
       if (!category) {
-        throw errorHandler(404, "Category not found");
+        throw errorHandler(404, 'Category not found');
       }
 
       const before = category.toObject();
 
       // Generic category → only superAdmin
-      if (category.isGeneric && req.user.role !== "superAdmin") {
+      if (category.isGeneric && req.user.role !== 'superAdmin') {
         throw errorHandler(
           403,
-          "Only superAdmin can modify generic categories",
+          'Only superAdmin can modify generic categories'
         );
       }
 
       // Restaurant category → admin must own it
       if (
         !category.isGeneric &&
-        req.user.role === "admin" &&
+        req.user.role === 'admin' &&
         toIdString(category.restaurantId) !== toIdString(req.user.restaurantId)
       ) {
-        throw errorHandler(403, "You can update only your restaurant category");
+        throw errorHandler(403, 'You can update only your restaurant category');
       }
 
       // apply updates
@@ -309,7 +308,7 @@ export const updateCategory = async (req, res, next) => {
         category.slug = await buildScopedSlugForUpdate({
           category,
           name: normalizedName,
-          session,
+          session
         });
       }
 
@@ -320,22 +319,22 @@ export const updateCategory = async (req, res, next) => {
 
       const after = category.toObject();
       const diff = diffObject(before, after, [
-        "name",
-        "slug",
-        "order",
-        "isActive",
+        'name',
+        'slug',
+        'order',
+        'isActive'
       ]);
 
       if (diff && Object.keys(diff).length > 0) {
         await logAudit({
           actorId: req.user.id,
           actorRole: req.user.role,
-          entityType: "category",
+          entityType: 'category',
           entityId: category._id,
-          action: isActive !== undefined ? "STATUS_CHANGE" : "UPDATE",
+          action: isActive !== undefined ? 'STATUS_CHANGE' : 'UPDATE',
           before,
           after: diff,
-          ipAddress: getClientIp(req),
+          ipAddress: getClientIp(req)
         });
       }
       return category;
@@ -343,8 +342,8 @@ export const updateCategory = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: "Category Updated Successfully",
-      data: result,
+      message: 'Category Updated Successfully',
+      data: result
     });
   } catch (error) {
     next(error);
@@ -387,36 +386,36 @@ export const deleteCategory = async (req, res, next) => {
   try {
     const result = await withTransaction(async (session) => {
       if (!isValidObjectId(req.params.id)) {
-        throw errorHandler(400, "Invalid ID format");
+        throw errorHandler(400, 'Invalid ID format');
       }
 
       const category = await Category.findById(req.params.id).session(session);
-      if (!category) throw errorHandler(404, "category not found");
+      if (!category) throw errorHandler(404, 'category not found');
 
       //Integrity check
       const activeMenu = await Menu.findOne({
         categoryId: category._id,
-        isActive: true,
+        isActive: true
       }).session(session);
 
       if (activeMenu) {
-        throw errorHandler(400, "Cannot delete category linked to active menu");
+        throw errorHandler(400, 'Cannot delete category linked to active menu');
       }
 
-      if (category.isGeneric && req.user.role !== "superAdmin") {
-        throw errorHandler(403, "only superAdmin can delete generic category");
+      if (category.isGeneric && req.user.role !== 'superAdmin') {
+        throw errorHandler(403, 'only superAdmin can delete generic category');
       }
 
       if (
         !category.isGeneric &&
-        req.user.role === "admin" &&
+        req.user.role === 'admin' &&
         toIdString(category.restaurantId) !== toIdString(req.user.restaurantId)
       ) {
-        throw errorHandler(403, "not allowed");
+        throw errorHandler(403, 'not allowed');
       }
 
       const before = {
-        isActive: category.isActive,
+        isActive: category.isActive
       };
 
       await category.softDelete(session, req.user.id);
@@ -424,12 +423,12 @@ export const deleteCategory = async (req, res, next) => {
       await logAudit({
         actorId: req.user.id,
         actorRole: req.user.role,
-        entityType: "category",
+        entityType: 'category',
         entityId: category._id,
-        action: "STATUS_CHANGE",
+        action: 'STATUS_CHANGE',
         before,
         after: { isActive: false },
-        ipAddress: getClientIp(req),
+        ipAddress: getClientIp(req)
       });
 
       return category;
@@ -437,8 +436,8 @@ export const deleteCategory = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: "Category deleted successfully",
-      data: result,
+      message: 'Category deleted successfully',
+      data: result
     });
   } catch (error) {
     next(error);
@@ -478,7 +477,7 @@ export const deleteCategory = async (req, res, next) => {
 
 export const reorderCategories = async (req, res, next) => {
   try {
-    const result = await withTransaction(async (session) => {
+    await withTransaction(async (session) => {
       // Payload must be an array
       validateReorderItems(req.body);
 
@@ -487,14 +486,14 @@ export const reorderCategories = async (req, res, next) => {
         updateOne: {
           filter: {
             _id: cat.id,
-            ...(req.user.role === "admin"
+            ...(req.user.role === 'admin'
               ? { restaurantId: req.user.restaurantId }
-              : {}),
+              : {})
           },
           update: {
-            $set: { order: cat.order },
-          },
-        },
+            $set: { order: cat.order }
+          }
+        }
       }));
 
       // Execute bulk update
@@ -504,30 +503,29 @@ export const reorderCategories = async (req, res, next) => {
       if (bulkResult.matchedCount !== req.body.length) {
         throw errorHandler(
           404,
-          "Some categories were not found or unauthorized",
+          'Some categories were not found or unauthorized'
         );
       }
 
       await logAudit({
         actorId: req.user.id,
         actorRole: req.user.role,
-        entityType: "category",
-        entityId: req.user.role === "admin" ? req.user.restaurantId : null,
-        action: "UPDATE",
+        entityType: 'category',
+        entityId: req.user.role === 'admin' ? req.user.restaurantId : null,
+        action: 'UPDATE',
         before: null,
         after: {
           reorderedCount: req.body.length,
-          restaurantId:
-            req.user.role === "admin" ? req.user.restaurantId : null,
+          restaurantId: req.user.role === 'admin' ? req.user.restaurantId : null
         },
-        ipAddress: getClientIp(req),
+        ipAddress: getClientIp(req)
       });
       return bulkResult;
     });
 
     res.status(200).json({
       success: true,
-      message: "Categories reordered successfully",
+      message: 'Categories reordered successfully'
     });
   } catch (error) {
     next(error);
@@ -540,10 +538,10 @@ export const bulkReorderCategories = async (req, res, next) => {
     cleanupIdempotencyStore();
 
     const idempotencyKey = String(
-      req.headers["x-idempotency-key"] || "",
+      req.headers['x-idempotency-key'] || ''
     ).trim();
     if (!idempotencyKey) {
-      throw errorHandler(400, "x-idempotency-key header is required");
+      throw errorHandler(400, 'x-idempotency-key header is required');
     }
 
     const items = req.body?.items;
@@ -557,15 +555,18 @@ export const bulkReorderCategories = async (req, res, next) => {
       if (existing.signature !== signature) {
         throw errorHandler(
           409,
-          "Idempotency key has already been used with a different payload",
+          'Idempotency key has already been used with a different payload'
         );
       }
       if (existing.inFlight) {
-        throw errorHandler(409, "Request with this idempotency key is in progress");
+        throw errorHandler(
+          409,
+          'Request with this idempotency key is in progress'
+        );
       }
       return res.status(200).json({
         ...existing.response,
-        idempotentReplay: true,
+        idempotentReplay: true
       });
     }
 
@@ -573,7 +574,7 @@ export const bulkReorderCategories = async (req, res, next) => {
       signature,
       inFlight: true,
       response: null,
-      expiresAt: Date.now() + IDEMPOTENCY_TTL_MS,
+      expiresAt: Date.now() + IDEMPOTENCY_TTL_MS
     });
 
     const result = await withTransaction(async (session) => {
@@ -581,35 +582,37 @@ export const bulkReorderCategories = async (req, res, next) => {
         updateOne: {
           filter: {
             _id: cat.id,
-            ...(req.user.role === "admin"
+            ...(req.user.role === 'admin'
               ? { restaurantId: req.user.restaurantId }
-              : {}),
+              : {})
           },
           update: {
-            $set: { order: cat.order },
-          },
-        },
+            $set: { order: cat.order }
+          }
+        }
       }));
 
       const bulkResult = await Category.bulkWrite(bulkOps, { session });
       if (bulkResult.matchedCount !== items.length) {
-        throw errorHandler(404, "Some categories were not found or unauthorized");
+        throw errorHandler(
+          404,
+          'Some categories were not found or unauthorized'
+        );
       }
 
       await logAudit({
         actorId: req.user.id,
         actorRole: req.user.role,
-        entityType: "category",
-        entityId: req.user.role === "admin" ? req.user.restaurantId : null,
-        action: "UPDATE",
+        entityType: 'category',
+        entityId: req.user.role === 'admin' ? req.user.restaurantId : null,
+        action: 'UPDATE',
         before: null,
         after: {
           reorderedCount: items.length,
           idempotencyKey,
-          restaurantId:
-            req.user.role === "admin" ? req.user.restaurantId : null,
+          restaurantId: req.user.role === 'admin' ? req.user.restaurantId : null
         },
-        ipAddress: getClientIp(req),
+        ipAddress: getClientIp(req)
       });
 
       return bulkResult;
@@ -617,18 +620,18 @@ export const bulkReorderCategories = async (req, res, next) => {
 
     const response = {
       success: true,
-      message: "Categories bulk reordered successfully",
+      message: 'Categories bulk reordered successfully',
       data: {
         matched: result.matchedCount,
-        modified: result.modifiedCount,
-      },
+        modified: result.modifiedCount
+      }
     };
 
     bulkReorderIdempotencyStore.set(scopedKey, {
       signature,
       inFlight: false,
       response,
-      expiresAt: Date.now() + IDEMPOTENCY_TTL_MS,
+      expiresAt: Date.now() + IDEMPOTENCY_TTL_MS
     });
 
     return res.status(200).json({ ...response, idempotentReplay: false });
@@ -645,53 +648,62 @@ export const bulkReorderCategories = async (req, res, next) => {
 
 export const checkCategorySlug = async (req, res, next) => {
   try {
-    const { name, slug, isGeneric = false, restaurantId, categoryId } = req.body;
-    const rawValue = String(slug || name || "").trim();
+    const {
+      name,
+      slug,
+      isGeneric = false,
+      restaurantId,
+      categoryId
+    } = req.body;
+    const rawValue = String(slug || name || '').trim();
 
     if (!rawValue) {
-      throw errorHandler(400, "Provide name or slug");
+      throw errorHandler(400, 'Provide name or slug');
     }
 
-    if (isGeneric && req.user.role !== "superAdmin") {
-      throw errorHandler(403, "Only superAdmin can validate generic category slug");
+    if (isGeneric && req.user.role !== 'superAdmin') {
+      throw errorHandler(
+        403,
+        'Only superAdmin can validate generic category slug'
+      );
     }
 
     if (!isGeneric) {
       if (!restaurantId || !isValidObjectId(restaurantId)) {
-        throw errorHandler(400, "Valid restaurantId is required");
+        throw errorHandler(400, 'Valid restaurantId is required');
       }
 
       const restaurant = await Restaurant.findById(restaurantId).lean();
-      if (!restaurant || restaurant.status !== "published") {
-        throw errorHandler(400, "Restaurant must be published");
+      if (!restaurant || restaurant.status !== 'published') {
+        throw errorHandler(400, 'Restaurant must be published');
       }
 
       if (
-        req.user.role === "admin" &&
+        req.user.role === 'admin' &&
         toIdString(req.user.restaurantId) !== toIdString(restaurantId)
       ) {
-        throw errorHandler(403, "Not your restaurant");
+        throw errorHandler(403, 'Not your restaurant');
       }
     }
 
     const normalizedSlug = rawValue
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)+/g, "");
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
 
     if (!normalizedSlug) {
-      throw errorHandler(400, "Invalid slug value");
+      throw errorHandler(400, 'Invalid slug value');
     }
 
     const scope = isGeneric ? { isGeneric: true } : { restaurantId };
     const query = {
       slug: normalizedSlug,
-      ...scope,
+      ...scope
     };
 
     if (categoryId) {
       if (!isValidObjectId(categoryId)) {
-        throw errorHandler(400, "Invalid categoryId format");
+        throw errorHandler(400, 'Invalid categoryId format');
       }
       query._id = { $ne: categoryId };
     }
@@ -703,8 +715,8 @@ export const checkCategorySlug = async (req, res, next) => {
       data: {
         slug: normalizedSlug,
         available: !existing,
-        conflictId: existing?._id || null,
-      },
+        conflictId: existing?._id || null
+      }
     });
   } catch (error) {
     next(error);
@@ -714,43 +726,53 @@ export const checkCategorySlug = async (req, res, next) => {
 export const getCategoryAuditLogs = async (req, res, next) => {
   try {
     if (!isValidObjectId(req.params.id)) {
-      throw errorHandler(400, "Invalid ID format");
+      throw errorHandler(400, 'Invalid ID format');
     }
 
     const category = await Category.findById(req.params.id)
       .setOptions({ includeInactive: true })
       .lean();
     if (!category) {
-      throw errorHandler(404, "Category not found");
+      throw errorHandler(404, 'Category not found');
     }
 
     if (
       !category.isGeneric &&
-      req.user.role === "admin" &&
+      req.user.role === 'admin' &&
       toIdString(category.restaurantId) !== toIdString(req.user.restaurantId)
     ) {
-      throw errorHandler(403, "Not allowed");
+      throw errorHandler(403, 'Not allowed');
     }
 
-    const { page = 1, limit = 20, action, actorId, from, to, sort = "desc" } =
-      req.query;
+    const {
+      page = 1,
+      limit = 20,
+      action,
+      actorId,
+      from,
+      to,
+      sort = 'desc'
+    } = req.query;
     const filter = {
-      entityType: "category",
-      entityId: req.params.id,
+      entityType: 'category',
+      entityId: req.params.id
     };
 
     if (action) filter.action = action;
     if (actorId) {
       if (!isValidObjectId(actorId)) {
-        throw errorHandler(400, "Invalid actorId format");
+        throw errorHandler(400, 'Invalid actorId format');
       }
       filter.actorId = actorId;
     }
     if (from || to) {
       const fromDate = from ? new Date(from) : null;
       const toDate = to ? new Date(to) : null;
-      if ((from && Number.isNaN(fromDate.getTime())) || (to && Number.isNaN(toDate.getTime()))) {
-        throw errorHandler(400, "Invalid date filter. Use ISO date values.");
+      if (
+        (from && Number.isNaN(fromDate.getTime())) ||
+        (to && Number.isNaN(toDate.getTime()))
+      ) {
+        throw errorHandler(400, 'Invalid date filter. Use ISO date values.');
       }
       filter.createdAt = {};
       if (fromDate) filter.createdAt.$gte = fromDate;
@@ -760,7 +782,7 @@ export const getCategoryAuditLogs = async (req, res, next) => {
     const total = await AuditLog.countDocuments(filter);
     const pagination = paginate({ page, limit, total });
     const logs = await AuditLog.find(filter)
-      .sort({ createdAt: sort === "asc" ? 1 : -1 })
+      .sort({ createdAt: sort === 'asc' ? 1 : -1 })
       .skip(pagination.skip)
       .limit(pagination.limit)
       .lean();
@@ -768,7 +790,7 @@ export const getCategoryAuditLogs = async (req, res, next) => {
     res.status(200).json({
       success: true,
       ...pagination,
-      data: logs,
+      data: logs
     });
   } catch (error) {
     next(error);
@@ -777,32 +799,32 @@ export const getCategoryAuditLogs = async (req, res, next) => {
 
 export const getDeletedCategories = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, search = "", restaurantId } = req.query;
+    const { page = 1, limit = 20, search = '', restaurantId } = req.query;
     if (restaurantId && !isValidObjectId(restaurantId)) {
-      throw errorHandler(400, "Invalid restaurantId format");
+      throw errorHandler(400, 'Invalid restaurantId format');
     }
 
     const safeSearch = String(search).trim().slice(0, MAX_SEARCH_LENGTH);
     const filter = {
       isActive: false,
-      ...(restaurantId ? { restaurantId } : {}),
+      ...(restaurantId ? { restaurantId } : {})
     };
 
     if (safeSearch) {
       const searchRegex = escapeRegex(safeSearch);
       filter.$or = [
-        { name: { $regex: searchRegex, $options: "i" } },
-        { slug: { $regex: searchRegex, $options: "i" } },
+        { name: { $regex: searchRegex, $options: 'i' } },
+        { slug: { $regex: searchRegex, $options: 'i' } }
       ];
     }
 
     const total = await Category.countDocuments(filter).setOptions({
-      includeInactive: true,
+      includeInactive: true
     });
     const pagination = paginate({ page, limit, total });
     const categories = await Category.find(filter)
       .setOptions({ includeInactive: true })
-      .select("-__v")
+      .select('-__v')
       .skip(pagination.skip)
       .limit(pagination.limit)
       .sort({ updatedAt: -1 })
@@ -811,7 +833,7 @@ export const getDeletedCategories = async (req, res, next) => {
     res.status(200).json({
       success: true,
       ...pagination,
-      data: categories,
+      data: categories
     });
   } catch (error) {
     next(error);
@@ -821,72 +843,72 @@ export const getDeletedCategories = async (req, res, next) => {
 export const exportCategories = async (req, res, next) => {
   try {
     const {
-      format = "json",
-      search = "",
+      format = 'json',
+      search = '',
       status,
       isGeneric,
       isActive,
       restaurantId,
-      includeInactive = "false",
-      limit = MAX_EXPORT_LIMIT,
+      includeInactive = 'false',
+      limit = MAX_EXPORT_LIMIT
     } = req.query;
 
     if (restaurantId && !isValidObjectId(restaurantId)) {
-      throw errorHandler(400, "Invalid restaurantId format");
+      throw errorHandler(400, 'Invalid restaurantId format');
     }
 
     const safeSearch = String(search).trim().slice(0, MAX_SEARCH_LENGTH);
     const filter = {};
 
     if (status) {
-      const allowedStatuses = ["draft", "blocked", "published"];
+      const allowedStatuses = ['draft', 'blocked', 'published'];
       if (!allowedStatuses.includes(status)) {
-        throw errorHandler(400, "Invalid status value");
+        throw errorHandler(400, 'Invalid status value');
       }
       filter.status = status;
     }
     if (restaurantId) filter.restaurantId = restaurantId;
-    if (isGeneric === "true" || isGeneric === "false") {
-      filter.isGeneric = isGeneric === "true";
+    if (isGeneric === 'true' || isGeneric === 'false') {
+      filter.isGeneric = isGeneric === 'true';
     }
-    if (isActive === "true" || isActive === "false") {
-      filter.isActive = isActive === "true";
+    if (isActive === 'true' || isActive === 'false') {
+      filter.isActive = isActive === 'true';
     }
     if (safeSearch) {
       const searchRegex = escapeRegex(safeSearch);
       filter.$or = [
-        { name: { $regex: searchRegex, $options: "i" } },
-        { slug: { $regex: searchRegex, $options: "i" } },
+        { name: { $regex: searchRegex, $options: 'i' } },
+        { slug: { $regex: searchRegex, $options: 'i' } }
       ];
     }
 
     const includeInactiveOption =
-      includeInactive === "true" || filter.isActive === false;
+      includeInactive === 'true' || filter.isActive === false;
 
     const exportLimit = Math.min(
       Math.max(parseInt(limit, 10) || MAX_EXPORT_LIMIT, 1),
-      MAX_EXPORT_LIMIT,
+      MAX_EXPORT_LIMIT
     );
 
     const categories = await Category.find(filter)
       .setOptions({ includeInactive: includeInactiveOption })
-      .select("-__v")
+      .select('-__v')
       .sort({ createdAt: -1 })
       .limit(exportLimit)
       .lean();
 
-    if (format === "csv") {
+    if (format === 'csv') {
       const headers = [
-        "_id",
-        "name",
-        "slug",
-        "isGeneric",
-        "restaurantId",
-        "status",
-        "isActive",
-        "order",
-        "createdAt",
-        "updatedAt",
+        '_id',
+        'name',
+        'slug',
+        'isGeneric',
+        'restaurantId',
+        'status',
+        'isActive',
+        'order',
+        'createdAt',
+        'updatedAt'
       ];
 
       const rows = categories.map((category) =>
@@ -900,17 +922,17 @@ export const exportCategories = async (req, res, next) => {
           category.isActive,
           category.order,
           category.createdAt,
-          category.updatedAt,
+          category.updatedAt
         ]
           .map(toCsvValue)
-          .join(","),
+          .join(',')
       );
 
-      const csv = [headers.join(","), ...rows].join("\n");
-      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      const csv = [headers.join(','), ...rows].join('\n');
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader(
-        "Content-Disposition",
-        `attachment; filename=\"categories-export-${new Date().toISOString().slice(0, 10)}.csv\"`,
+        'Content-Disposition',
+        `attachment; filename=\"categories-export-${new Date().toISOString().slice(0, 10)}.csv\"`
       );
       return res.status(200).send(csv);
     }
@@ -918,8 +940,8 @@ export const exportCategories = async (req, res, next) => {
     res.status(200).json({
       success: true,
       total: categories.length,
-      format: "json",
-      data: categories,
+      format: 'json',
+      data: categories
     });
   } catch (error) {
     next(error);
@@ -961,16 +983,16 @@ export const getCategories = async (req, res, next) => {
       restaurantId,
       page = 1,
       limit = 10,
-      search = "",
-      sort = "desc",
+      search = '',
+      sort = 'desc'
     } = req.query;
 
     const pageNum = Number(page);
     const limitNum = Number(limit);
-    const sortDirection = sort === "asc" ? 1 : -1;
-    
+    const sortDirection = sort === 'asc' ? 1 : -1;
+
     if (restaurantId && !isValidObjectId(restaurantId)) {
-      throw errorHandler(400, "Invalid restaurantId format");
+      throw errorHandler(400, 'Invalid restaurantId format');
     }
     const safeSearch = String(search).trim().slice(0, MAX_SEARCH_LENGTH);
 
@@ -985,7 +1007,7 @@ export const getCategories = async (req, res, next) => {
           isActive: true,
           ...(restaurantId
             ? { $or: [{ isGeneric: true }, { restaurantId }] }
-            : { isGeneric: true }),
+            : { isGeneric: true })
         };
 
         // Search filter
@@ -994,10 +1016,10 @@ export const getCategories = async (req, res, next) => {
           filter.$and = [
             {
               $or: [
-                { name: { $regex: searchRegex, $options: "i" } },
-                { slug: { $regex: searchRegex, $options: "i" } },
-              ],
-            },
+                { name: { $regex: searchRegex, $options: 'i' } },
+                { slug: { $regex: searchRegex, $options: 'i' } }
+              ]
+            }
           ];
         }
 
@@ -1005,7 +1027,7 @@ export const getCategories = async (req, res, next) => {
         const pagination = paginate({ page: pageNum, limit: limitNum, total });
 
         const categories = await Category.find(filter)
-          .select("-__v")
+          .select('-__v')
           .skip(pagination.skip)
           .limit(pagination.limit)
           .sort({ updatedAt: sortDirection })
@@ -1013,9 +1035,9 @@ export const getCategories = async (req, res, next) => {
 
         return {
           success: true,
-          message: "viewing all categories",
+          message: 'viewing all categories',
           ...pagination,
-          data: categories,
+          data: categories
         };
       },
       300 // Cache for 5 minutes
@@ -1058,23 +1080,23 @@ export const getMyCategories = async (req, res, next) => {
   try {
     const user = req.user;
 
-    if (user.role !== "admin") {
-      return next(errorHandler(403, "not allowed"));
+    if (user.role !== 'admin') {
+      return next(errorHandler(403, 'not allowed'));
     }
 
     const filter = {
       restaurantId: user.restaurantId,
-      isActive: true,
+      isActive: true
     };
 
-    const { page = 1, limit = 10, order = "desc" } = req.query;
-    const sortDirection = order === "asc" ? 1 : -1;
+    const { page = 1, limit = 10, order = 'desc' } = req.query;
+    const sortDirection = order === 'asc' ? 1 : -1;
 
     const total = await Category.countDocuments(filter);
     const pagination = paginate({ page, limit, total });
 
     const categories = await Category.find(filter)
-      .select("-__v")
+      .select('-__v')
       .skip(pagination.skip)
       .limit(pagination.limit)
       .sort({ updatedAt: sortDirection })
@@ -1082,9 +1104,9 @@ export const getMyCategories = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: `My categories fetched successfully`,
+      message: 'My categories fetched successfully',
       ...pagination,
-      data: categories,
+      data: categories
     });
   } catch (error) {
     next(error);
@@ -1122,25 +1144,25 @@ export const getMyCategories = async (req, res, next) => {
 export const getCategoryById = async (req, res, next) => {
   try {
     if (!isValidObjectId(req.params.id)) {
-      throw errorHandler(400, "Invalid ID format");
+      throw errorHandler(400, 'Invalid ID format');
     }
 
     const category = await Category.findById(req.params.id).lean();
 
-    if (!category) return next(errorHandler(404, "Category not found"));
+    if (!category) return next(errorHandler(404, 'Category not found'));
 
     // Ownership enforcement
     if (
       !category.isGeneric &&
-      req.user.role === "admin" &&
+      req.user.role === 'admin' &&
       toIdString(category.restaurantId) !== toIdString(req.user.restaurantId)
     ) {
-      return next(errorHandler(403, "Not Allowed"));
+      return next(errorHandler(403, 'Not Allowed'));
     }
 
     res.status(200).json({
       success: true,
-      data: category,
+      data: category
     });
   } catch (error) {
     next(error);
@@ -1180,32 +1202,32 @@ export const updateCategoryStatus = async (req, res, next) => {
   try {
     const result = await withTransaction(async (session) => {
       if (!isValidObjectId(req.params.id)) {
-        throw errorHandler(400, "Invalid ID format");
+        throw errorHandler(400, 'Invalid ID format');
       }
 
       const { isActive } = req.body;
 
-      if (typeof isActive !== "boolean") {
-        throw errorHandler(400, "isActive must be boolean");
+      if (typeof isActive !== 'boolean') {
+        throw errorHandler(400, 'isActive must be boolean');
       }
 
       const category = await Category.findById(req.params.id).session(session);
       if (!category) {
-        throw errorHandler(404, "category not found");
+        throw errorHandler(404, 'category not found');
       }
 
       // Generic → only superAdmin
-      if (category.isGeneric && req.user.role !== "superAdmin") {
-        throw errorHandler(403, "Only superAdmin");
+      if (category.isGeneric && req.user.role !== 'superAdmin') {
+        throw errorHandler(403, 'Only superAdmin');
       }
 
       // Restaurant category → admin must own it
       if (
         !category.isGeneric &&
-        req.user.role === "admin" &&
+        req.user.role === 'admin' &&
         toIdString(category.restaurantId) !== toIdString(req.user.restaurantId)
       ) {
-        throw errorHandler(403, "Not allowed");
+        throw errorHandler(403, 'Not allowed');
       }
 
       const before = { isActive: category.isActive };
@@ -1216,12 +1238,12 @@ export const updateCategoryStatus = async (req, res, next) => {
       await logAudit({
         actorId: req.user.id,
         actorRole: req.user.role,
-        entityType: "category",
+        entityType: 'category',
         entityId: category._id,
-        action: "STATUS_CHANGE",
+        action: 'STATUS_CHANGE',
         before,
         after: { isActive },
-        ipAddress: getClientIp(req),
+        ipAddress: getClientIp(req)
       });
       return category;
     });
@@ -1262,19 +1284,19 @@ export const restoreCategory = async (req, res, next) => {
   try {
     const result = await withTransaction(async (session) => {
       if (!isValidObjectId(req.params.id)) {
-        throw errorHandler(400, "Invalid ID format");
+        throw errorHandler(400, 'Invalid ID format');
       }
 
       const categoryId = new mongoose.Types.ObjectId(req.params.id);
       const existing = await Category.collection.findOne(
         { _id: categoryId },
-        { session },
+        { session }
       );
       if (!existing) {
-        throw errorHandler(404, "category not found");
+        throw errorHandler(404, 'category not found');
       }
       if (existing.isActive) {
-        throw errorHandler(400, "category already active");
+        throw errorHandler(400, 'category already active');
       }
 
       await Category.collection.updateOne(
@@ -1283,26 +1305,26 @@ export const restoreCategory = async (req, res, next) => {
           $set: {
             isActive: true,
             restoredAt: new Date(),
-            restoredBy: new mongoose.Types.ObjectId(req.user.id),
-          },
+            restoredBy: new mongoose.Types.ObjectId(req.user.id)
+          }
         },
-        { session },
+        { session }
       );
 
       const category = await Category.findById(categoryId)
         .session(session)
-        .select("-__v");
+        .select('-__v');
       const before = { isActive: false };
 
       await logAudit({
         actorId: req.user.id,
         actorRole: req.user.role,
-        entityType: "category",
+        entityType: 'category',
         entityId: category._id,
-        action: "RESTORE",
+        action: 'RESTORE',
         before,
         after: { isActive: true },
-        ipAddress: getClientIp(req),
+        ipAddress: getClientIp(req)
       });
       return category;
     });
@@ -1343,7 +1365,7 @@ export const restoreCategory = async (req, res, next) => {
 
 export const getAllCategories = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, search = "" } = req.query;
+    const { page = 1, limit = 20, search = '' } = req.query;
 
     const filter = {};
     const safeSearch = String(search).trim().slice(0, MAX_SEARCH_LENGTH);
@@ -1351,19 +1373,19 @@ export const getAllCategories = async (req, res, next) => {
     if (safeSearch) {
       const searchRegex = escapeRegex(safeSearch);
       filter.$or = [
-        { name: { $regex: searchRegex, $options: "i" } },
-        { slug: { $regex: searchRegex, $options: "i" } },
+        { name: { $regex: searchRegex, $options: 'i' } },
+        { slug: { $regex: searchRegex, $options: 'i' } }
       ];
     }
 
     const total = await Category.countDocuments(filter).setOptions({
-      includeInactive: true,
+      includeInactive: true
     });
     const pagination = paginate({ page, limit, total });
 
     const data = await Category.find(filter)
       .setOptions({ includeInactive: true })
-      .select("-__v")
+      .select('-__v')
       .skip(pagination.skip)
       .limit(pagination.limit)
       .sort({ createdAt: -1 })
@@ -1408,39 +1430,39 @@ export const bulkUpdateCategoryStatus = async (req, res, next) => {
       const { ids, status } = req.body;
 
       if (!Array.isArray(ids) || ids.length === 0) {
-        throw errorHandler(400, "ids must be a non-empty array");
+        throw errorHandler(400, 'ids must be a non-empty array');
       }
 
       const uniqueIds = [...new Set(ids.map((id) => String(id)))];
       if (uniqueIds.some((id) => !isValidObjectId(id))) {
-        throw errorHandler(400, "All ids must be valid ObjectId values");
+        throw errorHandler(400, 'All ids must be valid ObjectId values');
       }
 
-      const allowedStatuses = ["draft", "blocked", "published"];
+      const allowedStatuses = ['draft', 'blocked', 'published'];
 
       if (!allowedStatuses.includes(status)) {
-        throw errorHandler(400, "Invalid status value");
+        throw errorHandler(400, 'Invalid status value');
       }
 
       const updateResult = await Category.updateMany(
         { _id: { $in: uniqueIds } },
         { $set: { status } },
-        { session },
+        { session }
       );
 
       await logAudit({
         actorId: req.user.id,
         actorRole: req.user.role,
-        entityType: "category",
+        entityType: 'category',
         entityId: null,
-        action: "BULK_UPDATE",
+        action: 'BULK_UPDATE',
         before: null,
         after: {
           matched: updateResult.matchedCount,
           modified: updateResult.modifiedCount,
-          status,
+          status
         },
-        ipAddress: getClientIp(req),
+        ipAddress: getClientIp(req)
       });
 
       return updateResult;
@@ -1449,7 +1471,7 @@ export const bulkUpdateCategoryStatus = async (req, res, next) => {
     res.json({
       success: true,
       matched: result.matchedCount,
-      modified: result.modifiedCount,
+      modified: result.modifiedCount
     });
   } catch (error) {
     next(error);
@@ -1486,37 +1508,37 @@ export const bulkUpdateCategoryStatus = async (req, res, next) => {
 export const hardDeleteCategory = async (req, res, next) => {
   try {
     if (!isValidObjectId(req.params.id)) {
-      throw errorHandler(400, "Invalid ID format");
+      throw errorHandler(400, 'Invalid ID format');
     }
 
     const result = await withTransaction(async (session) => {
       const category = await Category.findById(req.params.id).session(session);
-      if (!category) throw errorHandler(404, "category not found");
+      if (!category) throw errorHandler(404, 'category not found');
 
       //Integrity check
       const activeMenu = await Menu.findOne({
         categoryId: category._id,
-        isActive: true,
+        isActive: true
       }).session(session);
 
       if (activeMenu) {
-        throw errorHandler(400, "Cannot delete category linked to active menu");
+        throw errorHandler(400, 'Cannot delete category linked to active menu');
       }
 
-      if (req.user.role !== "superAdmin") {
-        throw errorHandler(403, "Only superAdmin");
+      if (req.user.role !== 'superAdmin') {
+        throw errorHandler(403, 'Only superAdmin');
       }
 
       const hardDeleteCategory = await Category.findByIdAndDelete(
-        req.params.id,
+        req.params.id
       ).session(session);
       return hardDeleteCategory;
     });
 
     res.json({
       success: true,
-      message: "Category permanently deleted",
-      data: result,
+      message: 'Category permanently deleted',
+      data: result
     });
   } catch (error) {
     next(error);

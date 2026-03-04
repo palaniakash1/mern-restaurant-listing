@@ -1,11 +1,12 @@
-import mongoose from "mongoose";
-import dotenv from "dotenv";
-import app from "./app.js";
-import { initRedis } from "./utils/redisCache.js";
+/* eslint-disable no-console */
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import app from './app.js';
+import { initRedis } from './utils/redisCache.js';
 
 dotenv.config();
 
-const requiredEnvVars = ["MONGO", "JWT_SECRET"];
+const requiredEnvVars = ['MONGO', 'JWT_SECRET'];
 for (const key of requiredEnvVars) {
   if (!process.env[key]) {
     throw new Error(`Missing required environment variable: ${key}`);
@@ -15,15 +16,15 @@ for (const key of requiredEnvVars) {
 mongoose
   .connect(process.env.MONGO)
   .then(() => {
-    console.log("connected to mongoDB");
+    console.log('connected to mongoDB');
   })
   .catch((err) => {
     console.log(err);
   });
 
 // Initialize Redis (skip in test environment)
-if (process.env.NODE_ENV !== "test") {
-  initRedis().catch((err) => console.warn("Redis init failed:", err.message));
+if (process.env.NODE_ENV !== 'test') {
+  initRedis().catch((err) => console.warn('Redis init failed:', err.message));
 }
 
 const PORT = process.env.PORT || 3000;
@@ -38,18 +39,18 @@ const gracefulShutdown = async (signal) => {
       await mongoose.connection.close();
       process.exit(0);
     } catch (err) {
-      console.error("Error during shutdown:", err);
+      console.error('Error during shutdown:', err);
       process.exit(1);
     }
   });
 };
 
-process.on("SIGINT", () => gracefulShutdown("SIGINT"));
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-process.on("unhandledRejection", (reason) => {
-  console.error("Unhandled promise rejection:", reason);
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled promise rejection:', reason);
 });
-process.on("uncaughtException", (error) => {
-  console.error("Uncaught exception:", error);
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught exception:', error);
   process.exit(1);
 });

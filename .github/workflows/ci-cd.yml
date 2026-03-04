@@ -28,11 +28,11 @@ jobs:
   # ===================================================================
   # 🟢 BACKEND - Core backend testing and security
   # ===================================================================
-  
+
   backend-lint:
     name: 🟢 Backend Lint
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -54,7 +54,7 @@ jobs:
     name: 🟢 Backend Test
     runs-on: ubuntu-latest
     needs: backend-lint
-    
+
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -100,7 +100,7 @@ jobs:
   # ===================================================================
   # 🔵 AUDIT - Code quality and best practices
   # ===================================================================
-  
+
   audit-code-quality:
     name: 🔵 Audit Code Quality
     runs-on: ubuntu-latest
@@ -181,7 +181,7 @@ jobs:
   # ===================================================================
   # 🟣 FRONTEND - Client build and test
   # ===================================================================
-  
+
   frontend-install:
     name: 🟣 Frontend Install
     runs-on: ubuntu-latest
@@ -254,7 +254,7 @@ jobs:
   # ===================================================================
   # 🟡 VERIFICATION - Final checks
   # ===================================================================
-  
+
   verify-all:
     name: ✅ All Systems Go
     runs-on: ubuntu-latest

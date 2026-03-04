@@ -1,47 +1,47 @@
-import mongoose from "mongoose";
-import { softDeleteRestorePlugin } from "../utils/plugins/softDeleteRestore.plugin.js";
+import mongoose from 'mongoose';
+import { softDeleteRestorePlugin } from '../utils/plugins/softDeleteRestore.plugin.js';
 
 // Ingredient schema (critical)
 const ingredientSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true,
+      required: true
     },
 
     allergens: [
       {
         type: String,
         enum: [
-          "gluten",
-          "egg",
-          "fish",
-          "crustaceans",
-          "molluscs",
-          "milk",
-          "peanut",
-          "tree_nuts",
-          "sesame",
-          "soya",
-          "celery",
-          "mustard",
-          "sulphites",
-          "lupin",
-        ],
-      },
+          'gluten',
+          'egg',
+          'fish',
+          'crustaceans',
+          'molluscs',
+          'milk',
+          'peanut',
+          'tree_nuts',
+          'sesame',
+          'soya',
+          'celery',
+          'mustard',
+          'sulphites',
+          'lupin'
+        ]
+      }
     ],
 
     strict: {
       type: Boolean, // cannot be removed
-      default: false,
+      default: false
     },
 
     removable: {
       type: Boolean,
-      default: true,
-    },
+      default: true
+    }
   },
-  { _id: false },
+  { _id: false }
 );
 
 // Nutrition schema (with levels)
@@ -50,10 +50,10 @@ const nutritionValueSchema = new mongoose.Schema(
     value: Number,
     level: {
       type: String,
-      enum: ["green", "amber", "red"],
-    },
+      enum: ['green', 'amber', 'red']
+    }
   },
-  { _id: false },
+  { _id: false }
 );
 
 const nutritionSchema = new mongoose.Schema(
@@ -62,9 +62,9 @@ const nutritionSchema = new mongoose.Schema(
     fat: nutritionValueSchema,
     saturates: nutritionValueSchema,
     sugar: nutritionValueSchema,
-    salt: nutritionValueSchema,
+    salt: nutritionValueSchema
   },
-  { _id: false },
+  { _id: false }
 );
 
 // Upsell schema
@@ -72,14 +72,14 @@ const upsellSchema = new mongoose.Schema(
   {
     label: {
       type: String,
-      required: true,
+      required: true
     },
     price: {
       type: Number,
-      required: true,
-    },
+      required: true
+    }
   },
-  { _id: false },
+  { _id: false }
 );
 
 // Menu Item schema (core)
@@ -88,7 +88,7 @@ const menuItemSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      trim: true,
+      trim: true
     },
 
     description: String,
@@ -97,12 +97,12 @@ const menuItemSchema = new mongoose.Schema(
 
     price: {
       type: Number,
-      required: true,
+      required: true
     },
 
     dietary: {
       vegetarian: { type: Boolean, default: false },
-      vegan: { type: Boolean, default: false },
+      vegan: { type: Boolean, default: false }
     },
 
     ingredients: [ingredientSchema],
@@ -113,27 +113,27 @@ const menuItemSchema = new mongoose.Schema(
 
     isMeal: {
       type: Boolean,
-      default: false,
+      default: false
     },
 
     isAvailable: {
       type: Boolean,
-      default: true,
+      default: true
     },
 
     order: {
       type: Number,
-      default: 0,
+      default: 0
     },
 
     isActive: { type: Boolean, default: true },
     deletedAt: Date,
     deletedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
+      ref: 'User'
+    }
   },
-  { _id: true },
+  { _id: true }
 );
 
 // Menu schema (per category per restaurant)
@@ -141,16 +141,16 @@ const menuSchema = new mongoose.Schema(
   {
     restaurantId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Restaurant",
+      ref: 'Restaurant',
       required: true,
-      index: true,
+      index: true
     },
 
     categoryId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
+      ref: 'Category',
       required: true,
-      index: true,
+      index: true
     },
 
     items: [menuItemSchema],
@@ -158,21 +158,21 @@ const menuSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true,
-      index: true,
+      index: true
     },
 
     status: {
       type: String,
-      enum: ["draft", "blocked", "published"],
-      default: "draft",
-      index: true,
-    },
+      enum: ['draft', 'blocked', 'published'],
+      default: 'draft',
+      index: true
+    }
   },
-  { timestamps: true, optimisticConcurrency: true },
+  { timestamps: true, optimisticConcurrency: true }
 );
 
 menuSchema.index({ status: 1, isActive: 1 });
 menuSchema.index({ restaurantId: 1, categoryId: 1 }, { unique: true });
 menuSchema.plugin(softDeleteRestorePlugin);
 
-export default mongoose.model("Menu", menuSchema);
+export default mongoose.model('Menu', menuSchema);

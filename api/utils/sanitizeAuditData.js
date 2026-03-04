@@ -1,12 +1,12 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
-const forbiddenFields = ["password", "tokens", "access_token"];
+const forbiddenFields = ['password', 'tokens', 'access_token'];
 
 export const sanitizeAuditData = (data) => {
   const seen = new WeakSet();
 
   const sanitize = (value) => {
-    if (value === null || value === undefined || typeof value !== "object") {
+    if (value === null || value === undefined || typeof value !== 'object') {
       return value;
     }
 
@@ -19,7 +19,7 @@ export const sanitizeAuditData = (data) => {
     }
 
     if (seen.has(value)) {
-      return "[circular]";
+      return '[circular]';
     }
     seen.add(value);
 
@@ -27,9 +27,9 @@ export const sanitizeAuditData = (data) => {
       return value.map(sanitize);
     }
 
-    if (typeof value.toObject === "function") {
+    if (typeof value.toObject === 'function') {
       return sanitize(
-        value.toObject({ getters: false, virtuals: false, depopulate: true }),
+        value.toObject({ getters: false, virtuals: false, depopulate: true })
       );
     }
 

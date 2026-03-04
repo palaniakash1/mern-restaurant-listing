@@ -1,33 +1,33 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useSelector } from "react-redux";
-import { Table, Alert } from "flowbite-react";
-import { Button, Spinner, Modal } from "flowbite-react";
-import imageCompression from "browser-image-compression";
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { Table, Alert } from 'flowbite-react';
+import { Button, Spinner, Modal } from 'flowbite-react';
+import imageCompression from 'browser-image-compression';
 import {
   updateStart,
   updateSuccess,
   updateFailure,
   deleteUserStart,
   deleteUserSuccess,
-  deleteUserFailure,
-} from "../redux/user/userSlice";
-import { useDispatch } from "react-redux";
+  deleteUserFailure
+} from '../redux/user/userSlice';
+import { useDispatch } from 'react-redux';
 
 import {
   getDownloadURL,
   getStorage,
   ref,
-  uploadBytesResumable,
-} from "firebase/storage";
-import { app } from "../firebase";
-import ImageCircleLoader from "../components/ImageCircleLoader";
+  uploadBytesResumable
+} from 'firebase/storage';
+import { app } from '../firebase';
+import ImageCircleLoader from '../components/ImageCircleLoader';
 
 import {
   HiOutlineX,
   HiPencilAlt,
   HiTrash,
-  HiOutlineExclamationCircle,
-} from "react-icons/hi";
+  HiOutlineExclamationCircle
+} from 'react-icons/hi';
 
 export default function DashUsers() {
   const { currentUser } = useSelector((state) => state.user);
@@ -64,10 +64,9 @@ export default function DashUsers() {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        const res = await fetch(
-          `/api/users?page=${page}&limit=${limit}`,
-          { credentials: "include" }
-        );
+        const res = await fetch(`/api/users?page=${page}&limit=${limit}`, {
+          credentials: 'include'
+        });
         const data = await res.json();
 
         if (res.ok) {
@@ -81,7 +80,7 @@ export default function DashUsers() {
         setLoading(false);
       }
     };
-    if (currentUser.role === "superAdmin") {
+    if (currentUser.role === 'superAdmin') {
       fetchUsers();
     }
   }, [currentUser?.role, page, limit]);
@@ -91,23 +90,23 @@ export default function DashUsers() {
     if (!file) return;
 
     // ❌ 1. Reject non-image files
-    if (!file.type.startsWith("image/")) {
-      setImageFileUploadingError("Only image files are allowed.");
+    if (!file.type.startsWith('image/')) {
+      setImageFileUploadingError('Only image files are allowed.');
       e.target.value = null; // reset input
       return;
     }
     // Define our 2MB limit (2 * 1024 * 1024 bytes)
     const limitInBytes = 2 * 1024 * 1024;
-    console.log((file.size / (1024 * 1024)).toFixed(2) + " MB");
+    console.log((file.size / (1024 * 1024)).toFixed(2) + ' MB');
 
     // 2. Conditional Compression
     if (file.size > limitInBytes) {
-      console.log("File is large. Starting compression...");
+      console.log('File is large. Starting compression...');
 
       const options = {
         maxSizeMB: 2,
         maxWidthOrHeight: 1920,
-        useWebWorker: true,
+        useWebWorker: true
       };
 
       try {
@@ -119,16 +118,16 @@ export default function DashUsers() {
         // Use the compressed file
         setImageFile(compressedFile);
         setImageFileUrl(URL.createObjectURL(compressedFile));
-        console.log((compressedFile.size / (1024 * 1024)).toFixed(2) + " MB");
+        console.log((compressedFile.size / (1024 * 1024)).toFixed(2) + ' MB');
       } catch (error) {
         console.error(error);
-        setImageFileUploadingError("Compression failed. Try a smaller photo.");
+        setImageFileUploadingError('Compression failed. Try a smaller photo.');
       } finally {
         setImageFileUploading(false);
       }
     } else {
       // 3. File is already small, skip compression and use original
-      console.log("File is under 2MB. Skipping compression.");
+      console.log('File is under 2MB. Skipping compression.');
       setImageFile(file);
       setImageFileUrl(URL.createObjectURL(file));
       setImageFileUploadingError(null);
@@ -137,7 +136,6 @@ export default function DashUsers() {
     setImageFileUploadingError(null);
   };
 
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const uploadImage = useCallback(() => {
     if (!imageFile) return;
     setIsUploading(true); // 👈 START upload UI
@@ -148,7 +146,7 @@ export default function DashUsers() {
     const storageRef = ref(storage, fileName);
     const uploadTask = uploadBytesResumable(storageRef, imageFile);
     uploadTask.on(
-      "state_changed",
+      'state_changed',
       (snapshot) => {
         const progress =
           (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
@@ -178,7 +176,6 @@ export default function DashUsers() {
 
   useEffect(() => {
     if (imageFile) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       uploadImage();
     }
   }, [imageFile, uploadImage]);
@@ -194,7 +191,7 @@ export default function DashUsers() {
       userName: user.userName,
       email: user.email,
       role: user.role,
-      profilePicture: user.profilePicture,
+      profilePicture: user.profilePicture
     });
     // Reset status messages when opening for a new user
     setUpdateUserError(null);
@@ -227,17 +224,17 @@ export default function DashUsers() {
       }
 
       if (imageFileUploading) {
-        setUpdateUserError("please wait for the image to uploaded");
+        setUpdateUserError('please wait for the image to uploaded');
         return;
       }
 
       dispatch(updateStart());
       const res = await fetch(`/api/user/update/${selectedUser._id}`, {
-        method: "PUT",
+        method: 'PUT',
         headers: {
-          "content-type": "application/json",
+          'content-type': 'application/json'
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(formData)
       });
 
       const data = await res.json();
@@ -271,8 +268,8 @@ export default function DashUsers() {
   const handleDeleteUser = async () => {
     try {
       const res = await fetch(`/api/user/delete/${selectedUser._id}`, {
-        method: "DELETE",
-        credentials: "include",
+        method: 'DELETE',
+        credentials: 'include'
       });
 
       const data = await res.json();
@@ -369,9 +366,9 @@ export default function DashUsers() {
                 <Table.Cell>
                   <span
                     className={`px-2 py-1 rounded-md text-xs font-bold ${
-                      user.role === "superAdmin"
-                        ? "bg-purple-100 text-purple-700"
-                        : "bg-gray-100 text-gray-600"
+                      user.role === 'superAdmin'
+                        ? 'bg-purple-100 text-purple-700'
+                        : 'bg-gray-100 text-gray-600'
                     }`}
                   >
                     {user.role.toUpperCase()}
@@ -419,8 +416,8 @@ export default function DashUsers() {
         transition-all
         ${
           page === 1
-            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-            : "bg-red-600 text-white hover:bg-[#CC0001]"
+            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            : 'bg-red-600 text-white hover:bg-[#CC0001]'
         }
       `}
             >
@@ -446,8 +443,8 @@ export default function DashUsers() {
               text-sm font-semibold transition-all
               ${
                 page === p
-                  ? "bg-emerald-600 text-white shadow-md"
-                  : "bg-white border hover:bg-gray-100"
+                  ? 'bg-emerald-600 text-white shadow-md'
+                  : 'bg-white border hover:bg-gray-100'
               }
             `}
                   >
@@ -466,8 +463,8 @@ export default function DashUsers() {
         transition-all
         ${
           page === totalPages
-            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-            : "bg-red-600 text-white hover:bg-[#CC0001]"
+            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            : 'bg-red-600 text-white hover:bg-[#CC0001]'
         }
       `}
             >
@@ -539,8 +536,8 @@ export default function DashUsers() {
                   onClick={() => setPage(pageNumber)}
                   className={`px-3 py-1 border rounded ${
                     page === pageNumber
-                      ? "bg-emerald-500 text-white"
-                      : "bg-white"
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-white'
                   }`}
                 >
                   {pageNumber}
@@ -562,15 +559,15 @@ export default function DashUsers() {
       <div
         className={`fixed inset-0 z-50 transition-opacity duration-300 ${
           isDrawerOpen
-            ? "bg-black/40 opacity-100"
-            : "bg-transparent opacity-0 pointer-events-none"
+            ? 'bg-black/40 opacity-100'
+            : 'bg-transparent opacity-0 pointer-events-none'
         }`}
       >
         {/* DRAWER PANEL */}
         <div
           className={`absolute top-0 right-0 w-full max-w-sm h-full bg-white shadow-2xl
     transition-transform duration-500 ${
-      isDrawerOpen ? "translate-x-0" : "translate-x-full"
+      isDrawerOpen ? 'translate-x-0' : 'translate-x-full'
     }`}
         >
           {selectedUser && (
@@ -607,7 +604,7 @@ export default function DashUsers() {
                 {/* USERNAME */}
                 <input
                   id="userName"
-                  value={formData.userName || ""}
+                  value={formData.userName || ''}
                   onChange={handleChange}
                   className="w-full p-3 border rounded"
                   placeholder="Username"
@@ -616,7 +613,7 @@ export default function DashUsers() {
                 {/* EMAIL */}
                 <input
                   id="email"
-                  value={formData.email || ""}
+                  value={formData.email || ''}
                   onChange={handleChange}
                   className="w-full p-3 border rounded"
                   placeholder="Email"
@@ -625,7 +622,7 @@ export default function DashUsers() {
                 {/* ROLE */}
                 <select
                   id="role"
-                  value={formData.role || "user"}
+                  value={formData.role || 'user'}
                   onChange={handleChange}
                   className="w-full p-3 border rounded"
                 >
@@ -639,11 +636,9 @@ export default function DashUsers() {
                   type="submit"
                   disabled={loading}
                   className="w-full !bg-[#8fa31e]"
-                  
                 >
-                  {loading ? <Spinner size="sm" /> : "Edit User"}
+                  {loading ? <Spinner size="sm" /> : 'Edit User'}
                 </Button>
-
               </form>
               <Modal
                 show={showModal}

@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema(
   {
@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
       lowercase: true,
-      trim: true,
+      trim: true
     },
 
     email: {
@@ -15,17 +15,17 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
       lowercase: true,
-      trim: true,
+      trim: true
     },
     password: {
       type: String,
       required: true,
-      select: false, // ⬅️ important security improvement
+      select: false // ⬅️ important security improvement
     },
     profilePicture: {
       type: String,
       default:
-        "https://img.freepik.com/premium-vector/user-profile-icon-flat-style-member-avatar-vector-illustration-isolated-background-human-permission-sign-business-concept_157943-15752.jpg?semt=ais_hybrid&w=740&q=80",
+        'https://img.freepik.com/premium-vector/user-profile-icon-flat-style-member-avatar-vector-illustration-isolated-background-human-permission-sign-business-concept_157943-15752.jpg?semt=ais_hybrid&w=740&q=80'
     },
 
     // =========================
@@ -33,10 +33,10 @@ const userSchema = new mongoose.Schema(
     // =========================
     role: {
       type: String,
-      enum: ["user", "storeManager", "admin", "superAdmin"], // Define valid roles
-      default: "user", // Default role for new signups
+      enum: ['user', 'storeManager', 'admin', 'superAdmin'], // Define valid roles
+      default: 'user', // Default role for new signups
       required: true,
-      index: true,
+      index: true
     },
 
     // =========================
@@ -44,16 +44,16 @@ const userSchema = new mongoose.Schema(
     // =========================
     restaurantId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Restaurant",
+      ref: 'Restaurant',
       default: null,
-      index: true,
+      index: true
     },
 
     createdByAdminId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       default: null,
-      index: true,
+      index: true
     },
 
     // =========================
@@ -63,12 +63,12 @@ const userSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true,
-      index: true,
-    },
+      index: true
+    }
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
-const User = mongoose.model("User", userSchema);
+const User = mongoose.model('User', userSchema);
 
 export default User;
