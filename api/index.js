@@ -6,15 +6,22 @@ import { initRedis } from './utils/redisCache.js';
 
 dotenv.config();
 
-const requiredEnvVars = ['MONGO', 'JWT_SECRET'];
+const mongoUri = process.env.DATABASE_URL || process.env.MONGO;
+const requiredEnvVars = ['JWT_SECRET'];
 for (const key of requiredEnvVars) {
   if (!process.env[key]) {
     throw new Error(`Missing required environment variable: ${key}`);
   }
 }
 
+if (!mongoUri) {
+  throw new Error(
+    'Missing required environment variable: DATABASE_URL (or MONGO)'
+  );
+}
+
 mongoose
-  .connect(process.env.MONGO)
+  .connect(mongoUri)
   .then(() => {
     console.log('connected to mongoDB');
   })

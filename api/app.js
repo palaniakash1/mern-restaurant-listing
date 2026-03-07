@@ -32,7 +32,8 @@ import {
   metricsMiddleware,
   createMetricsEndpoint
 } from './middlewares/metrics.js';
-// import idempotentMiddleware from './middlewares/idempotency.js';
+import { createCookieCsrfGuard } from './middlewares/csrfProtection.js';
+import { verifyToken } from './utils/verifyUser.js';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -73,6 +74,11 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
+app.use(
+  createCookieCsrfGuard({
+    excludePaths: ['/api/auth/signin', '/api/auth/signup', '/api/auth/google']
+  })
+);
 
 // Health check endpoints
 app.get('/api/health', createHealthCheck());
@@ -81,7 +87,25 @@ app.get('/api/ready', createReadinessProbe());
 
 // Metrics endpoint
 app.use(metricsMiddleware);
-app.get('/api/metrics', createMetricsEndpoint());
+const metricsAccessGuard = (req, res, next) => {
+  const configuredToken = process.env.METRICS_TOKEN;
+  if (configuredToken) {
+    const suppliedToken = req.headers['x-metrics-token'];
+    if (typeof suppliedToken === 'string' && suppliedToken === configuredToken) {
+      return next();
+    }
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+
+  return verifyToken(req, res, (err) => {
+    if (err) return next(err);
+    if (req.user?.role !== 'superAdmin') {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    return next();
+  });
+};
+app.get('/api/metrics', metricsAccessGuard, createMetricsEndpoint());
 
 app.use('/api/users', userRouter);
 app.use('/api/auth', authRouter);
