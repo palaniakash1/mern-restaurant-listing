@@ -12,8 +12,6 @@ import crypto from 'crypto';
 // CONFIGURATION
 // ===================================================================
 
-const CSRF_SECRET =
-  process.env.CSRF_SECRET || crypto.randomBytes(32).toString('hex');
 const CSRF_TOKEN_LENGTH = 32;
 
 // In-memory token store (use Redis in production)
@@ -181,6 +179,11 @@ export const createCookieCsrfGuard = (options = {}) => {
     }
 
     if (req.authSource !== 'cookie' && !req.cookies?.access_token) {
+      return next();
+    }
+
+    // Enforce primarily for browser-originated requests.
+    if (!req.headers.origin) {
       return next();
     }
 

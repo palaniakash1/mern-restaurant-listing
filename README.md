@@ -21,7 +21,7 @@ Enterprise-grade RESTful API for a restaurant listing platform built with Node.j
 
 ### Key Features:
 
-- JWT-based authentication with refresh tokens
+- JWT-based authentication (access token + CSRF protection for cookie auth)
 - Role-based access control (RBAC)
 - Multi-tenant restaurant management
 - Menu and category management
@@ -116,8 +116,7 @@ api/
 
 ### Token Structure
 
-- **Access Token**: 1 hour expiry
-- **Refresh Token**: 7 days expiry
+- **Access Token**: Configurable via `JWT_EXPIRE` (default `1h`)
 
 ---
 
@@ -155,6 +154,7 @@ DATABASE_URL=mongodb://localhost:27017/restaurant
 JWT_SECRET=your-secret-key
 JWT_EXPIRE=1h
 CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+METRICS_TOKEN=optional-strong-token
 ```
 
 ---

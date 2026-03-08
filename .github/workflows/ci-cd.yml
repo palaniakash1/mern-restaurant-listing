@@ -47,8 +47,7 @@ jobs:
         run: npm ci
 
       - name: Run linter
-        run: npm run lint || true
-        continue-on-error: true
+        run: npm run lint
 
   backend-test:
     name: 🟢 Backend Test
@@ -95,7 +94,6 @@ jobs:
 
       - name: Audit dependencies
         run: npm audit --audit-level=high
-        continue-on-error: true
 
   # ===================================================================
   # 🔵 AUDIT - Code quality and best practices
@@ -122,8 +120,12 @@ jobs:
         run: npm ci
 
       - name: Check formatting
-        run: npm run format:check || true
-        continue-on-error: true
+        run: |
+          if npm run | grep -q "format:check"; then
+            npm run format:check
+          else
+            echo "format:check script not defined; skipping."
+          fi
 
       - name: Check for dangerous patterns
         run: |
@@ -150,9 +152,7 @@ jobs:
         run: npm ci
 
       - name: Run tests with coverage
-        run: |
-          npm test -- --coverage || true
-        continue-on-error: true
+        run: npm run test:coverage
 
   audit-dependencies:
     name: 🔵 Audit Dependencies
