@@ -4,6 +4,7 @@
  */
 
 import mongoose from 'mongoose';
+import { createClient } from 'redis';
 
 /**
  * Checks MongoDB connection status
@@ -144,7 +145,6 @@ export const createHealthCheck = (options = {}) => {
 const validateEnvironment = () => {
   const requiredEnvVars = [
     'NODE_ENV',
-    'DATABASE_URL',
     'PORT',
     'JWT_SECRET',
     'APP_NAME',
@@ -152,6 +152,9 @@ const validateEnvironment = () => {
   ];
 
   const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+  if (!process.env.DATABASE_URL && !process.env.MONGO) {
+    missingVars.push('DATABASE_URL');
+  }
   const warnings = [];
 
   // Check for common issues
@@ -182,16 +185,19 @@ const checkDependencies = async () => {
 
   // Check Redis (if configured)
   if (process.env.REDIS_URL) {
+    let client;
     try {
-      const redis = require('redis');
-      const client = redis.createClient({ url: process.env.REDIS_URL });
+      client = createClient({ url: process.env.REDIS_URL });
       await client.connect();
       await client.ping();
-      await client.quit();
       results.checks.redis = { status: 'healthy', latency: Date.now() - startTime };
     } catch (error) {
       results.checks.redis = { status: 'unhealthy', error: error.message };
       results.healthy = false;
+    } finally {
+      if (client?.isOpen) {
+        await client.quit();
+      }
     }
   }
 
@@ -200,7 +206,7 @@ const checkDependencies = async () => {
     try {
       const response = await fetch(process.env.EMAIL_SERVICE_URL, {
         method: 'HEAD',
-        timeout: 3000
+        signal: AbortSignal.timeout(3000)
       });
       results.checks.emailService = {
         status: response.ok ? 'healthy' : 'unhealthy',

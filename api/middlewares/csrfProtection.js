@@ -7,7 +7,6 @@
  */
 
 import crypto from 'crypto';
-import { setInterval } from 'timers/promises';
 
 // ===================================================================
 // CONFIGURATION
@@ -95,7 +94,7 @@ const cleanupExpiredTokens = () => {
 };
 
 // Run cleanup every hour
-setInterval(cleanupExpiredTokens, 60 * 60 * 1000);
+globalThis.setInterval(cleanupExpiredTokens, 60 * 60 * 1000);
 
 /**
  * Create CSRF middleware for Express
@@ -160,10 +159,56 @@ export const getCsrfToken = (req) => {
   return generateToken(userId);
 };
 
+/**
+ * Double-submit CSRF guard for cookie-authenticated write requests.
+ * If auth is via Authorization header, CSRF check is skipped.
+ */
+export const createCookieCsrfGuard = (options = {}) => {
+  const {
+    tokenHeader = 'x-csrf-token',
+    tokenCookie = 'csrf_token',
+    unsafeMethods = ['POST', 'PUT', 'PATCH', 'DELETE'],
+    excludePaths = ['/api/auth/signin', '/api/auth/signup', '/api/auth/google']
+  } = options;
+
+  return (req, res, next) => {
+    if (!unsafeMethods.includes(req.method)) {
+      return next();
+    }
+
+    if (excludePaths.some((path) => req.path.startsWith(path))) {
+      return next();
+    }
+
+    if (req.authSource !== 'cookie' && !req.cookies?.access_token) {
+      return next();
+    }
+
+    const headerToken = req.headers[tokenHeader];
+    const cookieToken = req.cookies?.[tokenCookie];
+
+    if (
+      typeof headerToken !== 'string' ||
+      typeof cookieToken !== 'string' ||
+      !headerToken ||
+      !cookieToken ||
+      headerToken !== cookieToken
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: 'Invalid or missing CSRF token'
+      });
+    }
+
+    next();
+  };
+};
+
 export default {
   generateToken,
   validateToken,
   removeToken,
   createCsrfMiddleware,
+  createCookieCsrfGuard,
   getCsrfToken
 };

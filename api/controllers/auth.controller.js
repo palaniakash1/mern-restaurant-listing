@@ -2,6 +2,7 @@ import User from '../models/user.model.js';
 import bcryptjs from 'bcryptjs';
 import { errorHandler } from '../utils/error.js';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { logAudit } from '../utils/auditLogger.js';
 import { getClientIp } from '../utils/controllerHelpers.js';
 
@@ -17,6 +18,24 @@ const buildCookieOptions = () => ({
   sameSite: 'lax',
   secure: process.env.NODE_ENV === 'production'
 });
+
+const buildCsrfCookieOptions = () => ({
+  httpOnly: false,
+  sameSite: 'lax',
+  secure: process.env.NODE_ENV === 'production'
+});
+
+const issueCsrfToken = () => crypto.randomBytes(32).toString('hex');
+
+const signAccessToken = (user) =>
+  jwt.sign(
+    {
+      id: user._id,
+      role: user.role
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRE || '1h' }
+  );
 
 export const signup = async (req, res, next) => {
   try {
@@ -183,14 +202,8 @@ export const signin = async (req, res, next) => {
       return next(errorHandler(401, INVALID_CREDENTIALS_MESSAGE));
     }
 
-    const token = jwt.sign(
-      {
-        id: validUser._id,
-        role: validUser.role
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    const token = signAccessToken(validUser);
+    const csrfToken = issueCsrfToken();
     const { password: pass, ...rest } = validUser._doc;
 
     await logAudit({
@@ -208,8 +221,9 @@ export const signin = async (req, res, next) => {
 
     res
       .cookie('access_token', token, buildCookieOptions())
+      .cookie('csrf_token', csrfToken, buildCsrfCookieOptions())
       .status(200)
-      .json(rest);
+      .json({ ...rest, csrfToken });
   } catch (error) {
     next(error);
   }
@@ -230,17 +244,15 @@ export const google = async (req, res, next) => {
       if (!user.isActive) {
         return next(errorHandler(403, 'User account is inactive'));
       }
-      const token = jwt.sign(
-        { id: user._id, role: user.role },
-        process.env.JWT_SECRET,
-        { expiresIn: '7d' }
-      );
+      const token = signAccessToken(user);
+      const csrfToken = issueCsrfToken();
       const { password, ...rest } = user._doc;
 
       return res
         .status(200)
         .cookie('access_token', token, buildCookieOptions())
-        .json(rest);
+        .cookie('csrf_token', csrfToken, buildCsrfCookieOptions())
+        .json({ ...rest, csrfToken });
     }
 
     const generatedPassword =
@@ -260,17 +272,15 @@ export const google = async (req, res, next) => {
 
     await newUser.save();
 
-    const token = jwt.sign(
-      { id: newUser._id, role: newUser.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    const token = signAccessToken(newUser);
+    const csrfToken = issueCsrfToken();
     const { password, ...rest } = newUser._doc;
 
     return res
       .status(200)
       .cookie('access_token', token, buildCookieOptions())
-      .json(rest);
+      .cookie('csrf_token', csrfToken, buildCsrfCookieOptions())
+      .json({ ...rest, csrfToken });
   } catch (error) {
     next(error);
   }
@@ -291,10 +301,14 @@ export const signout = async (req, res, next) => {
       });
     }
 
-    res.clearCookie('access_token', buildCookieOptions()).status(200).json({
-      success: true,
-      message: 'signed out successfully'
-    });
+    res
+      .clearCookie('access_token', buildCookieOptions())
+      .clearCookie('csrf_token', buildCsrfCookieOptions())
+      .status(200)
+      .json({
+        success: true,
+        message: 'signed out successfully'
+      });
   } catch (error) {
     next(error);
   }

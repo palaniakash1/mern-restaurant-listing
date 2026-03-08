@@ -5,6 +5,7 @@ import { errorHandler } from './error.js';
 export const verifyToken = async (req, res, next) => {
   try {
     let token = null;
+    let authSource = null;
 
     // 1️⃣ Authorization header (Swagger / Postman / Mobile)
 
@@ -13,10 +14,12 @@ export const verifyToken = async (req, res, next) => {
       req.headers.authorization.startsWith('Bearer ')
     ) {
       token = req.headers.authorization.split(' ')[1];
+      authSource = 'header';
     }
     // 2️⃣ Cookie (Browser)
     if (!token && req.cookies?.access_token) {
       token = req.cookies.access_token;
+      authSource = 'cookie';
     }
 
     if (!token) {
@@ -43,6 +46,7 @@ export const verifyToken = async (req, res, next) => {
       role: user.role,
       restaurantId: user.restaurantId ? user.restaurantId.toString() : null
     };
+    req.authSource = authSource;
 
     next();
   } catch (error) {
