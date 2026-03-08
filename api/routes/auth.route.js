@@ -3,6 +3,7 @@ import {
   changePassword,
   getSession,
   google,
+  refreshSession,
   signin,
   signup,
   signout
@@ -28,6 +29,11 @@ const googleLimiter = createRateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
   keyPrefix: 'auth_google'
+});
+const refreshLimiter = createRateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  keyPrefix: 'auth_refresh'
 });
 
 // ===============================================================================
@@ -85,6 +91,7 @@ router.post(
   validate(authValidators.google),
   google
 );
+router.post('/refresh', refreshLimiter, refreshSession);
 
 // ===============================================================================
 // 🔷 POST /api/auth/signout
