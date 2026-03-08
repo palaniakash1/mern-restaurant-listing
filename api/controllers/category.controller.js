@@ -18,10 +18,16 @@ import {
   getClientIp,
   escapeRegex
 } from '../utils/controllerHelpers.js';
-import { getOrFetch } from '../utils/redisCache.js';
+import {
+  deleteKey,
+  getJson,
+  getOrFetch,
+  setJson,
+  setJsonIfAbsent
+} from '../utils/redisCache.js';
 
 const IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000;
-const bulkReorderIdempotencyStore = new Map();
+const IDEMPOTENCY_TTL_SECONDS = Math.floor(IDEMPOTENCY_TTL_MS / 1000);
 
 const buildScopedSlugForUpdate = async ({ category, name, session }) => {
   const baseSlug = name
@@ -50,15 +56,6 @@ const buildScopedSlugForUpdate = async ({ category, name, session }) => {
 
     slug = `${baseSlug}-${counter}`;
     counter++;
-  }
-};
-
-const cleanupIdempotencyStore = () => {
-  const now = Date.now();
-  for (const [key, entry] of bulkReorderIdempotencyStore.entries()) {
-    if (entry.expiresAt <= now) {
-      bulkReorderIdempotencyStore.delete(key);
-    }
   }
 };
 
@@ -535,8 +532,6 @@ export const reorderCategories = async (req, res, next) => {
 export const bulkReorderCategories = async (req, res, next) => {
   let scopedKey = null;
   try {
-    cleanupIdempotencyStore();
-
     const idempotencyKey = String(
       req.headers['x-idempotency-key'] || ''
     ).trim();
@@ -548,10 +543,10 @@ export const bulkReorderCategories = async (req, res, next) => {
     validateReorderItems(items);
 
     const signature = JSON.stringify(items);
-    scopedKey = `${toIdString(req.user.id)}:${idempotencyKey}`;
-    const existing = bulkReorderIdempotencyStore.get(scopedKey);
+    scopedKey = `idempotency:category_reorder:${toIdString(req.user.id)}:${idempotencyKey}`;
+    const existing = await getJson(scopedKey);
 
-    if (existing && existing.expiresAt > Date.now()) {
+    if (existing) {
       if (existing.signature !== signature) {
         throw errorHandler(
           409,
@@ -570,12 +565,31 @@ export const bulkReorderCategories = async (req, res, next) => {
       });
     }
 
-    bulkReorderIdempotencyStore.set(scopedKey, {
-      signature,
-      inFlight: true,
-      response: null,
-      expiresAt: Date.now() + IDEMPOTENCY_TTL_MS
-    });
+    const acquired = await setJsonIfAbsent(
+      scopedKey,
+      {
+        signature,
+        inFlight: true,
+        response: null
+      },
+      IDEMPOTENCY_TTL_SECONDS
+    );
+    if (!acquired) {
+      const raceEntry = await getJson(scopedKey);
+      if (raceEntry?.signature && raceEntry.signature !== signature) {
+        throw errorHandler(
+          409,
+          'Idempotency key has already been used with a different payload'
+        );
+      }
+      if (raceEntry?.response) {
+        return res.status(200).json({
+          ...raceEntry.response,
+          idempotentReplay: true
+        });
+      }
+      throw errorHandler(409, 'Request with this idempotency key is in progress');
+    }
 
     const result = await withTransaction(async (session) => {
       const bulkOps = items.map((cat) => ({
@@ -627,19 +641,22 @@ export const bulkReorderCategories = async (req, res, next) => {
       }
     };
 
-    bulkReorderIdempotencyStore.set(scopedKey, {
-      signature,
-      inFlight: false,
-      response,
-      expiresAt: Date.now() + IDEMPOTENCY_TTL_MS
-    });
+    await setJson(
+      scopedKey,
+      {
+        signature,
+        inFlight: false,
+        response
+      },
+      IDEMPOTENCY_TTL_SECONDS
+    );
 
     return res.status(200).json({ ...response, idempotentReplay: false });
   } catch (error) {
     if (scopedKey) {
-      const entry = bulkReorderIdempotencyStore.get(scopedKey);
+      const entry = await getJson(scopedKey);
       if (entry?.inFlight) {
-        bulkReorderIdempotencyStore.delete(scopedKey);
+        await deleteKey(scopedKey);
       }
     }
     next(error);

@@ -9,7 +9,11 @@ import { logAudit } from '../utils/auditLogger.js';
 import { diffObject } from '../utils/diff.js';
 import { paginate } from '../utils/paginate.js';
 import Restaurant from '../models/restaurant.model.js';
-import { getClientIp } from '../utils/controllerHelpers.js';
+import {
+  MAX_SEARCH_LENGTH,
+  getClientIp,
+  escapeRegex
+} from '../utils/controllerHelpers.js';
 // import mongoose from 'mongoose';
 
 const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9]).{8,}$/;
@@ -417,13 +421,19 @@ export const getAllUsers = async (req, res, next) => {
 
     const { page, limit, q } = req.query;
     const sortDirection = req.query.order === 'asc' ? 1 : -1;
+    const safeQuery = String(q || '')
+      .trim()
+      .slice(0, MAX_SEARCH_LENGTH);
+    const searchRegex = safeQuery
+      ? new RegExp(escapeRegex(safeQuery), 'i')
+      : null;
 
-    const filter = q
+    const filter = searchRegex
       ? {
         $or: [
-          { userName: { $regex: q, $options: 'i' } },
-          { email: { $regex: q, $options: 'i' } },
-          { role: { $regex: q, $options: 'i' } }
+          { userName: { $regex: searchRegex } },
+          { email: { $regex: searchRegex } },
+          { role: { $regex: searchRegex } }
         ]
       }
       : {};
@@ -473,12 +483,16 @@ export const getAvailableAdmins = async (req, res, next) => {
     }
 
     const { page, limit, q } = req.query;
+    const safeQuery = String(q || '')
+      .trim()
+      .slice(0, MAX_SEARCH_LENGTH);
+    const searchRegex = new RegExp(escapeRegex(safeQuery), 'i');
 
     // admins who do not have restaurant linked
     const filter = {
       role: 'admin',
       restaurantId: { $in: [null, undefined] },
-      userName: { $regex: q || '', $options: 'i' }
+      userName: { $regex: searchRegex }
     };
 
     const total = await User.countDocuments(filter);
