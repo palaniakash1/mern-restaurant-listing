@@ -4,8 +4,9 @@ import { errorHandler } from '../utils/error.js';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { logAudit } from '../utils/auditLogger.js';
-import { getClientIp } from '../utils/controllerHelpers.js';
+import { getClientIp, isValidObjectId } from '../utils/controllerHelpers.js';
 import RefreshToken from '../models/refreshToken.model.js';
+import { incrementSecurityEvent } from '../utils/securityTelemetry.js';
 
 const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9]).{8,}$/;
 
@@ -44,6 +45,8 @@ const issueCsrfToken = () => crypto.randomBytes(32).toString('hex');
 const issueRefreshTokenValue = () => crypto.randomBytes(48).toString('base64url');
 const hashRefreshToken = (token) =>
   crypto.createHash('sha256').update(token).digest('hex');
+const getUserAgent = (req) =>
+  String(req.headers['user-agent'] || 'unknown').slice(0, 250);
 
 const signAccessToken = (user) =>
   jwt.sign(
@@ -59,7 +62,8 @@ const storeRefreshToken = async ({
   userId,
   tokenValue,
   familyId,
-  ipAddress
+  ipAddress,
+  userAgent
 }) => {
   const tokenHash = hashRefreshToken(tokenValue);
   const expiresAt = new Date(Date.now() + getRefreshTtlMs());
@@ -68,7 +72,8 @@ const storeRefreshToken = async ({
     tokenHash,
     familyId,
     expiresAt,
-    createdByIp: ipAddress || null
+    createdByIp: ipAddress || null,
+    userAgent: userAgent || null
   });
   return tokenHash;
 };
@@ -82,7 +87,8 @@ const issueSession = async ({ req, res, user, familyId = null }) => {
     userId: user._id,
     tokenValue: refreshTokenValue,
     familyId: tokenFamilyId,
-    ipAddress: getClientIp(req)
+    ipAddress: getClientIp(req),
+    userAgent: getUserAgent(req)
   });
   res
     .cookie('access_token', token, buildCookieOptions())
@@ -91,7 +97,7 @@ const issueSession = async ({ req, res, user, familyId = null }) => {
   return { csrfToken };
 };
 
-const revokeRefreshTokenFromRequest = async (req) => {
+const revokeRefreshTokenFromRequest = async (req, reason = 'signout') => {
   const refreshToken = req.cookies?.[REFRESH_COOKIE_NAME];
   if (!refreshToken) {
     return;
@@ -104,11 +110,25 @@ const revokeRefreshTokenFromRequest = async (req) => {
     },
     {
       $set: {
-        revokedAt: new Date()
+        revokedAt: new Date(),
+        revokedReason: reason
       }
     }
   );
 };
+
+const toSessionView = (tokenDoc, currentTokenHash = null) => ({
+  id: tokenDoc._id,
+  familyId: tokenDoc.familyId,
+  isCurrent: Boolean(currentTokenHash && tokenDoc.tokenHash === currentTokenHash),
+  createdAt: tokenDoc.createdAt,
+  lastUsedAt: tokenDoc.lastUsedAt,
+  expiresAt: tokenDoc.expiresAt,
+  createdByIp: tokenDoc.createdByIp || null,
+  userAgent: tokenDoc.userAgent || null,
+  revokedAt: tokenDoc.revokedAt,
+  revokedReason: tokenDoc.revokedReason || null
+});
 
 export const signup = async (req, res, next) => {
   try {
@@ -350,7 +370,8 @@ export const google = async (req, res, next) => {
 
 export const signout = async (req, res, next) => {
   try {
-    await revokeRefreshTokenFromRequest(req);
+    await revokeRefreshTokenFromRequest(req, 'signout');
+    await incrementSecurityEvent('refresh_revoked');
 
     if (req.user) {
       await logAudit({
@@ -383,23 +404,32 @@ export const refreshSession = async (req, res, next) => {
   try {
     const refreshToken = req.cookies?.[REFRESH_COOKIE_NAME];
     if (!refreshToken) {
+      await incrementSecurityEvent('refresh_invalid');
       return next(errorHandler(401, 'Refresh token missing'));
     }
 
     const tokenHash = hashRefreshToken(refreshToken);
     const tokenDoc = await RefreshToken.findOne({ tokenHash });
     if (!tokenDoc) {
+      await incrementSecurityEvent('refresh_invalid');
       return next(errorHandler(401, 'Invalid refresh token'));
     }
     if (tokenDoc.expiresAt <= new Date()) {
+      await incrementSecurityEvent('refresh_expired');
       return next(errorHandler(401, 'Refresh token expired'));
     }
 
     if (tokenDoc.revokedAt) {
       await RefreshToken.updateMany(
         { familyId: tokenDoc.familyId, revokedAt: null },
-        { $set: { revokedAt: new Date() } }
+        {
+          $set: {
+            revokedAt: new Date(),
+            revokedReason: 'replay_detected'
+          }
+        }
       );
+      await incrementSecurityEvent('refresh_replay_detected');
       return next(errorHandler(401, 'Refresh token replay detected'));
     }
 
@@ -423,7 +453,8 @@ export const refreshSession = async (req, res, next) => {
       familyId: tokenDoc.familyId,
       expiresAt: new Date(Date.now() + getRefreshTtlMs()),
       createdByIp: getClientIp(req),
-      lastUsedAt: now
+      lastUsedAt: now,
+      userAgent: getUserAgent(req)
     });
 
     const accessToken = signAccessToken(user);
@@ -447,6 +478,119 @@ export const refreshSession = async (req, res, next) => {
       .cookie(REFRESH_COOKIE_NAME, nextRefreshToken, buildRefreshCookieOptions())
       .status(200)
       .json({ ...rest, csrfToken });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const listSessions = async (req, res, next) => {
+  try {
+    const tokenHash = req.cookies?.[REFRESH_COOKIE_NAME]
+      ? hashRefreshToken(req.cookies[REFRESH_COOKIE_NAME])
+      : null;
+
+    const sessions = await RefreshToken.find({
+      userId: req.user.id
+    })
+      .sort({ createdAt: -1 })
+      .select(
+        '_id familyId createdAt lastUsedAt expiresAt createdByIp userAgent revokedAt revokedReason tokenHash'
+      )
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      data: sessions.map((session) => toSessionView(session, tokenHash))
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const revokeSessionById = async (req, res, next) => {
+  try {
+    const { sessionId } = req.params;
+    if (!isValidObjectId(sessionId)) {
+      return next(errorHandler(400, 'Invalid sessionId'));
+    }
+
+    const session = await RefreshToken.findOne({
+      _id: sessionId,
+      userId: req.user.id
+    });
+    if (!session) {
+      return next(errorHandler(404, 'Session not found'));
+    }
+    if (session.revokedAt) {
+      return res.status(200).json({
+        success: true,
+        message: 'Session already revoked'
+      });
+    }
+
+    session.revokedAt = new Date();
+    session.revokedReason = 'manual_revoke';
+    await session.save();
+    await incrementSecurityEvent('sessions_revoked_single');
+
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      entityType: 'auth',
+      entityId: req.user.id,
+      action: 'LOGOUT',
+      before: null,
+      after: { revokedSessionId: sessionId },
+      ipAddress: getClientIp(req)
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Session revoked'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const signoutAllSessions = async (req, res, next) => {
+  try {
+    const currentTokenHash = req.cookies?.[REFRESH_COOKIE_NAME]
+      ? hashRefreshToken(req.cookies[REFRESH_COOKIE_NAME])
+      : null;
+
+    const filter = {
+      userId: req.user.id,
+      revokedAt: null,
+      ...(currentTokenHash ? { tokenHash: { $ne: currentTokenHash } } : {})
+    };
+
+    const result = await RefreshToken.updateMany(filter, {
+      $set: {
+        revokedAt: new Date(),
+        revokedReason: 'signout_all'
+      }
+    });
+    await incrementSecurityEvent('sessions_revoked_all', result.modifiedCount || 0);
+
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      entityType: 'auth',
+      entityId: req.user.id,
+      action: 'LOGOUT',
+      before: null,
+      after: { revokedSessions: result.modifiedCount || 0, scope: 'all_other_sessions' },
+      ipAddress: getClientIp(req)
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'All other sessions revoked',
+      data: {
+        revokedSessions: result.modifiedCount || 0
+      }
+    });
   } catch (error) {
     next(error);
   }
