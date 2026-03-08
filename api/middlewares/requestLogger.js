@@ -1,11 +1,5 @@
-/**
- * Request Logging Middleware
- * Logs all incoming HTTP requests with relevant details
- * Uses fileLogger for persistent storage with 500 log stack
- */
-
 import crypto from 'crypto';
-import { logRequest, logResponse, logError } from '../utils/fileLogger.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Creates a request logger middleware
@@ -18,7 +12,6 @@ export const createRequestLogger = (options = {}) => {
   const { logBody = false, shouldLogResponse = false } = options;
 
   return (req, res, next) => {
-    // Generate request ID if not already present
     const requestId = req.headers['x-request-id'] || crypto.randomUUID();
     req.requestId = requestId;
     res.setHeader('X-Request-Id', requestId);
@@ -27,56 +20,39 @@ export const createRequestLogger = (options = {}) => {
     const { method, url, ip, headers } = req;
     const clientIp = headers['x-forwarded-for'] || ip;
     const userAgent = headers['user-agent'] || 'unknown';
-
-    // Log incoming request using fileLogger
-    logRequest({
+    const requestLog = logger.child({
       requestId,
       method,
       url,
-      clientIp,
+      clientIp
+    });
+
+    requestLog.info('request.start', {
       userAgent: userAgent.substring(0, 100),
       contentLength: headers['content-length'] || 0,
       ...(logBody && req.body && { body: req.body })
     });
 
-    // Capture original end to log response
-    const originalEnd = res.end;
-
-    res.end = function (chunk, encoding) {
-      res.end = originalEnd;
-      res.end(chunk, encoding);
-
+    res.on('finish', () => {
       const duration = Date.now() - startTime;
-      const responseSize = res.getHeader('content-length') || (chunk ? chunk.length : 0);
+      const responseSize = res.getHeader('content-length') || 0;
 
       const logEntry = {
-        requestId,
-        method,
-        url,
-        clientIp,
         statusCode: res.statusCode,
-        duration: `${duration}ms`,
+        durationMs: duration,
         responseSize
       };
 
-      // Log response body for errors (sanitized)
-      if (shouldLogResponse && chunk) {
-        try {
-          const parsed = JSON.parse(chunk.toString());
-          logEntry.response = parsed;
-        } catch {
-          logEntry.response = chunk.toString();
-        }
+      if (shouldLogResponse && res.locals?.responseBody) {
+        logEntry.response = res.locals.responseBody;
       }
 
-      // Add error info for 5xx responses
       if (res.statusCode >= 500) {
-        logEntry.error = true;
-        logError(logEntry);
+        requestLog.error('request.finish', logEntry);
       } else {
-        logResponse(logEntry);
+        requestLog.info('request.finish', logEntry);
       }
-    };
+    });
 
     next();
   };

@@ -4,6 +4,7 @@
  */
 
 import mongoose from 'mongoose';
+import { logger } from '../utils/logger.js';
 
 /**
  * Determines if the error is a operational error (expected)
@@ -81,11 +82,8 @@ export const createErrorHandler = (options = {}) => {
 
     // Log error in development
     if (logErrors) {
-      const logLevel = err.statusCode >= 500 ? 'error' : 'warn';
-      console[logLevel](JSON.stringify({
-        type: 'error',
+      const logPayload = {
         requestId,
-        timestamp: new Date().toISOString(),
         errorType,
         message: err.message,
         stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined,
@@ -93,7 +91,12 @@ export const createErrorHandler = (options = {}) => {
         method: req.method,
         statusCode: err.statusCode || 500,
         isOperational: isOperationalError(err)
-      }));
+      };
+      if ((err.statusCode || 500) >= 500) {
+        logger.error('request.error', logPayload);
+      } else {
+        logger.warn('request.error', logPayload);
+      }
     }
 
     // Handle Mongoose validation errors

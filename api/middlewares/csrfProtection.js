@@ -7,6 +7,7 @@
  */
 
 import crypto from 'crypto';
+import { logger } from '../utils/logger.js';
 
 // ===================================================================
 // CONFIGURATION
@@ -92,7 +93,11 @@ const cleanupExpiredTokens = () => {
 };
 
 // Run cleanup every hour
-globalThis.setInterval(cleanupExpiredTokens, 60 * 60 * 1000);
+const cleanupInterval = globalThis.setInterval(
+  cleanupExpiredTokens,
+  60 * 60 * 1000
+);
+cleanupInterval.unref?.();
 
 /**
  * Create CSRF middleware for Express
@@ -126,7 +131,7 @@ export const createCsrfMiddleware = (options = {}) => {
     // In production, you might want to require it
     if (!csrfToken) {
       // Log but don't block (API security handled by JWT)
-      console.warn('CSRF token not provided but allowing (JWT auth)');
+      logger.warn('csrf.token_missing_allowed', { path: req.path, method: req.method });
       return next();
     }
 

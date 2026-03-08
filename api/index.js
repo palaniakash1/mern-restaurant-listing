@@ -1,8 +1,8 @@
-/* eslint-disable no-console */
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import app from './app.js';
 import { initRedis } from './utils/redisCache.js';
+import { logger } from './utils/logger.js';
 
 dotenv.config();
 
@@ -23,30 +23,32 @@ if (!mongoUri) {
 mongoose
   .connect(mongoUri)
   .then(() => {
-    console.log('connected to mongoDB');
+    logger.info('mongo.connected', {});
   })
   .catch((err) => {
-    console.log(err);
+    logger.error('mongo.connection.error', { error: err.message });
   });
 
 // Initialize Redis (skip in test environment)
 if (process.env.NODE_ENV !== 'test') {
-  initRedis().catch((err) => console.warn('Redis init failed:', err.message));
+  initRedis().catch((err) =>
+    logger.warn('redis.init.error', { error: err.message })
+  );
 }
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}!`);
+  logger.info('server.started', { port: PORT });
 });
 
 const gracefulShutdown = async (signal) => {
-  console.log(`${signal} received. Shutting down gracefully...`);
+  logger.warn('server.shutdown.start', { signal });
   server.close(async () => {
     try {
       await mongoose.connection.close();
       process.exit(0);
     } catch (err) {
-      console.error('Error during shutdown:', err);
+      logger.error('server.shutdown.error', { error: err.message });
       process.exit(1);
     }
   });
@@ -55,9 +57,11 @@ const gracefulShutdown = async (signal) => {
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('unhandledRejection', (reason) => {
-  console.error('Unhandled promise rejection:', reason);
+  logger.error('process.unhandled_rejection', {
+    reason: reason instanceof Error ? reason.message : String(reason)
+  });
 });
 process.on('uncaughtException', (error) => {
-  console.error('Uncaught exception:', error);
+  logger.error('process.uncaught_exception', { error: error.message });
   process.exit(1);
 });

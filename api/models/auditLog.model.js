@@ -34,7 +34,8 @@ const auditLogSchema = new mongoose.Schema(
         // ✅ AUTH EVENTS
         'LOGIN',
         'LOGIN_FAILED',
-        'LOGOUT'
+        'LOGOUT',
+        'REFRESH'
       ],
       required: true
     },
