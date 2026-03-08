@@ -1,39 +1,43 @@
-/**
- * Redis Caching Layer
- * Provides in-memory and Redis caching for performance optimization
- *
- * Note: This utility works with or without Redis
- * If Redis is not available, it falls back to in-memory cache
- */
-
 import Redis from 'ioredis';
-
-// ===================================================================
-// CONFIGURATION
-// ===================================================================
+import { logger } from './logger.js';
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
-const CACHE_TTL = parseInt(process.env.CACHE_TTL || '300', 10); // 5 minutes default
-const REDIS_CONNECT_TIMEOUT = 2000; // 2 second timeout for Redis connection
+const CACHE_TTL = parseInt(process.env.CACHE_TTL || '300', 10);
+const REDIS_CONNECT_TIMEOUT = 2000;
 
-// In-memory fallback cache
 const memoryCache = new Map();
 const memoryCacheTTL = new Map();
-
-// ===================================================================
-// REDIS CLIENT (with fallback)
-// ===================================================================
+const memoryCounters = new Map();
 
 let redisClient = null;
 let isRedisAvailable = false;
 
-/**
- * Initialize Redis connection with timeout
- */
+const memoryGet = (key) => {
+  const expiry = memoryCacheTTL.get(key);
+  if (expiry && Date.now() > expiry) {
+    memoryCache.delete(key);
+    memoryCacheTTL.delete(key);
+    return null;
+  }
+  return memoryCache.get(key) || null;
+};
+
+const memorySet = (key, value, ttlSeconds) => {
+  memoryCache.set(key, value);
+  memoryCacheTTL.set(key, Date.now() + ttlSeconds * 1000);
+};
+
+const toSafeJson = (value) => {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return null;
+  }
+};
+
 export const initRedis = async () => {
-  // If no Redis URL configured, skip Redis entirely
   if (!REDIS_URL || REDIS_URL.trim() === '') {
-    console.log('ℹ️ Redis URL not configured, using in-memory cache');
+    logger.info('redis.disabled', { reason: 'missing REDIS_URL' });
     isRedisAvailable = false;
     return false;
   }
@@ -41,154 +45,89 @@ export const initRedis = async () => {
   try {
     redisClient = new Redis(REDIS_URL, {
       maxRetriesPerRequest: 1,
-      retryStrategy: () => null, // Don't retry, fail fast
+      retryStrategy: () => null,
       connectTimeout: REDIS_CONNECT_TIMEOUT,
       commandTimeout: REDIS_CONNECT_TIMEOUT,
       lazyConnect: true,
-      enableOfflineQueue: false // Fail immediately if not connected
+      enableOfflineQueue: false
     });
 
-    // Set up connection timeout
     const connectionPromise = redisClient.connect();
     const timeoutPromise = new Promise((_, reject) =>
+      // eslint-disable-next-line no-undef
       setTimeout(() => reject(new Error('Redis connection timeout')), REDIS_CONNECT_TIMEOUT)
     );
-
     await Promise.race([connectionPromise, timeoutPromise]);
 
     isRedisAvailable = true;
-    console.log('✅ Redis connected successfully');
+    logger.info('redis.connected', { urlConfigured: true });
 
     redisClient.on('error', (err) => {
-      console.warn('Redis error:', err.message);
       isRedisAvailable = false;
+      logger.warn('redis.error', { error: err.message });
     });
-
     redisClient.on('close', () => {
       isRedisAvailable = false;
-      console.log('Redis connection closed');
+      logger.warn('redis.closed', {});
     });
-
     return true;
   } catch (error) {
-    console.warn(`⚠️ Redis not available: ${error.message}, using in-memory cache`);
     isRedisAvailable = false;
+    logger.warn('redis.unavailable', { error: error.message, fallback: 'memory' });
     return false;
   }
 };
 
-/**
- * Get Redis client status
- */
 export const isRedisConnected = () => isRedisAvailable;
+export const getRedisClient = () => (isRedisAvailable ? redisClient : null);
 
-// ===================================================================
-// CACHE OPERATIONS
-// ===================================================================
-
-/**
- * Get value from cache
- * @param {string} key - Cache key
- * @returns {Promise<any>} Cached value or null
- */
 export const get = async (key) => {
   const cacheKey = `cache:${key}`;
-
   if (isRedisAvailable && redisClient) {
     try {
-      // Add timeout for Redis operations
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Redis get timeout')), 1000)
-      );
-      const getPromise = redisClient.get(cacheKey);
-
-      const value = await Promise.race([getPromise, timeoutPromise]);
+      const value = await redisClient.get(cacheKey);
       return value ? JSON.parse(value) : null;
     } catch (error) {
-      console.warn('Redis get error:', error.message);
       isRedisAvailable = false;
+      logger.warn('redis.get.error', { error: error.message });
     }
   }
-
-  // Fallback to memory cache
-  const expiry = memoryCacheTTL.get(cacheKey);
-  if (expiry && Date.now() > expiry) {
-    memoryCache.delete(cacheKey);
-    memoryCacheTTL.delete(cacheKey);
-    return null;
-  }
-
-  return memoryCache.get(cacheKey) || null;
+  return memoryGet(cacheKey);
 };
 
-/**
- * Set value in cache
- * @param {string} key - Cache key
- * @param {any} value - Value to cache
- * @param {number} ttl - Time to live in seconds
- */
 export const set = async (key, value, ttl = CACHE_TTL) => {
   const cacheKey = `cache:${key}`;
-  const serialized = JSON.stringify(value);
-
+  const serialized = toSafeJson(value);
+  if (!serialized) {
+    return false;
+  }
   if (isRedisAvailable && redisClient) {
     try {
-      // Add timeout for Redis operations
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Redis set timeout')), 1000)
-      );
-      const setPromise = redisClient.setex(cacheKey, ttl, serialized);
-
-      await Promise.race([setPromise, timeoutPromise]);
+      await redisClient.setex(cacheKey, ttl, serialized);
       return true;
     } catch (error) {
-      console.warn('Redis set error:', error.message);
       isRedisAvailable = false;
+      logger.warn('redis.set.error', { error: error.message });
     }
   }
-
-  // Fallback to memory cache
-  memoryCache.set(cacheKey, value);
-  memoryCacheTTL.set(cacheKey, Date.now() + ttl * 1000);
-
-  // Clean old entries if cache is too large
-  if (memoryCache.size > 1000) {
-    const now = Date.now();
-    for (const [k, exp] of memoryCacheTTL.entries()) {
-      if (now > exp) {
-        memoryCache.delete(k);
-        memoryCacheTTL.delete(k);
-      }
-    }
-  }
-
+  memorySet(cacheKey, value, ttl);
   return true;
 };
 
-/**
- * Delete value from cache
- * @param {string} key - Cache key
- */
 export const del = async (key) => {
   const cacheKey = `cache:${key}`;
-
   if (isRedisAvailable && redisClient) {
     try {
       await redisClient.del(cacheKey);
     } catch (error) {
-      console.warn('Redis delete error:', error.message);
+      logger.warn('redis.del.error', { error: error.message });
     }
   }
-
   memoryCache.delete(cacheKey);
   memoryCacheTTL.delete(cacheKey);
-
   return true;
 };
 
-/**
- * Clear all cache
- */
 export const clear = async () => {
   if (isRedisAvailable && redisClient) {
     try {
@@ -197,54 +136,33 @@ export const clear = async () => {
         await redisClient.del(...keys);
       }
     } catch (error) {
-      console.warn('Redis clear error:', error.message);
+      logger.warn('redis.clear.error', { error: error.message });
     }
   }
-
   memoryCache.clear();
   memoryCacheTTL.clear();
-
+  memoryCounters.clear();
   return true;
 };
 
-/**
- * Get cached or fetch data
- * @param {string} key - Cache key
- * @param {Function} fetcher - Function to fetch data if not cached
- * @param {number} ttl - Time to live in seconds
- * @returns {Promise<any>} Cached or fetched data
- */
 export const getOrFetch = async (key, fetcher, ttl = CACHE_TTL) => {
-  // Try to get from cache
   try {
     const cached = await get(key);
     if (cached !== null) {
       return cached;
     }
   } catch (error) {
-    console.warn('Cache get error, falling back to fetcher:', error.message);
+    logger.warn('cache.get_or_fetch.get_error', { error: error.message });
   }
-
-  // Fetch fresh data
   const data = await fetcher();
-
-  // Store in cache (don't await, fire and forget)
-  set(key, data, ttl).catch(err => console.warn('Cache set error:', err.message));
-
+  set(key, data, ttl).catch((err) =>
+    logger.warn('cache.get_or_fetch.set_error', { error: err.message })
+  );
   return data;
 };
 
-// ===================================================================
-// CACHE HELPERS FOR COMMON PATTERNS
-// ===================================================================
-
-/**
- * Invalidate cache by pattern
- * @param {string} pattern - Key pattern to invalidate
- */
 export const invalidatePattern = async (pattern) => {
   const cachePattern = `cache:${pattern}`;
-
   if (isRedisAvailable && redisClient) {
     try {
       const keys = await redisClient.keys(cachePattern);
@@ -252,39 +170,138 @@ export const invalidatePattern = async (pattern) => {
         await redisClient.del(...keys);
       }
     } catch (error) {
-      console.warn('Redis invalidate error:', error.message);
+      logger.warn('redis.invalidate.error', { error: error.message });
     }
   }
-
-  // Also clean memory cache
-  const patternStr = pattern.replace('*', '');
+  const startsWith = pattern.replace('*', '');
   for (const key of memoryCache.keys()) {
-    if (key.includes(patternStr)) {
+    if (key.includes(startsWith)) {
       memoryCache.delete(key);
       memoryCacheTTL.delete(key);
     }
   }
 };
 
-/**
- * Get cache statistics
- */
-export const getCacheStats = () => {
-  return {
-    redis: isRedisAvailable,
-    memorySize: memoryCache.size,
-    ttl: CACHE_TTL
-  };
+export const getCacheStats = () => ({
+  redis: isRedisAvailable,
+  memorySize: memoryCache.size,
+  ttl: CACHE_TTL
+});
+
+export const atomicRateLimitIncrement = async (key, windowMs) => {
+  if (isRedisAvailable && redisClient) {
+    try {
+      const results = await redisClient
+        .multi()
+        .incr(key)
+        .pexpire(key, windowMs, 'NX')
+        .pttl(key)
+        .exec();
+
+      const count = Number(results?.[0]?.[1] || 0);
+      let ttlMs = Number(results?.[2]?.[1] || windowMs);
+      if (!Number.isFinite(ttlMs) || ttlMs < 0) {
+        ttlMs = windowMs;
+      }
+      return { count, ttlMs };
+    } catch (error) {
+      isRedisAvailable = false;
+      logger.warn('redis.ratelimit.error', { error: error.message });
+    }
+  }
+
+  const now = Date.now();
+  const existing = memoryCounters.get(key);
+  if (!existing || existing.resetAt <= now) {
+    const next = { count: 1, resetAt: now + windowMs };
+    memoryCounters.set(key, next);
+    return { count: 1, ttlMs: windowMs };
+  }
+  existing.count += 1;
+  memoryCounters.set(key, existing);
+  return { count: existing.count, ttlMs: Math.max(existing.resetAt - now, 0) };
+};
+
+export const setJsonIfAbsent = async (key, value, ttlSeconds) => {
+  const serialized = toSafeJson(value);
+  if (!serialized) {
+    return false;
+  }
+
+  if (isRedisAvailable && redisClient) {
+    try {
+      const result = await redisClient.set(key, serialized, 'EX', ttlSeconds, 'NX');
+      return result === 'OK';
+    } catch (error) {
+      isRedisAvailable = false;
+      logger.warn('redis.setnx.error', { error: error.message });
+    }
+  }
+
+  if (memoryGet(key) !== null) {
+    return false;
+  }
+  memorySet(key, value, ttlSeconds);
+  return true;
+};
+
+export const getJson = async (key) => {
+  if (isRedisAvailable && redisClient) {
+    try {
+      const value = await redisClient.get(key);
+      return value ? JSON.parse(value) : null;
+    } catch (error) {
+      isRedisAvailable = false;
+      logger.warn('redis.getjson.error', { error: error.message });
+    }
+  }
+  return memoryGet(key);
+};
+
+export const setJson = async (key, value, ttlSeconds) => {
+  const serialized = toSafeJson(value);
+  if (!serialized) {
+    return false;
+  }
+  if (isRedisAvailable && redisClient) {
+    try {
+      await redisClient.set(key, serialized, 'EX', ttlSeconds);
+      return true;
+    } catch (error) {
+      isRedisAvailable = false;
+      logger.warn('redis.setjson.error', { error: error.message });
+    }
+  }
+  memorySet(key, value, ttlSeconds);
+  return true;
+};
+
+export const deleteKey = async (key) => {
+  if (isRedisAvailable && redisClient) {
+    try {
+      await redisClient.del(key);
+    } catch (error) {
+      logger.warn('redis.deletekey.error', { error: error.message });
+    }
+  }
+  memoryCache.delete(key);
+  memoryCacheTTL.delete(key);
 };
 
 export default {
   initRedis,
   isRedisConnected,
+  getRedisClient,
   get,
   set,
   del,
   clear,
   getOrFetch,
   invalidatePattern,
-  getCacheStats
+  getCacheStats,
+  atomicRateLimitIncrement,
+  setJsonIfAbsent,
+  getJson,
+  setJson,
+  deleteKey
 };

@@ -35,6 +35,19 @@ describe('Auth integration', { concurrency: false }, () => {
     });
     assert.equal(signinRes.status, 200);
     assert.equal(signinRes.body.email, 'testuser1@example.com');
+    const firstRefreshCookie = signinRes.headers['set-cookie']?.find((cookie) =>
+      cookie.startsWith('refresh_token=')
+    );
+    assert.ok(firstRefreshCookie);
+
+    const refreshRes = await agent.post('/api/auth/refresh').send({});
+    assert.equal(refreshRes.status, 200);
+    assert.equal(refreshRes.body.email, 'testuser1@example.com');
+    const rotatedRefreshCookie = refreshRes.headers['set-cookie']?.find((cookie) =>
+      cookie.startsWith('refresh_token=')
+    );
+    assert.ok(rotatedRefreshCookie);
+    assert.notEqual(rotatedRefreshCookie, firstRefreshCookie);
 
     const sessionRes = await agent.get('/api/auth/session');
     assert.equal(sessionRes.status, 200);

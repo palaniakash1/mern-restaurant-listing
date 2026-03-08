@@ -1,31 +1,24 @@
 import { errorHandler } from './error.js';
-
-const stores = new Map();
+import { atomicRateLimitIncrement } from './redisCache.js';
 
 export const createRateLimit = ({
   windowMs = 60 * 1000,
   max = 30,
   keyPrefix = 'global'
 } = {}) => {
-  return (req, res, next) => {
-    const now = Date.now();
+  return async (req, res, next) => {
     const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
-    const key = `${keyPrefix}:${ip}`;
+    const key = `ratelimit:${keyPrefix}:${ip}`;
 
-    let entry = stores.get(key);
-    if (!entry || entry.resetAt <= now) {
-      entry = { count: 0, resetAt: now + windowMs };
-    }
+    const { count, ttlMs } = await atomicRateLimitIncrement(key, windowMs);
+    const retryAfterSec = Math.ceil(ttlMs / 1000);
+    const remaining = Math.max(max - count, 0);
 
-    entry.count += 1;
-    stores.set(key, entry);
-
-    const retryAfterSec = Math.ceil((entry.resetAt - now) / 1000);
     res.setHeader('X-RateLimit-Limit', String(max));
-    res.setHeader('X-RateLimit-Remaining', String(Math.max(max - entry.count, 0)));
+    res.setHeader('X-RateLimit-Remaining', String(remaining));
     res.setHeader('X-RateLimit-Reset', String(retryAfterSec));
 
-    if (entry.count > max) {
+    if (count > max) {
       res.setHeader('Retry-After', String(retryAfterSec));
       return next(
         errorHandler(
