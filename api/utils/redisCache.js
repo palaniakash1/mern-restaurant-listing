@@ -53,6 +53,15 @@ export const initRedis = async () => {
       enableOfflineQueue: false
     });
 
+    redisClient.on('error', (err) => {
+      isRedisAvailable = false;
+      logger.warn('redis.error', { error: err.message });
+    });
+    redisClient.on('close', () => {
+      isRedisAvailable = false;
+      logger.warn('redis.closed', {});
+    });
+
     const connectionPromise = redisClient.connect();
     const timeoutPromise = new Promise((_, reject) =>
       // eslint-disable-next-line no-undef
@@ -62,18 +71,16 @@ export const initRedis = async () => {
 
     isRedisAvailable = true;
     logger.info('redis.connected', { urlConfigured: true });
-
-    redisClient.on('error', (err) => {
-      isRedisAvailable = false;
-      logger.warn('redis.error', { error: err.message });
-    });
-    redisClient.on('close', () => {
-      isRedisAvailable = false;
-      logger.warn('redis.closed', {});
-    });
     return true;
   } catch (error) {
     isRedisAvailable = false;
+    try {
+      redisClient?.disconnect();
+    } catch {
+      // Ignore cleanup failures after a failed lazy connection attempt.
+    } finally {
+      redisClient = null;
+    }
     logger.warn('redis.unavailable', { error: error.message, fallback: 'memory' });
     return false;
   }
