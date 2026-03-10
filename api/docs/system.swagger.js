@@ -37,3 +37,19 @@
  *       200:
  *         description: Swagger UI served
  */
+
+/**
+ * @swagger
+ * /metrics:
+ *   get:
+ *     tags: [System]
+ *     summary: Operational metrics and security telemetry
+ *     description: Requires `x-metrics-token` or superAdmin auth depending on deployment configuration.
+ *     responses:
+ *       200:
+ *         description: Metrics payload served
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */

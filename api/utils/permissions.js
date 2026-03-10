@@ -1,6 +1,11 @@
 export const PERMISSIONS = {
   superAdmin: {
-    auth: ['signout', 'session', 'changePassword'],
+    auth: [
+      'signout',
+      'session',
+      'changePassword',
+      'manageUserSessions'
+    ],
     admin: ['createPrivilegedUser'],
     audit: ['read'],
     user: [

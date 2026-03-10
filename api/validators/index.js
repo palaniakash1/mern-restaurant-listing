@@ -139,6 +139,16 @@ export const authValidators = {
   changePassword: Joi.object({
     currentPassword: Joi.string().required(),
     newPassword: Joi.string().pattern(PASSWORD_REGEX).required()
+  }),
+  userIdParam: Joi.object({
+    userId: objectId.required()
+  }),
+  sessionIdParam: Joi.object({
+    sessionId: objectId.required()
+  }),
+  userIdSessionIdParam: Joi.object({
+    userId: objectId.required(),
+    sessionId: objectId.required()
   })
 };
 
@@ -412,4 +422,3 @@ export const reviewValidators = {
     isActive: Joi.boolean().required()
   })
 };
-

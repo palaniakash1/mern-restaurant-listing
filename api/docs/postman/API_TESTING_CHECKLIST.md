@@ -1,6 +1,6 @@
 # API Testing Checklist
 
-> Complete testing checklist for all 78+ API endpoints with role-based access control
+> Complete testing checklist for all 86+ API endpoints with role-based access control
 
 ---
 
@@ -20,19 +20,27 @@
 
 ---
 
-# 🔐 AUTHENTICATION (7 Endpoints)
+# AUTHENTICATION (15 Endpoints)
 
-## 👤 User Registration & Login
+## User Registration And Session Governance
 
-| #   | Endpoint                    | Method | Role | Test Case                    | Status |
-| --- | --------------------------- | ------ | ---- | ---------------------------- | ------ |
-| 1   | `/api/auth/signup`          | POST   | 👤   | Create regular user          | [ ]    |
-| 2   | `/api/auth/signin`          | POST   | 👤   | Login with valid credentials | [ ]    |
-| 3   | `/api/auth/signup`          | POST   | 🏪   | Create admin user            | [ ]    |
-| 4   | `/api/auth/signin`          | POST   | 🏪   | Admin login                  | [ ]    |
-| 5   | `/api/auth/google`          | POST   | 👤   | OAuth Google signup          | [ ]    |
-| 6   | `/api/auth/session`         | GET    | 👤   | Get current session          | [ ]    |
-| 7   | `/api/auth/change-password` | POST   | 👤   | Change password              | [ ]    |
+| #   | Endpoint                                        | Method | Role       | Test Case                           | Status |
+| --- | ----------------------------------------------- | ------ | ---------- | ----------------------------------- | ------ |
+| 1   | `/api/auth/signup`                              | POST   | User       | Create regular user                 | [ ]    |
+| 2   | `/api/auth/signin`                              | POST   | User       | Login with valid credentials        | [ ]    |
+| 3   | `/api/auth/signup`                              | POST   | Admin      | Create admin user                   | [ ]    |
+| 4   | `/api/auth/signin`                              | POST   | Admin      | Admin login                         | [ ]    |
+| 5   | `/api/auth/google`                              | POST   | User       | OAuth Google signup                 | [ ]    |
+| 6   | `/api/auth/session`                             | GET    | User       | Get current session                 | [ ]    |
+| 7   | `/api/auth/change-password`                     | POST   | User       | Change password                     | [ ]    |
+| 8   | `/api/auth/refresh`                             | POST   | User       | Rotate refresh/access token         | [ ]    |
+| 9   | `/api/auth/sessions`                            | GET    | User       | List current user sessions          | [ ]    |
+| 10  | `/api/auth/sessions/:id`                        | DELETE | User       | Revoke one user session             | [ ]    |
+| 11  | `/api/auth/signout-all`                         | POST   | User       | Revoke all other user sessions      | [ ]    |
+| 12  | `/api/auth/signout`                             | POST   | User       | Sign out current session            | [ ]    |
+| 13  | `/api/auth/admin/users/:id/sessions`            | GET    | SuperAdmin | SuperAdmin list user sessions       | [ ]    |
+| 14  | `/api/auth/admin/users/:id/sessions/:sessionId` | DELETE | SuperAdmin | SuperAdmin revoke one user session  | [ ]    |
+| 15  | `/api/auth/admin/users/:id/sessions/revoke-all` | POST   | SuperAdmin | SuperAdmin revoke all user sessions | [ ]    |
 
 ## Auth Error Tests
 
@@ -374,7 +382,7 @@
 
 | Module      | Total  | Tested | Remaining |
 | ----------- | ------ | ------ | --------- |
-| Auth        | 7      | [ ]    | [ ]       |
+| Auth        | 15     | [ ]    | [ ]       |
 | Users       | 11     | [ ]    | [ ]       |
 | Restaurants | 16     | [ ]    | [ ]       |
 | Categories  | 18     | [ ]    | [ ]       |
@@ -383,7 +391,7 @@
 | Admin       | 1      | [ ]    | [ ]       |
 | Audit       | 1      | [ ]    | [ ]       |
 | System      | 3      | [ ]    | [ ]       |
-| **TOTAL**   | **79** | [ ]    | [ ]       |
+| **TOTAL**   | **86** | [ ]    | [ ]       |
 
 ---
 

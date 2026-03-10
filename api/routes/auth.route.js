@@ -1,5 +1,8 @@
 import express from 'express';
 import {
+  adminListUserSessions,
+  adminRevokeAllUserSessions,
+  adminRevokeUserSession,
   changePassword,
   getSession,
   google,
@@ -103,7 +106,34 @@ router.post('/signout', verifyToken, can('signout', 'auth'), signout);
 router.post('/signout-all', verifyToken, can('signout', 'auth'), signoutAllSessions);
 router.get('/session', verifyToken, can('session', 'auth'), getSession);
 router.get('/sessions', verifyToken, can('session', 'auth'), listSessions);
-router.delete('/sessions/:sessionId', verifyToken, can('session', 'auth'), revokeSessionById);
+router.delete(
+  '/sessions/:sessionId',
+  verifyToken,
+  can('session', 'auth'),
+  validate(authValidators.sessionIdParam, 'params'),
+  revokeSessionById
+);
+router.get(
+  '/admin/users/:userId/sessions',
+  verifyToken,
+  can('manageUserSessions', 'auth'),
+  validate(authValidators.userIdParam, 'params'),
+  adminListUserSessions
+);
+router.delete(
+  '/admin/users/:userId/sessions/:sessionId',
+  verifyToken,
+  can('manageUserSessions', 'auth'),
+  validate(authValidators.userIdSessionIdParam, 'params'),
+  adminRevokeUserSession
+);
+router.post(
+  '/admin/users/:userId/sessions/revoke-all',
+  verifyToken,
+  can('manageUserSessions', 'auth'),
+  validate(authValidators.userIdParam, 'params'),
+  adminRevokeAllUserSessions
+);
 router.post(
   '/change-password',
   verifyToken,

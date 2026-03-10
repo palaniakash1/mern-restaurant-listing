@@ -6,7 +6,6 @@ import app from '../app.js';
 import User from '../models/user.model.js';
 import Restaurant from '../models/restaurant.model.js';
 import Category from '../models/category.model.js';
-import Menu from '../models/menu.model.js';
 import {
   clearTestDb,
   setupTestDb,
@@ -139,6 +138,57 @@ describe('Platform core integration', { concurrency: false }, () => {
       });
     assert.equal(successRes.status, 201);
     assert.equal(successRes.body.user.role, 'admin');
+  });
+
+  it('superAdmin should govern user sessions and admin should be forbidden', async () => {
+    const { user, tokens } = await createBaseActors();
+
+    const userAgentA = request.agent(app);
+    const userAgentB = request.agent(app);
+
+    const signinA = await userAgentA.post('/api/auth/signin').send({
+      email: user.email,
+      password: 'Password1'
+    });
+    assert.equal(signinA.status, 200);
+
+    const signinB = await userAgentB.post('/api/auth/signin').send({
+      email: user.email,
+      password: 'Password1'
+    });
+    assert.equal(signinB.status, 200);
+
+    const forbiddenListRes = await request(app)
+      .get(`/api/auth/admin/users/${user._id}/sessions`)
+      .set('Authorization', `Bearer ${tokens.adminA}`);
+    assert.equal(forbiddenListRes.status, 403);
+
+    const listRes = await request(app)
+      .get(`/api/auth/admin/users/${user._id}/sessions`)
+      .set('Authorization', `Bearer ${tokens.superAdmin}`);
+    assert.equal(listRes.status, 200);
+    assert.equal(listRes.body.success, true);
+    assert.ok(Array.isArray(listRes.body.data));
+    assert.ok(listRes.body.data.length >= 2);
+
+    const targetSessionId = listRes.body.data[0].id;
+    const revokeSingleRes = await request(app)
+      .delete(`/api/auth/admin/users/${user._id}/sessions/${targetSessionId}`)
+      .set('Authorization', `Bearer ${tokens.superAdmin}`);
+    assert.equal(revokeSingleRes.status, 200);
+    assert.equal(revokeSingleRes.body.success, true);
+
+    const revokeAllRes = await request(app)
+      .post(`/api/auth/admin/users/${user._id}/sessions/revoke-all`)
+      .set('Authorization', `Bearer ${tokens.superAdmin}`)
+      .send({});
+    assert.equal(revokeAllRes.status, 200);
+    assert.equal(revokeAllRes.body.success, true);
+
+    const refreshA = await userAgentA.post('/api/auth/refresh').send({});
+    const refreshB = await userAgentB.post('/api/auth/refresh').send({});
+    assert.equal(refreshA.status, 401);
+    assert.equal(refreshB.status, 401);
   });
 
   it('restaurant/category/menu flow should enforce auth, validation and ownership', async () => {

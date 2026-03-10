@@ -246,3 +246,149 @@
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 
+/**
+ * @swagger
+ * /auth/refresh:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Rotate refresh token and issue a new access token
+ *     description: Uses the refresh cookie and returns a fresh access session.
+ *     responses:
+ *       200:
+ *         description: Session refreshed successfully
+ *       401:
+ *         description: Invalid, expired, or replayed refresh token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
+/**
+ * @swagger
+ * /auth/signout-all:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Sign out from all other sessions
+ *     description: Revokes all active refresh sessions except current one.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Other sessions revoked
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /auth/sessions:
+ *   get:
+ *     tags: [Auth]
+ *     summary: List current user sessions
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Sessions list returned
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /auth/sessions/{sessionId}:
+ *   delete:
+ *     tags: [Auth]
+ *     summary: Revoke a specific current-user session
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Refresh session document id
+ *     responses:
+ *       200:
+ *         description: Session revoked
+ *       404:
+ *         description: Session not found
+ */
+
+/**
+ * @swagger
+ * /auth/admin/users/{userId}/sessions:
+ *   get:
+ *     tags: [Auth]
+ *     summary: SuperAdmin list sessions for a user
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Target user id
+ *     responses:
+ *       200:
+ *         description: User sessions returned
+ *       403:
+ *         description: Permission denied
+ *       404:
+ *         description: User not found
+ */
+
+/**
+ * @swagger
+ * /auth/admin/users/{userId}/sessions/{sessionId}:
+ *   delete:
+ *     tags: [Auth]
+ *     summary: SuperAdmin revoke one user session
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User session revoked
+ *       403:
+ *         description: Permission denied
+ *       404:
+ *         description: Session not found
+ */
+
+/**
+ * @swagger
+ * /auth/admin/users/{userId}/sessions/revoke-all:
+ *   post:
+ *     tags: [Auth]
+ *     summary: SuperAdmin revoke all active sessions for a user
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: All user sessions revoked
+ *       403:
+ *         description: Permission denied
+ *       404:
+ *         description: User not found
+ */
+
