@@ -8,6 +8,7 @@
     "dev": "npx nodemon api/index.js",
     "start": "node api/index.js",
     "test": "node --test --test-concurrency=1 api/tests/*.test.js",
+    "test:e2e": "node --test --test-concurrency=1 api/tests/e2e-smoke.test.js",
     "test:coverage": "node --test --experimental-test-coverage --test-concurrency=1 api/tests/*.test.js",
     "migrate": "node api/migrations/migrate.js migrate",
     "migrate:rollback": "node api/migrations/migrate.js migrate:rollback",

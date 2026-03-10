@@ -8,10 +8,7 @@ import {
   findUserByEmailWithPassword,
   findUserById,
   findUserByUserName,
-  findUserRefreshTokenById,
-  listUserRefreshTokens,
   revokeRefreshFamily,
-  revokeUserRefreshTokens,
   createRefreshToken,
   createUser
 } from '../repositories/auth.repository.js';
@@ -36,9 +33,16 @@ import {
   REFRESH_COOKIE_NAME,
   resetSigninSecurityState,
   revokeRefreshTokenFromRequest,
-  signAccessToken,
-  toSessionView
+  signAccessToken
 } from '../services/auth.service.js';
+import {
+  getRefreshTokenFromRequest,
+  listSessionsForAdminTarget,
+  listSessionsForUser,
+  revokeAllSessionsForAdminTarget,
+  revokeAllSessionsForUser,
+  revokeSessionForUser
+} from '../services/authOperations.service.js';
 
 export const signup = async (req, res, next) => {
   try {
@@ -431,18 +435,12 @@ export const refreshSession = async (req, res, next) => {
 
 export const listSessions = async (req, res, next) => {
   try {
-    const tokenHash = req.cookies?.[REFRESH_COOKIE_NAME]
-      ? hashRefreshToken(req.cookies[REFRESH_COOKIE_NAME])
-      : null;
-
-    const sessions = await listUserRefreshTokens(
-      req.user.id,
-      '_id familyId createdAt lastUsedAt expiresAt createdByIp userAgent revokedAt revokedReason tokenHash'
-    );
-
     res.status(200).json({
       success: true,
-      data: sessions.map((session) => toSessionView(session, tokenHash))
+      data: await listSessionsForUser({
+        userId: req.user.id,
+        refreshToken: getRefreshTokenFromRequest(req)
+      })
     });
   } catch (error) {
     next(error);
@@ -456,20 +454,21 @@ export const revokeSessionById = async (req, res, next) => {
       return next(errorHandler(400, 'Invalid sessionId'));
     }
 
-    const session = await findUserRefreshTokenById(sessionId, req.user.id);
-    if (!session) {
+    const result = await revokeSessionForUser({
+      sessionId,
+      userId: req.user.id,
+      reason: 'manual_revoke'
+    });
+    if (result.status === 'not_found') {
       return next(errorHandler(404, 'Session not found'));
     }
-    if (session.revokedAt) {
+    if (result.status === 'already_revoked') {
       return res.status(200).json({
         success: true,
         message: 'Session already revoked'
       });
     }
 
-    session.revokedAt = new Date();
-    session.revokedReason = 'manual_revoke';
-    await session.save();
     await incrementSecurityEvent('sessions_revoked_single');
 
     await logAudit({
@@ -494,20 +493,14 @@ export const revokeSessionById = async (req, res, next) => {
 
 export const signoutAllSessions = async (req, res, next) => {
   try {
-    const currentTokenHash = req.cookies?.[REFRESH_COOKIE_NAME]
-      ? hashRefreshToken(req.cookies[REFRESH_COOKIE_NAME])
-      : null;
-
-    const filter = {
+    const result = await revokeAllSessionsForUser({
       userId: req.user.id,
-      revokedAt: null,
-      ...(currentTokenHash ? { tokenHash: { $ne: currentTokenHash } } : {})
-    };
-
-    const result = await revokeUserRefreshTokens(filter, 'signout_all');
+      refreshToken: getRefreshTokenFromRequest(req),
+      reason: 'signout_all'
+    });
     await incrementSecurityEvent(
       'sessions_revoked_all',
-      result.modifiedCount || 0
+      result.revokedCount
     );
 
     await logAudit({
@@ -518,7 +511,7 @@ export const signoutAllSessions = async (req, res, next) => {
       action: 'LOGOUT',
       before: null,
       after: {
-        revokedSessions: result.modifiedCount || 0,
+        revokedSessions: result.revokedCount,
         scope: 'all_other_sessions'
       },
       ipAddress: getClientIp(req)
@@ -528,7 +521,7 @@ export const signoutAllSessions = async (req, res, next) => {
       success: true,
       message: 'All other sessions revoked',
       data: {
-        revokedSessions: result.modifiedCount || 0
+        revokedSessions: result.revokedCount
       }
     });
   } catch (error) {
@@ -539,19 +532,14 @@ export const signoutAllSessions = async (req, res, next) => {
 export const adminListUserSessions = async (req, res, next) => {
   try {
     const { userId } = req.params;
-    const targetUser = await findUserById(userId, '_id');
-    if (!targetUser) {
+    const result = await listSessionsForAdminTarget({ userId });
+    if (result.status === 'not_found') {
       return next(errorHandler(404, 'User not found'));
     }
 
-    const sessions = await listUserRefreshTokens(
-      userId,
-      '_id familyId createdAt lastUsedAt expiresAt createdByIp userAgent revokedAt revokedReason'
-    );
-
     return res.status(200).json({
       success: true,
-      data: sessions.map((session) => toSessionView(session))
+      data: result.sessions
     });
   } catch (error) {
     next(error);
@@ -561,20 +549,21 @@ export const adminListUserSessions = async (req, res, next) => {
 export const adminRevokeUserSession = async (req, res, next) => {
   try {
     const { userId, sessionId } = req.params;
-    const session = await findUserRefreshTokenById(sessionId, userId);
-    if (!session) {
+    const result = await revokeSessionForUser({
+      sessionId,
+      userId,
+      reason: 'admin_revoke'
+    });
+    if (result.status === 'not_found') {
       return next(errorHandler(404, 'Session not found'));
     }
-    if (session.revokedAt) {
+    if (result.status === 'already_revoked') {
       return res.status(200).json({
         success: true,
         message: 'Session already revoked'
       });
     }
 
-    session.revokedAt = new Date();
-    session.revokedReason = 'admin_revoke';
-    await session.save();
     await incrementSecurityEvent('sessions_revoked_single');
 
     await logAudit({
@@ -600,17 +589,14 @@ export const adminRevokeUserSession = async (req, res, next) => {
 export const adminRevokeAllUserSessions = async (req, res, next) => {
   try {
     const { userId } = req.params;
-    const targetUser = await findUserById(userId, '_id');
-    if (!targetUser) {
+    const result = await revokeAllSessionsForAdminTarget({
+      userId,
+      reason: 'admin_revoke_all'
+    });
+    if (result.status === 'not_found') {
       return next(errorHandler(404, 'User not found'));
     }
-
-    const result = await revokeUserRefreshTokens(
-      { userId, revokedAt: null },
-      'admin_revoke_all'
-    );
-    const revokedCount = result.modifiedCount || 0;
-    await incrementSecurityEvent('sessions_revoked_all', revokedCount);
+    await incrementSecurityEvent('sessions_revoked_all', result.revokedCount);
 
     await logAudit({
       actorId: req.user.id,
@@ -619,7 +605,7 @@ export const adminRevokeAllUserSessions = async (req, res, next) => {
       entityId: userId,
       action: 'LOGOUT',
       before: null,
-      after: { revokedSessions: revokedCount, scope: 'admin_all' },
+      after: { revokedSessions: result.revokedCount, scope: 'admin_all' },
       ipAddress: getClientIp(req)
     });
 
@@ -627,7 +613,7 @@ export const adminRevokeAllUserSessions = async (req, res, next) => {
       success: true,
       message: 'All user sessions revoked',
       data: {
-        revokedSessions: revokedCount
+        revokedSessions: result.revokedCount
       }
     });
   } catch (error) {
