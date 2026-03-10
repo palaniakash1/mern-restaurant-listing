@@ -1,202 +1,44 @@
-import User from '../models/user.model.js';
-import bcryptjs from 'bcryptjs';
 import { errorHandler } from '../utils/error.js';
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
 import { logAudit } from '../utils/auditLogger.js';
 import { getClientIp, isValidObjectId } from '../utils/controllerHelpers.js';
-import RefreshToken from '../models/refreshToken.model.js';
 import { incrementSecurityEvent } from '../utils/securityTelemetry.js';
-import config, { isProduction } from '../config.js';
-
-const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9]).{8,}$/;
-
-const INVALID_CREDENTIALS_MESSAGE = 'Invalid email or password';
-const REFRESH_COOKIE_NAME = 'refresh_token';
-const ACCOUNT_LOCKED_MESSAGE =
-  'Account temporarily locked due to repeated failed login attempts';
-// Precomputed bcrypt hash for the string "password" to keep signin timing consistent.
-const DUMMY_PASSWORD_HASH =
-  '$2b$10$CwTycUXWue0Thq9StjUM0uJ8s7Qw6vY.fQ0M9f8Q5lHppZArYrusW';
-
-const buildCookieOptions = () => ({
-  httpOnly: true,
-  sameSite: 'lax',
-  secure: isProduction
-});
-
-const buildCsrfCookieOptions = () => ({
-  httpOnly: false,
-  sameSite: 'lax',
-  secure: isProduction
-});
-
-const toPositiveInt = (value, fallback) => {
-  const parsed = Number.parseInt(String(value || ''), 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-};
-const getRefreshTtlMs = () =>
-  toPositiveInt(process.env.REFRESH_TOKEN_TTL_DAYS, config.refreshTokenTtlDays) *
-  24 *
-  60 *
-  60 *
-  1000;
-
-const buildRefreshCookieOptions = () => ({
-  httpOnly: true,
-  sameSite: 'lax',
-  secure: isProduction,
-  maxAge: getRefreshTtlMs()
-});
-
-const issueCsrfToken = () => crypto.randomBytes(32).toString('hex');
-const issueRefreshTokenValue = () => crypto.randomBytes(48).toString('base64url');
-const hashRefreshToken = (token) =>
-  crypto.createHash('sha256').update(token).digest('hex');
-const getUserAgent = (req) =>
-  String(req.headers['user-agent'] || 'unknown').slice(0, 250);
-const getLockoutConfig = () => ({
-  threshold: toPositiveInt(
-    process.env.LOGIN_LOCKOUT_THRESHOLD,
-    config.loginLockout.threshold
-  ),
-  baseMs: toPositiveInt(
-    process.env.LOGIN_LOCKOUT_BASE_MS,
-    config.loginLockout.baseMs
-  ),
-  maxMs: toPositiveInt(
-    process.env.LOGIN_LOCKOUT_MAX_MS,
-    config.loginLockout.maxMs
-  )
-});
-const getActiveLockoutUntil = (user) => {
-  const lockoutUntil = user?.security?.lockoutUntil;
-  if (!(lockoutUntil instanceof Date) || Number.isNaN(lockoutUntil.getTime())) {
-    return null;
-  }
-
-  return lockoutUntil > new Date() ? lockoutUntil : null;
-};
-const resetSigninSecurityState = async (user) => {
-  user.security = {
-    ...user.security,
-    failedLoginAttempts: 0,
-    lockoutUntil: null,
-    lockoutCount: 0,
-    lastFailedLoginAt: null
-  };
-  await user.save();
-};
-const recordFailedSigninAttempt = async (user) => {
-  const config = getLockoutConfig();
-  const nextAttemptCount = (user.security?.failedLoginAttempts || 0) + 1;
-  const nextLockoutCount = user.security?.lockoutCount || 0;
-  const now = new Date();
-  const shouldLock = nextAttemptCount >= config.threshold;
-
-  user.security = {
-    ...user.security,
-    failedLoginAttempts: shouldLock ? 0 : nextAttemptCount,
-    lockoutUntil: shouldLock
-      ? new Date(
-        now.getTime() +
-            Math.min(config.baseMs * 2 ** nextLockoutCount, config.maxMs)
-      )
-      : null,
-    lockoutCount: shouldLock ? nextLockoutCount + 1 : nextLockoutCount,
-    lastFailedLoginAt: now
-  };
-
-  await user.save();
-
-  return {
-    locked: shouldLock,
-    attemptsRemaining: Math.max(config.threshold - nextAttemptCount, 0),
-    lockoutUntil: shouldLock ? user.security.lockoutUntil : null
-  };
-};
-
-const signAccessToken = (user) =>
-  jwt.sign(
-    {
-      id: user._id,
-      role: user.role
-    },
-    config.jwtSecret,
-    { expiresIn: config.jwtExpire }
-  );
-
-const storeRefreshToken = async ({
-  userId,
-  tokenValue,
-  familyId,
-  ipAddress,
-  userAgent
-}) => {
-  const tokenHash = hashRefreshToken(tokenValue);
-  const expiresAt = new Date(Date.now() + getRefreshTtlMs());
-  await RefreshToken.create({
-    userId,
-    tokenHash,
-    familyId,
-    expiresAt,
-    createdByIp: ipAddress || null,
-    userAgent: userAgent || null
-  });
-  return tokenHash;
-};
-
-const issueSession = async ({ req, res, user, familyId = null }) => {
-  const token = signAccessToken(user);
-  const csrfToken = issueCsrfToken();
-  const refreshTokenValue = issueRefreshTokenValue();
-  const tokenFamilyId = familyId || crypto.randomUUID();
-  await storeRefreshToken({
-    userId: user._id,
-    tokenValue: refreshTokenValue,
-    familyId: tokenFamilyId,
-    ipAddress: getClientIp(req),
-    userAgent: getUserAgent(req)
-  });
-  res
-    .cookie('access_token', token, buildCookieOptions())
-    .cookie('csrf_token', csrfToken, buildCsrfCookieOptions())
-    .cookie(REFRESH_COOKIE_NAME, refreshTokenValue, buildRefreshCookieOptions());
-  return { csrfToken };
-};
-
-const revokeRefreshTokenFromRequest = async (req, reason = 'signout') => {
-  const refreshToken = req.cookies?.[REFRESH_COOKIE_NAME];
-  if (!refreshToken) {
-    return;
-  }
-  const tokenHash = hashRefreshToken(refreshToken);
-  await RefreshToken.updateOne(
-    {
-      tokenHash,
-      revokedAt: null
-    },
-    {
-      $set: {
-        revokedAt: new Date(),
-        revokedReason: reason
-      }
-    }
-  );
-};
-
-const toSessionView = (tokenDoc, currentTokenHash = null) => ({
-  id: tokenDoc._id,
-  familyId: tokenDoc.familyId,
-  isCurrent: Boolean(currentTokenHash && tokenDoc.tokenHash === currentTokenHash),
-  createdAt: tokenDoc.createdAt,
-  lastUsedAt: tokenDoc.lastUsedAt,
-  expiresAt: tokenDoc.expiresAt,
-  createdByIp: tokenDoc.createdByIp || null,
-  userAgent: tokenDoc.userAgent || null,
-  revokedAt: tokenDoc.revokedAt,
-  revokedReason: tokenDoc.revokedReason || null
-});
+import {
+  findRefreshTokenByHash,
+  findUserByEmail,
+  findUserByEmailWithPassword,
+  findUserById,
+  findUserByUserName,
+  findUserRefreshTokenById,
+  listUserRefreshTokens,
+  revokeRefreshFamily,
+  revokeUserRefreshTokens,
+  createRefreshToken,
+  createUser
+} from '../repositories/auth.repository.js';
+import {
+  ACCOUNT_LOCKED_MESSAGE,
+  buildCookieOptions,
+  buildCsrfCookieOptions,
+  buildRefreshCookieOptions,
+  comparePassword,
+  DUMMY_PASSWORD_HASH,
+  getActiveLockoutUntil,
+  getRefreshTtlMs,
+  getUserAgent,
+  hashPassword,
+  hashRefreshToken,
+  INVALID_CREDENTIALS_MESSAGE,
+  issueCsrfToken,
+  issueRefreshTokenValue,
+  issueSession,
+  PASSWORD_REGEX,
+  recordFailedSigninAttempt,
+  REFRESH_COOKIE_NAME,
+  resetSigninSecurityState,
+  revokeRefreshTokenFromRequest,
+  signAccessToken,
+  toSessionView
+} from '../services/auth.service.js';
 
 export const signup = async (req, res, next) => {
   try {
@@ -238,9 +80,7 @@ export const signup = async (req, res, next) => {
     const normalizedUserName = userName.toLowerCase();
     const normalizedEmail = email.toLowerCase();
 
-    const existingUserName = await User.findOne({
-      userName: normalizedUserName
-    });
+    const existingUserName = await findUserByUserName(normalizedUserName);
     if (existingUserName) {
       return next(
         errorHandler(
@@ -250,7 +90,7 @@ export const signup = async (req, res, next) => {
       );
     }
 
-    const existingEmail = await User.findOne({ email: normalizedEmail });
+    const existingEmail = await findUserByEmail(normalizedEmail);
     if (existingEmail) {
       return next(
         errorHandler(
@@ -260,16 +100,12 @@ export const signup = async (req, res, next) => {
       );
     }
 
-    const hashedPassword = bcryptjs.hashSync(password, 10);
-
-    const newUser = new User({
+    const newUser = await createUser({
       userName: normalizedUserName,
       email: normalizedEmail,
-      password: hashedPassword,
+      password: hashPassword(password),
       role: 'user'
     });
-
-    await newUser.save();
 
     await logAudit({
       actorId: newUser._id,
@@ -313,12 +149,10 @@ export const signin = async (req, res, next) => {
 
     const normalizedEmail = email.toLowerCase();
 
-    const validUser = await User.findOne({ email: normalizedEmail }).select(
-      '+password'
-    );
+    const validUser = await findUserByEmailWithPassword(normalizedEmail);
 
     if (!validUser) {
-      bcryptjs.compareSync(password, DUMMY_PASSWORD_HASH);
+      comparePassword(password, DUMMY_PASSWORD_HASH);
       await incrementSecurityEvent('login_failed');
       await logAudit({
         actorId: null,
@@ -372,7 +206,7 @@ export const signin = async (req, res, next) => {
       await resetSigninSecurityState(validUser);
     }
 
-    const validPassword = bcryptjs.compareSync(password, validUser.password);
+    const validPassword = comparePassword(password, validUser.password);
     if (!validPassword) {
       await incrementSecurityEvent('login_failed');
       const failureResult = await recordFailedSigninAttempt(validUser);
@@ -387,7 +221,9 @@ export const signin = async (req, res, next) => {
         action: 'LOGIN_FAILED',
         before: {
           email: validUser.email,
-          reason: failureResult.locked ? 'lockout_threshold_reached' : 'invalid_password',
+          reason: failureResult.locked
+            ? 'lockout_threshold_reached'
+            : 'invalid_password',
           attemptsRemaining: failureResult.attemptsRemaining,
           lockoutUntil: failureResult.lockoutUntil?.toISOString() || null
         },
@@ -398,7 +234,9 @@ export const signin = async (req, res, next) => {
       return next(
         errorHandler(
           failureResult.locked ? 423 : 401,
-          failureResult.locked ? ACCOUNT_LOCKED_MESSAGE : INVALID_CREDENTIALS_MESSAGE
+          failureResult.locked
+            ? ACCOUNT_LOCKED_MESSAGE
+            : INVALID_CREDENTIALS_MESSAGE
         )
       );
     }
@@ -443,7 +281,7 @@ export const google = async (req, res, next) => {
     }
 
     const normalizedEmail = email.toLowerCase();
-    const user = await User.findOne({ email: normalizedEmail });
+    const user = await findUserByEmail(normalizedEmail);
 
     if (user) {
       if (!user.isActive) {
@@ -453,35 +291,27 @@ export const google = async (req, res, next) => {
       const rest = user.toObject();
       delete rest.password;
 
-      return res
-        .status(200)
-        .json({ ...rest, csrfToken });
+      return res.status(200).json({ ...rest, csrfToken });
     }
 
     const generatedPassword =
       Math.random().toString(36).slice(-8) +
       Math.random().toString(36).slice(-8);
-    const hashedPassword = bcryptjs.hashSync(generatedPassword, 10);
-
-    const newUser = new User({
+    const newUser = await createUser({
       userName:
         (name || 'user').toLowerCase().split(' ').join('') +
         Math.random().toString(9).slice(-4),
       email: normalizedEmail,
-      password: hashedPassword,
+      password: hashPassword(generatedPassword),
       profilePicture: googlePhotoUrl,
       role: 'user'
     });
-
-    await newUser.save();
 
     const { csrfToken } = await issueSession({ req, res, user: newUser });
     const rest = newUser.toObject();
     delete rest.password;
 
-    return res
-      .status(200)
-      .json({ ...rest, csrfToken });
+    return res.status(200).json({ ...rest, csrfToken });
   } catch (error) {
     next(error);
   }
@@ -528,7 +358,7 @@ export const refreshSession = async (req, res, next) => {
     }
 
     const tokenHash = hashRefreshToken(refreshToken);
-    const tokenDoc = await RefreshToken.findOne({ tokenHash });
+    const tokenDoc = await findRefreshTokenByHash(tokenHash);
     if (!tokenDoc) {
       await incrementSecurityEvent('refresh_invalid');
       return next(errorHandler(401, 'Invalid refresh token'));
@@ -539,20 +369,12 @@ export const refreshSession = async (req, res, next) => {
     }
 
     if (tokenDoc.revokedAt) {
-      await RefreshToken.updateMany(
-        { familyId: tokenDoc.familyId, revokedAt: null },
-        {
-          $set: {
-            revokedAt: new Date(),
-            revokedReason: 'replay_detected'
-          }
-        }
-      );
+      await revokeRefreshFamily(tokenDoc.familyId, 'replay_detected');
       await incrementSecurityEvent('refresh_replay_detected');
       return next(errorHandler(401, 'Refresh token replay detected'));
     }
 
-    const user = await User.findById(tokenDoc.userId);
+    const user = await findUserById(tokenDoc.userId);
     if (!user || !user.isActive) {
       return next(errorHandler(401, 'User not found or inactive'));
     }
@@ -566,7 +388,7 @@ export const refreshSession = async (req, res, next) => {
     tokenDoc.lastUsedAt = now;
     await tokenDoc.save();
 
-    await RefreshToken.create({
+    await createRefreshToken({
       userId: user._id,
       tokenHash: nextHash,
       familyId: tokenDoc.familyId,
@@ -595,7 +417,11 @@ export const refreshSession = async (req, res, next) => {
     return res
       .cookie('access_token', accessToken, buildCookieOptions())
       .cookie('csrf_token', csrfToken, buildCsrfCookieOptions())
-      .cookie(REFRESH_COOKIE_NAME, nextRefreshToken, buildRefreshCookieOptions())
+      .cookie(
+        REFRESH_COOKIE_NAME,
+        nextRefreshToken,
+        buildRefreshCookieOptions()
+      )
       .status(200)
       .json({ ...rest, csrfToken });
   } catch (error) {
@@ -609,14 +435,10 @@ export const listSessions = async (req, res, next) => {
       ? hashRefreshToken(req.cookies[REFRESH_COOKIE_NAME])
       : null;
 
-    const sessions = await RefreshToken.find({
-      userId: req.user.id
-    })
-      .sort({ createdAt: -1 })
-      .select(
-        '_id familyId createdAt lastUsedAt expiresAt createdByIp userAgent revokedAt revokedReason tokenHash'
-      )
-      .lean();
+    const sessions = await listUserRefreshTokens(
+      req.user.id,
+      '_id familyId createdAt lastUsedAt expiresAt createdByIp userAgent revokedAt revokedReason tokenHash'
+    );
 
     res.status(200).json({
       success: true,
@@ -634,10 +456,7 @@ export const revokeSessionById = async (req, res, next) => {
       return next(errorHandler(400, 'Invalid sessionId'));
     }
 
-    const session = await RefreshToken.findOne({
-      _id: sessionId,
-      userId: req.user.id
-    });
+    const session = await findUserRefreshTokenById(sessionId, req.user.id);
     if (!session) {
       return next(errorHandler(404, 'Session not found'));
     }
@@ -685,13 +504,11 @@ export const signoutAllSessions = async (req, res, next) => {
       ...(currentTokenHash ? { tokenHash: { $ne: currentTokenHash } } : {})
     };
 
-    const result = await RefreshToken.updateMany(filter, {
-      $set: {
-        revokedAt: new Date(),
-        revokedReason: 'signout_all'
-      }
-    });
-    await incrementSecurityEvent('sessions_revoked_all', result.modifiedCount || 0);
+    const result = await revokeUserRefreshTokens(filter, 'signout_all');
+    await incrementSecurityEvent(
+      'sessions_revoked_all',
+      result.modifiedCount || 0
+    );
 
     await logAudit({
       actorId: req.user.id,
@@ -700,7 +517,10 @@ export const signoutAllSessions = async (req, res, next) => {
       entityId: req.user.id,
       action: 'LOGOUT',
       before: null,
-      after: { revokedSessions: result.modifiedCount || 0, scope: 'all_other_sessions' },
+      after: {
+        revokedSessions: result.modifiedCount || 0,
+        scope: 'all_other_sessions'
+      },
       ipAddress: getClientIp(req)
     });
 
@@ -719,19 +539,15 @@ export const signoutAllSessions = async (req, res, next) => {
 export const adminListUserSessions = async (req, res, next) => {
   try {
     const { userId } = req.params;
-    const targetUser = await User.findById(userId).select('_id');
+    const targetUser = await findUserById(userId, '_id');
     if (!targetUser) {
       return next(errorHandler(404, 'User not found'));
     }
 
-    const sessions = await RefreshToken.find({
-      userId
-    })
-      .sort({ createdAt: -1 })
-      .select(
-        '_id familyId createdAt lastUsedAt expiresAt createdByIp userAgent revokedAt revokedReason'
-      )
-      .lean();
+    const sessions = await listUserRefreshTokens(
+      userId,
+      '_id familyId createdAt lastUsedAt expiresAt createdByIp userAgent revokedAt revokedReason'
+    );
 
     return res.status(200).json({
       success: true,
@@ -745,10 +561,7 @@ export const adminListUserSessions = async (req, res, next) => {
 export const adminRevokeUserSession = async (req, res, next) => {
   try {
     const { userId, sessionId } = req.params;
-    const session = await RefreshToken.findOne({
-      _id: sessionId,
-      userId
-    });
+    const session = await findUserRefreshTokenById(sessionId, userId);
     if (!session) {
       return next(errorHandler(404, 'Session not found'));
     }
@@ -787,19 +600,14 @@ export const adminRevokeUserSession = async (req, res, next) => {
 export const adminRevokeAllUserSessions = async (req, res, next) => {
   try {
     const { userId } = req.params;
-    const targetUser = await User.findById(userId).select('_id');
+    const targetUser = await findUserById(userId, '_id');
     if (!targetUser) {
       return next(errorHandler(404, 'User not found'));
     }
 
-    const result = await RefreshToken.updateMany(
+    const result = await revokeUserRefreshTokens(
       { userId, revokedAt: null },
-      {
-        $set: {
-          revokedAt: new Date(),
-          revokedReason: 'admin_revoke_all'
-        }
-      }
+      'admin_revoke_all'
     );
     const revokedCount = result.modifiedCount || 0;
     await incrementSecurityEvent('sessions_revoked_all', revokedCount);
@@ -829,7 +637,8 @@ export const adminRevokeAllUserSessions = async (req, res, next) => {
 
 export const getSession = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id).select(
+    const user = await findUserById(
+      req.user.id,
       '_id userName email role restaurantId profilePicture isActive'
     );
     if (!user) {
@@ -864,7 +673,7 @@ export const changePassword = async (req, res, next) => {
       );
     }
 
-    const user = await User.findById(req.user.id).select('+password');
+    const user = await findUserById(req.user.id, '+password');
     if (!user) {
       return next(errorHandler(404, 'User not found'));
     }
@@ -873,7 +682,7 @@ export const changePassword = async (req, res, next) => {
       return next(errorHandler(403, 'User account is inactive'));
     }
 
-    const validCurrentPassword = bcryptjs.compareSync(
+    const validCurrentPassword = comparePassword(
       currentPassword,
       user.password
     );
@@ -891,7 +700,7 @@ export const changePassword = async (req, res, next) => {
       return next(errorHandler(401, 'Current password is invalid'));
     }
 
-    user.password = bcryptjs.hashSync(newPassword, 10);
+    user.password = hashPassword(newPassword);
     await user.save();
 
     await logAudit({
