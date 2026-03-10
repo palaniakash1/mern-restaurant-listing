@@ -35,6 +35,7 @@ import {
 } from './middlewares/metrics.js';
 import { createCookieCsrfGuard } from './middlewares/csrfProtection.js';
 import { verifyToken } from './utils/verifyUser.js';
+import { tracingMiddleware } from './tracing.js';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -42,6 +43,9 @@ app.disable('x-powered-by');
 
 // Request logging middleware (at the top)
 app.use(createRequestLogger());
+
+// Tracing middleware (after request logging)
+app.use(tracingMiddleware);
 
 const allowedOrigins = config.corsOrigins;
 

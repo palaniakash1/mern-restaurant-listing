@@ -1,8 +1,8 @@
 import bcryptjs from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 
 import config, { isProduction } from '../config.js';
+import jwtRotationService from './jwtRotation.service.js';
 import {
   createRefreshToken,
   revokeActiveRefreshTokenByHash,
@@ -130,13 +130,15 @@ export const recordFailedSigninAttempt = async (user) => {
 };
 
 export const signAccessToken = (user) =>
-  jwt.sign(
+  jwtRotationService.signToken(
     {
       id: user._id,
       role: user.role
     },
-    config.jwtSecret,
-    { expiresIn: config.jwtExpire }
+    {
+      expiresIn: config.jwtExpire,
+      fallbackSecret: config.jwtSecret
+    }
   );
 
 export const hashPassword = (password) => bcryptjs.hashSync(password, 10);

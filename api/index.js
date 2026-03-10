@@ -2,8 +2,10 @@ import mongoose from 'mongoose';
 import { clearTimeout, setTimeout } from 'node:timers';
 import app from './app.js';
 import config from './config.js';
+import { initTracing, shutdownTracing } from './tracing.js';
 import { closeRedis, initRedis } from './utils/redisCache.js';
 import { logger } from './utils/logger.js';
+import jwtRotationService from './services/jwtRotation.service.js';
 
 let server;
 let isShuttingDown = false;
@@ -41,6 +43,7 @@ const gracefulShutdown = async (signal) => {
     await closeServer();
     await mongoose.connection.close();
     await closeRedis();
+    await shutdownTracing();
     clearTimeout(forceShutdownTimer);
     logger.info('server.shutdown.complete', { signal });
     process.exit(0);
@@ -56,6 +59,8 @@ const gracefulShutdown = async (signal) => {
 
 const startServer = async () => {
   try {
+    await initTracing();
+    await jwtRotationService.ready;
     await mongoose.connect(config.databaseUrl);
     logger.info('mongo.connected', {});
 
@@ -69,6 +74,7 @@ const startServer = async () => {
   } catch (error) {
     logger.error('server.startup.error', { error: error.message });
     await closeRedis();
+    await shutdownTracing();
     process.exit(1);
   }
 };

@@ -146,7 +146,7 @@ test('auth operations service supports admin target listing and bulk revoke', as
     reason: 'admin_revoke_all'
   });
   const missing = await listSessionsForAdminTarget({
-    userId: (await createUser())._id.toString().replace(/.$/, '0')
+    userId: new mongoose.Types.ObjectId().toString()
   });
 
   assert.equal(listed.status, 'ok');
@@ -163,3 +163,4 @@ test('auth operations service reads refresh token from request cookies', () => {
   );
   assert.equal(getRefreshTokenFromRequest({ cookies: {} }), null);
 });
+import mongoose from 'mongoose';

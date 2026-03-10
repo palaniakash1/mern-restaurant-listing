@@ -4,6 +4,7 @@ import { can } from '../utils/policy.js';
 import { createUserBySuperAdmin } from '../controllers/admin.controller.js';
 import { validate } from '../middlewares/validate.js';
 import { adminValidators } from '../validators/index.js';
+import jwtAdminRoutes from './admin.jwt.route.js';
 
 const router = express.Router();
 
@@ -39,4 +40,8 @@ router.post(
   validate(adminValidators.createPrivilegedUser),
   createUserBySuperAdmin
 );
+
+// JWT Management routes
+router.use('/jwt', jwtAdminRoutes);
+
 export default router;

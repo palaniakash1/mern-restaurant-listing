@@ -1,7 +1,7 @@
-import jwt from 'jsonwebtoken';
 import User from '../models/user.model.js';
 import { errorHandler } from './error.js';
 import config from '../config.js';
+import jwtRotationService from '../services/jwtRotation.service.js';
 
 export const verifyToken = async (req, res, next) => {
   try {
@@ -28,7 +28,9 @@ export const verifyToken = async (req, res, next) => {
       return next(errorHandler(401, 'Authentication token missing'));
     }
 
-    const decoded = jwt.verify(token, config.jwtSecret);
+    const decoded = jwtRotationService.verifyToken(token, {
+      fallbackSecret: config.jwtSecret
+    });
 
     // FETCH FRESH USER DATA
     const user = await User.findById(decoded.id).select(
