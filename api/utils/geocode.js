@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { errorHandler } from './error.js';
+import config from '../config.js';
 
 export const geocodeAddress = async ({
   addressLine1,
@@ -8,6 +9,10 @@ export const geocodeAddress = async ({
   postcode,
   country
 }) => {
+  if (!config.googleMapsApiKey) {
+    throw errorHandler(503, 'Geocoding service is not configured');
+  }
+
   const fullAddress = `${addressLine1}, ${areaLocality}, ${city}, ${postcode}, ${country}`;
 
   const response = await axios.get(
@@ -15,7 +20,7 @@ export const geocodeAddress = async ({
     {
       params: {
         address: fullAddress,
-        key: process.env.GOOGLE_MAPS_API_KEY
+        key: config.googleMapsApiKey
       }
     }
   );

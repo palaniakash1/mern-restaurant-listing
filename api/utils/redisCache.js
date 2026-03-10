@@ -1,9 +1,9 @@
 import Redis from 'ioredis';
 import { logger } from './logger.js';
+import config from '../config.js';
 
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
-const CACHE_TTL = parseInt(process.env.CACHE_TTL || '300', 10);
-const REDIS_CONNECT_TIMEOUT = 2000;
+const CACHE_TTL = config.redis.cacheTtlSeconds;
+const REDIS_CONNECT_TIMEOUT = config.redis.connectTimeoutMs;
 
 const memoryCache = new Map();
 const memoryCacheTTL = new Map();
@@ -36,14 +36,15 @@ const toSafeJson = (value) => {
 };
 
 export const initRedis = async () => {
-  if (!REDIS_URL || REDIS_URL.trim() === '') {
+  const redisUrl = config.redis.url;
+  if (!redisUrl) {
     logger.info('redis.disabled', { reason: 'missing REDIS_URL' });
     isRedisAvailable = false;
     return false;
   }
 
   try {
-    redisClient = new Redis(REDIS_URL, {
+    redisClient = new Redis(redisUrl, {
       maxRetriesPerRequest: 1,
       retryStrategy: () => null,
       connectTimeout: REDIS_CONNECT_TIMEOUT,
@@ -75,6 +76,27 @@ export const initRedis = async () => {
     isRedisAvailable = false;
     logger.warn('redis.unavailable', { error: error.message, fallback: 'memory' });
     return false;
+  }
+};
+
+export const closeRedis = async () => {
+  if (!redisClient) {
+    isRedisAvailable = false;
+    return;
+  }
+
+  try {
+    await redisClient.quit();
+  } catch (error) {
+    logger.warn('redis.quit.error', { error: error.message });
+    try {
+      redisClient.disconnect();
+    } catch {
+      // Ignore disconnect cleanup failures during shutdown.
+    }
+  } finally {
+    redisClient = null;
+    isRedisAvailable = false;
   }
 };
 
@@ -290,6 +312,7 @@ export const deleteKey = async (key) => {
 
 export default {
   initRedis,
+  closeRedis,
   isRedisConnected,
   getRedisClient,
   get,

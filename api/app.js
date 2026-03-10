@@ -1,6 +1,7 @@
 import express from 'express';
 import crypto from 'crypto';
 import cookieParser from 'cookie-parser';
+import config from './config.js';
 
 // Routes
 import userRouter from './routes/user.route.js';
@@ -42,10 +43,7 @@ app.disable('x-powered-by');
 // Request logging middleware (at the top)
 app.use(createRequestLogger());
 
-const allowedOrigins = (process.env.CORS_ORIGINS || '')
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+const allowedOrigins = config.corsOrigins;
 
 app.use((req, res, next) => {
   req.requestId = req.headers['x-request-id'] || crypto.randomUUID();
@@ -88,10 +86,13 @@ app.get('/api/ready', createReadinessProbe());
 // Metrics endpoint
 app.use(metricsMiddleware);
 const metricsAccessGuard = (req, res, next) => {
-  const configuredToken = process.env.METRICS_TOKEN;
-  if (configuredToken) {
+  const configuredMetricsToken = config.metricsToken;
+  if (configuredMetricsToken) {
     const suppliedToken = req.headers['x-metrics-token'];
-    if (typeof suppliedToken === 'string' && suppliedToken === configuredToken) {
+    if (
+      typeof suppliedToken === 'string' &&
+      suppliedToken === configuredMetricsToken
+    ) {
       return next();
     }
     return res.status(401).json({ success: false, message: 'Unauthorized' });

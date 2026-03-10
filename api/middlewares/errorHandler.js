@@ -4,6 +4,7 @@
  */
 
 import mongoose from 'mongoose';
+import { isProduction } from '../config.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -25,7 +26,7 @@ const isOperationalError = (error) => {
  */
 const sanitizeErrorMessage = (error) => {
   // Don't expose internal error details in production
-  if (process.env.NODE_ENV === 'production') {
+  if (isProduction) {
     // Keep custom error messages
     if (error.isOperational) {
       return error.message;
@@ -86,7 +87,7 @@ export const createErrorHandler = (options = {}) => {
         requestId,
         errorType,
         message: err.message,
-        stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined,
+        stack: !isProduction ? err.stack : undefined,
         path: req.path,
         method: req.method,
         statusCode: err.statusCode || 500,
@@ -176,7 +177,7 @@ export const createErrorHandler = (options = {}) => {
       statusCode,
       error: errorType,
       message,
-      ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+      ...(!isProduction && { stack: err.stack })
     });
   };
 };

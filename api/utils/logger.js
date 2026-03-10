@@ -1,14 +1,6 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import config, { isTest } from '../config.js';
 
 const LOG_LEVELS = ['debug', 'info', 'warn', 'error'];
-const DEFAULT_LEVEL = process.env.LOG_LEVEL || 'info';
-const LOG_DIR = path.join(__dirname, '..', 'logs');
-const LOG_FILE = path.join(LOG_DIR, 'app.log');
 const MAX_LOG_BUFFER = 1000;
 
 const levelWeight = {
@@ -18,30 +10,10 @@ const levelWeight = {
   error: 40
 };
 
-const runningInTest = process.env.NODE_ENV === 'test' || process.argv.includes('--test');
-const shouldWriteToConsole = !runningInTest;
-const runtimeLevel = LOG_LEVELS.includes(DEFAULT_LEVEL) ? DEFAULT_LEVEL : 'info';
-let logStream = null;
+const runtimeLevel = LOG_LEVELS.includes(config.logLevel)
+  ? config.logLevel
+  : 'info';
 const recentLogs = [];
-
-const ensureLogStream = () => {
-  if (runningInTest) {
-    return null;
-  }
-
-  if (!fs.existsSync(LOG_DIR)) {
-    fs.mkdirSync(LOG_DIR, { recursive: true });
-  }
-
-  if (!logStream) {
-    logStream = fs.createWriteStream(LOG_FILE, { flags: 'a', encoding: 'utf8' });
-    logStream.on('error', () => {
-      logStream = null;
-    });
-  }
-
-  return logStream;
-};
 
 const truncate = (value, max = 256) => {
   if (typeof value !== 'string') {
@@ -66,9 +38,11 @@ const redactValue = (key, value) => {
   }
 
   if (Array.isArray(value)) {
-    return value.slice(0, 50).map((item) =>
-      typeof item === 'object' && item !== null ? sanitize(item) : item
-    );
+    return value
+      .slice(0, 50)
+      .map((item) =>
+        typeof item === 'object' && item !== null ? sanitize(item) : item
+      );
   }
 
   if (value && typeof value === 'object') {
@@ -100,16 +74,15 @@ const pushRecentLog = (entry) => {
 const canLog = (level) => levelWeight[level] >= levelWeight[runtimeLevel];
 
 const writeEntry = (entry) => {
-  const serialized = `${JSON.stringify(entry)}\n`;
-  const stream = ensureLogStream();
-  if (stream) {
-    stream.write(serialized);
+  if (isTest) {
+    return;
   }
-  if (shouldWriteToConsole) {
-    const consoleMethod = entry.level === 'error' ? 'error' : entry.level === 'warn' ? 'warn' : 'log';
-    // eslint-disable-next-line no-console
-    console[consoleMethod](serialized.trim());
-  }
+
+  const serialized = JSON.stringify(entry);
+  const consoleMethod =
+    entry.level === 'error' ? 'error' : entry.level === 'warn' ? 'warn' : 'log';
+  // eslint-disable-next-line no-console
+  console[consoleMethod](serialized);
 };
 
 const baseLog = (level, message, metadata = {}) => {
@@ -121,6 +94,8 @@ const baseLog = (level, message, metadata = {}) => {
     timestamp: new Date().toISOString(),
     level,
     message: truncate(String(message || ''), 2000),
+    service: config.appName,
+    environment: config.env,
     ...sanitize(metadata)
   };
 

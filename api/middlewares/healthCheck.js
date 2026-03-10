@@ -4,7 +4,8 @@
  */
 
 import mongoose from 'mongoose';
-import { createClient } from 'redis';
+import config from '../config.js';
+import { isRedisConnected } from '../utils/redisCache.js';
 
 /**
  * Checks MongoDB connection status
@@ -91,8 +92,8 @@ export const createHealthCheck = (options = {}) => {
     const health = {
       status: 'ok',
       timestamp: new Date().toISOString(),
-      service: process.env.APP_NAME || 'mern-restaurant',
-      version: process.env.APP_VERSION || '1.0.0'
+      service: config.appName,
+      version: config.appVersion
     };
 
     let overallStatus = 'ok';
@@ -144,33 +145,26 @@ export const createHealthCheck = (options = {}) => {
 // New functions for enhanced environment testing
 const validateEnvironment = () => {
   const requiredEnvVars = [
-    'NODE_ENV',
-    'PORT',
     'JWT_SECRET',
-    'APP_NAME',
-    'APP_VERSION'
+    'DATABASE_URL'
   ];
 
-  const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
-  if (!process.env.DATABASE_URL && !process.env.MONGO) {
-    missingVars.push('DATABASE_URL');
-  }
+  const missingVars = requiredEnvVars.filter((varName) => {
+    if (varName === 'JWT_SECRET') return !config.jwtSecret;
+    if (varName === 'DATABASE_URL') return !config.databaseUrl;
+    return false;
+  });
   const warnings = [];
 
-  // Check for common issues
-  if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
-    warnings.push('JWT_SECRET is required in production');
-  }
-
-  if (process.env.NODE_ENV === 'development' && process.env.NODE_ENV === 'test') {
-    warnings.push('NODE_ENV should not be both development and test');
+  if (!config.googleMapsApiKey) {
+    warnings.push('GOOGLE_MAPS_API_KEY not configured; address geocoding will fail');
   }
 
   return {
     valid: missingVars.length === 0,
     missing: missingVars,
     warnings,
-    nodeEnv: process.env.NODE_ENV,
+    nodeEnv: config.env,
     warningsCount: warnings.length
   };
 };
@@ -184,27 +178,19 @@ const checkDependencies = async () => {
   };
 
   // Check Redis (if configured)
-  if (process.env.REDIS_URL) {
-    let client;
-    try {
-      client = createClient({ url: process.env.REDIS_URL });
-      await client.connect();
-      await client.ping();
-      results.checks.redis = { status: 'healthy', latency: Date.now() - startTime };
-    } catch (error) {
-      results.checks.redis = { status: 'unhealthy', error: error.message };
+  if (config.redis.url) {
+    results.checks.redis = {
+      status: isRedisConnected() ? 'healthy' : 'degraded'
+    };
+    if (!isRedisConnected()) {
       results.healthy = false;
-    } finally {
-      if (client?.isOpen) {
-        await client.quit();
-      }
     }
   }
 
   // Check external services (example: email service)
-  if (process.env.EMAIL_SERVICE_URL) {
+  if (config.emailServiceUrl) {
     try {
-      const response = await fetch(process.env.EMAIL_SERVICE_URL, {
+      const response = await fetch(config.emailServiceUrl, {
         method: 'HEAD',
         signal: AbortSignal.timeout(3000)
       });

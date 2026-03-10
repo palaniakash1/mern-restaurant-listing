@@ -7,6 +7,7 @@ import { logAudit } from '../utils/auditLogger.js';
 import { getClientIp, isValidObjectId } from '../utils/controllerHelpers.js';
 import RefreshToken from '../models/refreshToken.model.js';
 import { incrementSecurityEvent } from '../utils/securityTelemetry.js';
+import config, { isProduction } from '../config.js';
 
 const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9]).{8,}$/;
 
@@ -21,25 +22,30 @@ const DUMMY_PASSWORD_HASH =
 const buildCookieOptions = () => ({
   httpOnly: true,
   sameSite: 'lax',
-  secure: process.env.NODE_ENV === 'production'
+  secure: isProduction
 });
 
 const buildCsrfCookieOptions = () => ({
   httpOnly: false,
   sameSite: 'lax',
-  secure: process.env.NODE_ENV === 'production'
+  secure: isProduction
 });
 
-const getRefreshTtlMs = () => {
-  const days = Number.parseInt(process.env.REFRESH_TOKEN_TTL_DAYS || '14', 10);
-  const validDays = Number.isFinite(days) && days > 0 ? days : 14;
-  return validDays * 24 * 60 * 60 * 1000;
+const toPositiveInt = (value, fallback) => {
+  const parsed = Number.parseInt(String(value || ''), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 };
+const getRefreshTtlMs = () =>
+  toPositiveInt(process.env.REFRESH_TOKEN_TTL_DAYS, config.refreshTokenTtlDays) *
+  24 *
+  60 *
+  60 *
+  1000;
 
 const buildRefreshCookieOptions = () => ({
   httpOnly: true,
   sameSite: 'lax',
-  secure: process.env.NODE_ENV === 'production',
+  secure: isProduction,
   maxAge: getRefreshTtlMs()
 });
 
@@ -49,14 +55,19 @@ const hashRefreshToken = (token) =>
   crypto.createHash('sha256').update(token).digest('hex');
 const getUserAgent = (req) =>
   String(req.headers['user-agent'] || 'unknown').slice(0, 250);
-const toPositiveInt = (value, fallback) => {
-  const parsed = Number.parseInt(String(value || ''), 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-};
 const getLockoutConfig = () => ({
-  threshold: toPositiveInt(process.env.LOGIN_LOCKOUT_THRESHOLD, 5),
-  baseMs: toPositiveInt(process.env.LOGIN_LOCKOUT_BASE_MS, 15 * 60 * 1000),
-  maxMs: toPositiveInt(process.env.LOGIN_LOCKOUT_MAX_MS, 24 * 60 * 60 * 1000)
+  threshold: toPositiveInt(
+    process.env.LOGIN_LOCKOUT_THRESHOLD,
+    config.loginLockout.threshold
+  ),
+  baseMs: toPositiveInt(
+    process.env.LOGIN_LOCKOUT_BASE_MS,
+    config.loginLockout.baseMs
+  ),
+  maxMs: toPositiveInt(
+    process.env.LOGIN_LOCKOUT_MAX_MS,
+    config.loginLockout.maxMs
+  )
 });
 const getActiveLockoutUntil = (user) => {
   const lockoutUntil = user?.security?.lockoutUntil;
@@ -111,8 +122,8 @@ const signAccessToken = (user) =>
       id: user._id,
       role: user.role
     },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRE || process.env.ACCESS_TOKEN_EXPIRE || '1h' }
+    config.jwtSecret,
+    { expiresIn: config.jwtExpire }
   );
 
 const storeRefreshToken = async ({
