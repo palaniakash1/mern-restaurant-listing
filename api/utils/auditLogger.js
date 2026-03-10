@@ -1,5 +1,6 @@
 import AuditLog from '../models/auditLog.model.js';
 import { sanitizeAuditData } from './sanitizeAuditData.js';
+import { logger } from './logger.js';
 
 export const logAudit = async ({
   actorId = null,
@@ -32,6 +33,6 @@ export const logAudit = async ({
     await AuditLog.create(payload);
   } catch (error) {
     // DO NOT throw - audit logs must never break business logic.
-    console.error('Audit log failed:', error.message);
+    logger.error('audit.log.failed', { error: error.message });
   }
 };

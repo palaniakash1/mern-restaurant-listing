@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Sample Seed: Create test users
  */

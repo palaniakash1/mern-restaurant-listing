@@ -412,7 +412,8 @@ export const signin = async (req, res, next) => {
     }
 
     const { csrfToken } = await issueSession({ req, res, user: validUser });
-    const { password: pass, ...rest } = validUser._doc;
+    const rest = validUser.toObject();
+    delete rest.password;
 
     await logAudit({
       actorId: validUser._id,
@@ -449,7 +450,8 @@ export const google = async (req, res, next) => {
         return next(errorHandler(403, 'User account is inactive'));
       }
       const { csrfToken } = await issueSession({ req, res, user });
-      const { password, ...rest } = user._doc;
+      const rest = user.toObject();
+      delete rest.password;
 
       return res
         .status(200)
@@ -474,7 +476,8 @@ export const google = async (req, res, next) => {
     await newUser.save();
 
     const { csrfToken } = await issueSession({ req, res, user: newUser });
-    const { password, ...rest } = newUser._doc;
+    const rest = newUser.toObject();
+    delete rest.password;
 
     return res
       .status(200)
@@ -575,7 +578,8 @@ export const refreshSession = async (req, res, next) => {
 
     const accessToken = signAccessToken(user);
     const csrfToken = issueCsrfToken();
-    const { password: pass, ...rest } = user._doc;
+    const rest = user.toObject();
+    delete rest.password;
 
     await logAudit({
       actorId: user._id,

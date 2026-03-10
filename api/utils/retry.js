@@ -1,14 +1,9 @@
+import { setTimeout as delay } from 'node:timers/promises';
+
 /**
  * Retry Logic and Circuit Breaker Utilities
  * Provides robust error handling for database operations
  */
-
-/**
- * Simple delay function
- * @param {number} ms - Milliseconds to delay
- * @returns {Promise} Promise that resolves after delay
- */
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * Exponential backoff calculator

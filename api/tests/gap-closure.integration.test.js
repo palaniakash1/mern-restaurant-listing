@@ -106,7 +106,7 @@ describe('Gap closure integration', { concurrency: false }, () => {
   });
 
   it('should cover remaining users endpoints', async () => {
-    const { superAdmin, admin, tokens } = await createActors();
+    const { admin, tokens } = await createActors();
     const restaurant = await Restaurant.create(
       restaurantPayload('Gap User Restaurant', admin._id)
     );

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Secret Scanner Utility
  * Scans code for potential hardcoded secrets

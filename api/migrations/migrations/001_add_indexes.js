@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Sample Migration: Add indexes to improve performance
  */
@@ -16,7 +17,7 @@ export const up = async (db) => {
   console.log('✅ Indexes created');
 };
 
-export const down = async (db) => {
+export const down = async () => {
   console.log('Removing indexes...');
   console.log('✅ Indexes removed');
 };

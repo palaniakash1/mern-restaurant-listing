@@ -1,8 +1,7 @@
 import mongoose from 'mongoose';
+import { setTimeout as sleep } from 'node:timers/promises';
 
 const MAX_TRANSACTION_RETRIES = 3;
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const isRetryableTransactionError = (error) => {
   if (!error) return false;

@@ -88,7 +88,7 @@ export const createHealthCheck = (options = {}) => {
   // Use { include: ["mongo"] } to enable DB check
   const { include = ['system'] } = options;
 
-  return async (req, res, next) => {
+  return async (req, res) => {
     const health = {
       status: 'ok',
       timestamp: new Date().toISOString(),
@@ -190,9 +190,16 @@ const checkDependencies = async () => {
   // Check external services (example: email service)
   if (config.emailServiceUrl) {
     try {
-      const response = await fetch(config.emailServiceUrl, {
+      if (
+        typeof globalThis.fetch !== 'function' ||
+        typeof globalThis.AbortSignal?.timeout !== 'function'
+      ) {
+        throw new Error('Fetch-based dependency probes are unavailable');
+      }
+
+      const response = await globalThis.fetch(config.emailServiceUrl, {
         method: 'HEAD',
-        signal: AbortSignal.timeout(3000)
+        signal: globalThis.AbortSignal.timeout(3000)
       });
       results.checks.emailService = {
         status: response.ok ? 'healthy' : 'unhealthy',

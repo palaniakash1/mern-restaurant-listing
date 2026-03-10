@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import mongoose from 'mongoose';
 import Review from '../models/review.model.js';
 import Restaurant from '../models/restaurant.model.js';

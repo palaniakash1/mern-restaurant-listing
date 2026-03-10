@@ -102,9 +102,6 @@ export const normalizePagination = (query) => {
  * @param {string} defaultDirection - Default direction if not provided
  * @returns {number} - 1 for asc, -1 for desc
  */
-export const normalizeSortDirection = (
-  sortParam,
-  defaultDirection = 'desc'
-) => {
+export const normalizeSortDirection = (sortParam) => {
   return sortParam === 'asc' ? 1 : -1;
 };

@@ -3,9 +3,6 @@
  * Express middleware for validating requests using Zod schemas
  */
 
-import { z } from 'zod';
-import { AppError } from '../utils/error.js';
-
 /**
  * Validate request body against a Zod schema
  * @param {z.ZodSchema} schema - Zod schema to validate against

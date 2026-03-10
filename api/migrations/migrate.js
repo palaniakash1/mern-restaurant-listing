@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Database Migration CLI
  *
@@ -39,6 +40,10 @@ async function main() {
     await rollbackMigration(db);
   } else if (command === 'seed') {
     await runSeeds(db);
+  } else if (command === 'test') {
+    await runDeploymentTests(db);
+  } else if (command === 'test:options') {
+    await showDeploymentTests();
   } else {
     await showStatus(db);
   }
@@ -49,7 +54,7 @@ async function main() {
 
 async function runMigrations(db) {
   const applied = await db.collection(MIGRATION_COLLECTION).find({}).toArray();
-  const appliedNames = applied.map(m => m.name);
+  const appliedNames = applied.map((migration) => migration.name);
 
   // Get migration files
   if (!fs.existsSync(MIGRATIONS_DIR)) {
@@ -162,7 +167,7 @@ async function runDeploymentTests(db) {
   try {
     const testCollection = await db.collection('test_crud');
     await testCollection.insertOne({ test: 'deployment', timestamp: new Date() });
-    const inserted = await testCollection.findOne({ test: 'deployment' });
+    await testCollection.findOne({ test: 'deployment' });
     await testCollection.deleteOne({ test: 'deployment' });
     console.log('  ✅ CRUD operations working - inserted and deleted test document');
   } catch (error) {
@@ -185,7 +190,7 @@ async function runDeploymentTests(db) {
   console.log('\n5. Testing performance...');
   try {
     const startTime = Date.now();
-    const sample = await db.collection('users').findOne({}, { projection: { _id: 1 } });
+    await db.collection('users').findOne({}, { projection: { _id: 1 } });
     const latency = Date.now() - startTime;
     console.log(`  ✅ Performance check - query completed in ${latency}ms`);
   } catch (error) {
@@ -198,7 +203,7 @@ async function runDeploymentTests(db) {
 }
 
 // Add deployment test option to CLI
-async function showDeploymentTests(db) {
+async function showDeploymentTests() {
   console.log('\n=== Deployment Test Options ===');
   console.log('1. Run all deployment tests');
   console.log('2. Test database connectivity');
@@ -220,7 +225,7 @@ async function showStatus(db) {
   }
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
