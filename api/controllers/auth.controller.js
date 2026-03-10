@@ -12,6 +12,8 @@ const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9]).{8,}$/;
 
 const INVALID_CREDENTIALS_MESSAGE = 'Invalid email or password';
 const REFRESH_COOKIE_NAME = 'refresh_token';
+const ACCOUNT_LOCKED_MESSAGE =
+  'Account temporarily locked due to repeated failed login attempts';
 // Precomputed bcrypt hash for the string "password" to keep signin timing consistent.
 const DUMMY_PASSWORD_HASH =
   '$2b$10$CwTycUXWue0Thq9StjUM0uJ8s7Qw6vY.fQ0M9f8Q5lHppZArYrusW';
@@ -47,6 +49,61 @@ const hashRefreshToken = (token) =>
   crypto.createHash('sha256').update(token).digest('hex');
 const getUserAgent = (req) =>
   String(req.headers['user-agent'] || 'unknown').slice(0, 250);
+const toPositiveInt = (value, fallback) => {
+  const parsed = Number.parseInt(String(value || ''), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+const getLockoutConfig = () => ({
+  threshold: toPositiveInt(process.env.LOGIN_LOCKOUT_THRESHOLD, 5),
+  baseMs: toPositiveInt(process.env.LOGIN_LOCKOUT_BASE_MS, 15 * 60 * 1000),
+  maxMs: toPositiveInt(process.env.LOGIN_LOCKOUT_MAX_MS, 24 * 60 * 60 * 1000)
+});
+const getActiveLockoutUntil = (user) => {
+  const lockoutUntil = user?.security?.lockoutUntil;
+  if (!(lockoutUntil instanceof Date) || Number.isNaN(lockoutUntil.getTime())) {
+    return null;
+  }
+
+  return lockoutUntil > new Date() ? lockoutUntil : null;
+};
+const resetSigninSecurityState = async (user) => {
+  user.security = {
+    ...user.security,
+    failedLoginAttempts: 0,
+    lockoutUntil: null,
+    lockoutCount: 0,
+    lastFailedLoginAt: null
+  };
+  await user.save();
+};
+const recordFailedSigninAttempt = async (user) => {
+  const config = getLockoutConfig();
+  const nextAttemptCount = (user.security?.failedLoginAttempts || 0) + 1;
+  const nextLockoutCount = user.security?.lockoutCount || 0;
+  const now = new Date();
+  const shouldLock = nextAttemptCount >= config.threshold;
+
+  user.security = {
+    ...user.security,
+    failedLoginAttempts: shouldLock ? 0 : nextAttemptCount,
+    lockoutUntil: shouldLock
+      ? new Date(
+        now.getTime() +
+            Math.min(config.baseMs * 2 ** nextLockoutCount, config.maxMs)
+      )
+      : null,
+    lockoutCount: shouldLock ? nextLockoutCount + 1 : nextLockoutCount,
+    lastFailedLoginAt: now
+  };
+
+  await user.save();
+
+  return {
+    locked: shouldLock,
+    attemptsRemaining: Math.max(config.threshold - nextAttemptCount, 0),
+    lockoutUntil: shouldLock ? user.security.lockoutUntil : null
+  };
+};
 
 const signAccessToken = (user) =>
   jwt.sign(
@@ -251,13 +308,14 @@ export const signin = async (req, res, next) => {
 
     if (!validUser) {
       bcryptjs.compareSync(password, DUMMY_PASSWORD_HASH);
+      await incrementSecurityEvent('login_failed');
       await logAudit({
         actorId: null,
         actorRole: 'anonymous',
         entityType: 'auth',
         entityId: null,
         action: 'LOGIN_FAILED',
-        before: { email: normalizedEmail },
+        before: { email: normalizedEmail, reason: 'unknown_email' },
         after: null,
         ipAddress: getClientIp(req)
       });
@@ -279,20 +337,67 @@ export const signin = async (req, res, next) => {
       return next(errorHandler(403, 'User account is inactive'));
     }
 
-    const validPassword = bcryptjs.compareSync(password, validUser.password);
-    if (!validPassword) {
+    const activeLockoutUntil = getActiveLockoutUntil(validUser);
+    if (activeLockoutUntil) {
+      await incrementSecurityEvent('login_lockout_blocked');
       await logAudit({
         actorId: validUser._id,
         actorRole: validUser.role,
         entityType: 'auth',
         entityId: validUser._id,
         action: 'LOGIN_FAILED',
-        before: { email: validUser.email },
+        before: {
+          email: validUser.email,
+          reason: 'account_locked',
+          lockoutUntil: activeLockoutUntil.toISOString()
+        },
+        after: null,
+        ipAddress: getClientIp(req)
+      });
+      return next(errorHandler(423, ACCOUNT_LOCKED_MESSAGE));
+    }
+
+    if (validUser.security?.lockoutUntil) {
+      await resetSigninSecurityState(validUser);
+    }
+
+    const validPassword = bcryptjs.compareSync(password, validUser.password);
+    if (!validPassword) {
+      await incrementSecurityEvent('login_failed');
+      const failureResult = await recordFailedSigninAttempt(validUser);
+      if (failureResult.locked) {
+        await incrementSecurityEvent('login_lockout_started');
+      }
+      await logAudit({
+        actorId: validUser._id,
+        actorRole: validUser.role,
+        entityType: 'auth',
+        entityId: validUser._id,
+        action: 'LOGIN_FAILED',
+        before: {
+          email: validUser.email,
+          reason: failureResult.locked ? 'lockout_threshold_reached' : 'invalid_password',
+          attemptsRemaining: failureResult.attemptsRemaining,
+          lockoutUntil: failureResult.lockoutUntil?.toISOString() || null
+        },
         after: null,
         ipAddress: getClientIp(req)
       });
 
-      return next(errorHandler(401, INVALID_CREDENTIALS_MESSAGE));
+      return next(
+        errorHandler(
+          failureResult.locked ? 423 : 401,
+          failureResult.locked ? ACCOUNT_LOCKED_MESSAGE : INVALID_CREDENTIALS_MESSAGE
+        )
+      );
+    }
+
+    if (
+      (validUser.security?.failedLoginAttempts || 0) > 0 ||
+      validUser.security?.lockoutCount ||
+      validUser.security?.lastFailedLoginAt
+    ) {
+      await resetSigninSecurityState(validUser);
     }
 
     const { csrfToken } = await issueSession({ req, res, user: validUser });

@@ -3,6 +3,9 @@ import { getRedisClient } from './redisCache.js';
 const telemetryMemoryStore = new Map();
 const TELEMETRY_PREFIX = 'security:telemetry:';
 const KNOWN_EVENTS = [
+  'login_failed',
+  'login_lockout_started',
+  'login_lockout_blocked',
   'refresh_invalid',
   'refresh_expired',
   'refresh_replay_detected',
@@ -62,7 +65,12 @@ export const getSecurityTelemetry = async () => {
   return result;
 };
 
+export const resetSecurityTelemetry = () => {
+  telemetryMemoryStore.clear();
+};
+
 export default {
   incrementSecurityEvent,
-  getSecurityTelemetry
+  getSecurityTelemetry,
+  resetSecurityTelemetry
 };

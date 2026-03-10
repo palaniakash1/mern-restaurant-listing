@@ -1,10 +1,15 @@
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { setTimeout as delay } from 'node:timers/promises';
 import request from 'supertest';
 import bcryptjs from 'bcryptjs';
 import app from '../app.js';
 import User from '../models/user.model.js';
 import { clearTestDb, setupTestDb, teardownTestDb } from './helpers/testDb.js';
+import {
+  getSecurityTelemetry,
+  resetSecurityTelemetry
+} from '../utils/securityTelemetry.js';
 
 describe('Auth integration', { concurrency: false }, () => {
   before(async () => {
@@ -17,6 +22,7 @@ describe('Auth integration', { concurrency: false }, () => {
 
   beforeEach(async () => {
     await clearTestDb();
+    resetSecurityTelemetry();
   });
 
   it('signup, signin, session and change-password flow should work', async () => {
@@ -86,6 +92,93 @@ describe('Auth integration', { concurrency: false }, () => {
 
     assert.equal(signinRes.status, 403);
     assert.equal(signinRes.body.success, false);
+  });
+
+  it('should lock an account after repeated failed signin attempts and recover after the lockout window', async () => {
+    const originalThreshold = process.env.LOGIN_LOCKOUT_THRESHOLD;
+    const originalBaseMs = process.env.LOGIN_LOCKOUT_BASE_MS;
+    const originalMaxMs = process.env.LOGIN_LOCKOUT_MAX_MS;
+
+    process.env.LOGIN_LOCKOUT_THRESHOLD = '3';
+    process.env.LOGIN_LOCKOUT_BASE_MS = '40';
+    process.env.LOGIN_LOCKOUT_MAX_MS = '40';
+
+    try {
+      const hashedPassword = bcryptjs.hashSync('Password1', 10);
+      await User.create({
+        userName: 'lockeduser',
+        email: 'locked@example.com',
+        password: hashedPassword,
+        role: 'user',
+        isActive: true
+      });
+
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        const signinRes = await request(app).post('/api/auth/signin').send({
+          email: 'locked@example.com',
+          password: 'WrongPassword1'
+        });
+
+        assert.equal(signinRes.status, 401);
+        assert.equal(signinRes.body.message, 'Invalid email or password');
+      }
+
+      const lockoutRes = await request(app).post('/api/auth/signin').send({
+        email: 'locked@example.com',
+        password: 'WrongPassword1'
+      });
+      assert.equal(lockoutRes.status, 423);
+      assert.equal(
+        lockoutRes.body.message,
+        'Account temporarily locked due to repeated failed login attempts'
+      );
+
+      const blockedRes = await request(app).post('/api/auth/signin').send({
+        email: 'locked@example.com',
+        password: 'Password1'
+      });
+      assert.equal(blockedRes.status, 423);
+
+      const lockedUser = await User.findOne({ email: 'locked@example.com' }).lean();
+      assert.ok(lockedUser?.security?.lockoutUntil);
+      assert.equal(lockedUser?.security?.failedLoginAttempts, 0);
+
+      const telemetry = await getSecurityTelemetry();
+      assert.equal(telemetry.login_failed, 3);
+      assert.equal(telemetry.login_lockout_started, 1);
+      assert.equal(telemetry.login_lockout_blocked, 1);
+
+      await delay(60);
+
+      const recoveredRes = await request(app).post('/api/auth/signin').send({
+        email: 'locked@example.com',
+        password: 'Password1'
+      });
+      assert.equal(recoveredRes.status, 200);
+
+      const recoveredUser = await User.findOne({ email: 'locked@example.com' }).lean();
+      assert.equal(recoveredUser?.security?.failedLoginAttempts, 0);
+      assert.equal(recoveredUser?.security?.lockoutCount, 0);
+      assert.equal(recoveredUser?.security?.lockoutUntil, null);
+    } finally {
+      if (originalThreshold === undefined) {
+        delete process.env.LOGIN_LOCKOUT_THRESHOLD;
+      } else {
+        process.env.LOGIN_LOCKOUT_THRESHOLD = originalThreshold;
+      }
+
+      if (originalBaseMs === undefined) {
+        delete process.env.LOGIN_LOCKOUT_BASE_MS;
+      } else {
+        process.env.LOGIN_LOCKOUT_BASE_MS = originalBaseMs;
+      }
+
+      if (originalMaxMs === undefined) {
+        delete process.env.LOGIN_LOCKOUT_MAX_MS;
+      } else {
+        process.env.LOGIN_LOCKOUT_MAX_MS = originalMaxMs;
+      }
+    }
   });
 
   it('should list and revoke current session', async () => {
