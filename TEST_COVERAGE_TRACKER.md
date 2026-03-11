@@ -8,10 +8,10 @@ Date: 2026-03-11
 
 | Metric | Value |
 | --- | --- |
-| Lines | 92.16% |
-| Branches | 71.77% |
-| Functions | 92.91% |
-| Tests Passing | 109/109 |
+| Lines | 92.25% |
+| Branches | 72.23% |
+| Functions | 93.28% |
+| Tests Passing | 113/113 |
 | Lint | Pass |
 | Audit | Pass |
 | Coverage | Pass |
@@ -20,10 +20,9 @@ Date: 2026-03-11
 ## Current Batch
 
 Scope:
-- added [admin.repository.test.js](/d:/MARAA/coding-projects/mern-restaurant/api/tests/admin.repository.test.js)
-- fixed `admin.repository.js` stats aggregation and locked-user filtering
-- added `lastLoginAt` to [user.model.js](/d:/MARAA/coding-projects/mern-restaurant/api/models/user.model.js) and wired successful auth updates in [auth.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/auth.controller.js)
-- added `k6` load-test scripts in [package.json](/d:/MARAA/coding-projects/mern-restaurant/package.json) and profile support in [auth-load-test.js](/d:/MARAA/coding-projects/mern-restaurant/api/load-tests/auth-load-test.js)
+- expanded [runtime-hardening.test.js](/d:/MARAA/coding-projects/mern-restaurant/api/tests/runtime-hardening.test.js) for Redis serialization/parse failures, metrics status-class/error forwarding, and tracing no-op metrics
+- improved runtime coverage for [redisCache.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/redisCache.js), [metrics.js](/d:/MARAA/coding-projects/mern-restaurant/api/middlewares/metrics.js), and [tracing.js](/d:/MARAA/coding-projects/mern-restaurant/api/tracing.js)
+- revalidated `test`, `lint`, `coverage`, and `audit`
 - revalidated `test`, `lint`, `coverage`, and `audit`
 
 Notes:
@@ -47,16 +46,17 @@ npm audit --audit-level=high
 | [restaurant.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/restaurant.controller.js) | 87.22% | 42.45% | 93.55% | High |
 | [category.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/category.controller.js) | 77.80% | 35.54% | 91.43% | High |
 | [menu.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/menu.controller.js) | 78.33% | 31.20% | 88.57% | High |
-| [redisCache.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/redisCache.js) | 72.05% | 67.11% | 96.15% | High |
+| [redisCache.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/redisCache.js) | 74.35% | 72.62% | 96.15% | High |
 | [admin.repository.js](/d:/MARAA/coding-projects/mern-restaurant/api/repositories/admin.repository.js) | 98.89% | 95.08% | 100.00% | Medium |
-| [tracing.js](/d:/MARAA/coding-projects/mern-restaurant/api/tracing.js) | 93.31% | 76.92% | 82.61% | Medium |
+| [tracing.js](/d:/MARAA/coding-projects/mern-restaurant/api/tracing.js) | 94.88% | 80.00% | 96.15% | Medium |
 | [jwtRotation.service.js](/d:/MARAA/coding-projects/mern-restaurant/api/services/jwtRotation.service.js) | 87.86% | 79.07% | 84.62% | Medium |
+| [metrics.js](/d:/MARAA/coding-projects/mern-restaurant/api/middlewares/metrics.js) | 97.39% | 81.82% | 100.00% | Medium |
 
 ## Next Batches
 
 1. Runtime reliability batch
    - continue filling remaining lines in [redisCache.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/redisCache.js)
-   - add direct tests around [metrics.js](/d:/MARAA/coding-projects/mern-restaurant/api/middlewares/metrics.js) and remaining [tracing.js](/d:/MARAA/coding-projects/mern-restaurant/api/tracing.js) paths
+   - close the remaining collector-shutdown and invalid-trace-id branches in [tracing.js](/d:/MARAA/coding-projects/mern-restaurant/api/tracing.js)
 
 2. Remaining controller batch
    - keep pushing [menu.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/menu.controller.js) on reorder, deleted-menu listing, and audit filter branches
@@ -76,6 +76,7 @@ npm audit --audit-level=high
 
 | Date | Lines | Branches | Functions | Notes |
 | --- | --- | --- | --- | --- |
+| 2026-03-11 | 92.25% | 72.23% | 93.28% | Runtime follow-up batch completed; Redis parse/serialization, metrics error paths, and tracing no-op metric coverage added |
 | 2026-03-11 | 92.16% | 71.77% | 92.91% | Repository/auth batch completed; admin repository tests added, `lastLoginAt` integrated, `k6` scripts wired |
 | 2026-03-11 | 90.76% | 70.90% | 89.18% | Controller branch batch completed; new restaurant/category/menu failure-path coverage added |
 | 2026-03-11 | 90.42% | 69.89% | 88.92% | App/bootstrap batch completed; request logger and metrics/options coverage added |

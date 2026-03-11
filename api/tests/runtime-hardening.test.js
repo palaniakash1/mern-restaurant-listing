@@ -25,6 +25,7 @@ import {
   clear as clearRedisMemory,
   closeRedis,
   del,
+  deleteKey,
   get,
   getCacheStats,
   getJson,
@@ -40,6 +41,16 @@ import {
   incrementSecurityEvent,
   resetSecurityTelemetry
 } from '../utils/securityTelemetry.js';
+import {
+  authOperationTotal,
+  databaseOperationDuration,
+  httpRequestDuration,
+  httpRequestTotal,
+  meter,
+  refreshTokensActive,
+  shutdownTracing,
+  updateRefreshTokenMetrics
+} from '../tracing.js';
 
 const createMockReqRes = ({
   method = 'GET',
@@ -338,6 +349,42 @@ describe('Runtime hardening branches', { concurrency: false }, () => {
     assert.ok(endpointContext.res.body.latencyMs.sampleSize >= 1);
   });
 
+  it('metrics middleware and endpoint should cover 3xx/4xx paths and endpoint error forwarding', async () => {
+    const redirectContext = createMockReqRes({
+      method: 'POST',
+      path: '/redirect',
+      routePath: '/redirect',
+      baseUrl: '/api'
+    });
+    metricsMiddleware(redirectContext.req, redirectContext.res, () => {});
+    redirectContext.res.statusCode = 302;
+    redirectContext.res.emit('finish');
+
+    const clientErrorContext = createMockReqRes({
+      method: 'DELETE',
+      path: '/missing',
+      routePath: '/missing',
+      baseUrl: '/api'
+    });
+    metricsMiddleware(clientErrorContext.req, clientErrorContext.res, () => {});
+    clientErrorContext.res.statusCode = 404;
+    clientErrorContext.res.emit('finish');
+    clientErrorContext.res.emit('finish');
+
+    const endpoint = createMetricsEndpoint();
+    const endpointContext = createMockReqRes();
+    endpointContext.res.json = () => {
+      throw new Error('metrics render failed');
+    };
+
+    let nextError = null;
+    await endpoint(endpointContext.req, endpointContext.res, (error) => {
+      nextError = error;
+    });
+
+    assert.equal(nextError?.message, 'metrics render failed');
+  });
+
   it('redis cache helpers should exercise memory fallback branches', async () => {
     config.redis.url = null;
     const initResult = await initRedis();
@@ -373,6 +420,19 @@ describe('Runtime hardening branches', { concurrency: false }, () => {
     const stats = getCacheStats();
     assert.equal(stats.redis, false);
     assert.ok(stats.memorySize >= 1);
+  });
+
+  it('redis cache helpers should cover serialization guards and deleteKey fallbacks', async () => {
+    const circular = {};
+    circular.self = circular;
+
+    assert.equal(await set('circular', circular, 5), false);
+    assert.equal(await setJson('circular-json', circular, 5), false);
+    assert.equal(await setJsonIfAbsent('circular-nx', circular, 5), false);
+
+    await setJson('delete-key', { ok: true }, 5);
+    await deleteKey('delete-key');
+    assert.equal(await getJson('delete-key'), null);
   });
 
   it('security telemetry should exercise memory fallback counters', async () => {
@@ -475,6 +535,39 @@ describe('Runtime hardening branches', { concurrency: false }, () => {
     assert.equal(execCalls, 0);
   });
 
+  it('redis helpers should cover redis parse failures and clear/delete fallback behavior', async () => {
+    let deleteCalls = 0;
+    __setRedisTestState({
+      available: true,
+      client: {
+        async get(key) {
+          if (key === 'cache:broken-json') {
+            return '{invalid';
+          }
+          if (key === 'json:broken') {
+            return '{invalid';
+          }
+          return null;
+        },
+        async keys() {
+          return [];
+        },
+        async del() {
+          deleteCalls += 1;
+        }
+      }
+    });
+
+    assert.equal(await get('broken-json'), null);
+    assert.equal(await getJson('json:broken'), null);
+
+    await clearRedisMemory();
+    await del('missing-key');
+    await deleteKey('json:missing');
+    assert.equal(deleteCalls, 0);
+    assert.equal(getCacheStats().redis, false);
+  });
+
   it('security telemetry should cover redis-backed and redis-fallback branches', async () => {
     let incrbyCalls = 0;
     __setRedisTestState({
@@ -515,5 +608,26 @@ describe('Runtime hardening branches', { concurrency: false }, () => {
     await incrementSecurityEvent('sessions_revoked_all', 4);
     const fallbackTelemetry = await getSecurityTelemetry();
     assert.equal(fallbackTelemetry.sessions_revoked_all, 4);
+  });
+
+  it('tracing no-op metrics should be callable in test mode', async () => {
+    const histogram = meter.createHistogram('http_request_duration_ms');
+    const counter = meter.createCounter('http_requests_total');
+    const upDownCounter = meter.createUpDownCounter('refresh_tokens_active');
+
+    histogram.record(12.34);
+    counter.add(1, { route: '/health' });
+    upDownCounter.add(2);
+    httpRequestDuration.record(10, { method: 'GET' });
+    httpRequestTotal.add(1, { method: 'GET' });
+    databaseOperationDuration.record(4, { operation: 'find' });
+    authOperationTotal.add(1, { operation: 'signin' });
+    updateRefreshTokenMetrics(3);
+    refreshTokensActive.add(-1);
+
+    await shutdownTracing();
+    assert.equal(typeof histogram.record, 'function');
+    assert.equal(typeof counter.add, 'function');
+    assert.equal(typeof upDownCounter.add, 'function');
   });
 });
