@@ -1,78 +1,72 @@
 # Test Coverage Tracker
 
-This file tracks backend coverage progress and should be updated after every successful `npm run test:coverage` run.
-
-## Update Rule
-
-After each coverage run, update:
-
-- the latest coverage snapshot
-- gate status (`lint`, `audit`, `test`, `coverage`, `load`)
-- the modules that improved
-- the next weakest production-critical targets
+Update this file after every successful `npm run test:coverage` run.
 
 ## Latest Verified Snapshot
 
 Date: 2026-03-11
-Source: last fully green verified run before the current batch
 
-| Metric        | Value                              |
-| ------------- | ---------------------------------- |
-| Lines         | 89.40%                             |
-| Branches      | 66.50%                             |
-| Functions     | 88.23%                             |
-| Tests Passing | 93/93                              |
-| Lint          | Pass                               |
-| Audit         | Pass                               |
-| Coverage      | Pass                               |
-| Load Tests    | Blocked locally (`k6` unavailable) |
+| Metric | Value |
+| --- | --- |
+| Lines | 89.47% |
+| Branches | 66.73% |
+| Functions | 88.31% |
+| Tests Passing | 94/94 |
+| Lint | Pass |
+| Audit | Pass |
+| Coverage | Pass |
+| Load Tests | Blocked locally (`k6` unavailable) |
 
-## Current Batch Status
+## Current Batch
 
-Date: 2026-03-11
-Status: Pending verification
+Scope:
+- stabilized [controller-branch.integration.test.js](/d:/MARAA/coding-projects/mern-restaurant/api/tests/controller-branch.integration.test.js)
+- restored green gates for `test`, `lint`, `coverage`, and `audit`
+- kept the new controller-branch suite focused on deterministic restaurant failure paths
 
-Changes made in this batch:
+Notes:
+- The tracing lifecycle tests still log collector shutdown warnings when no OTLP collector is running on `127.0.0.1:4318` / `::1:4318`, but the suite passes
 
-- Added controller branch integration coverage in [controller-branch.integration.test.js](/d:/MARAA/coding-projects/mern-restaurant/api/tests/controller-branch.integration.test.js)
-- Patched the unstable restaurant status assertion so the suite can be re-run cleanly
+## Verified Commands
 
-Verification blocker:
+```powershell
+npm test
+npm run lint
+npm run test:coverage
+npm audit --audit-level=high
+```
 
-- Shell command execution is currently failing in this environment, so `npm run lint`, `npm test`, `npm run test:coverage`, and `npm audit --audit-level=high` need to be re-run once command execution is available again
+## High-Value Coverage Targets
 
-## Recent Improvements
+| Module | Lines | Branches | Functions | Priority |
+| --- | --- | --- | --- | --- |
+| [restaurant.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/restaurant.controller.js) | 85.21% | 32.35% | 93.55% | High |
+| [category.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/category.controller.js) | 77.54% | 34.73% | 91.43% | High |
+| [menu.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/menu.controller.js) | 76.25% | 26.77% | 85.71% | High |
+| [redisCache.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/redisCache.js) | 65.88% | 60.00% | 96.00% | High |
+| [healthCheck.js](/d:/MARAA/coding-projects/mern-restaurant/api/middlewares/healthCheck.js) | 76.63% | 52.17% | 90.91% | Medium |
+| [logger.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/logger.js) | 87.40% | 74.36% | 78.95% | Medium |
+| [securityTelemetry.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/securityTelemetry.js) | 77.63% | 82.35% | 66.67% | Medium |
+| [app.js](/d:/MARAA/coding-projects/mern-restaurant/api/app.js) | 82.01% | 40.00% | 50.00% | Medium |
 
-| Date       | Scope                                  | Result                                                                                                                                                                                                                                                                                                 |
-| ---------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 2026-03-11 | JWT rotation + tracing lifecycle tests | Raised [jwtRotation.service.js](/d:/MARAA/coding-projects/mern-restaurant/api/services/jwtRotation.service.js) and [tracing.js](/d:/MARAA/coding-projects/mern-restaurant/api/tracing.js) coverage materially                                                                                          |
-| 2026-03-11 | Auth integration hardening             | Raised [auth.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/auth.controller.js) failure-path coverage                                                                                                                                                                        |
-| 2026-03-11 | User/admin service tests               | Raised [user.service.js](/d:/MARAA/coding-projects/mern-restaurant/api/services/user.service.js), [admin.service.js](/d:/MARAA/coding-projects/mern-restaurant/api/services/admin.service.js), and [user.repository.js](/d:/MARAA/coding-projects/mern-restaurant/api/repositories/user.repository.js) |
+## Next Batches
 
-## Priority Targets
+1. Controller branch batch
+   - Expand failure-path integration tests for [restaurant.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/restaurant.controller.js)
+   - Expand failure-path integration tests for [category.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/category.controller.js)
+   - Start closing the larger branch gap in [menu.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/menu.controller.js)
 
-These remain the highest-value modules to improve for production readiness:
+2. Runtime reliability batch
+   - Add deeper edge/error coverage for [redisCache.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/redisCache.js)
+   - Add more branch coverage for [healthCheck.js](/d:/MARAA/coding-projects/mern-restaurant/api/middlewares/healthCheck.js)
+   - Expand [logger.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/logger.js) and [securityTelemetry.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/securityTelemetry.js)
 
-| Module                                                                                                         | Priority | Notes                                                               |
-| -------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------- |
-| [restaurant.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/restaurant.controller.js) | High     | Branch coverage remains a major gap                                 |
-| [category.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/category.controller.js)     | High     | Business-rule and authorization branches still need deeper coverage |
-| [redisCache.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/redisCache.js)                             | High     | Shared-state fallback and error-path reliability remains critical   |
-| [securityTelemetry.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/securityTelemetry.js)               | Medium   | More edge and fallback paths still need direct tests                |
-| [logger.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/logger.js)                                     | Medium   | Buffer and suppression paths can still be expanded                  |
+3. App/bootstrap batch
+   - Improve coverage for [app.js](/d:/MARAA/coding-projects/mern-restaurant/api/app.js)
+   - Validate more middleware wiring and startup branches
 
-## Production Gate Checklist
+## Update Log
 
-| Gate                           | Status              | Notes                                                    |
-| ------------------------------ | ------------------- | -------------------------------------------------------- |
-| `npm run lint`                 | Pending rerun       | Last verified pass before current batch                  |
-| `npm audit --audit-level=high` | Pending rerun       | Last verified pass before current batch                  |
-| `npm test`                     | Pending rerun       | Last verified pass before current batch                  |
-| `npm run test:coverage`        | Pending rerun       | Update snapshot after rerun                              |
-| `npm run test:load`            | Environment-blocked | Requires `k6` to be installed in CI/staging/local runner |
-
-## Next Batch
-
-1. Re-run the full gates and update this file with the new verified baseline.
-2. Continue increasing branch coverage in [restaurant.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/restaurant.controller.js) and [category.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/category.controller.js).
-3. Add deeper runtime error-path tests for [redisCache.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/redisCache.js) and [securityTelemetry.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/securityTelemetry.js).
+| Date | Lines | Branches | Functions | Notes |
+| --- | --- | --- | --- | --- |
+| 2026-03-11 | 89.47% | 66.73% | 88.31% | Controller-branch test stabilized; full gates green |
