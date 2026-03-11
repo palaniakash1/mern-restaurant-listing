@@ -1,205 +1,111 @@
 import User from '../models/user.model.js';
+import Restaurant from '../models/restaurant.model.js';
 import { traceDatabaseOperation } from '../tracing.js';
 
-export const findUserById = (userId, select = null) => {
-  return traceDatabaseOperation('findUserById', async () => {
-    const query = User.findById(userId);
-    return select ? query.select(select) : query;
-  });
-};
-
-export const findUserByEmail = (email) => {
-  return traceDatabaseOperation('findUserByEmail', async () => {
-    return User.findOne({ email });
-  });
-};
-
-export const findUserByEmailWithPassword = (email) => {
-  return traceDatabaseOperation('findUserByEmailWithPassword', async () => {
-    return User.findOne({ email }).select('+password');
-  });
-};
-
-export const findUserByUserName = (userName) => {
-  return traceDatabaseOperation('findUserByUserName', async () => {
-    return User.findOne({ userName });
-  });
-};
-
-export const findUsers = (filter = {}, options = {}) => {
-  return traceDatabaseOperation('findUsers', async () => {
-    const { limit = 10, skip = 0, sort = { createdAt: -1 }, select } = options;
-
-    let query = User.find(filter);
-
+export const findUserById = (userId, { session = null, select = null } = {}) =>
+  traceDatabaseOperation('userFindById', async () => {
+    let query = User.findById(userId);
+    if (session) {
+      query = query.session(session);
+    }
     if (select) {
       query = query.select(select);
     }
+    return query;
+  });
 
-    query = query.sort(sort).skip(skip).limit(limit);
-
+export const findUserByIdLean = (
+  userId,
+  { session = null, select = null } = {}
+) =>
+  traceDatabaseOperation('userFindByIdLean', async () => {
+    let query = User.findById(userId);
+    if (session) {
+      query = query.session(session);
+    }
+    if (select) {
+      query = query.select(select);
+    }
     return query.lean();
   });
-};
 
-export const findUsersCount = (filter = {}) => {
-  return traceDatabaseOperation('findUsersCount', async () => {
-    return User.countDocuments(filter);
+export const findUserOne = (filter, { session = null, select = null } = {}) =>
+  traceDatabaseOperation('userFindOne', async () => {
+    let query = User.findOne(filter);
+    if (session) {
+      query = query.session(session);
+    }
+    if (select) {
+      query = query.select(select);
+    }
+    return query;
   });
-};
 
-export const createUser = async (payload) => {
-  return traceDatabaseOperation('createUser', async () => {
-    const user = new User(payload);
-    await user.save();
-    return user;
+export const countUsers = (filter = {}) =>
+  traceDatabaseOperation('userCountDocuments', async () =>
+    User.countDocuments(filter)
+  );
+
+export const listUsers = (
+  filter = {},
+  { select = null, skip = 0, limit = 10, sort = { createdAt: -1 } } = {}
+) =>
+  traceDatabaseOperation('userListUsers', async () => {
+    let query = User.find(filter);
+    if (select) {
+      query = query.select(select);
+    }
+    return query.sort(sort).skip(skip).limit(limit).lean();
   });
-};
 
-export const updateUser = async (userId, updateData) => {
-  return traceDatabaseOperation('updateUser', async () => {
-    return User.findByIdAndUpdate(userId, updateData, {
-      new: true,
-      runValidators: true
+export const updateUserById = (
+  userId,
+  update,
+  { session = null, select = null, lean = false, new: isNew = true } = {}
+) =>
+  traceDatabaseOperation('userUpdateById', async () => {
+    let query = User.findByIdAndUpdate(userId, update, {
+      new: isNew,
+      session
     });
+    if (select) {
+      query = query.select(select);
+    }
+    return lean ? query.lean() : query;
   });
-};
 
-export const deleteUser = async (userId) => {
-  return traceDatabaseOperation('deleteUser', async () => {
-    return User.findByIdAndDelete(userId);
+export const deleteUserById = (userId, { session = null } = {}) =>
+  traceDatabaseOperation('userDeleteById', async () =>
+    User.findByIdAndDelete(userId, { session })
+  );
+
+export const createUser = (payload, { session = null } = {}) =>
+  traceDatabaseOperation('userCreate', async () => {
+    const [createdUser] = await User.create([payload], { session });
+    return createdUser;
   });
-};
 
-export const updateUserRole = async (userId, role) => {
-  return traceDatabaseOperation('updateUserRole', async () => {
-    return User.findByIdAndUpdate(userId, { role }, { new: true });
+export const saveUser = (user, { session = null } = {}) =>
+  traceDatabaseOperation('userSave', async () => user.save({ session }));
+
+export const findRestaurantById = (restaurantId, { session = null } = {}) =>
+  traceDatabaseOperation('userFindRestaurantById', async () => {
+    let query = Restaurant.findById(restaurantId);
+    if (session) {
+      query = query.session(session);
+    }
+    return query;
   });
-};
-
-export const updateUserStatus = async (userId, isActive) => {
-  return traceDatabaseOperation('updateUserStatus', async () => {
-    return User.findByIdAndUpdate(userId, { isActive }, { new: true });
-  });
-};
-
-export const findUsersByRole = (role, options = {}) => {
-  return traceDatabaseOperation('findUsersByRole', async () => {
-    return findUsers({ role }, options);
-  });
-};
-
-export const findAdminUsers = (options = {}) => {
-  return traceDatabaseOperation('findAdminUsers', async () => {
-    return findUsers(
-      {
-        role: { $in: ['admin', 'superAdmin', 'storeManager'] }
-      },
-      options
-    );
-  });
-};
-
-export const findActiveUsers = (options = {}) => {
-  return traceDatabaseOperation('findActiveUsers', async () => {
-    return findUsers({ isActive: true }, options);
-  });
-};
-
-export const findInactiveUsers = (options = {}) => {
-  return traceDatabaseOperation('findInactiveUsers', async () => {
-    return findUsers({ isActive: false }, options);
-  });
-};
-
-export const bulkUpdateUsers = async (filter, updateData) => {
-  return traceDatabaseOperation('bulkUpdateUsers', async () => {
-    return User.updateMany(filter, updateData);
-  });
-};
-
-export const bulkDeleteUsers = async (filter) => {
-  return traceDatabaseOperation('bulkDeleteUsers', async () => {
-    return User.deleteMany(filter);
-  });
-};
-
-export const getUserStats = async () => {
-  return traceDatabaseOperation('getUserStats', async () => {
-    const stats = await User.aggregate([
-      {
-        $group: {
-          _id: null,
-          totalUsers: { $sum: 1 },
-          activeUsers: {
-            $sum: { $cond: [{ $eq: ['$isActive', true] }, 1, 0] }
-          },
-          inactiveUsers: {
-            $sum: { $cond: [{ $eq: ['$isActive', false] }, 1, 0] }
-          }
-        }
-      },
-      {
-        $group: {
-          _id: null,
-          totalUsers: { $first: '$totalUsers' },
-          activeUsers: { $first: '$activeUsers' },
-          inactiveUsers: { $first: '$inactiveUsers' },
-          activePercentage: {
-            $multiply: [{ $divide: ['$activeUsers', '$totalUsers'] }, 100]
-          }
-        }
-      }
-    ]);
-
-    return stats.length > 0
-      ? stats[0]
-      : {
-        totalUsers: 0,
-        activeUsers: 0,
-        inactiveUsers: 0,
-        activePercentage: 0
-      };
-  });
-};
-
-export const getUserRolesStats = async () => {
-  return traceDatabaseOperation('getUserRolesStats', async () => {
-    return User.aggregate([
-      {
-        $group: {
-          _id: '$role',
-          count: { $sum: 1 },
-          activeCount: {
-            $sum: { $cond: [{ $eq: ['$isActive', true] }, 1, 0] }
-          }
-        }
-      },
-      {
-        $sort: { count: -1 }
-      }
-    ]);
-  });
-};
 
 export default {
   findUserById,
-  findUserByEmail,
-  findUserByEmailWithPassword,
-  findUserByUserName,
-  findUsers,
-  findUsersCount,
+  findUserByIdLean,
+  findUserOne,
+  countUsers,
+  listUsers,
+  updateUserById,
+  deleteUserById,
   createUser,
-  updateUser,
-  deleteUser,
-  updateUserRole,
-  updateUserStatus,
-  findUsersByRole,
-  findAdminUsers,
-  findActiveUsers,
-  findInactiveUsers,
-  bulkUpdateUsers,
-  bulkDeleteUsers,
-  getUserStats,
-  getUserRolesStats
+  saveUser,
+  findRestaurantById
 };
