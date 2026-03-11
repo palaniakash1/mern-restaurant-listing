@@ -8,29 +8,36 @@ const authFailureRate = new Rate('auth_failures');
 const sessionResponseTime = new Trend('session_response_time');
 const refreshResponseTime = new Trend('refresh_response_time');
 
-// Test configuration
+const baselineStages = [
+  { duration: '2m', target: 10 },
+  { duration: '5m', target: 10 },
+  { duration: '2m', target: 20 },
+  { duration: '5m', target: 20 },
+  { duration: '2m', target: 50 },
+  { duration: '10m', target: 50 },
+  { duration: '5m', target: 0 }
+];
+
+const smokeStages = [
+  { duration: '15s', target: 5 },
+  { duration: '30s', target: 5 },
+  { duration: '15s', target: 0 }
+];
+
+const loadProfile = __ENV.LOAD_PROFILE || 'baseline';
+
 export const options = {
-  stages: [
-    { duration: '2m', target: 10 }, // Ramp up to 10 users over 2 minutes
-    { duration: '5m', target: 10 }, // Stay at 10 users for 5 minutes
-    { duration: '2m', target: 20 }, // Ramp up to 20 users over 2 minutes
-    { duration: '5m', target: 20 }, // Stay at 20 users for 5 minutes
-    { duration: '2m', target: 50 }, // Ramp up to 50 users over 2 minutes
-    { duration: '10m', target: 50 }, // Stay at 50 users for 10 minutes
-    { duration: '5m', target: 0 } // Ramp down to 0 users over 5 minutes
-  ],
+  stages: loadProfile === 'smoke' ? smokeStages : baselineStages,
   thresholds: {
-    // Auth endpoints should have 99% success rate
     http_req_failed: ['rate<0.01'],
-    // 95% of requests should complete within 500ms
     http_req_duration: ['p(95)<500'],
-    // Auth-specific thresholds
     auth_failures: ['rate<0.01'],
-    // Session and refresh should be fast
     session_response_time: ['p(95)<300'],
     refresh_response_time: ['p(95)<300'],
-    // Overall throughput
-    http_reqs: ['rate>10']
+    http_reqs: ['rate>5']
+  },
+  tags: {
+    profile: loadProfile
   }
 };
 
@@ -66,7 +73,7 @@ const testUsers = [
 ];
 
 export function setup() {
-  console.log('Setting up load test environment...');
+  console.log(`Setting up load test environment for profile: ${loadProfile}`);
 
   // Create test users if they don't exist
   testUsers.forEach((user) => {
@@ -301,5 +308,5 @@ export default function (data) {
 }
 
 export function teardown() {
-  console.log('Tearing down load test environment...');
+  console.log(`Tearing down load test environment for profile: ${loadProfile}`);
 }

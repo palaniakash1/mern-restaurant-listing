@@ -135,13 +135,17 @@ export const getUserStats = async () => {
         }
       },
       {
-        $group: {
-          _id: null,
-          totalUsers: { $first: '$totalUsers' },
-          activeUsers: { $first: '$activeUsers' },
-          inactiveUsers: { $first: '$inactiveUsers' },
+        $project: {
+          _id: 0,
+          totalUsers: 1,
+          activeUsers: 1,
+          inactiveUsers: 1,
           activePercentage: {
-            $multiply: [{ $divide: ['$activeUsers', '$totalUsers'] }, 100]
+            $cond: [
+              { $gt: ['$totalUsers', 0] },
+              { $multiply: [{ $divide: ['$activeUsers', '$totalUsers'] }, 100] },
+              0
+            ]
           }
         }
       }
@@ -274,8 +278,10 @@ export const findLockedUsers = (options = {}) => {
   return traceDatabaseOperation('adminFindLockedUsers', async () => {
     return findUsers(
       {
-        'security.lockoutUntil': { $exists: true, $ne: null },
-        'security.lockoutUntil': { $gt: new Date() }
+        $and: [
+          { 'security.lockoutUntil': { $exists: true, $ne: null } },
+          { 'security.lockoutUntil': { $gt: new Date() } }
+        ]
       },
       options
     );

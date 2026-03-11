@@ -65,6 +65,11 @@ const userSchema = new mongoose.Schema(
       default: true,
       index: true
     },
+    lastLoginAt: {
+      type: Date,
+      default: null,
+      index: true
+    },
     security: {
       failedLoginAttempts: {
         type: Number,

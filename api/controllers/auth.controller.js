@@ -10,7 +10,8 @@ import {
   findUserByUserName,
   revokeRefreshFamily,
   createRefreshToken,
-  createUser
+  createUser,
+  saveUser
 } from '../repositories/auth.repository.js';
 import {
   ACCOUNT_LOCKED_MESSAGE,
@@ -253,6 +254,9 @@ export const signin = async (req, res, next) => {
       await resetSigninSecurityState(validUser);
     }
 
+    validUser.lastLoginAt = new Date();
+    await saveUser(validUser);
+
     const { csrfToken } = await issueSession({ req, res, user: validUser });
     const rest = validUser.toObject();
     delete rest.password;
@@ -291,6 +295,8 @@ export const google = async (req, res, next) => {
       if (!user.isActive) {
         return next(errorHandler(403, 'User account is inactive'));
       }
+      user.lastLoginAt = new Date();
+      await saveUser(user);
       const { csrfToken } = await issueSession({ req, res, user });
       const rest = user.toObject();
       delete rest.password;
@@ -310,6 +316,8 @@ export const google = async (req, res, next) => {
       profilePicture: googlePhotoUrl,
       role: 'user'
     });
+    newUser.lastLoginAt = new Date();
+    await saveUser(newUser);
 
     const { csrfToken } = await issueSession({ req, res, user: newUser });
     const rest = newUser.toObject();
@@ -401,6 +409,9 @@ export const refreshSession = async (req, res, next) => {
       lastUsedAt: now,
       userAgent: getUserAgent(req)
     });
+
+    user.lastLoginAt = now;
+    await saveUser(user);
 
     const accessToken = signAccessToken(user);
     const csrfToken = issueCsrfToken();
