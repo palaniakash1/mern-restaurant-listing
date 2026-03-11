@@ -44,8 +44,7 @@ export const initTracing = async () => {
 
   if (!sdkState.startPromise) {
     sdkState.sdk = buildNodeSdk();
-    sdkState.startPromise = sdkState.sdk
-      .start()
+    sdkState.startPromise = Promise.resolve(sdkState.sdk.start())
       .then(() => {
         sdkState.started = true;
         console.log(`Tracing enabled for service: ${tracingConfig.serviceName}`);
