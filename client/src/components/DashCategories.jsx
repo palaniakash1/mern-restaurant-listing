@@ -15,7 +15,7 @@ export default function DashCategories() {
       try {
         setLoading(true);
         const res = await fetch(
-          `/api/user/all-users?page=${page}&limit=${limit}`,
+          `/api/users/all-users?page=${page}&limit=${limit}`,
           {
             credentials: 'include'
           }

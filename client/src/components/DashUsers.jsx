@@ -6,10 +6,10 @@ import imageCompression from 'browser-image-compression';
 import {
   updateStart,
   updateSuccess,
-  updateFailure,
-  deleteUserStart,
-  deleteUserSuccess,
-  deleteUserFailure
+  updateFailure
+  // deleteUserStart,
+  // deleteUserSuccess,
+  // deleteUserFailure
 } from '../redux/user/userSlice';
 import { useDispatch } from 'react-redux';
 
@@ -229,7 +229,7 @@ export default function DashUsers() {
       }
 
       dispatch(updateStart());
-      const res = await fetch(`/api/user/update/${selectedUser._id}`, {
+      const res = await fetch(`/api/users/update/${selectedUser._id}`, {
         method: 'PUT',
         headers: {
           'content-type': 'application/json'
@@ -267,7 +267,7 @@ export default function DashUsers() {
   // =================================================
   const handleDeleteUser = async () => {
     try {
-      const res = await fetch(`/api/user/delete/${selectedUser._id}`, {
+      const res = await fetch(`/api/users/delete/${selectedUser._id}`, {
         method: 'DELETE',
         credentials: 'include'
       });
