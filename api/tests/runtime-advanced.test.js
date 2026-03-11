@@ -255,3 +255,34 @@ test('logger enforces bounded buffers and safe recent-log retrieval', () => {
   assert.equal(recentLogs[0].message, 'entry-1004');
   assert.deepEqual(negativeRecentLogs, []);
 });
+
+test('logger child metadata should redact secrets, truncate values, and preserve base metadata', () => {
+  logger.clearRecentLogs();
+
+  const childLogger = logger.child({
+    component: 'runtime-test',
+    authorization: 'Bearer sensitive',
+    nested: {
+      password: 'super-secret',
+      values: Array.from({ length: 60 }, (_, index) => ({
+        token: `token-${index}`
+      }))
+    }
+  });
+
+  childLogger.warn('x'.repeat(2505), {
+    secretValue: 'hide-me',
+    description: 'y'.repeat(2105)
+  });
+
+  const [entry] = logger.getRecentLogs(1);
+  assert.equal(entry.level, 'warn');
+  assert.equal(entry.component, 'runtime-test');
+  assert.equal(entry.authorization, '[REDACTED]');
+  assert.equal(entry.nested.password, '[REDACTED]');
+  assert.equal(entry.nested.values.length, 50);
+  assert.equal(entry.nested.values[0].token, '[REDACTED]');
+  assert.equal(entry.secretValue, '[REDACTED]');
+  assert.equal(entry.message.endsWith('...'), true);
+  assert.equal(entry.description.endsWith('...'), true);
+});

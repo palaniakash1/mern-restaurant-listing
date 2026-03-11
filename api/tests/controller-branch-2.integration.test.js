@@ -14,33 +14,38 @@ import {
 
 const passwordHash = bcryptjs.hashSync('Password1', 10);
 
-const buildRestaurantPayload = (name = 'Branch Diner') => ({
-  name,
-  tagline: 'Coverage target',
-  description: 'Payload for controller branch coverage',
-  address: {
-    addressLine1: 'Street 10',
-    areaLocality: 'Central',
-    city: 'London',
-    postcode: 'SW1A 1AA',
-    country: 'United Kingdom'
-  },
-  location: {
-    lat: 51.5072,
-    lng: -0.1276
-  },
-  openingHours: {
-    monday: { open: '09:00', close: '22:00', isClosed: false },
-    tuesday: { open: '09:00', close: '22:00', isClosed: false },
-    wednesday: { open: '09:00', close: '22:00', isClosed: false },
-    thursday: { open: '09:00', close: '22:00', isClosed: false },
-    friday: { open: '09:00', close: '22:00', isClosed: false },
-    saturday: { open: '09:00', close: '22:00', isClosed: false },
-    sunday: { open: '09:00', close: '22:00', isClosed: false }
-  },
-  contactNumber: '+44-20-5555-5555',
-  email: 'owner@example.com'
-});
+const buildRestaurantPayload = (name = 'Branch Diner') => {
+  const slugBase = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  return {
+    name,
+    tagline: 'Coverage target',
+    description: 'Payload for controller branch coverage',
+    address: {
+      addressLine1: 'Street 10',
+      areaLocality: 'Central',
+      city: 'London',
+      postcode: 'SW1A 1AA',
+      country: 'United Kingdom'
+    },
+    location: {
+      lat: 51.5072,
+      lng: -0.1276
+    },
+    openingHours: {
+      monday: { open: '09:00', close: '22:00', isClosed: false },
+      tuesday: { open: '09:00', close: '22:00', isClosed: false },
+      wednesday: { open: '09:00', close: '22:00', isClosed: false },
+      thursday: { open: '09:00', close: '22:00', isClosed: false },
+      friday: { open: '09:00', close: '22:00', isClosed: false },
+      saturday: { open: '09:00', close: '22:00', isClosed: false },
+      sunday: { open: '09:00', close: '22:00', isClosed: false }
+    },
+    contactNumber: '+44-20-5555-5555',
+    email: `${slugBase}-${uniqueSuffix}@example.com`
+  };
+};
 
 const createBaseActors = async () => {
   const superAdmin = await User.create({
@@ -76,6 +81,24 @@ const createBaseActors = async () => {
   };
 };
 
+const createRestaurantFixture = async (token, baseName) => {
+  let lastResponse;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const payload = buildRestaurantPayload(`${baseName} ${attempt + 1}`);
+    lastResponse = await request(app)
+      .post('/api/restaurants')
+      .set('Authorization', `Bearer ${token}`)
+      .send(payload);
+
+    if (lastResponse.status === 201) {
+      return lastResponse;
+    }
+  }
+
+  return lastResponse;
+};
+
 describe('Controller branch expansion', { concurrency: false }, () => {
   before(async () => {
     await setupTestDb();
@@ -92,10 +115,10 @@ describe('Controller branch expansion', { concurrency: false }, () => {
   it('restaurant endpoints reject duplicate ownership and invalid status transitions', async () => {
     const { tokens } = await createBaseActors();
 
-    const createRestaurantRes = await request(app)
-      .post('/api/restaurants')
-      .set('Authorization', `Bearer ${tokens.adminA}`)
-      .send(buildRestaurantPayload('Primary Branch Diner'));
+    const createRestaurantRes = await createRestaurantFixture(
+      tokens.adminA,
+      'Primary Branch Diner'
+    );
     assert.equal(createRestaurantRes.status, 201);
 
     const duplicateRestaurantRes = await request(app)
@@ -119,10 +142,10 @@ describe('Controller branch expansion', { concurrency: false }, () => {
   it('category endpoints reject unpublished restaurant scope and invalid bulk status payloads', async () => {
     const { tokens } = await createBaseActors();
 
-    const restaurantRes = await request(app)
-      .post('/api/restaurants')
-      .set('Authorization', `Bearer ${tokens.adminA}`)
-      .send(buildRestaurantPayload('Draft Category Diner'));
+    const restaurantRes = await createRestaurantFixture(
+      tokens.adminA,
+      'Draft Category Diner'
+    );
     assert.equal(restaurantRes.status, 201);
 
     const restaurantId = restaurantRes.body.data._id;
@@ -152,10 +175,10 @@ describe('Controller branch expansion', { concurrency: false }, () => {
   it('menu endpoints reject unpublished category creation and invalid lifecycle payloads', async () => {
     const { tokens } = await createBaseActors();
 
-    const restaurantRes = await request(app)
-      .post('/api/restaurants')
-      .set('Authorization', `Bearer ${tokens.adminA}`)
-      .send(buildRestaurantPayload('Menu Branch Diner'));
+    const restaurantRes = await createRestaurantFixture(
+      tokens.adminA,
+      'Menu Branch Diner'
+    );
     assert.equal(restaurantRes.status, 201);
     const restaurantId = restaurantRes.body.data._id;
 

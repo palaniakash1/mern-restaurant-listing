@@ -1,6 +1,7 @@
 import { beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
+import mongoose from 'mongoose';
 
 import config from '../config.js';
 import {
@@ -11,6 +12,7 @@ import {
 } from '../middlewares/csrfProtection.js';
 import {
   createHealthCheck,
+  createLivenessProbe,
   createReadinessProbe
 } from '../middlewares/healthCheck.js';
 import {
@@ -18,6 +20,7 @@ import {
   metricsMiddleware
 } from '../middlewares/metrics.js';
 import {
+  __setRedisTestState,
   atomicRateLimitIncrement,
   clear as clearRedisMemory,
   closeRedis,
@@ -89,6 +92,7 @@ describe('Runtime hardening branches', { concurrency: false }, () => {
     config.emailServiceUrl = originalEmailServiceUrl;
     config.redis.url = originalRedisUrl;
     resetSecurityTelemetry();
+    __setRedisTestState();
     await clearRedisMemory();
     await closeRedis();
   });
@@ -230,6 +234,79 @@ describe('Runtime hardening branches', { concurrency: false }, () => {
     }
   });
 
+  it('health probes should cover liveness, mongo unhealthy, mongo healthy, and invalid environment branches', async () => {
+    const originalJwtSecret = config.jwtSecret;
+    const originalDatabaseUrl = config.databaseUrl;
+    const originalReadyState = mongoose.connection.readyState;
+    const originalConnectionName = mongoose.connection.name;
+    const originalDb = mongoose.connection.db;
+
+    try {
+      const liveness = createLivenessProbe();
+      const livenessContext = createMockReqRes();
+      liveness(livenessContext.req, livenessContext.res);
+      assert.equal(livenessContext.res.statusCode, 200);
+      assert.equal(livenessContext.res.body.status, 'alive');
+
+      config.jwtSecret = '';
+      config.databaseUrl = '';
+      const invalidEnvHandler = createHealthCheck({ include: ['environment'] });
+      const invalidEnvContext = createMockReqRes();
+      await invalidEnvHandler(invalidEnvContext.req, invalidEnvContext.res);
+      assert.equal(invalidEnvContext.res.statusCode, 503);
+      assert.equal(invalidEnvContext.res.body.checks.environment.valid, false);
+      assert.deepEqual(
+        invalidEnvContext.res.body.checks.environment.missing.sort(),
+        ['DATABASE_URL', 'JWT_SECRET']
+      );
+
+      Object.defineProperty(mongoose.connection, 'readyState', {
+        configurable: true,
+        value: 0
+      });
+      mongoose.connection.name = 'runtime-test-db';
+      const unhealthyMongoHandler = createHealthCheck({ include: ['mongo'] });
+      const unhealthyMongoContext = createMockReqRes();
+      await unhealthyMongoHandler(
+        unhealthyMongoContext.req,
+        unhealthyMongoContext.res
+      );
+      assert.equal(unhealthyMongoContext.res.statusCode, 503);
+      assert.equal(unhealthyMongoContext.res.body.checks.mongodb.status, 'unhealthy');
+      assert.equal(unhealthyMongoContext.res.body.checks.mongodb.state, 'disconnected');
+
+      Object.defineProperty(mongoose.connection, 'readyState', {
+        configurable: true,
+        value: 1
+      });
+      mongoose.connection.db = {
+        async command() {
+          return { ok: 1 };
+        }
+      };
+      const healthyMongoHandler = createHealthCheck({ include: ['mongo'] });
+      const healthyMongoContext = createMockReqRes();
+      await healthyMongoHandler(healthyMongoContext.req, healthyMongoContext.res);
+      assert.equal(healthyMongoContext.res.statusCode, 200);
+      assert.equal(healthyMongoContext.res.body.checks.mongodb.status, 'healthy');
+
+      const readiness = createReadinessProbe();
+      const readinessContext = createMockReqRes();
+      await readiness(readinessContext.req, readinessContext.res);
+      assert.equal(readinessContext.res.statusCode, 200);
+      assert.equal(readinessContext.res.body.status, 'ready');
+    } finally {
+      config.jwtSecret = originalJwtSecret;
+      config.databaseUrl = originalDatabaseUrl;
+      Object.defineProperty(mongoose.connection, 'readyState', {
+        configurable: true,
+        value: originalReadyState
+      });
+      mongoose.connection.name = originalConnectionName;
+      mongoose.connection.db = originalDb;
+    }
+  });
+
   it('metrics middleware and endpoint should aggregate request and error stats', async () => {
     const middlewareContext = createMockReqRes({
       method: 'GET',
@@ -307,5 +384,136 @@ describe('Runtime hardening branches', { concurrency: false }, () => {
     assert.equal(telemetry.login_failed, 1);
     assert.equal(telemetry.login_lockout_started, 3);
     assert.equal(telemetry.refresh_invalid, 0);
+  });
+
+  it('redis shutdown and helpers should cover client error fallbacks', async () => {
+    let disconnectCalls = 0;
+    __setRedisTestState({
+      available: true,
+      client: {
+        async quit() {
+          throw new Error('quit failed');
+        },
+        disconnect() {
+          disconnectCalls += 1;
+        }
+      }
+    });
+
+    await closeRedis();
+    assert.equal(disconnectCalls, 1);
+
+    let setexCalls = 0;
+    let getCalls = 0;
+    let delCalls = 0;
+    let keysCalls = 0;
+    let setCalls = 0;
+    let execCalls = 0;
+    const failingRedis = {
+      async get() {
+        getCalls += 1;
+        throw new Error('get failed');
+      },
+      async setex() {
+        setexCalls += 1;
+        throw new Error('setex failed');
+      },
+      async del() {
+        delCalls += 1;
+        throw new Error('del failed');
+      },
+      async keys() {
+        keysCalls += 1;
+        throw new Error('keys failed');
+      },
+      multi() {
+        return {
+          incr() {
+            return this;
+          },
+          pexpire() {
+            return this;
+          },
+          pttl() {
+            return this;
+          },
+          async exec() {
+            execCalls += 1;
+            throw new Error('multi failed');
+          }
+        };
+      },
+      async set() {
+        setCalls += 1;
+        throw new Error('set failed');
+      }
+    };
+
+    __setRedisTestState({ client: failingRedis, available: true });
+    await set('fallback-set', { ok: true }, 5);
+    assert.equal(setexCalls, 1);
+    assert.deepEqual(await get('fallback-set'), { ok: true });
+    assert.equal(getCalls, 0);
+
+    await setJson('json-fallback', { ok: true }, 5);
+    assert.equal(setCalls, 0);
+    assert.deepEqual(await getJson('json-fallback'), { ok: true });
+    assert.equal(getCalls, 0);
+
+    const setIfAbsentResult = await setJsonIfAbsent('json-absent', { ok: true }, 5);
+    assert.equal(setIfAbsentResult, true);
+    assert.equal(setCalls, 0);
+
+    await del('fallback-set');
+    await invalidatePattern('json-*');
+    await clearRedisMemory();
+    const rateState = await atomicRateLimitIncrement('runtime-rate', 100);
+    assert.equal(rateState.count, 1);
+    assert.equal(getCacheStats().redis, false);
+    assert.equal(delCalls, 0);
+    assert.equal(keysCalls, 0);
+    assert.equal(execCalls, 0);
+  });
+
+  it('security telemetry should cover redis-backed and redis-fallback branches', async () => {
+    let incrbyCalls = 0;
+    __setRedisTestState({
+      client: {
+        async incrby(key, delta) {
+          incrbyCalls += 1;
+          assert.equal(key, 'security:telemetry:refresh_invalid');
+          assert.equal(delta, 2);
+        },
+        async mget(keys) {
+          assert.equal(keys.length >= 1, true);
+          return ['2', '-4', 'abc', null];
+        }
+      },
+      available: true
+    });
+
+    await incrementSecurityEvent('refresh_invalid', 2);
+    assert.equal(incrbyCalls, 1);
+
+    const redisTelemetry = await getSecurityTelemetry();
+    assert.equal(redisTelemetry.login_failed, 2);
+    assert.equal(redisTelemetry.login_lockout_started, 0);
+    assert.equal(redisTelemetry.login_lockout_blocked, 0);
+
+    __setRedisTestState({
+      client: {
+        async incrby() {
+          throw new Error('telemetry failed');
+        },
+        async mget() {
+          throw new Error('mget failed');
+        }
+      },
+      available: true
+    });
+
+    await incrementSecurityEvent('sessions_revoked_all', 4);
+    const fallbackTelemetry = await getSecurityTelemetry();
+    assert.equal(fallbackTelemetry.sessions_revoked_all, 4);
   });
 });

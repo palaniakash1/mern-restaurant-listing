@@ -217,6 +217,15 @@ export const getCacheStats = () => ({
   ttl: CACHE_TTL
 });
 
+export const __setRedisTestState = ({ client = null, available = false } = {}) => {
+  if (config.env !== 'test') {
+    throw new Error('__setRedisTestState is only available in tests');
+  }
+
+  redisClient = client;
+  isRedisAvailable = Boolean(client) && Boolean(available);
+};
+
 export const atomicRateLimitIncrement = async (key, windowMs) => {
   if (isRedisAvailable && redisClient) {
     try {
@@ -329,6 +338,7 @@ export default {
   getOrFetch,
   invalidatePattern,
   getCacheStats,
+  __setRedisTestState,
   atomicRateLimitIncrement,
   setJsonIfAbsent,
   getJson,
