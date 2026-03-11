@@ -8,10 +8,10 @@ Date: 2026-03-11
 
 | Metric | Value |
 | --- | --- |
-| Lines | 92.25% |
-| Branches | 72.23% |
-| Functions | 93.28% |
-| Tests Passing | 113/113 |
+| Lines | 92.63% |
+| Branches | 73.02% |
+| Functions | 93.36% |
+| Tests Passing | 116/116 |
 | Lint | Pass |
 | Audit | Pass |
 | Coverage | Pass |
@@ -20,15 +20,15 @@ Date: 2026-03-11
 ## Current Batch
 
 Scope:
-- expanded [runtime-hardening.test.js](/d:/MARAA/coding-projects/mern-restaurant/api/tests/runtime-hardening.test.js) for Redis serialization/parse failures, metrics status-class/error forwarding, and tracing no-op metrics
-- improved runtime coverage for [redisCache.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/redisCache.js), [metrics.js](/d:/MARAA/coding-projects/mern-restaurant/api/middlewares/metrics.js), and [tracing.js](/d:/MARAA/coding-projects/mern-restaurant/api/tracing.js)
-- revalidated `test`, `lint`, `coverage`, and `audit`
-- revalidated `test`, `lint`, `coverage`, and `audit`
+- added [controller-branch-4.integration.test.js](/d:/MARAA/coding-projects/mern-restaurant/api/tests/controller-branch-4.integration.test.js) and closed the flaky restaurant/category/menu branch coverage gaps from the previous controller batch
+- revalidated `npm test`, `npm run lint`, `npm run test:coverage`, and `npm audit --audit-level=high`
+- verified `npm run test:load:smoke` still blocks on missing `k6`
+- replaced raw `k6` package scripts with [run-k6.js](/d:/MARAA/coding-projects/mern-restaurant/api/load-tests/run-k6.js) so load-test commands fail with a clear install message when the runner is unavailable
 
 Notes:
 - tracing lifecycle tests still emit collector shutdown warnings when no OTLP collector is listening on `127.0.0.1:4318` / `::1:4318`
 - those warnings do not fail the suite
-- `k6` scripts are wired as `npm run test:load` and `npm run test:load:smoke`, but the runner is not installed in this environment
+- `k6` scripts are wired as `npm run test:load` and `npm run test:load:smoke` through a Node wrapper, but the runner is not installed in this environment
 
 ## Verified Commands
 
@@ -43,39 +43,36 @@ npm audit --audit-level=high
 
 | Module | Lines | Branches | Functions | Priority |
 | --- | --- | --- | --- | --- |
-| [restaurant.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/restaurant.controller.js) | 87.22% | 42.45% | 93.55% | High |
-| [category.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/category.controller.js) | 77.80% | 35.54% | 91.43% | High |
-| [menu.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/menu.controller.js) | 78.33% | 31.20% | 88.57% | High |
+| [restaurant.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/restaurant.controller.js) | 88.03% | 44.76% | 93.55% | High |
+| [category.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/category.controller.js) | 79.53% | 38.10% | 91.43% | High |
+| [menu.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/menu.controller.js) | 79.38% | 34.68% | 88.57% | High |
 | [redisCache.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/redisCache.js) | 74.35% | 72.62% | 96.15% | High |
-| [admin.repository.js](/d:/MARAA/coding-projects/mern-restaurant/api/repositories/admin.repository.js) | 98.89% | 95.08% | 100.00% | Medium |
-| [tracing.js](/d:/MARAA/coding-projects/mern-restaurant/api/tracing.js) | 94.88% | 80.00% | 96.15% | Medium |
+| [auditLog.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/auditLog.controller.js) | 86.76% | 30.77% | 100.00% | High |
+| [tracing.js](/d:/MARAA/coding-projects/mern-restaurant/api/tracing.js) | 94.88% | 79.07% | 96.15% | Medium |
 | [jwtRotation.service.js](/d:/MARAA/coding-projects/mern-restaurant/api/services/jwtRotation.service.js) | 87.86% | 79.07% | 84.62% | Medium |
 | [metrics.js](/d:/MARAA/coding-projects/mern-restaurant/api/middlewares/metrics.js) | 97.39% | 81.82% | 100.00% | Medium |
 
 ## Next Batches
 
-1. Runtime reliability batch
-   - continue filling remaining lines in [redisCache.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/redisCache.js)
-   - close the remaining collector-shutdown and invalid-trace-id branches in [tracing.js](/d:/MARAA/coding-projects/mern-restaurant/api/tracing.js)
-
-2. Remaining controller batch
+1. Remaining controller batch
    - keep pushing [menu.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/menu.controller.js) on reorder, deleted-menu listing, and audit filter branches
    - continue filling branch gaps in [restaurant.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/restaurant.controller.js) on create/update ownership and listing filters
    - continue filling branch gaps in [category.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/category.controller.js) on export, bulk reorder/idempotency, and restore/hard-delete branches
+
+2. Runtime follow-up batch
+   - continue filling remaining lines in [redisCache.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/redisCache.js)
+   - close the remaining collector-shutdown and invalid-trace-id branches in [tracing.js](/d:/MARAA/coding-projects/mern-restaurant/api/tracing.js)
 
 3. Load and operations batch
    - install `k6` in local/CI runner environments
    - validate `npm run test:load` and `npm run test:load:smoke`
    - capture baseline latency/error thresholds for auth/session/refresh
 
-4. App/bootstrap follow-up
-   - improve coverage for [app.js](/d:/MARAA/coding-projects/mern-restaurant/api/app.js)
-   - validate more middleware wiring and startup branches
-
 ## Update Log
 
 | Date | Lines | Branches | Functions | Notes |
 | --- | --- | --- | --- | --- |
+| 2026-03-11 | 92.63% | 73.02% | 93.36% | Controller batch 4 verified; `controller-branch-4` added, full gates green, load-test wrapper added for clearer `k6` validation failures |
 | 2026-03-11 | 92.25% | 72.23% | 93.28% | Runtime follow-up batch completed; Redis parse/serialization, metrics error paths, and tracing no-op metric coverage added |
 | 2026-03-11 | 92.16% | 71.77% | 92.91% | Repository/auth batch completed; admin repository tests added, `lastLoginAt` integrated, `k6` scripts wired |
 | 2026-03-11 | 90.76% | 70.90% | 89.18% | Controller branch batch completed; new restaurant/category/menu failure-path coverage added |
