@@ -1,6 +1,7 @@
 import express from 'express';
 import crypto from 'crypto';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import config from './config.js';
 
 // Routes
@@ -75,6 +76,12 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json({ limit: '1mb' }));
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: false
+  })
+);
 app.use(cookieParser());
 app.use(
   createCookieCsrfGuard({

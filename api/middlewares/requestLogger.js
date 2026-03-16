@@ -1,6 +1,36 @@
 import crypto from 'crypto';
 import { logger } from '../utils/logger.js';
 
+const redactValue = (value) => {
+  if (typeof value === 'string') {
+    if (value.length > 3 && !value.includes(' ')) {
+      return '[REDACTED]';
+    }
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value.map(redactValue);
+  }
+  if (value && typeof value === 'object') {
+    const redacted = {};
+    for (const [key, val] of Object.entries(value)) {
+      const lowerKey = key.toLowerCase();
+      if (
+        lowerKey.includes('password') ||
+        lowerKey.includes('token') ||
+        lowerKey.includes('secret') ||
+        lowerKey.includes('key')
+      ) {
+        redacted[key] = '[REDACTED]';
+      } else {
+        redacted[key] = redactValue(val);
+      }
+    }
+    return redacted;
+  }
+  return value;
+};
+
 /**
  * Creates a request logger middleware
  * @param {Object} options - Configuration options
@@ -30,7 +60,7 @@ export const createRequestLogger = (options = {}) => {
     requestLog.info('request.start', {
       userAgent: userAgent.substring(0, 100),
       contentLength: headers['content-length'] || 0,
-      ...(logBody && req.body && { body: req.body })
+      ...(logBody && req.body && { body: redactValue(req.body) })
     });
 
     res.on('finish', () => {
@@ -44,7 +74,7 @@ export const createRequestLogger = (options = {}) => {
       };
 
       if (shouldLogResponse && res.locals?.responseBody) {
-        logEntry.response = res.locals.responseBody;
+        logEntry.response = redactValue(res.locals.responseBody);
       }
 
       if (res.statusCode >= 500) {
@@ -59,5 +89,3 @@ export const createRequestLogger = (options = {}) => {
 };
 
 export default createRequestLogger;
-
-

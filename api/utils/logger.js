@@ -103,8 +103,17 @@ const pinoConfig = {
 
 const pinoLogger = pino(pinoConfig);
 
+const MAX_LOG_BUFFER = 1000;
+const recentLogs = [];
+
 const wrapLogger = (logger) => ({
   debug: (message, metadata) => {
+    const entry =
+      typeof message === 'object'
+        ? { ...message, level: 'debug' }
+        : { message, ...metadata, level: 'debug' };
+    recentLogs.unshift(entry);
+    if (recentLogs.length > MAX_LOG_BUFFER) recentLogs.pop();
     if (typeof message === 'object') {
       logger.debug(message);
     } else {
@@ -112,6 +121,12 @@ const wrapLogger = (logger) => ({
     }
   },
   info: (message, metadata) => {
+    const entry =
+      typeof message === 'object'
+        ? { ...message, level: 'info' }
+        : { message, ...metadata, level: 'info' };
+    recentLogs.unshift(entry);
+    if (recentLogs.length > MAX_LOG_BUFFER) recentLogs.pop();
     if (typeof message === 'object') {
       logger.info(message);
     } else {
@@ -119,6 +134,12 @@ const wrapLogger = (logger) => ({
     }
   },
   warn: (message, metadata) => {
+    const entry =
+      typeof message === 'object'
+        ? { ...message, level: 'warn' }
+        : { message, ...metadata, level: 'warn' };
+    recentLogs.unshift(entry);
+    if (recentLogs.length > MAX_LOG_BUFFER) recentLogs.pop();
     if (typeof message === 'object') {
       logger.warn(message);
     } else {
@@ -126,6 +147,12 @@ const wrapLogger = (logger) => ({
     }
   },
   error: (message, metadata) => {
+    const entry =
+      typeof message === 'object'
+        ? { ...message, level: 'error' }
+        : { message, ...metadata, level: 'error' };
+    recentLogs.unshift(entry);
+    if (recentLogs.length > MAX_LOG_BUFFER) recentLogs.pop();
     if (typeof message === 'object') {
       logger.error(message);
     } else {
@@ -135,8 +162,10 @@ const wrapLogger = (logger) => ({
   child: (bindings) => {
     return wrapLogger(logger.child(bindings));
   },
-  getRecentLogs: () => [],
-  clearRecentLogs: () => {}
+  getRecentLogs: (count = 100) => recentLogs.slice(0, count),
+  clearRecentLogs: () => {
+    recentLogs.length = 0;
+  }
 });
 
 export const logger = wrapLogger(pinoLogger);

@@ -103,7 +103,7 @@ This checklist ensures consistent, reliable releases of the MERN Restaurant API.
 - [ ] Verify backup jobs running
 - [ ] Monitor security alerts
 
-### Documentation
+### Documentations
 
 - [ ] Update release notes
 - [ ] Publish changelog
