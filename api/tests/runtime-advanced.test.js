@@ -144,17 +144,18 @@ test('jwt rotation service covers expired, manual rotation, and revocation branc
 
     jwtRotationService.currentKeyId = expiredKey.kid;
     jwtRotationService.saveKey = async () => {};
-    jwtRotationService.generateNewKey = async function generateReplacementKey() {
-      this.currentKeyId = 'replacement-kid';
-      this.keys.set('replacement-kid', {
-        kid: 'replacement-kid',
-        secret: 'replacement-secret',
-        created_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 60_000).toISOString(),
-        active: true,
-        algorithm: 'HS256'
-      });
-    };
+    jwtRotationService.generateNewKey =
+      async function generateReplacementKey() {
+        this.currentKeyId = 'replacement-kid';
+        this.keys.set('replacement-kid', {
+          kid: 'replacement-kid',
+          secret: 'replacement-secret',
+          created_at: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 60_000).toISOString(),
+          active: true,
+          algorithm: 'HS256'
+        });
+      };
 
     const revokeResult = await jwtRotationService.revokeKey(expiredKey.kid);
     assert.equal(revokeResult.revokedKeyId, expiredKey.kid);
@@ -244,6 +245,8 @@ test('redis cache utilities cover serialization failures and delete/stat branche
 });
 
 test('logger enforces bounded buffers and safe recent-log retrieval', () => {
+  logger.clearRecentLogs();
+
   for (let index = 0; index < 1005; index += 1) {
     logger.info(`entry-${index}`);
   }

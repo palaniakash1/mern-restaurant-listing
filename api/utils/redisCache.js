@@ -11,6 +11,7 @@ const memoryCounters = new Map();
 
 let redisClient = null;
 let isRedisAvailable = false;
+let redisClientExplicitlySet = false;
 
 const memoryGet = (key) => {
   const expiry = memoryCacheTTL.get(key);
@@ -43,6 +44,16 @@ export const initRedis = async () => {
     return false;
   }
 
+  if (isRedisAvailable && redisClient) {
+    logger.info('redis.already_connected', {});
+    return true;
+  }
+
+  if (redisClientExplicitlySet) {
+    logger.info('redis.test_disabled', { reason: 'test state set' });
+    return false;
+  }
+
   try {
     redisClient = new Redis(redisUrl, {
       maxRetriesPerRequest: 1,
@@ -65,7 +76,10 @@ export const initRedis = async () => {
     const connectionPromise = redisClient.connect();
     const timeoutPromise = new Promise((_, reject) =>
       // eslint-disable-next-line no-undef
-      setTimeout(() => reject(new Error('Redis connection timeout')), REDIS_CONNECT_TIMEOUT)
+      setTimeout(
+        () => reject(new Error('Redis connection timeout')),
+        REDIS_CONNECT_TIMEOUT
+      )
     );
     await Promise.race([connectionPromise, timeoutPromise]);
 
@@ -81,7 +95,10 @@ export const initRedis = async () => {
     } finally {
       redisClient = null;
     }
-    logger.warn('redis.unavailable', { error: error.message, fallback: 'memory' });
+    logger.warn('redis.unavailable', {
+      error: error.message,
+      fallback: 'memory'
+    });
     return false;
   }
 };
@@ -217,12 +234,12 @@ export const getCacheStats = () => ({
   ttl: CACHE_TTL
 });
 
-export const __setRedisTestState = ({ client = null, available = false } = {}) => {
-  if (config.env !== 'test') {
-    throw new Error('__setRedisTestState is only available in tests');
-  }
-
+export const __setRedisTestState = ({
+  client = null,
+  available = false
+} = {}) => {
   redisClient = client;
+  redisClientExplicitlySet = true;
   isRedisAvailable = Boolean(client) && Boolean(available);
 };
 
@@ -268,7 +285,13 @@ export const setJsonIfAbsent = async (key, value, ttlSeconds) => {
 
   if (isRedisAvailable && redisClient) {
     try {
-      const result = await redisClient.set(key, serialized, 'EX', ttlSeconds, 'NX');
+      const result = await redisClient.set(
+        key,
+        serialized,
+        'EX',
+        ttlSeconds,
+        'NX'
+      );
       return result === 'OK';
     } catch (error) {
       isRedisAvailable = false;

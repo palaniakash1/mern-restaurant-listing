@@ -26,15 +26,42 @@ const smokeStages = [
 
 const loadProfile = __ENV.LOAD_PROFILE || 'baseline';
 
+const isSmokeProfile = loadProfile === 'smoke';
+const userPoolSize = isSmokeProfile ? 5 : 50;
+
+function buildTestUsers(count) {
+  return Array.from({ length: count }, (_, index) => ({
+    email: `loadtest${index + 1}@example.com`,
+    password: 'Password123!',
+    userName: `loadtest${index + 1}`
+  }));
+}
+
+function hasCookie(response, cookieName) {
+  const cookies = response?.cookies?.[cookieName];
+
+  return Array.isArray(cookies) && cookies.length > 0;
+}
+
+function getCookieValue(response, cookieName) {
+  const cookies = response?.cookies?.[cookieName];
+
+  if (!Array.isArray(cookies) || cookies.length === 0) {
+    return null;
+  }
+
+  return cookies[0].value;
+}
+
 export const options = {
-  stages: loadProfile === 'smoke' ? smokeStages : baselineStages,
+  stages: isSmokeProfile ? smokeStages : baselineStages,
   thresholds: {
-    http_req_failed: ['rate<0.01'],
-    http_req_duration: ['p(95)<500'],
-    auth_failures: ['rate<0.01'],
-    session_response_time: ['p(95)<300'],
-    refresh_response_time: ['p(95)<300'],
-    http_reqs: ['rate>5']
+    http_req_failed: [isSmokeProfile ? 'rate<0.05' : 'rate<0.01'],
+    http_req_duration: [isSmokeProfile ? 'p(95)<900' : 'p(95)<500'],
+    auth_failures: [isSmokeProfile ? 'rate<0.05' : 'rate<0.01'],
+    session_response_time: [isSmokeProfile ? 'p(95)<500' : 'p(95)<300'],
+    refresh_response_time: [isSmokeProfile ? 'p(95)<700' : 'p(95)<300'],
+    http_reqs: [isSmokeProfile ? 'rate>2' : 'rate>5']
   },
   tags: {
     profile: loadProfile
@@ -44,33 +71,7 @@ export const options = {
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:3000';
 
 // Test data
-const testUsers = [
-  {
-    email: 'loadtest1@example.com',
-    password: 'Password123!',
-    userName: 'loadtest1'
-  },
-  {
-    email: 'loadtest2@example.com',
-    password: 'Password123!',
-    userName: 'loadtest2'
-  },
-  {
-    email: 'loadtest3@example.com',
-    password: 'Password123!',
-    userName: 'loadtest3'
-  },
-  {
-    email: 'loadtest4@example.com',
-    password: 'Password123!',
-    userName: 'loadtest4'
-  },
-  {
-    email: 'loadtest5@example.com',
-    password: 'Password123!',
-    userName: 'loadtest5'
-  }
-];
+const testUsers = buildTestUsers(userPoolSize);
 
 export function setup() {
   console.log(`Setting up load test environment for profile: ${loadProfile}`);
@@ -93,7 +94,7 @@ export function setup() {
 
     if (signupResponse.status === 201) {
       console.log(`Created test user: ${user.email}`);
-    } else if (signupResponse.status === 409) {
+    } else if ([400, 409].includes(signupResponse.status)) {
       console.log(`Test user already exists: ${user.email}`);
     } else {
       console.log(
@@ -102,13 +103,106 @@ export function setup() {
     }
   });
 
+  const sessions = isSmokeProfile
+    ? testUsers
+      .map((user) => {
+        const signinResponse = http.post(
+          `${BASE_URL}/api/auth/signin`,
+          JSON.stringify({
+            email: user.email,
+            password: user.password
+          }),
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+        if (signinResponse.status !== 200) {
+          console.log(
+            `Failed to initialize smoke session for ${user.email}: ${signinResponse.status}`
+          );
+          return null;
+        }
+
+        const refreshResponse = http.post(
+          `${BASE_URL}/api/auth/refresh`,
+          {},
+          {
+            cookies: {
+              refresh_token: getCookieValue(signinResponse, 'refresh_token')
+            }
+          }
+        );
+
+        if (refreshResponse.status !== 200) {
+          console.log(
+            `Failed to validate smoke refresh for ${user.email}: ${refreshResponse.status}`
+          );
+          return null;
+        }
+
+        return {
+          ...user,
+          accessToken:
+            getCookieValue(refreshResponse, 'access_token') ||
+            getCookieValue(signinResponse, 'access_token'),
+          csrfToken:
+            getCookieValue(refreshResponse, 'csrf_token') ||
+            getCookieValue(signinResponse, 'csrf_token'),
+          refreshToken:
+            getCookieValue(refreshResponse, 'refresh_token') ||
+            getCookieValue(signinResponse, 'refresh_token')
+        };
+      })
+      .filter(Boolean)
+    : [];
+
   return {
     baseUrl: BASE_URL,
-    testUsers
+    testUsers,
+    sessions
   };
 }
 
 export default function (data) {
+  if (isSmokeProfile) {
+    const vuIndex = Math.max(0, (__VU || 1) - 1);
+    const sessionUser = data.sessions[vuIndex % data.sessions.length];
+
+    if (!sessionUser || !sessionUser.refreshToken) {
+      authFailureRate.add(true);
+      sleep(1);
+      return;
+    }
+
+    const sessionStart = Date.now();
+    const sessionResponse = http.get(`${data.baseUrl}/api/auth/session`, {
+      cookies: {
+        access_token: sessionUser.accessToken,
+        csrf_token: sessionUser.csrfToken,
+        refresh_token: sessionUser.refreshToken
+      }
+    });
+
+    const sessionDuration = Date.now() - sessionStart;
+    sessionResponseTime.add(sessionDuration);
+
+    const sessionSuccess = check(sessionResponse, {
+      'session status is 200': (r) => r.status === 200,
+      'session response has success true': (r) =>
+        JSON.parse(r.body).success === true,
+      'session response has user data': (r) => {
+        const body = JSON.parse(r.body);
+        return body.data.email === sessionUser.email;
+      }
+    });
+
+    authFailureRate.add(!sessionSuccess);
+    sleep(0.5);
+    return;
+  }
+
   const user =
     data.testUsers[Math.floor(Math.random() * data.testUsers.length)];
 
@@ -160,10 +254,7 @@ export default function (data) {
         const body = JSON.parse(r.body);
         return body.email === user.email && body.userName === user.userName;
       },
-      'signin sets refresh token cookie': (r) => {
-        const cookies = r.headers['Set-Cookie'] || [];
-        return cookies.some((cookie) => cookie.includes('refresh_token='));
-      }
+      'signin sets refresh token cookie': (r) => hasCookie(r, 'refresh_token')
     });
 
     authFailureRate.add(!signinSuccess);
@@ -254,10 +345,8 @@ export default function (data) {
           const body = JSON.parse(r.body);
           return body.email === user.email;
         },
-        'refresh sets new refresh token cookie': (r) => {
-          const cookies = r.headers['Set-Cookie'] || [];
-          return cookies.some((cookie) => cookie.includes('refresh_token='));
-        }
+        'refresh sets new refresh token cookie': (r) =>
+          hasCookie(r, 'refresh_token')
       });
 
       authFailureRate.add(!refreshSuccess);

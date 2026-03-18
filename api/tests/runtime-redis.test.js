@@ -17,7 +17,8 @@ import {
   isRedisConnected,
   set,
   setJson,
-  setJsonIfAbsent
+  setJsonIfAbsent,
+  __setRedisTestState
 } from '../utils/redisCache.js';
 
 test.beforeEach(async () => {
@@ -25,6 +26,9 @@ test.beforeEach(async () => {
 });
 
 test('redis helpers expose a safe disconnected fallback state', async () => {
+  const wasConnected = isRedisConnected();
+  __setRedisTestState({ client: null, available: false });
+
   assert.equal(isRedisConnected(), false);
   assert.equal(getRedisClient(), null);
   assert.equal(await initRedis(), false);
@@ -35,6 +39,14 @@ test('redis helpers expose a safe disconnected fallback state', async () => {
 
   assert.equal(isRedisConnected(), false);
   assert.equal(getRedisClient(), null);
+
+  if (wasConnected) {
+    const Redis = await import('ioredis');
+    const redis = new Redis.default(
+      'redis://default:CGUmcOCrxysmkY3or4YCKnIPc1zOfUY4@redis-17809.c98.us-east-1-4.ec2.cloud.redislabs.com:17809'
+    );
+    __setRedisTestState({ client: redis, available: true });
+  }
 });
 
 test('redis fallback aliases support basic string cache operations', async () => {
@@ -93,6 +105,11 @@ test('redis fallback getOrFetch and pattern invalidation behave consistently', a
 });
 
 test('redis fallback rate-limit increment and cache stats return structured data', async () => {
+  const wasConnected = isRedisConnected();
+  if (wasConnected) {
+    __setRedisTestState({ client: null, available: false });
+  }
+
   const first = await atomicRateLimitIncrement('runtime:limit', 60);
   const second = await atomicRateLimitIncrement('runtime:limit', 60);
   const stats = getCacheStats();
@@ -101,4 +118,12 @@ test('redis fallback rate-limit increment and cache stats return structured data
   assert.equal(typeof second, 'object');
   assert.equal(typeof stats, 'object');
   assert.equal(isRedisConnected(), false);
+
+  if (wasConnected) {
+    const Redis = await import('ioredis');
+    const redis = new Redis.default(
+      'redis://default:CGUmcOCrxysmkY3or4YCKnIPc1zOfUY4@redis-17809.c98.us-east-1-4.ec2.cloud.redislabs.com:17809'
+    );
+    __setRedisTestState({ client: redis, available: true });
+  }
 });

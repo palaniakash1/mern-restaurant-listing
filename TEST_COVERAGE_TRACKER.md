@@ -4,30 +4,31 @@ Update this file after every successful `npm run test:coverage` run.
 
 ## Latest Verified Snapshot
 
-Date: 2026-03-11
+Date: 2026-03-14
 
 | Metric | Value |
 | --- | --- |
 | Lines | 94.27% |
-| Branches | 77.30% |
+| Branches | 77.39% |
 | Functions | 93.88% |
 | Tests Passing | 120/120 |
 | Lint | Pass |
 | Audit | Pass |
 | Coverage | Pass |
-| Load Tests | Blocked locally (`k6` unavailable) |
+| Load Tests | Smoke pass (`npm run test:load:smoke`); full baseline pending |
 
 ## Current Batch
 
 Scope:
-- rewrote the unstable controller branch suite into [controller-deep-branches.unit.test.js](/d:/MARAA/coding-projects/mern-restaurant/api/tests/controller-deep-branches.unit.test.js) with direct controller-unit coverage for audit log, category, menu, and restaurant decision paths
-- revalidated `npm test`, `npm run lint`, `npm run test:coverage`, and `npm audit --audit-level=high`
-- load-test commands remain wired through [run-k6.js](/d:/MARAA/coding-projects/mern-restaurant/api/load-tests/run-k6.js), but `k6` is still not installed locally
+- validated `k6` execution locally and fixed the smoke load script in [auth-load-test.js](/d:/MARAA/coding-projects/mern-restaurant/api/load-tests/auth-load-test.js) so cookie handling, per-VU session isolation, and smoke thresholds reflect real deployment checks
+- revalidated `npm test`, `npm run lint`, `npm run test:coverage`, `npm audit --audit-level=high`, and `npm run test:load:smoke`
+- confirmed overall coverage remains strong, but the controller branch targets in category/menu/restaurant and audit-log are still below the desired `90%` branch bar
 
 Notes:
 - tracing lifecycle tests still emit collector shutdown warnings when no OTLP collector is listening on `127.0.0.1:4318` / `::1:4318`
 - those warnings do not fail the suite
-- `k6` scripts are wired as `npm run test:load` and `npm run test:load:smoke` through a Node wrapper, but the runner is not installed in this environment
+- `k6` is now installed locally and the smoke profile is green against a live API instance
+- the full baseline profile remains pending because it is a much longer run and was not required to validate the smoke deployment gate in this batch
 
 ## Verified Commands
 
@@ -36,6 +37,7 @@ npm test
 npm run lint
 npm run test:coverage
 npm audit --audit-level=high
+npm run test:load:smoke
 ```
 
 ## High-Value Coverage Targets
@@ -44,7 +46,7 @@ npm audit --audit-level=high
 | --- | --- | --- | --- | --- |
 | [category.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/category.controller.js) | 88.29% | 50.00% | 100.00% | High |
 | [menu.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/menu.controller.js) | 85.31% | 40.00% | 91.43% | High |
-| [restaurant.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/restaurant.controller.js) | 92.76% | 68.85% | 96.77% | High |
+| [restaurant.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/restaurant.controller.js) | 92.76% | 69.60% | 96.77% | High |
 | [redisCache.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/redisCache.js) | 74.35% | 72.62% | 96.15% | High |
 | [auditLog.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/auditLog.controller.js) | 98.53% | 88.89% | 100.00% | High |
 | [tracing.js](/d:/MARAA/coding-projects/mern-restaurant/api/tracing.js) | 94.88% | 79.07% | 96.15% | Medium |
@@ -63,14 +65,15 @@ npm audit --audit-level=high
    - close the remaining collector-shutdown and invalid-trace-id branches in [tracing.js](/d:/MARAA/coding-projects/mern-restaurant/api/tracing.js)
 
 3. Load and operations batch
-   - install `k6` in local/CI runner environments
-   - validate `npm run test:load` and `npm run test:load:smoke`
-   - capture baseline latency/error thresholds for auth/session/refresh
+   - run the full `npm run test:load` baseline profile in a suitable environment
+   - capture and commit baseline latency/error thresholds for auth/session/refresh
+   - wire the smoke load test into CI or release validation
 
 ## Update Log
 
 | Date | Lines | Branches | Functions | Notes |
 | --- | --- | --- | --- | --- |
+| 2026-03-14 | 94.27% | 77.39% | 93.88% | `k6` installed locally, smoke load test fixed and passing, audit repaired with `npm audit fix`; controller branch targets still remain below the desired 90% bar |
 | 2026-03-11 | 94.27% | 77.30% | 93.88% | Rewrote the hanging controller test into `controller-deep-branches.unit.test.js`; full gates green and controller branch coverage materially improved |
 | 2026-03-11 | 92.63% | 73.02% | 93.36% | Controller batch 4 verified; `controller-branch-4` added, full gates green, load-test wrapper added for clearer `k6` validation failures |
 | 2026-03-11 | 92.25% | 72.23% | 93.28% | Runtime follow-up batch completed; Redis parse/serialization, metrics error paths, and tracing no-op metric coverage added |
