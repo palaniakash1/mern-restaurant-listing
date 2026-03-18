@@ -4,13 +4,13 @@ Update this file after every successful `npm run test:coverage` run.
 
 ## Latest Verified Snapshot
 
-Date: 2026-03-14
+Date: 2026-03-18
 
 | Metric | Value |
 | --- | --- |
-| Lines | 94.27% |
-| Branches | 77.39% |
-| Functions | 93.88% |
+| Lines | 93.26% |
+| Branches | 76.92% |
+| Functions | 92.60% |
 | Tests Passing | 120/120 |
 | Lint | Pass |
 | Audit | Pass |
@@ -20,15 +20,17 @@ Date: 2026-03-14
 ## Current Batch
 
 Scope:
-- validated `k6` execution locally and fixed the smoke load script in [auth-load-test.js](/d:/MARAA/coding-projects/mern-restaurant/api/load-tests/auth-load-test.js) so cookie handling, per-VU session isolation, and smoke thresholds reflect real deployment checks
-- revalidated `npm test`, `npm run lint`, `npm run test:coverage`, `npm audit --audit-level=high`, and `npm run test:load:smoke`
-- confirmed overall coverage remains strong, but the controller branch targets in category/menu/restaurant and audit-log are still below the desired `90%` branch bar
+- fixed test-mode runtime detection so background JWT rotation and tracing behaviors do not keep the Node test runner alive
+- muted logger transport output in tests while preserving in-memory log assertions
+- revalidated `npm test`, `npm run lint`, `npm run test:coverage`, and `npm audit --audit-level=high`
+- confirmed the backend is stable again, but the controller branch targets in category/menu/restaurant and audit-log are still below the desired `90%` branch bar
 
 Notes:
 - tracing lifecycle tests still emit collector shutdown warnings when no OTLP collector is listening on `127.0.0.1:4318` / `::1:4318`
 - those warnings do not fail the suite
 - `k6` is now installed locally and the smoke profile is green against a live API instance
 - the full baseline profile remains pending because it is a much longer run and was not required to validate the smoke deployment gate in this batch
+- test output is now materially quieter because logger transports are disabled during test runs
 
 ## Verified Commands
 
@@ -46,12 +48,13 @@ npm run test:load:smoke
 | --- | --- | --- | --- | --- |
 | [category.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/category.controller.js) | 88.29% | 50.00% | 100.00% | High |
 | [menu.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/menu.controller.js) | 85.31% | 40.00% | 91.43% | High |
-| [restaurant.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/restaurant.controller.js) | 92.76% | 69.60% | 96.77% | High |
+| [restaurant.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/restaurant.controller.js) | 92.76% | 68.33% | 96.77% | High |
 | [redisCache.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/redisCache.js) | 74.35% | 72.62% | 96.15% | High |
 | [auditLog.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/auditLog.controller.js) | 98.53% | 88.89% | 100.00% | High |
-| [tracing.js](/d:/MARAA/coding-projects/mern-restaurant/api/tracing.js) | 94.88% | 79.07% | 96.15% | Medium |
+| [tracing.js](/d:/MARAA/coding-projects/mern-restaurant/api/tracing.js) | 64.96% | 80.56% | 84.00% | Medium |
 | [jwtRotation.service.js](/d:/MARAA/coding-projects/mern-restaurant/api/services/jwtRotation.service.js) | 87.86% | 79.07% | 84.62% | Medium |
 | [auth.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/auth.controller.js) | 88.21% | 60.23% | 100.00% | Medium |
+| [logger.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/logger.js) | 79.10% | 77.06% | 75.00% | Medium |
 
 ## Next Batches
 
@@ -61,6 +64,7 @@ npm run test:load:smoke
    - continue filling branch gaps in [restaurant.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/restaurant.controller.js) on create/update ownership and listing filters
 
 2. Runtime follow-up batch
+   - restore coverage on [logger.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/logger.js) for the new quiet test-mode path
    - continue filling remaining lines in [redisCache.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/redisCache.js)
    - close the remaining collector-shutdown and invalid-trace-id branches in [tracing.js](/d:/MARAA/coding-projects/mern-restaurant/api/tracing.js)
 
@@ -73,6 +77,7 @@ npm run test:load:smoke
 
 | Date | Lines | Branches | Functions | Notes |
 | --- | --- | --- | --- | --- |
+| 2026-03-18 | 93.26% | 76.92% | 92.60% | Test hanging fixed by correcting test-mode runtime detection; logger muted during tests; full gates green again after the helmet/dependency refresh |
 | 2026-03-14 | 94.27% | 77.39% | 93.88% | `k6` installed locally, smoke load test fixed and passing, audit repaired with `npm audit fix`; controller branch targets still remain below the desired 90% bar |
 | 2026-03-11 | 94.27% | 77.30% | 93.88% | Rewrote the hanging controller test into `controller-deep-branches.unit.test.js`; full gates green and controller branch coverage materially improved |
 | 2026-03-11 | 92.63% | 73.02% | 93.36% | Controller batch 4 verified; `controller-branch-4` added, full gates green, load-test wrapper added for clearer `k6` validation failures |

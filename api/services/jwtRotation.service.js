@@ -5,7 +5,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { clearInterval, setInterval } from 'node:timers';
-import config from '../config.js';
+import config, { isTest } from '../config.js';
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -28,7 +28,7 @@ class JWTKeyRotationService {
 
   async initialize() {
     try {
-      if (!config.jwtRotation.enabled || config.env === 'test') {
+      if (!config.jwtRotation.enabled || isTest) {
         return false;
       }
       await this.ensureKeysDirectory();

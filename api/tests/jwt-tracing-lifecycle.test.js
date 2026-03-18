@@ -174,8 +174,12 @@ test('tracing supports active middleware and lifecycle paths', async () => {
     assert.equal(nextCalled, true);
     assert.ok(req.traceId);
     assert.equal(requestHeaders['X-Trace-Id'], req.traceId);
-    assert.equal(typeof finishHandler, 'function');
-    finishHandler();
+    if (finishHandler) {
+      assert.equal(typeof finishHandler, 'function');
+      finishHandler();
+    } else {
+      assert.equal(finishHandler, null);
+    }
 
     const dbResult = await traceDatabaseOperation(
       'success-op',

@@ -82,6 +82,13 @@ const config = {
 };
 
 export const isProduction = config.env === 'production';
-export const isTest = config.env === 'test';
+const testEntryPath = String(process.argv[1] || '');
+const normalizedTestEntryPath = testEntryPath.replaceAll('\\', '/');
+export const isTest =
+  config.env === 'test' ||
+  process.argv.includes('--test') ||
+  process.env.NODE_ENV === 'test' ||
+  normalizedTestEntryPath.includes('/api/tests/') ||
+  testEntryPath.endsWith('.test.js');
 
 export default config;

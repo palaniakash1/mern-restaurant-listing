@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { context, propagation, trace, SpanStatusCode } from '@opentelemetry/api';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 
-import config from './config.js';
+import config, { isTest } from './config.js';
 
 const tracingConfig = config.tracing;
 const sdkState = {
@@ -34,7 +34,7 @@ const buildNodeSdk = () =>
   });
 
 export const initTracing = async () => {
-  if (!tracingConfig.enabled || config.env === 'test') {
+  if (!tracingConfig.enabled || isTest) {
     return false;
   }
 
@@ -107,7 +107,7 @@ export const refreshTokensActive = {
 const getActiveTraceId = () => trace.getActiveSpan()?.spanContext().traceId || null;
 
 export const tracingMiddleware = (req, res, next) => {
-  if (!tracingConfig.enabled || config.env === 'test') {
+  if (!tracingConfig.enabled || isTest) {
     req.traceId = req.requestId || randomUUID();
     res.setHeader('X-Trace-Id', req.traceId);
     return next();

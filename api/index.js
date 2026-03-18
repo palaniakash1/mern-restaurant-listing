@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { clearTimeout, setTimeout } from 'node:timers';
 import app from './app.js';
-import config from './config.js';
+import config, { isTest } from './config.js';
 import { initTracing, shutdownTracing } from './tracing.js';
 import { closeRedis, initRedis } from './utils/redisCache.js';
 import { logger } from './utils/logger.js';
@@ -64,7 +64,7 @@ const startServer = async () => {
     await mongoose.connect(config.databaseUrl);
     logger.info('mongo.connected', {});
 
-    if (config.env !== 'test') {
+    if (!isTest) {
       await initRedis();
     }
 

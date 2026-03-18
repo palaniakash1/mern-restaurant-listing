@@ -56,6 +56,7 @@ const transportConfig = isProd
   };
 
 const pinoConfig = {
+  enabled: !isTestEnv,
   level: config.logLevel || 'info',
   formatters: {
     level: (label) => {
