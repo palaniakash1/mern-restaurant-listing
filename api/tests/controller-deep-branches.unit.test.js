@@ -1113,6 +1113,121 @@ test('category controller covers slug, audit, status, restore, export, and hard-
     params: { id: categoryId }
   });
   assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(createCategory, {
+    user: { role: 'admin', id: userId, restaurantId },
+    body: { name: 'Sides', isGeneric: false }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Restaurant, 'findById', () => query({ _id: restaurantId, status: 'draft' }));
+  result = await invoke(createCategory, {
+    user: { role: 'superAdmin', id: userId },
+    body: { name: 'Sides', isGeneric: false, restaurantId }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Restaurant, 'findById', () => query({ _id: otherRestaurantId, status: 'published' }));
+  result = await invoke(createCategory, {
+    user: { role: 'admin', id: userId, restaurantId },
+    body: { name: 'Sides', isGeneric: false, restaurantId: otherRestaurantId }
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  result = await invoke(updateCategory, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { id: categoryId },
+    body: {}
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(updateCategory, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { id: categoryId },
+    body: { name: '   ' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Category, 'findOne', () => query(genericCategory));
+  result = await invoke(updateCategory, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { id: categoryId },
+    body: { order: 1 }
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  patch(Category, 'findOne', () => query(foreignCategory));
+  result = await invoke(updateCategory, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { id: categoryId },
+    body: { order: 1 }
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  result = await invoke(deleteCategory, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { id: 'bad-id' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Category, 'findById', () => query(genericCategory));
+  patch(Menu, 'findOne', () => query(null));
+  result = await invoke(deleteCategory, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { id: categoryId }
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  patch(Category, 'findById', () => query(foreignCategory));
+  result = await invoke(deleteCategory, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { id: categoryId }
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  result = await invoke(reorderCategories, {
+    user: { role: 'admin', id: userId, restaurantId },
+    body: []
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Category, 'bulkWrite', async () => ({ matchedCount: 1, modifiedCount: 1 }));
+  result = await invoke(reorderCategories, {
+    user: { role: 'admin', id: userId, restaurantId },
+    body: [{ id: categoryId, order: 1 }, { id: oid(), order: 2 }]
+  });
+  assert.equal(result.nextError.statusCode, 404);
+
+  result = await invoke(bulkReorderCategories, {
+    user: { role: 'admin', id: userId, restaurantId },
+    headers: {},
+    body: { items: [{ id: categoryId, order: 1 }] }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  await setRedisJson(
+    `idempotency:category_reorder:${userId}:busy-key`,
+    { signature: JSON.stringify([{ id: categoryId, order: 1 }]), inFlight: true },
+    60
+  );
+  result = await invoke(bulkReorderCategories, {
+    user: { role: 'admin', id: userId, restaurantId },
+    headers: { 'x-idempotency-key': 'busy-key' },
+    body: { items: [{ id: categoryId, order: 1 }] }
+  });
+  assert.equal(result.nextError.statusCode, 409);
+
+  await setRedisJson(
+    `idempotency:category_reorder:${userId}:conflict-key`,
+    { signature: JSON.stringify([{ id: categoryId, order: 2 }]), inFlight: false, response: { success: true } },
+    60
+  );
+  result = await invoke(bulkReorderCategories, {
+    user: { role: 'admin', id: userId, restaurantId },
+    headers: { 'x-idempotency-key': 'conflict-key' },
+    body: { items: [{ id: categoryId, order: 1 }] }
+  });
+  assert.equal(result.nextError.statusCode, 409);
 });
 
 test('menu controller covers creation, access, status, restore, and public retrieval failure branches', async () => {
@@ -1268,6 +1383,13 @@ test('menu controller covers creation, access, status, restore, and public retri
   });
   assert.equal(result.nextError.statusCode, 403);
 
+  result = await invoke(updateMenuItem, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId: 'bad-id', itemId: 'bad-id' },
+    body: { price: 10 }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
   result = await invoke(reorderMenuItems, {
     user: { role: 'admin', id: userId, restaurantId },
     params: { menuId },
@@ -1275,10 +1397,74 @@ test('menu controller covers creation, access, status, restore, and public retri
   });
   assert.equal(result.nextError.statusCode, 400);
 
+  result = await invoke(reorderMenuItems, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId: 'bad-id' },
+    body: { order: [{ itemId: String(menuDoc.items[0]._id), order: 1 }] }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(reorderMenuItems, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId },
+    body: { order: [{ itemId: 'bad-id', order: 1 }, { itemId: String(menuDoc.items[1]._id), order: 2 }] }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(reorderMenuItems, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId },
+    body: {
+      order: [
+        { itemId: String(menuDoc.items[0]._id), order: 1 },
+        { itemId: String(menuDoc.items[0]._id), order: 2 }
+      ]
+    }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(reorderMenuItems, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId },
+    body: {
+      order: [
+        { itemId: String(menuDoc.items[0]._id), order: 1 },
+        { itemId: String(menuDoc.items[1]._id), order: 1 }
+      ]
+    }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(reorderMenuItems, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId },
+    body: {
+      order: [
+        { itemId: String(menuDoc.items[0]._id), order: 1 },
+        { itemId: String(menuDoc.items[1]._id), order: 3 }
+      ]
+    }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
   result = await invoke(updateMenuStatus, {
     user: { role: 'admin', id: userId, restaurantId },
     params: { menuId },
     body: { status: 'draft' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(updateMenuStatus, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId: 'bad-id' },
+    body: { status: 'published' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(updateMenuStatus, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId },
+    body: { status: 'nope' }
   });
   assert.equal(result.nextError.statusCode, 400);
 
@@ -1374,6 +1560,34 @@ test('menu controller covers creation, access, status, restore, and public retri
   });
   assert.equal(result.nextError.statusCode, 403);
 
+  result = await invoke(deleteMenu, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId: 'bad-id' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Menu, 'findById', () => query(null));
+  result = await invoke(deleteMenu, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId }
+  });
+  assert.equal(result.nextError.statusCode, 404);
+
+  patch(Menu, 'findById', () => query(menuDoc));
+  result = await invoke(getMenuAuditLogs, {
+    user: { role: 'admin', restaurantId: otherRestaurantId },
+    params: { menuId },
+    query: {}
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  result = await invoke(getMenuAuditLogs, {
+    user: { role: 'admin', restaurantId },
+    params: { menuId },
+    query: { from: 'bad-date' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
   result = await invoke(getMenuByRestaurant, {
     params: { restaurantId: 'bad-id' },
     query: {}
@@ -1425,6 +1639,41 @@ test('restaurant controller covers missing resource, ownership, and public valid
     body: { status: 'published' }
   });
   assert.equal(result.nextError.statusCode, 404);
+
+  patch(Restaurant, 'findOne', () => query(null));
+  patch(User, 'findById', () => query({ _id: userId, role: 'admin', restaurantId }));
+  result = await invoke(create, {
+    user: { id: userId, role: 'admin' },
+    body: {
+      name: 'Demo',
+      address: { city: 'City', addressLine1: 'Line' },
+      contactNumber: '123',
+      email: 'demo@example.com',
+      location: { lat: 1, lng: 2 }
+    }
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  const assignedAdminId = oid();
+  patch(Restaurant, 'findOne', () => query(null));
+  patch(User, 'findById', (id) => {
+    if (String(id) === String(assignedAdminId)) {
+      return query({ _id: assignedAdminId, role: 'admin', restaurantId });
+    }
+    return query(null);
+  });
+  result = await invoke(create, {
+    user: { id: userId, role: 'superAdmin' },
+    body: {
+      name: 'Demo',
+      address: { city: 'City', addressLine1: 'Line' },
+      contactNumber: '123',
+      email: 'demo@example.com',
+      adminId: assignedAdminId,
+      location: { lat: 1, lng: 2 }
+    }
+  });
+  assert.equal(result.nextError.statusCode, 403);
 
   result = await invoke(deleteRestaurant, {
     user: { id: userId, role: 'superAdmin' },
@@ -1482,6 +1731,45 @@ test('restaurant controller covers missing resource, ownership, and public valid
     user: { id: userId, role: 'superAdmin' },
     params: { id: restaurantId },
     body: { status: 'published' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Restaurant, 'findById', () => query({ ...restaurant }));
+  patch(Category, 'countDocuments', async () => 0);
+  result = await invoke(updateRestaurant, {
+    user: { id: userId, role: 'admin' },
+    params: { id: restaurantId },
+    body: { categories: [oid()] }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Restaurant, 'findByIdAndUpdate', () => query(null));
+  patch(Category, 'countDocuments', async () => 1);
+  result = await invoke(updateRestaurant, {
+    user: { id: userId, role: 'admin' },
+    params: { id: restaurantId },
+    body: { name: 'Renamed' }
+  });
+  assert.equal(result.nextError.statusCode, 404);
+
+  patch(Restaurant, 'findById', () => query({ ...restaurant, status: 'draft' }));
+  result = await invoke(restoreRestaurant, {
+    user: { id: userId, role: 'superAdmin' },
+    params: { id: restaurantId }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Restaurant, 'findById', () => query({ ...restaurant, adminId: oid() }));
+  patch(User, 'findById', () => query(null));
+  result = await invoke(reassignRestaurantAdmin, {
+    user: { id: userId, role: 'superAdmin' },
+    params: { id: restaurantId },
+    body: { newAdminId: oid() }
+  });
+  assert.equal(result.nextError.statusCode, 500);
+
+  result = await invoke(listRestaurants, {
+    query: { page: 0, limit: 10 }
   });
   assert.equal(result.nextError.statusCode, 400);
 });
