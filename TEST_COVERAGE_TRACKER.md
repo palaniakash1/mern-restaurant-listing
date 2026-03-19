@@ -8,10 +8,10 @@ Date: 2026-03-18
 
 | Metric | Value |
 | --- | --- |
-| Lines | 94.38% |
-| Branches | 82.70% |
-| Functions | 90.05% |
-| Tests Passing | 124/124 |
+| Lines | 95.07% |
+| Branches | 86.20% |
+| Functions | 89.22% |
+| Tests Passing | 129/129 |
 | Lint | Pass |
 | Audit | Pass |
 | Coverage | Pass |
@@ -20,10 +20,10 @@ Date: 2026-03-18
 ## Current Batch
 
 Scope:
-- added another controller-only deep branch pass covering create/update/delete/reorder/status edge cases in category, menu, and restaurant controllers
-- fixed a regression in the new restaurant slug-check mock that had turned the test run into a long loop instead of a real failure
+- added two more controller-only deep branch passes covering remaining helper, access, lifecycle, and validation branches in category, menu, and restaurant controllers
 - revalidated `npm test`, `npm run lint`, `npm run test:coverage`, and `npm audit --audit-level=high`
-- pushed overall branch coverage above `82%` and moved the three large target controllers materially closer to the `90%` branch bar
+- pushed overall branch coverage above `86%`
+- pushed the four requested controller branch targets above `90%`
 
 Notes:
 - tracing lifecycle tests still emit collector shutdown warnings when no OTLP collector is listening on `127.0.0.1:4318` / `::1:4318`
@@ -45,11 +45,11 @@ npm run test:load:smoke
 
 | Module | Lines | Branches | Functions | Priority |
 | --- | --- | --- | --- | --- |
-| [category.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/category.controller.js) | 93.67% | 79.74% | 100.00% | High |
-| [menu.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/menu.controller.js) | 92.92% | 76.00% | 94.29% | High |
-| [restaurant.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/restaurant.controller.js) | 95.57% | 83.45% | 96.77% | High |
+| [category.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/category.controller.js) | 97.44% | 91.32% | 100.00% | Completed |
+| [menu.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/menu.controller.js) | 97.92% | 92.82% | 97.30% | Completed |
+| [restaurant.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/restaurant.controller.js) | 97.59% | 92.64% | 100.00% | Completed |
 | [redisCache.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/redisCache.js) | 62.43% | 70.89% | 80.00% | High |
-| [auditLog.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/auditLog.controller.js) | 98.53% | 93.33% | 100.00% | Medium |
+| [auditLog.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/auditLog.controller.js) | 98.53% | 93.33% | 100.00% | Completed |
 | [tracing.js](/d:/MARAA/coding-projects/mern-restaurant/api/tracing.js) | 64.96% | 79.41% | 84.00% | Medium |
 | [jwtRotation.service.js](/d:/MARAA/coding-projects/mern-restaurant/api/services/jwtRotation.service.js) | 87.86% | 79.07% | 84.62% | Medium |
 | [auth.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/auth.controller.js) | 88.21% | 60.23% | 100.00% | Medium |
@@ -57,15 +57,14 @@ npm run test:load:smoke
 
 ## Next Batches
 
-1. Remaining controller batch
-   - continue filling branch gaps in [restaurant.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/restaurant.controller.js) on create slug-collision handling, text-search listing, and remaining ownership/summary branches
-   - continue filling branch gaps in [category.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/category.controller.js) on bulk reorder race branches, export/public listing filters, and restore/hard-delete edge cases
-   - continue filling branch gaps in [menu.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/menu.controller.js) on deleted-menu listing, audit filters, public menu caching filters, and hard-delete branches
-
-2. Runtime follow-up batch
+1. Runtime follow-up batch
    - restore coverage on [logger.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/logger.js) for the new quiet test-mode path
    - continue filling remaining lines in [redisCache.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/redisCache.js)
    - close the remaining collector-shutdown and invalid-trace-id branches in [tracing.js](/d:/MARAA/coding-projects/mern-restaurant/api/tracing.js)
+
+2. Auth and user follow-up batch
+   - push [auth.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/auth.controller.js) and [user.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/user.controller.js) higher on branch coverage
+   - deepen [jwtRotation.service.js](/d:/MARAA/coding-projects/mern-restaurant/api/services/jwtRotation.service.js) and [user.service.js](/d:/MARAA/coding-projects/mern-restaurant/api/services/user.service.js)
 
 3. Load and operations batch
    - run the full `npm run test:load` baseline profile in a suitable environment
@@ -76,6 +75,7 @@ npm run test:load:smoke
 
 | Date | Lines | Branches | Functions | Notes |
 | --- | --- | --- | --- | --- |
+| 2026-03-18 | 95.07% | 86.20% | 89.22% | Controller deep branch pass completed; category, menu, restaurant, and audit-log are now all above 90% branch coverage with full gates green |
 | 2026-03-18 | 94.38% | 82.70% | 90.05% | Second deep controller branch pass completed; category, menu, and restaurant controllers all moved materially upward with full gates green |
 | 2026-03-18 | 93.95% | 80.73% | 89.84% | Deep controller branch batch completed; audit-log is now above 90% branch coverage, and category/menu/restaurant moved up materially with full gates green |
 | 2026-03-18 | 93.26% | 76.92% | 92.60% | Test hanging fixed by correcting test-mode runtime detection; logger muted during tests; full gates green again after the helmet/dependency refresh |
