@@ -198,8 +198,8 @@ describe('Auth integration', { concurrency: false }, () => {
     const originalMaxMs = process.env.LOGIN_LOCKOUT_MAX_MS;
 
     process.env.LOGIN_LOCKOUT_THRESHOLD = '3';
-    process.env.LOGIN_LOCKOUT_BASE_MS = '40';
-    process.env.LOGIN_LOCKOUT_MAX_MS = '40';
+    process.env.LOGIN_LOCKOUT_BASE_MS = '1000';
+    process.env.LOGIN_LOCKOUT_MAX_MS = '1000';
 
     try {
       const hashedPassword = bcryptjs.hashSync('Password1', 10);
@@ -246,7 +246,7 @@ describe('Auth integration', { concurrency: false }, () => {
       assert.equal(telemetry.login_lockout_started, 1);
       assert.equal(telemetry.login_lockout_blocked, 1);
 
-      await delay(60);
+      await delay(1100);
 
       const recoveredRes = await request(app).post('/api/auth/signin').send({
         email: 'locked@example.com',
