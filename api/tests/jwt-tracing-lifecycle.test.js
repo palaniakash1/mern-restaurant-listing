@@ -7,6 +7,8 @@ import path from 'node:path';
 import config from '../config.js';
 import jwtRotationService from '../services/jwtRotation.service.js';
 import {
+  __setTracingSdkFactory,
+  __setTracingTestOverride,
   initTracing,
   shutdownTracing,
   traceAuthOperation,
@@ -37,6 +39,8 @@ const restoreJwtState = (state) => {
 
 test.after(async () => {
   jwtRotationService.stopRotationTimer();
+  __setTracingTestOverride(null);
+  __setTracingSdkFactory(null);
   await shutdownTracing();
 });
 
@@ -135,6 +139,7 @@ test('tracing supports active middleware and lifecycle paths', async () => {
   try {
     config.env = 'development';
     config.tracing.enabled = true;
+    __setTracingTestOverride(false);
 
     const initResult = await initTracing();
     assert.equal(typeof initResult, 'boolean');
@@ -199,7 +204,62 @@ test('tracing supports active middleware and lifecycle paths', async () => {
     await shutdownTracing();
     await shutdownTracing();
   } finally {
+    __setTracingTestOverride(null);
     config.env = originalEnv;
     config.tracing.enabled = originalEnabled;
+  }
+});
+
+test('tracing init and shutdown cover explicit success and failure sdk paths', async () => {
+  const originalEnabled = config.tracing.enabled;
+  const calls = [];
+
+  try {
+    config.tracing.enabled = true;
+    __setTracingTestOverride(false);
+
+    __setTracingSdkFactory(() => ({
+      start() {
+        calls.push('start-success');
+      },
+      async shutdown() {
+        calls.push('shutdown-success');
+      }
+    }));
+
+    const successResult = await initTracing();
+    assert.equal(successResult, true);
+    await shutdownTracing();
+    assert.deepEqual(calls, ['start-success', 'shutdown-success']);
+
+    __setTracingSdkFactory(() => ({
+      start() {
+        throw new Error('sdk start failed');
+      },
+      async shutdown() {
+        calls.push('shutdown-failure-sdk');
+      }
+    }));
+
+    const failureResult = await initTracing();
+    assert.equal(failureResult, false);
+
+    __setTracingSdkFactory(() => ({
+      start() {
+        calls.push('start-shutdown-failure');
+      },
+      async shutdown() {
+        throw new Error('sdk shutdown failed');
+      }
+    }));
+
+    await initTracing();
+    await shutdownTracing();
+    assert.equal(calls.includes('start-shutdown-failure'), true);
+  } finally {
+    __setTracingSdkFactory(null);
+    __setTracingTestOverride(null);
+    config.tracing.enabled = originalEnabled;
+    await shutdownTracing();
   }
 });

@@ -13,6 +13,9 @@ const sdkState = {
   started: false
 };
 
+let tracingTestOverride = null;
+let tracingSdkFactory = () => buildNodeSdk();
+
 const INVALID_TRACE_ID = '00000000000000000000000000000000';
 
 const createNoopMeter = () => ({
@@ -33,8 +36,19 @@ const buildNodeSdk = () =>
     autoDetectResources: true
   });
 
+const isTracingDisabled = () =>
+  tracingTestOverride ?? (!tracingConfig.enabled || isTest);
+
+export const __setTracingTestOverride = (value = null) => {
+  tracingTestOverride = value;
+};
+
+export const __setTracingSdkFactory = (factory = null) => {
+  tracingSdkFactory = factory || (() => buildNodeSdk());
+};
+
 export const initTracing = async () => {
-  if (!tracingConfig.enabled || isTest) {
+  if (isTracingDisabled()) {
     return false;
   }
 
@@ -43,19 +57,27 @@ export const initTracing = async () => {
   }
 
   if (!sdkState.startPromise) {
-    sdkState.sdk = buildNodeSdk();
-    sdkState.startPromise = Promise.resolve(sdkState.sdk.start())
-      .then(() => {
-        sdkState.started = true;
-        console.log(`Tracing enabled for service: ${tracingConfig.serviceName}`);
-        return true;
-      })
-      .catch((error) => {
-        console.error('Failed to initialize tracing:', error);
-        sdkState.sdk = null;
-        sdkState.startPromise = null;
-        return false;
-      });
+    try {
+      sdkState.sdk = tracingSdkFactory();
+      const startResult = sdkState.sdk.start();
+      sdkState.startPromise = Promise.resolve(startResult)
+        .then(() => {
+          sdkState.started = true;
+          console.log(`Tracing enabled for service: ${tracingConfig.serviceName}`);
+          return true;
+        })
+        .catch((error) => {
+          console.error('Failed to initialize tracing:', error);
+          sdkState.sdk = null;
+          sdkState.startPromise = null;
+          return false;
+        });
+    } catch (error) {
+      console.error('Failed to initialize tracing:', error);
+      sdkState.sdk = null;
+      sdkState.startPromise = null;
+      return false;
+    }
   }
 
   return sdkState.startPromise;
@@ -107,7 +129,7 @@ export const refreshTokensActive = {
 const getActiveTraceId = () => trace.getActiveSpan()?.spanContext().traceId || null;
 
 export const tracingMiddleware = (req, res, next) => {
-  if (!tracingConfig.enabled || isTest) {
+  if (isTracingDisabled()) {
     req.traceId = req.requestId || randomUUID();
     res.setHeader('X-Trace-Id', req.traceId);
     return next();

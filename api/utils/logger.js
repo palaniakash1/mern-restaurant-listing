@@ -12,51 +12,55 @@ const logDirectory = join(
   'logs'
 );
 
-const transportConfig = isProd
-  ? {
-    targets: [
-      {
-        target: 'pino/file',
-        options: {
-          destination: 1,
-          mkdir: true
+const buildTransportConfig = (production = isProd) =>
+  production
+    ? {
+      targets: [
+        {
+          target: 'pino/file',
+          options: {
+            destination: 1,
+            mkdir: true
+          },
+          level: 'info'
         },
-        level: 'info'
-      },
-      {
-        target: 'pino/file',
-        options: {
-          destination: join(logDirectory, 'error.log'),
-          mkdir: true
+        {
+          target: 'pino/file',
+          options: {
+            destination: join(logDirectory, 'error.log'),
+            mkdir: true
+          },
+          level: 'error'
         },
-        level: 'error'
-      },
-      {
-        target: 'pino/file',
-        options: {
-          destination: join(logDirectory, 'combined.log'),
-          mkdir: true
-        },
-        level: 'info'
-      }
-    ]
-  }
-  : {
-    targets: [
-      {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'SYS:standard',
-          ignore: 'pid,hostname'
-        },
-        level: 'debug'
-      }
-    ]
-  };
+        {
+          target: 'pino/file',
+          options: {
+            destination: join(logDirectory, 'combined.log'),
+            mkdir: true
+          },
+          level: 'info'
+        }
+      ]
+    }
+    : {
+      targets: [
+        {
+          target: 'pino-pretty',
+          options: {
+            colorize: true,
+            translateTime: 'SYS:standard',
+            ignore: 'pid,hostname'
+          },
+          level: 'debug'
+        }
+      ]
+    };
 
-const pinoConfig = {
-  enabled: !isTestEnv,
+const buildPinoConfig = ({
+  production = isProd,
+  testEnv = isTestEnv
+} = {}) => ({
+  enabled: !testEnv,
   level: config.logLevel || 'info',
   formatters: {
     level: (label) => {
@@ -78,7 +82,7 @@ const pinoConfig = {
       path: req.path,
       parameters: req.parameters,
       headers: {
-        host: req.headers.host
+        host: req.headers?.host
       }
     }),
     res: (res) => ({
@@ -99,8 +103,12 @@ const pinoConfig = {
     censor: '[REDACTED]'
   },
   timestamp: () => `,"timestamp":"${new Date().toISOString()}"`,
-  ...(isProd && !isTestEnv ? { transport: transportConfig } : {})
-};
+  ...(production && !testEnv
+    ? { transport: buildTransportConfig(production) }
+    : {})
+});
+
+const pinoConfig = buildPinoConfig();
 
 const pinoLogger = pino(pinoConfig);
 
@@ -331,5 +339,12 @@ const wrapLogger = (logger) => ({
 });
 
 export const logger = wrapLogger(pinoLogger);
+
+export const __loggerTestUtils = {
+  buildTransportConfig,
+  buildPinoConfig,
+  redactValue,
+  wrapLogger
+};
 
 export default logger;

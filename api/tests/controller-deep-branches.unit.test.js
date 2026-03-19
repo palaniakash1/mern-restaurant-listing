@@ -2023,3 +2023,1019 @@ test('restaurant controller covers missing resource, ownership, and public valid
   });
   assert.equal(result.res.statusCode, 200);
 });
+
+test('category controller covers remaining ownership, restore, and validation edge branches', async () => {
+  const userId = oid();
+  const restaurantId = oid();
+  const otherRestaurantId = oid();
+  const categoryId = oid();
+  const genericCategoryId = oid();
+  const activeCategoryId = oid();
+  const missingCategoryId = oid();
+
+  const ownedCategory = makeCategoryDoc({
+    _id: categoryId,
+    restaurantId,
+    isGeneric: false,
+    isActive: true
+  });
+  const genericCategory = makeCategoryDoc({
+    _id: genericCategoryId,
+    isGeneric: true,
+    restaurantId: null
+  });
+  const foreignCategory = makeCategoryDoc({
+    _id: oid(),
+    restaurantId: otherRestaurantId,
+    isGeneric: false
+  });
+
+  patch(Restaurant, 'findById', (id) => {
+    if (String(id) === String(otherRestaurantId)) {
+      return query({
+        _id: otherRestaurantId,
+        status: 'draft',
+        isActive: false
+      });
+    }
+    return query({ _id: restaurantId, status: 'published', isActive: true });
+  });
+  patch(Category, 'findOne', (filter) => {
+    if (String(filter?._id) === String(missingCategoryId)) return query(null);
+    if (String(filter?._id) === String(genericCategoryId)) {
+      return query(genericCategory);
+    }
+    if (String(filter?._id) === String(foreignCategory._id)) {
+      return query(foreignCategory);
+    }
+    return query(ownedCategory);
+  });
+  patch(Category, 'findById', (id) => {
+    if (String(id) === String(categoryId)) return query(ownedCategory);
+    if (String(id) === String(genericCategoryId)) return query(genericCategory);
+    if (String(id) === String(foreignCategory._id)) {
+      return query(foreignCategory);
+    }
+    if (String(id) === String(activeCategoryId)) {
+      return query(
+        makeCategoryDoc({
+          _id: activeCategoryId,
+          restaurantId,
+          isActive: true
+        })
+      );
+    }
+    return query(null);
+  });
+  patch(Category, 'bulkWrite', async () => ({
+    matchedCount: 1,
+    modifiedCount: 1
+  }));
+  patch(Category, 'countDocuments', () => countQuery(1));
+  patch(Category, 'find', () => query([ownedCategory]));
+  patch(Category, 'updateMany', async () => ({
+    matchedCount: 1,
+    modifiedCount: 1
+  }));
+  patch(Category, 'findByIdAndDelete', () => query(ownedCategory));
+  patch(Menu, 'findOne', (filter) => {
+    if (String(filter?.categoryId) === String(categoryId)) {
+      return query({ _id: oid(), categoryId });
+    }
+    return query(null);
+  });
+  patch(AuditLog, 'countDocuments', async () => 1);
+  patch(AuditLog, 'find', () => query([{ action: 'UPDATE' }]));
+
+  Category.collection.findOne = async (filter) => {
+    if (String(filter._id) === String(missingCategoryId)) return null;
+    if (String(filter._id) === String(activeCategoryId)) {
+      return { _id: activeCategoryId, isActive: true };
+    }
+    return { _id: categoryId, isActive: false };
+  };
+  Category.collection.updateOne = async () => ({ acknowledged: true });
+
+  let result = await invoke(createCategory, {
+    user: { role: 'admin', id: userId, restaurantId },
+    body: {}
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(createCategory, {
+    user: { role: 'admin', id: userId, restaurantId },
+    body: {
+      name: 'Unpublished',
+      isGeneric: false,
+      restaurantId: otherRestaurantId
+    }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Restaurant, 'findById', () =>
+    query({ _id: restaurantId, status: 'published', isActive: true })
+  );
+  result = await invoke(createCategory, {
+    user: { role: 'admin', id: userId, restaurantId },
+    body: {
+      name: 'Foreign',
+      isGeneric: false,
+      restaurantId: otherRestaurantId
+    }
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  result = await invoke(updateCategory, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { id: missingCategoryId },
+    body: { name: 'Updated' }
+  });
+  assert.equal(result.nextError.statusCode, 404);
+
+  result = await invoke(updateCategory, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { id: genericCategoryId },
+    body: { name: 'Updated' }
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  result = await invoke(deleteCategory, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { id: categoryId }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Menu, 'findOne', () => query(null));
+  result = await invoke(deleteCategory, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { id: foreignCategory._id }
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  result = await invoke(reorderCategories, {
+    user: { role: 'admin', id: userId, restaurantId },
+    body: [{ id: categoryId, order: 1 }, { id: oid(), order: 2 }]
+  });
+  assert.equal(result.nextError.statusCode, 404);
+
+  result = await invoke(checkCategorySlug, {
+    user: { role: 'admin', id: userId, restaurantId },
+    body: {
+      slug: 'demo',
+      isGeneric: false,
+      restaurantId,
+      categoryId: 'bad-id'
+    }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(getCategoryAuditLogs, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { id: categoryId },
+    query: { actorId: 'bad-id' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(getCategoryAuditLogs, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { id: categoryId },
+    query: { from: 'bad-date' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(getMyCategories, {
+    user: { role: 'superAdmin', id: userId },
+    query: {}
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  result = await invoke(getCategoryById, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { id: 'bad-id' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(updateCategoryStatus, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { id: categoryId },
+    body: { isActive: 'yes' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(updateCategoryStatus, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { id: genericCategoryId },
+    body: { isActive: false }
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  result = await invoke(restoreCategory, {
+    user: { role: 'superAdmin', id: userId },
+    params: { id: 'bad-id' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(restoreCategory, {
+    user: { role: 'superAdmin', id: userId },
+    params: { id: missingCategoryId }
+  });
+  assert.equal(result.nextError.statusCode, 404);
+
+  result = await invoke(restoreCategory, {
+    user: { role: 'superAdmin', id: userId },
+    params: { id: activeCategoryId }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(bulkUpdateCategoryStatus, {
+    user: { role: 'superAdmin', id: userId },
+    body: { ids: ['bad-id'], status: 'published' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(bulkUpdateCategoryStatus, {
+    user: { role: 'superAdmin', id: userId },
+    body: { ids: [categoryId], status: 'bad-status' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Menu, 'findOne', () => query({ _id: oid(), categoryId }));
+  result = await invoke(hardDeleteCategory, {
+    user: { role: 'superAdmin', id: userId },
+    params: { id: categoryId }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+});
+
+test('menu controller covers remaining validation, audit, and deletion edge branches', async () => {
+  const userId = oid();
+  const restaurantId = oid();
+  const otherRestaurantId = oid();
+  const menuId = oid();
+  const itemId = oid();
+
+  const baseMenu = makeMenuDoc({
+    _id: menuId,
+    restaurantId,
+    categoryId: oid(),
+    status: 'draft',
+    isActive: true
+  });
+  baseMenu.items = [
+    {
+      _id: itemId,
+      name: 'Item One',
+      price: 10,
+      order: 1,
+      isActive: true,
+      isAvailable: true,
+      toObject() {
+        return { ...this };
+      }
+    }
+  ];
+  baseMenu.items.id = (id) =>
+    baseMenu.items.find((item) => String(item._id) === String(id)) || null;
+
+  patch(Restaurant, 'findById', (id) => {
+    if (String(id) === String(otherRestaurantId)) {
+      return query({
+        _id: otherRestaurantId,
+        status: 'draft',
+        isActive: false
+      });
+    }
+    return query({ _id: restaurantId, status: 'published', isActive: true });
+  });
+  patch(Category, 'findById', () =>
+    query({
+      _id: oid(),
+      restaurantId,
+      isActive: true,
+      status: 'published',
+      isGeneric: false
+    })
+  );
+  patch(Menu, 'findOne', () => query(null));
+  patch(Menu, 'findById', () => query(baseMenu));
+  patch(Menu, 'findByIdAndDelete', () => query(null));
+  patch(Menu, 'countDocuments', async () => 1);
+  patch(Menu, 'find', () => query([{ ...baseMenu, items: baseMenu.items }]));
+  patch(AuditLog, 'countDocuments', async () => 1);
+  patch(AuditLog, 'find', () => query([{ action: 'UPDATE' }]));
+  Menu.collection.findOne = async () => ({
+    _id: new mongoose.Types.ObjectId(menuId),
+    restaurantId,
+    isActive: true
+  });
+
+  let result = await invoke(createMenu, {
+    user: { role: 'customer', id: userId },
+    body: { restaurantId, categoryId: oid() }
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  result = await invoke(createMenu, {
+    user: { role: 'admin', id: userId, restaurantId },
+    body: { restaurantId: otherRestaurantId, categoryId: oid() }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Restaurant, 'findById', () =>
+    query({ _id: restaurantId, status: 'published', isActive: true })
+  );
+  patch(Category, 'findById', () => query(null));
+  result = await invoke(createMenu, {
+    user: { role: 'superAdmin', id: userId },
+    body: { restaurantId, categoryId: oid() }
+  });
+  assert.equal(result.nextError.statusCode, 404);
+
+  patch(Category, 'findById', () =>
+    query({
+      _id: oid(),
+      restaurantId,
+      isActive: false,
+      status: 'published',
+      isGeneric: false
+    })
+  );
+  result = await invoke(createMenu, {
+    user: { role: 'superAdmin', id: userId },
+    body: { restaurantId, categoryId: oid() }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Category, 'findById', () =>
+    query({
+      _id: oid(),
+      restaurantId,
+      isActive: true,
+      status: 'draft',
+      isGeneric: false
+    })
+  );
+  result = await invoke(createMenu, {
+    user: { role: 'superAdmin', id: userId },
+    body: { restaurantId, categoryId: oid() }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Category, 'findById', () =>
+    query({
+      _id: oid(),
+      restaurantId: otherRestaurantId,
+      isActive: true,
+      status: 'published',
+      isGeneric: false
+    })
+  );
+  result = await invoke(createMenu, {
+    user: { role: 'superAdmin', id: userId },
+    body: { restaurantId, categoryId: oid() }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Category, 'findById', () =>
+    query({
+      _id: oid(),
+      restaurantId,
+      isActive: true,
+      status: 'published',
+      isGeneric: false
+    })
+  );
+  patch(Menu, 'findOne', () => query({ _id: oid() }));
+  result = await invoke(createMenu, {
+    user: { role: 'superAdmin', id: userId },
+    body: { restaurantId, categoryId: oid() }
+  });
+  assert.equal(result.nextError.statusCode, 409);
+
+  patch(Menu, 'findOne', () => query(null));
+  result = await invoke(addMenuItems, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId },
+    body: { name: '', price: -1 }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Menu, 'findOne', () => query(null));
+  result = await invoke(addMenuItems, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId },
+    body: { name: 'New Item', price: 10 }
+  });
+  assert.equal(result.nextError.statusCode, 404);
+
+  patch(Menu, 'findOne', () => query({ ...baseMenu, restaurantId: otherRestaurantId }));
+  result = await invoke(addMenuItems, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId },
+    body: { name: 'New Item', price: 10 }
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  patch(Menu, 'findOne', () =>
+    query({
+      ...baseMenu,
+      items: [
+        {
+          _id: itemId,
+          name: 'Item One',
+          order: 1,
+          isActive: true,
+          isAvailable: true
+        }
+      ]
+    })
+  );
+  result = await invoke(addMenuItems, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId },
+    body: { name: 'item one', price: 12 }
+  });
+  assert.equal(result.nextError.statusCode, 409);
+
+  patch(Menu, 'findById', () => query(baseMenu));
+  result = await invoke(updateMenuItem, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId, itemId },
+    body: { unsupported: true }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(updateMenuItem, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId, itemId },
+    body: { price: -10 }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(deleteMenuItem, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId, itemId: oid() }
+  });
+  assert.equal(result.nextError.statusCode, 404);
+
+  const deletedItemMenu = makeMenuDoc({
+    _id: menuId,
+    restaurantId,
+    status: 'draft'
+  });
+  deletedItemMenu.items[0].isActive = false;
+  deletedItemMenu.items.id = (id) =>
+    deletedItemMenu.items.find((item) => String(item._id) === String(id)) || null;
+  patch(Menu, 'findById', () => query(deletedItemMenu));
+  result = await invoke(toggleItemAvailability, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId, itemId: deletedItemMenu.items[0]._id }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Menu, 'findById', () => query({ ...baseMenu, status: 'published' }));
+  result = await invoke(updateMenuStatus, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId },
+    body: { status: 'published' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Menu, 'findById', () => query({ ...baseMenu, status: 'draft', items: [] }));
+  patch(Restaurant, 'findById', () =>
+    query({ _id: restaurantId, status: 'published', isActive: true })
+  );
+  patch(Category, 'findById', () =>
+    query({ _id: oid(), status: 'published', isActive: true })
+  );
+  result = await invoke(updateMenuStatus, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId },
+    body: { status: 'published' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(deleteMenu, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId: 'bad-id' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  Menu.collection.findOne = async () => ({
+    _id: new mongoose.Types.ObjectId(menuId),
+    restaurantId,
+    isActive: true
+  });
+  result = await invoke(restoreMenu, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Menu, 'findById', () => query({ ...baseMenu, restaurantId }));
+  result = await invoke(getMenuAuditLogs, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId },
+    query: { actorId: 'bad-id' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(getMenuAuditLogs, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId },
+    query: { from: 'bad-date' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Menu, 'findById', () => query(null));
+  result = await invoke(hardDeleteMenu, {
+    user: { role: 'superAdmin', id: userId },
+    params: { menuId }
+  });
+  assert.equal(result.nextError.statusCode, 404);
+});
+
+test('restaurant controller covers remaining create, lifecycle, and nearby edge branches', async () => {
+  const userId = oid();
+  const restaurantId = oid();
+  const adminId = oid();
+  const otherAdminId = oid();
+
+  const restaurant = {
+    _id: restaurantId,
+    slug: 'demo',
+    name: 'Demo',
+    tagline: 'Tag',
+    address: { city: 'City', addressLine1: 'Line' },
+    openingHours: [],
+    contactNumber: '123',
+    email: 'demo@example.com',
+    status: 'draft',
+    isActive: false,
+    adminId
+  };
+
+  patch(Restaurant, 'findOne', () => query(null));
+  patch(Restaurant, 'findById', (id) => {
+    if (String(id) === String(restaurantId)) return query({ ...restaurant });
+    return query(null);
+  });
+  patch(Restaurant, 'findByIdAndUpdate', () =>
+    query({ ...restaurant, status: 'blocked', isActive: false })
+  );
+  patch(Restaurant, 'create', async ([payload]) => [{ ...payload, _id: restaurantId }]);
+  patch(Restaurant, 'countDocuments', async () => 1);
+  patch(Restaurant, 'find', () => query([{ ...restaurant, openingHours: [] }]));
+  patch(Restaurant, 'aggregate', async () => []);
+  patch(User, 'findById', (id) => {
+    if (String(id) === String(adminId)) {
+      return query({ _id: adminId, role: 'admin', restaurantId: null });
+    }
+    if (String(id) === String(otherAdminId)) {
+      return query({ _id: otherAdminId, role: 'admin', restaurantId });
+    }
+    return query({ _id: userId, role: 'admin', restaurantId: null });
+  });
+  patch(User, 'findByIdAndUpdate', async () => ({}));
+  patch(Category, 'countDocuments', async () => 1);
+  patch(Menu, 'countDocuments', async () => 1);
+
+  let result = await invoke(create, {
+    user: { id: userId, role: 'admin' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(create, {
+    user: { id: userId, role: 'admin' },
+    body: { name: 'Demo' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(create, {
+    user: { id: userId, role: 'admin' },
+    body: {
+      name: 'Demo',
+      address: { city: 'City' },
+      contactNumber: '123',
+      email: 'demo@example.com'
+    }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(create, {
+    user: { id: userId, role: 'admin' },
+    body: {
+      name: 'Demo',
+      address: { city: 'City', addressLine1: 'Line' },
+      contactNumber: '123',
+      email: 'bad-email'
+    }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(create, {
+    user: { id: userId, role: 'admin' },
+    body: {
+      name: 'Demo',
+      address: { city: 'City', addressLine1: 'Line' },
+      contactNumber: '123',
+      email: 'demo@example.com',
+      isFeatured: true,
+      location: { lat: 1, lng: 2 }
+    }
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  patch(User, 'findById', () =>
+    query({ _id: userId, role: 'admin', restaurantId })
+  );
+  result = await invoke(create, {
+    user: { id: userId, role: 'admin' },
+    body: {
+      name: 'Demo',
+      address: { city: 'City', addressLine1: 'Line' },
+      contactNumber: '123',
+      email: 'demo@example.com',
+      location: { lat: 1, lng: 2 }
+    }
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  patch(User, 'findById', () =>
+    query({ _id: otherAdminId, role: 'customer', restaurantId: null })
+  );
+  result = await invoke(create, {
+    user: { id: userId, role: 'superAdmin' },
+    body: {
+      name: 'Demo',
+      address: { city: 'City', addressLine1: 'Line' },
+      contactNumber: '123',
+      email: 'demo@example.com',
+      location: { lat: 1, lng: 2 },
+      adminId: otherAdminId
+    }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(User, 'findById', (id) => {
+    if (String(id) === String(otherAdminId)) {
+      return query({ _id: otherAdminId, role: 'admin', restaurantId });
+    }
+    return query({ _id: userId, role: 'admin', restaurantId: null });
+  });
+  result = await invoke(create, {
+    user: { id: userId, role: 'superAdmin' },
+    body: {
+      name: 'Demo',
+      address: { city: 'City', addressLine1: 'Line' },
+      contactNumber: '123',
+      email: 'demo@example.com',
+      location: { lat: 1, lng: 2 },
+      adminId: otherAdminId
+    }
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  result = await invoke(getRestaurantById, {
+    params: { id: oid() }
+  });
+  assert.equal(result.nextError.statusCode, 404);
+
+  result = await invoke(updateRestaurantStatus, {
+    user: { id: userId, role: 'superAdmin' },
+    params: { id: restaurantId },
+    body: { status: 'bad-status' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Restaurant, 'findById', () => query({ ...restaurant, status: 'draft' }));
+  result = await invoke(updateRestaurantStatus, {
+    user: { id: userId, role: 'superAdmin' },
+    params: { id: restaurantId },
+    body: { status: 'draft' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Restaurant, 'findById', () => query({ ...restaurant }));
+  result = await invoke(updateRestaurant, {
+    user: { id: userId, role: 'admin' },
+    params: { id: restaurantId },
+    body: { slug: 'nope' }
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  result = await invoke(updateRestaurant, {
+    user: { id: userId, role: 'admin' },
+    params: { id: restaurantId },
+    body: {}
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Restaurant, 'findById', () => query(null));
+  result = await invoke(deleteRestaurant, {
+    user: { id: userId, role: 'superAdmin' },
+    params: { id: restaurantId }
+  });
+  assert.equal(result.nextError.statusCode, 404);
+
+  patch(Restaurant, 'findById', () =>
+    query({ ...restaurant, status: 'blocked', isActive: false })
+  );
+  result = await invoke(deleteRestaurant, {
+    user: { id: userId, role: 'superAdmin' },
+    params: { id: restaurantId }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Restaurant, 'findById', () => query(null));
+  result = await invoke(restoreRestaurant, {
+    user: { id: userId, role: 'superAdmin' },
+    params: { id: restaurantId }
+  });
+  assert.equal(result.nextError.statusCode, 404);
+
+  patch(Restaurant, 'findById', () => query(null));
+  result = await invoke(reassignRestaurantAdmin, {
+    user: { id: userId, role: 'superAdmin' },
+    params: { id: restaurantId },
+    body: { newAdminId: adminId }
+  });
+  assert.equal(result.nextError.statusCode, 404);
+
+  patch(Restaurant, 'findById', () => query({ ...restaurant }));
+  patch(User, 'findById', (id) => {
+    if (String(id) === String(adminId)) {
+      return query({ _id: adminId, role: 'admin', restaurantId: null });
+    }
+    return query({ _id: otherAdminId, role: 'customer', restaurantId: null });
+  });
+  result = await invoke(reassignRestaurantAdmin, {
+    user: { id: userId, role: 'superAdmin' },
+    params: { id: restaurantId },
+    body: { newAdminId: otherAdminId }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(User, 'findById', (id) => {
+    if (String(id) === String(adminId)) {
+      return query({ _id: adminId, role: 'admin', restaurantId: null });
+    }
+    return query({ _id: otherAdminId, role: 'admin', restaurantId });
+  });
+  result = await invoke(reassignRestaurantAdmin, {
+    user: { id: userId, role: 'superAdmin' },
+    params: { id: restaurantId },
+    body: { newAdminId: otherAdminId }
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  result = await invoke(getNearByRestaurants, {
+    query: {}
+  });
+  assert.equal(result.nextError.statusCode, 400);
+});
+
+test('category controller covers slug-collision update and reorder validation helper branches', async () => {
+  const userId = oid();
+  const restaurantId = oid();
+  const categoryId = oid();
+  const categoryDoc = makeCategoryDoc({
+    _id: categoryId,
+    restaurantId,
+    isGeneric: false,
+    isActive: true,
+    status: 'draft',
+    name: 'Sides',
+    slug: 'sides'
+  });
+  let slugLookupCount = 0;
+
+  patch(Category, 'findOne', (filter) => {
+    if (filter.slug) {
+      slugLookupCount += 1;
+      return query(slugLookupCount === 1 ? { _id: oid(), slug: filter.slug } : null);
+    }
+    return query(categoryDoc);
+  });
+  patch(Category, 'bulkWrite', async () => ({
+    matchedCount: 2,
+    modifiedCount: 2
+  }));
+
+  let result = await invoke(updateCategory, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { id: categoryId },
+    body: { name: 'Updated Name' }
+  });
+  assert.equal(result.res.statusCode, 200);
+  assert.ok(slugLookupCount >= 2);
+
+  result = await invoke(reorderCategories, {
+    user: { role: 'admin', id: userId, restaurantId },
+    body: [{ id: categoryId, order: -1 }]
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(reorderCategories, {
+    user: { role: 'admin', id: userId, restaurantId },
+    body: [
+      { id: categoryId, order: 1 },
+      { id: categoryId, order: 2 }
+    ]
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Category, 'findById', () => query(null));
+  result = await invoke(getCategoryAuditLogs, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { id: categoryId },
+    query: {}
+  });
+  assert.equal(result.nextError.statusCode, 404);
+
+  result = await invoke(checkCategorySlug, {
+    user: { role: 'admin', id: userId, restaurantId },
+    body: { slug: 'demo', isGeneric: false }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(hardDeleteCategory, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { id: categoryId }
+  });
+  assert.equal(result.nextError.statusCode, 404);
+});
+
+test('menu controller covers remaining create, item, reorder, status, and access guards', async () => {
+  const userId = oid();
+  const restaurantId = oid();
+  const otherRestaurantId = oid();
+  const menuId = oid();
+  const itemId = oid();
+  const menuDoc = makeMenuDoc({
+    _id: menuId,
+    restaurantId,
+    status: 'draft',
+    isActive: true
+  });
+  menuDoc.items = [
+    {
+      _id: itemId,
+      name: 'Burger',
+      price: 12,
+      order: 1,
+      isActive: true,
+      isAvailable: true,
+      toObject() {
+        return { ...this };
+      }
+    }
+  ];
+  menuDoc.items.id = (id) =>
+    menuDoc.items.find((item) => String(item._id) === String(id)) || null;
+
+  patch(Restaurant, 'findById', () =>
+    query({ _id: restaurantId, status: 'published', isActive: true })
+  );
+  patch(Category, 'findById', () =>
+    query({
+      _id: oid(),
+      restaurantId,
+      isActive: true,
+      status: 'published',
+      isGeneric: false
+    })
+  );
+  patch(Menu, 'findOne', () => query(null));
+  patch(Menu, 'findById', () => query(menuDoc));
+
+  let result = await invoke(createMenu, {
+    user: { role: 'admin', id: userId, restaurantId },
+    body: { categoryId: oid() }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(createMenu, {
+    user: { role: 'admin', id: userId, restaurantId },
+    body: { restaurantId, categoryId: 'bad-id' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Menu, 'findById', () => query({ ...menuDoc, restaurantId: otherRestaurantId }));
+  result = await invoke(deleteMenuItem, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId, itemId }
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  result = await invoke(toggleItemAvailability, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId: 'bad-id', itemId }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Menu, 'findById', () => query(null));
+  result = await invoke(toggleItemAvailability, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId, itemId }
+  });
+  assert.equal(result.nextError.statusCode, 404);
+
+  patch(Menu, 'findById', () => query({ ...menuDoc, restaurantId: otherRestaurantId }));
+  result = await invoke(toggleItemAvailability, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId, itemId }
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  patch(Menu, 'findById', () => query(menuDoc));
+  result = await invoke(reorderMenuItems, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId },
+    body: { order: [] }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(reorderMenuItems, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId },
+    body: { order: [{ itemId, order: 0 }] }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  result = await invoke(reorderMenuItems, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId },
+    body: { order: [{ itemId: oid(), order: 1 }] }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  const deletedReorderMenu = makeMenuDoc({
+    _id: menuId,
+    restaurantId,
+    status: 'draft',
+    isActive: true
+  });
+  deletedReorderMenu.items[0].isActive = false;
+  deletedReorderMenu.items.id = (id) =>
+    deletedReorderMenu.items.find((item) => String(item._id) === String(id)) || null;
+  patch(Menu, 'findById', () => query(deletedReorderMenu));
+  result = await invoke(reorderMenuItems, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId },
+    body: {
+      order: [{ itemId: deletedReorderMenu.items[0]._id, order: 1 }]
+    }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Menu, 'findById', () => query(null));
+  result = await invoke(updateMenuStatus, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId },
+    body: { status: 'blocked' }
+  });
+  assert.equal(result.nextError.statusCode, 404);
+
+  patch(Menu, 'findById', () => query({ ...menuDoc, isActive: false }));
+  result = await invoke(updateMenuStatus, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId },
+    body: { status: 'blocked' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+
+  patch(Menu, 'findById', () => query({ ...menuDoc, restaurantId: otherRestaurantId }));
+  result = await invoke(updateMenuStatus, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId },
+    body: { status: 'blocked' }
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  result = await invoke(deleteMenu, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId }
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  Menu.collection.findOne = async () => ({
+    _id: new mongoose.Types.ObjectId(menuId),
+    restaurantId: otherRestaurantId,
+    isActive: false
+  });
+  patch(Restaurant, 'findById', () =>
+    query({ _id: otherRestaurantId, status: 'published', isActive: true })
+  );
+  result = await invoke(restoreMenu, {
+    user: { role: 'admin', id: userId, restaurantId },
+    params: { menuId }
+  });
+  assert.equal(result.nextError.statusCode, 403);
+
+  result = await invoke(hardDeleteMenu, {
+    user: { role: 'superAdmin', id: userId },
+    params: { menuId: 'bad-id' }
+  });
+  assert.equal(result.nextError.statusCode, 400);
+});

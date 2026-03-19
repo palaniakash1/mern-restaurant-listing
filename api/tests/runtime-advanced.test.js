@@ -12,7 +12,6 @@ import {
   tracingMiddleware,
   updateRefreshTokenMetrics
 } from '../tracing.js';
-import logger from '../utils/logger.js';
 import {
   clear,
   deleteKey,
@@ -21,6 +20,7 @@ import {
   setJson,
   setJsonIfAbsent
 } from '../utils/redisCache.js';
+import logger, { __loggerTestUtils } from '../utils/logger.js';
 
 const restoreJwtState = (state) => {
   jwtRotationService.keys = state.keys;
@@ -288,4 +288,85 @@ test('logger child metadata should redact secrets, truncate values, and preserve
   assert.equal(entry.secretValue, '[REDACTED]');
   assert.equal(entry.message.endsWith('...'), true);
   assert.equal(entry.description.endsWith('...'), true);
+});
+
+test('logger test helpers cover transport and pino config branches', () => {
+  const prodTransport = __loggerTestUtils.buildTransportConfig(true);
+  const devTransport = __loggerTestUtils.buildTransportConfig(false);
+  const prodConfig = __loggerTestUtils.buildPinoConfig({
+    production: true,
+    testEnv: false
+  });
+  const testConfig = __loggerTestUtils.buildPinoConfig({
+    production: true,
+    testEnv: true
+  });
+
+  assert.equal(prodTransport.targets.length, 3);
+  assert.equal(prodTransport.targets[0].options.destination, 1);
+  assert.match(prodTransport.targets[1].options.destination, /error\.log$/);
+  assert.match(prodTransport.targets[2].options.destination, /combined\.log$/);
+  assert.equal(devTransport.targets.length, 1);
+  assert.equal(devTransport.targets[0].target, 'pino-pretty');
+
+  assert.equal(prodConfig.enabled, true);
+  assert.ok(prodConfig.transport);
+  assert.equal(testConfig.enabled, false);
+  assert.equal('transport' in testConfig, false);
+  assert.equal(
+    prodConfig.serializers.req({
+      method: 'GET',
+      url: '/x',
+      path: '/x',
+      parameters: { q: 1 },
+      headers: {}
+    }).headers.host,
+    undefined
+  );
+});
+
+test('logger wrapper covers object logging paths and nested child bindings', () => {
+  const calls = [];
+  const sink = {
+    debug(payload, message) {
+      calls.push(['debug', payload, message]);
+    },
+    info(payload, message) {
+      calls.push(['info', payload, message]);
+    },
+    warn(payload, message) {
+      calls.push(['warn', payload, message]);
+    },
+    error(payload, message) {
+      calls.push(['error', payload, message]);
+    },
+    child(bindings) {
+      calls.push(['child', bindings]);
+      return this;
+    }
+  };
+
+  const wrapped = __loggerTestUtils.wrapLogger(sink);
+  wrapped.debug({ token: 'secret-token', message: 'object debug' });
+  wrapped.info({ apiKey: 'hidden', msg: 'object info' });
+  const child = wrapped.child({ component: 'root-child', token: 'hide' });
+  child.warn({ authorization: 'Bearer secret', message: 'nested warn' });
+  child.error('nested error', { secretKey: 'abc123' });
+  child.child({ subsystem: 'inner' }).info({ password: 'pw', msg: 'deep info' });
+
+  const recentLogs = wrapped.getRecentLogs(10);
+  assert.equal(calls.some(([method]) => method === 'child'), true);
+  assert.equal(calls.some(([method]) => method === 'debug'), true);
+  assert.equal(calls.some(([method]) => method === 'warn'), true);
+  assert.equal(recentLogs.some((entry) => entry.token === '[REDACTED]'), true);
+  assert.equal(
+    recentLogs.some((entry) => entry.authorization === '[REDACTED]'),
+    true
+  );
+  assert.equal(
+    recentLogs.some((entry) => entry.secretKey === '[REDACTED]'),
+    true
+  );
+
+  logger.clearRecentLogs();
 });

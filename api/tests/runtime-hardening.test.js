@@ -435,6 +435,76 @@ describe('Runtime hardening branches', { concurrency: false }, () => {
     assert.equal(await getJson('delete-key'), null);
   });
 
+  it('redis init and cache helpers should cover no-url, already-connected, and redis-backed operations', async () => {
+    config.redis.url = null;
+    assert.equal(await initRedis(), false);
+
+    const connectedClient = {
+      async get(key) {
+        if (key === 'cache:cached-key') {
+          return JSON.stringify({ ok: true });
+        }
+        if (key === 'json:key') {
+          return JSON.stringify({ mode: 'json' });
+        }
+        return null;
+      },
+      async setex() {},
+      async del() {},
+      async keys() {
+        return ['cache:one', 'cache:two'];
+      },
+      async set() {
+        return 'OK';
+      },
+      multi() {
+        return {
+          incr() {
+            return this;
+          },
+          pexpire() {
+            return this;
+          },
+          pttl() {
+            return this;
+          },
+          async exec() {
+            return [[null, 2], [null, 1], [null, 1234]];
+          }
+        };
+      }
+    };
+
+    config.redis.url = 'redis://runtime-test';
+    __setRedisTestState({ client: connectedClient, available: true });
+    assert.equal(await initRedis(), true);
+    assert.deepEqual(await get('cached-key'), { ok: true });
+    assert.deepEqual(await getJson('json:key'), { mode: 'json' });
+    assert.equal(await setJsonIfAbsent('json:absent-ok', { ok: 1 }, 30), true);
+    assert.equal(await set('connected-key', { value: 1 }, 30), true);
+    assert.equal((await atomicRateLimitIncrement('rate:key:connected', 1000)).count, 2);
+    await del('connected-key');
+    await invalidatePattern('cache:*');
+    await clearRedisMemory();
+  });
+
+  it('redis helpers should cover parse and fallback branches when redis returns bad payloads', async () => {
+    __setRedisTestState({
+      available: true,
+      client: {
+        async get(key) {
+          if (key === 'cache:bad-json') return '{bad-json';
+          if (key === 'bad-json-key') return '{bad-json';
+          return null;
+        }
+      }
+    });
+
+    assert.equal(await get('bad-json'), null);
+    assert.equal(await getJson('bad-json-key'), null);
+    assert.equal(getCacheStats().redis, false);
+  });
+
   it('security telemetry should exercise memory fallback counters', async () => {
     await incrementSecurityEvent('login_failed');
     await incrementSecurityEvent('login_lockout_started', 3);
