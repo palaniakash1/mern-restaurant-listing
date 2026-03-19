@@ -8,10 +8,10 @@ Date: 2026-03-19
 
 | Metric | Value |
 | --- | --- |
-| Lines | 96.01% |
-| Branches | 87.15% |
-| Functions | 90.12% |
-| Tests Passing | 134/134 |
+| Lines | 96.26% |
+| Branches | 88.10% |
+| Functions | 90.53% |
+| Tests Passing | 138/138 |
 | Lint | Pass |
 | Audit | Pass |
 | Coverage | Pass |
@@ -20,17 +20,19 @@ Date: 2026-03-19
 ## Current Batch
 
 Scope:
-- added runtime-focused test helpers for logger and tracing without changing production behavior
-- expanded runtime coverage for redis-backed paths, logger transport/config builders, object-log wrappers, and tracing init/shutdown lifecycle branches
+- added focused unit coverage for [user.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/user.controller.js) and [jwtRotation.service.js](/d:/MARAA/coding-projects/mern-restaurant/api/services/jwtRotation.service.js)
+- fixed the JWT rotation edge-suite cleanup bug that was leaving an interval alive and causing long test runs to hang
+- aligned JWT malformed-token assertions with the actual `jsonwebtoken` failure shape
 - revalidated `npm test`, `npm run lint`, `npm run test:coverage`, and `npm audit --audit-level=high`
-- pushed overall branch coverage above `87%`
-- materially improved runtime modules that were previously blocking the next backend hardening batch
+- pushed overall branch coverage above `88%`
+- brought [user.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/user.controller.js) and [jwtRotation.service.js](/d:/MARAA/coding-projects/mern-restaurant/api/services/jwtRotation.service.js) above `90%` in their primary target metrics
 
 Notes:
 - tracing lifecycle tests still emit collector shutdown warnings when no OTLP collector is listening on `127.0.0.1:4318` / `::1:4318`
 - those warnings do not fail the suite
 - the load-test status is unchanged in this batch: smoke is already green and the full `k6` baseline remains pending
 - test output remains materially quieter because logger transports are disabled during test runs
+- the JWT rotation edge test now cleans up its timer correctly, so the full suite completes without the previous timeout behavior
 
 ## Verified Commands
 
@@ -51,9 +53,10 @@ npm run test:load:smoke
 | [restaurant.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/restaurant.controller.js) | 97.59% | 92.64% | 100.00% | Completed |
 | [redisCache.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/redisCache.js) | 80.81% | 89.41% | 80.00% | High |
 | [auditLog.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/auditLog.controller.js) | 98.53% | 93.33% | 100.00% | Completed |
-| [tracing.js](/d:/MARAA/coding-projects/mern-restaurant/api/tracing.js) | 95.29% | 83.02% | 93.55% | Medium |
-| [jwtRotation.service.js](/d:/MARAA/coding-projects/mern-restaurant/api/services/jwtRotation.service.js) | 87.86% | 79.07% | 84.62% | Medium |
+| [tracing.js](/d:/MARAA/coding-projects/mern-restaurant/api/tracing.js) | 95.29% | 82.35% | 93.55% | Medium |
+| [jwtRotation.service.js](/d:/MARAA/coding-projects/mern-restaurant/api/services/jwtRotation.service.js) | 93.93% | 93.18% | 92.31% | Completed |
 | [auth.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/auth.controller.js) | 88.21% | 60.23% | 100.00% | Medium |
+| [user.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/user.controller.js) | 100.00% | 100.00% | 100.00% | Completed |
 | [logger.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/logger.js) | 93.14% | 82.79% | 90.91% | Medium |
 
 ## Next Batches
@@ -64,8 +67,9 @@ npm run test:load:smoke
    - push [logger.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/logger.js) branch coverage higher if we want the runtime layer uniformly above `90%`
 
 2. Auth and user follow-up batch
-   - push [auth.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/auth.controller.js) and [user.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/user.controller.js) higher on branch coverage
-   - deepen [jwtRotation.service.js](/d:/MARAA/coding-projects/mern-restaurant/api/services/jwtRotation.service.js) and [user.service.js](/d:/MARAA/coding-projects/mern-restaurant/api/services/user.service.js)
+   - push [auth.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/auth.controller.js) higher on branch coverage
+   - deepen [user.service.js](/d:/MARAA/coding-projects/mern-restaurant/api/services/user.service.js)
+   - raise [review.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/review.controller.js) so another core controller is no longer well below the production bar
 
 3. Load and operations batch
    - run the full `npm run test:load` baseline profile in a suitable environment
@@ -76,6 +80,7 @@ npm run test:load:smoke
 
 | Date | Lines | Branches | Functions | Notes |
 | --- | --- | --- | --- | --- |
+| 2026-03-19 | 96.26% | 88.10% | 90.53% | User controller and JWT rotation edge coverage batch completed; timer-cleanup hang fixed, full gates green again |
 | 2026-03-19 | 96.01% | 87.15% | 90.12% | Runtime hardening batch completed; logger, tracing, and redis coverage improved materially with full gates green |
 | 2026-03-18 | 95.07% | 86.20% | 89.22% | Controller deep branch pass completed; category, menu, restaurant, and audit-log are now all above 90% branch coverage with full gates green |
 | 2026-03-18 | 94.38% | 82.70% | 90.05% | Second deep controller branch pass completed; category, menu, and restaurant controllers all moved materially upward with full gates green |
