@@ -8,10 +8,10 @@ Date: 2026-03-19
 
 | Metric | Value |
 | --- | --- |
-| Lines | 96.72% |
-| Branches | 88.63% |
-| Functions | 91.04% |
-| Tests Passing | 143/143 |
+| Lines | 96.90% |
+| Branches | 88.31% |
+| Functions | 90.74% |
+| Tests Passing | 149/149 |
 | Lint | Pass |
 | Audit | Pass |
 | Coverage | Pass |
@@ -20,18 +20,18 @@ Date: 2026-03-19
 ## Current Batch
 
 Scope:
-- added focused low-level tests for [generateUniqueSlug.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/generateUniqueSlug.js), [geocode.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/geocode.js), [roleGuards.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/roleGuards.js), [softDeleteRestore.plugin.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/plugins/softDeleteRestore.plugin.js), and [rateLimit.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/rateLimit.js)
-- stabilized the auth lockout integration test for slower coverage-mode runs by widening the temporary lockout window in [auth.integration.test.js](/d:/MARAA/coding-projects/mern-restaurant/api/tests/auth.integration.test.js)
+- added focused branch tests in [branch-gap-helpers.unit.test.js](/d:/MARAA/coding-projects/mern-restaurant/api/tests/branch-gap-helpers.unit.test.js) for [paginate.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/paginate.js), [policy.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/policy.js), [openNow.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/openNow.js), [admin.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/admin.controller.js), and pre-persistence guard paths in [review.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/review.controller.js)
+- added deterministic env and clock isolation so the new helper suite does not hang or depend on local timezone behavior
 - revalidated `npm test`, `npm run lint`, `npm run test:coverage`, and `npm audit --audit-level=high`
-- pushed overall branch coverage above `88.5%`
-- lifted the previously low helper modules from roughly `15-50%` up into a safe `70%+` range or higher
+- lifted the remaining helper/util modules that were near or below the requested floor into a safer range
 
 Notes:
 - tracing lifecycle tests still emit collector shutdown warnings when no OTLP collector is listening on `127.0.0.1:4318` / `::1:4318`
 - those warnings do not fail the suite
 - the load-test status is unchanged in this batch: smoke is already green and the full `k6` baseline remains pending
 - test output remains materially quieter because logger transports are disabled during test runs
-- the full suite now includes a dedicated low-coverage utility test file: [low-coverage-utils.test.js](/d:/MARAA/coding-projects/mern-restaurant/api/tests/low-coverage-utils.test.js)
+- the full suite now includes dedicated low-coverage helper coverage in both [low-coverage-utils.test.js](/d:/MARAA/coding-projects/mern-restaurant/api/tests/low-coverage-utils.test.js) and [branch-gap-helpers.unit.test.js](/d:/MARAA/coding-projects/mern-restaurant/api/tests/branch-gap-helpers.unit.test.js)
+- [config.js](/d:/MARAA/coding-projects/mern-restaurant/api/config.js) still needs a more complete import-isolated pass; the missing-env error path is covered now, but branch accounting on that module remains anomalously low because of its import-time environment matrix
 
 ## Verified Commands
 
@@ -57,11 +57,16 @@ npm run test:load:smoke
 | [auth.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/auth.controller.js) | 88.21% | 60.23% | 100.00% | Medium |
 | [user.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/user.controller.js) | 100.00% | 100.00% | 100.00% | Completed |
 | [logger.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/logger.js) | 93.14% | 82.79% | 90.91% | Medium |
+| [review.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/review.controller.js) | 95.67% | 78.79% | 100.00% | Medium |
 | [generateUniqueSlug.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/generateUniqueSlug.js) | 100.00% | 100.00% | 100.00% | Completed |
 | [geocode.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/geocode.js) | 100.00% | 100.00% | 100.00% | Completed |
 | [roleGuards.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/roleGuards.js) | 96.61% | 95.45% | 100.00% | Completed |
 | [softDeleteRestore.plugin.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/plugins/softDeleteRestore.plugin.js) | 100.00% | 87.50% | 100.00% | Completed |
 | [rateLimit.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/rateLimit.js) | 100.00% | 71.43% | 100.00% | Completed |
+| [paginate.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/paginate.js) | 100.00% | 75.00% | 100.00% | Completed |
+| [policy.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/policy.js) | 100.00% | 100.00% | 100.00% | Completed |
+| [openNow.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/openNow.js) | 100.00% | 100.00% | 100.00% | Completed |
+| [config.js](/d:/MARAA/coding-projects/mern-restaurant/api/config.js) | 98.94% | 25.93% | 75.00% | High |
 
 ## Next Batches
 
@@ -69,12 +74,12 @@ npm run test:load:smoke
    - continue filling remaining lines in [redisCache.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/redisCache.js), especially connection-failure and shutdown fallback branches
    - close the remaining branch gaps in [tracing.js](/d:/MARAA/coding-projects/mern-restaurant/api/tracing.js)
    - push [logger.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/logger.js) branch coverage higher if we want the runtime layer uniformly above `90%`
-   - raise [paginate.js](/d:/MARAA/coding-projects/mern-restaurant/api/utils/paginate.js) and [config.js](/d:/MARAA/coding-projects/mern-restaurant/api/config.js) if we want to clear the remaining helper files sitting near the `50-60%` branch range
+   - finish a clean import-matrix test strategy for [config.js](/d:/MARAA/coding-projects/mern-restaurant/api/config.js), which is still the biggest low-branch outlier in the helper layer
 
 2. Auth and user follow-up batch
    - push [auth.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/auth.controller.js) higher on branch coverage
    - deepen [user.service.js](/d:/MARAA/coding-projects/mern-restaurant/api/services/user.service.js)
-   - raise [review.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/review.controller.js) so another core controller is no longer well below the production bar
+   - raise [review.controller.js](/d:/MARAA/coding-projects/mern-restaurant/api/controllers/review.controller.js) from the high-70s into the 90-range
 
 3. Load and operations batch
    - run the full `npm run test:load` baseline profile in a suitable environment
@@ -85,6 +90,7 @@ npm run test:load:smoke
 
 | Date | Lines | Branches | Functions | Notes |
 | --- | --- | --- | --- | --- |
+| 2026-03-19 | 96.90% | 88.31% | 90.74% | Branch-gap helper batch completed; paginate, policy, openNow, admin.controller, and review-controller guard paths were lifted with full gates green again |
 | 2026-03-19 | 96.72% | 88.63% | 91.04% | Low-coverage helper batch completed; geocode, slug generation, role guards, soft-delete plugin, and rate limit are all now above the requested floor with full gates green |
 | 2026-03-19 | 96.26% | 88.10% | 90.53% | User controller and JWT rotation edge coverage batch completed; timer-cleanup hang fixed, full gates green again |
 | 2026-03-19 | 96.01% | 87.15% | 90.12% | Runtime hardening batch completed; logger, tracing, and redis coverage improved materially with full gates green |
