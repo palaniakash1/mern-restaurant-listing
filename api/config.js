@@ -33,7 +33,7 @@ const config = {
   jwtExpire:
     toOptionalString(process.env.JWT_EXPIRE) ||
     toOptionalString(process.env.ACCESS_TOKEN_EXPIRE) ||
-    '1h',
+    '12h',
   jwtIssuer: toOptionalString(process.env.JWT_ISSUER) || 'mern-restaurant-api',
   jwtAudience:
     toOptionalString(process.env.JWT_AUDIENCE) || 'mern-restaurant-client',
@@ -57,13 +57,13 @@ const config = {
   googleMapsApiKey: toOptionalString(process.env.GOOGLE_MAPS_API_KEY),
   emailServiceUrl: toOptionalString(process.env.EMAIL_SERVICE_URL),
   refreshTokenTtlDays: toPositiveInt(process.env.REFRESH_TOKEN_TTL_DAYS, 14),
+  csrf: {
+    ttlMs: toPositiveInt(process.env.CSRF_TOKEN_TTL_MS, 24 * 60 * 60 * 1000)
+  },
   loginLockout: {
     threshold: toPositiveInt(process.env.LOGIN_LOCKOUT_THRESHOLD, 5),
     baseMs: toPositiveInt(process.env.LOGIN_LOCKOUT_BASE_MS, 15 * 60 * 1000),
-    maxMs: toPositiveInt(
-      process.env.LOGIN_LOCKOUT_MAX_MS,
-      24 * 60 * 60 * 1000
-    )
+    maxMs: toPositiveInt(process.env.LOGIN_LOCKOUT_MAX_MS, 24 * 60 * 60 * 1000)
   },
   redis: {
     url: toOptionalString(process.env.REDIS_URL),
@@ -74,8 +74,7 @@ const config = {
     enabled: String(process.env.OTEL_ENABLED || 'true') !== 'false',
     serviceName:
       toOptionalString(process.env.OTEL_SERVICE_NAME) || 'mern-restaurant-api',
-    serviceVersion:
-      toOptionalString(process.env.APP_VERSION) || '1.0.0',
+    serviceVersion: toOptionalString(process.env.APP_VERSION) || '1.0.0',
     exporterUrl: toOptionalString(process.env.OTEL_EXPORTER_OTLP_ENDPOINT),
     jaegerEndpoint: toOptionalString(process.env.OTEL_EXPORTER_JAEGER_ENDPOINT)
   }
