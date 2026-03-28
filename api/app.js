@@ -13,6 +13,7 @@ import categoryRouter from './routes/category.route.js';
 import menuRouter from './routes/menu.route.js';
 import auditLogRoutes from './routes/auditLog.routes.js';
 import reviewRoutes from './routes/review.route.js';
+import fsaRouter from './routes/fsa.routes.js';
 
 // API Versioning
 import v1Routes from './routes/v1/index.js';
@@ -127,6 +128,7 @@ app.use('/api/categories', categoryRouter);
 app.use('/api/menus', menuRouter);
 app.use('/api/auditlogs', auditLogRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/fsa', fsaRouter);
 
 // API v1 routes (for future versioning)
 app.use('/api/v1', v1Routes);
