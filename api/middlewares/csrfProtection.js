@@ -8,12 +8,14 @@
 
 import crypto from 'crypto';
 import { logger } from '../utils/logger.js';
+import config from '../config.js';
 
 // ===================================================================
 // CONFIGURATION
 // ===================================================================
 
 const CSRF_TOKEN_LENGTH = 32;
+const CSRF_TOKEN_TTL_MS = config.csrf?.ttlMs || 24 * 60 * 60 * 1000;
 
 // In-memory token store (use Redis in production)
 const csrfTokens = new Map();
@@ -31,7 +33,7 @@ export const generateToken = (userId) => {
   csrfTokens.set(token, {
     userId,
     createdAt: timestamp,
-    expiresAt: timestamp + 24 * 60 * 60 * 1000 // 24 hours
+    expiresAt: timestamp + CSRF_TOKEN_TTL_MS
   });
 
   // Cleanup old tokens periodically
