@@ -153,17 +153,27 @@ export const addMenuItems = async (req, res, next) => {
   try {
     const result = await withTransaction(async (session) => {
       const { menuId } = req.params;
-      const item = req.body;
+      const body = req.body;
 
       if (!isValidObjectId(req.params.menuId)) {
         throw errorHandler(400, 'Invalid ID format');
       }
 
-      if (!item?.name || typeof item?.price !== 'number' || item.price < 0) {
-        throw errorHandler(
-          400,
-          'Valid item name and non-negative price are required'
-        );
+      // Handle both single item and array of items
+      const itemsToAdd = Array.isArray(body.items) ? body.items : [body];
+
+      if (!itemsToAdd.length) {
+        throw errorHandler(400, 'At least one item is required');
+      }
+
+      // Validate each item has required fields
+      for (const item of itemsToAdd) {
+        if (!item?.name || typeof item?.price !== 'number' || item.price < 0) {
+          throw errorHandler(
+            400,
+            'Valid item name and non-negative price are required'
+          );
+        }
       }
 
       const menu = await Menu.findOne({ _id: menuId })
@@ -178,18 +188,25 @@ export const addMenuItems = async (req, res, next) => {
         throw errorHandler(403, 'not allowed');
       }
 
-      const duplicate = menu.items.some(
-        (i) => i.isActive && i.name.toLowerCase() === item.name.toLowerCase()
-      );
+      const addedItems = [];
 
-      if (duplicate) {
-        throw errorHandler(409, 'Item name already exists');
+      for (const item of itemsToAdd) {
+        const duplicate = menu.items.some(
+          (i) => i.isActive && i.name.toLowerCase() === item.name.toLowerCase()
+        );
+
+        if (duplicate) {
+          throw errorHandler(409, `Item name "${item.name}" already exists`);
+        }
+
+        const maxOrder = Math.max(0, ...menu.items.map((i) => i.order));
+        item.order = item.order || maxOrder + 1;
+        item.isAvailable = item.isAvailable !== false;
+
+        menu.items.push(item);
+        addedItems.push(item.name);
       }
 
-      const maxOrder = Math.max(0, ...menu.items.map((i) => i.order));
-      item.order = maxOrder + 1;
-
-      menu.items.push(item);
       await menu.save({ session });
 
       await logAudit({
@@ -199,14 +216,14 @@ export const addMenuItems = async (req, res, next) => {
         entityId: menu._id,
         action: 'UPDATE',
         before: null,
-        after: { addeditem: item.name },
+        after: { addedItems: addedItems },
         ipAddress: getClientIp(req)
       });
       return menu.items;
     });
     res.status(201).json({
       success: true,
-      message: 'menu item created successfully',
+      message: 'menu item(s) created successfully',
       data: result
     });
   } catch (error) {
