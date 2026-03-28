@@ -18,6 +18,7 @@ import menuRoutes from '../menu.route.js';
 import reviewRoutes from '../review.route.js';
 import adminRoutes from '../admin.route.js';
 import auditLogRoutes from '../auditLog.routes.js';
+import placesRoutes from '../places.routes.js';
 
 const router = Router();
 
@@ -35,5 +36,6 @@ router.use('/menu', menuRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/admin', adminRoutes);
 router.use('/auditlogs', auditLogRoutes);
+router.use('/places', placesRoutes);
 
 export default router;

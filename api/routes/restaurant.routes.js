@@ -9,6 +9,9 @@ import {
   getRestaurantBySlug,
   reassignRestaurantAdmin,
   getMyRestaurant,
+  getMyRestaurants,
+  getMyRestaurantById,
+  setPrimaryRestaurant,
   getNearByRestaurants,
   listRestaurants,
   getFeaturedRestaurants,
@@ -75,11 +78,26 @@ router.post(
 
 // admin
 router.get('/me', verifyToken, can('readMine', 'restaurant'), getMyRestaurant);
+router.get('/me/all', verifyToken, can('readAllMine', 'restaurant'), getMyRestaurants);
 router.get(
   '/me/summary',
   verifyToken,
   can('readMineSummary', 'restaurant'),
   getAdminRestaurantSummary
+);
+router.get(
+  '/me/:restaurantId',
+  verifyToken,
+  can('readMine', 'restaurant'),
+  validate(restaurantValidators.idParam, 'params'),
+  getMyRestaurantById
+);
+router.patch(
+  '/me/primary/:restaurantId',
+  verifyToken,
+  can('updateMine', 'restaurant'),
+  validate(restaurantValidators.idParam, 'params'),
+  setPrimaryRestaurant
 );
 
 router.get(

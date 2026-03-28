@@ -60,9 +60,9 @@ router.post(
   verifyToken,
   can('addItem', 'menu'),
   validate(menuValidators.menuParam, 'params'),
-  validate(menuValidators.addItemBody),
+  validate(menuValidators.addItemsBody),
   addMenuItems
-); // create menu item
+); // create menu items (single or array)
 router.put(
   '/:menuId/items/:itemId',
   verifyToken,
