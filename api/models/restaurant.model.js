@@ -104,6 +104,28 @@ const restaurantSchema = new mongoose.Schema(
     searchText: {
       type: String,
       index: true
+    },
+
+    fhrsId: {
+      type: Number,
+      default: null,
+      index: true
+    },
+
+    fsaRating: {
+      value: {
+        type: String,
+        enum: ['0', '1', '2', '3', '4', '5', 'Exempt', null],
+        default: null
+      },
+      lastRefreshed: {
+        type: Date,
+        default: null
+      },
+      isManuallyLinked: {
+        type: Boolean,
+        default: false
+      }
     }
   },
   { timestamps: true }

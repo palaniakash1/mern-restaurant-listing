@@ -48,6 +48,16 @@ const userSchema = new mongoose.Schema(
       default: null,
       index: true
     },
+    restaurantIds: {
+      type: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Restaurant'
+        }
+      ],
+      default: [],
+      index: true
+    },
 
     createdByAdminId: {
       type: mongoose.Schema.Types.ObjectId,
