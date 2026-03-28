@@ -1,7 +1,12 @@
 /* eslint-disable no-console */
 import { randomUUID } from 'node:crypto';
 
-import { context, propagation, trace, SpanStatusCode } from '@opentelemetry/api';
+import {
+  context,
+  propagation,
+  trace,
+  SpanStatusCode
+} from '@opentelemetry/api';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 
 import config, { isTest } from './config.js';
@@ -63,7 +68,9 @@ export const initTracing = async () => {
       sdkState.startPromise = Promise.resolve(startResult)
         .then(() => {
           sdkState.started = true;
-          console.log(`Tracing enabled for service: ${tracingConfig.serviceName}`);
+          console.log(
+            `Tracing enabled for service: ${tracingConfig.serviceName}`
+          );
           return true;
         })
         .catch((error) => {
@@ -126,7 +133,8 @@ export const refreshTokensActive = {
   add: () => {}
 };
 
-const getActiveTraceId = () => trace.getActiveSpan()?.spanContext().traceId || null;
+const getActiveTraceId = () =>
+  trace.getActiveSpan()?.spanContext().traceId || null;
 
 export const tracingMiddleware = (req, res, next) => {
   if (isTracingDisabled()) {
