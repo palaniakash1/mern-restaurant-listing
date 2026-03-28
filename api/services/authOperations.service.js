@@ -4,7 +4,11 @@ import {
   listUserRefreshTokens,
   revokeUserRefreshTokens
 } from '../repositories/auth.repository.js';
-import { hashRefreshToken, REFRESH_COOKIE_NAME, toSessionView } from './auth.service.js';
+import {
+  hashRefreshToken,
+  REFRESH_COOKIE_NAME,
+  toSessionView
+} from './auth.service.js';
 
 export const listSessionsForUser = async ({ userId, refreshToken }) => {
   const currentTokenHash = refreshToken ? hashRefreshToken(refreshToken) : null;
@@ -72,7 +76,10 @@ export const revokeAllSessionsForAdminTarget = async ({ userId, reason }) => {
     return { status: 'not_found' };
   }
 
-  const result = await revokeUserRefreshTokens({ userId, revokedAt: null }, reason);
+  const result = await revokeUserRefreshTokens(
+    { userId, revokedAt: null },
+    reason
+  );
   return { status: 'ok', revokedCount: result.modifiedCount || 0 };
 };
 
@@ -81,7 +88,8 @@ const saveUserSession = async (session) => {
   return session;
 };
 
-export const getRefreshTokenFromRequest = (req) => req.cookies?.[REFRESH_COOKIE_NAME] || null;
+export const getRefreshTokenFromRequest = (req) =>
+  req.cookies?.[REFRESH_COOKIE_NAME] || null;
 
 export default {
   getRefreshTokenFromRequest,
