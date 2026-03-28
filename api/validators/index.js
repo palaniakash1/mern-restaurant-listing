@@ -30,7 +30,8 @@ const messages = {
   },
   objectId: 'Invalid ID format. Please provide a valid 24-character hex string',
   pattern: {
-    objectId: 'Invalid ID format. Please provide a valid 24-character hex string (e.g., "507f1f77bcf86cd799439011")'
+    objectId:
+      'Invalid ID format. Please provide a valid 24-character hex string (e.g., "507f1f77bcf86cd799439011")'
   }
 };
 
@@ -89,11 +90,13 @@ const restaurantCreateBody = Joi.object({
   isActive: Joi.boolean(),
   isFeatured: Joi.boolean(),
   isTrending: Joi.boolean(),
-  // Location at top level - controller uses lat/lng directly instead of geocoding
+  // Location at top level - accepts either lat/lng OR GeoJSON format
   location: Joi.object({
-    lat: Joi.number().required(),
-    lng: Joi.number().required()
-  })
+    lat: Joi.number(),
+    lng: Joi.number(),
+    type: Joi.string().valid('Point'),
+    coordinates: Joi.array().items(Joi.number()).length(2)
+  }).or('lat', 'coordinates')
 }).unknown(false);
 
 const restaurantUpdateBody = Joi.object({
@@ -294,7 +297,7 @@ export const categoryValidators = {
     isActive: Joi.boolean()
   }).min(1),
   updateStatusBody: Joi.object({
-    isActive: Joi.boolean().required()
+    status: Joi.string().valid('draft', 'blocked', 'published').required()
   }),
   bulkStatusBody: Joi.object({
     ids: Joi.array().items(objectId).min(1).required(),
@@ -349,8 +352,38 @@ export const menuValidators = {
         price: Joi.number().min(0).required()
       })
     ),
-    isMeal: Joi.boolean()
+    isMeal: Joi.boolean(),
+    order: Joi.number().integer().min(0),
+    isAvailable: Joi.boolean()
   }).unknown(false),
+  addItemsBody: Joi.object({
+    items: Joi.array()
+      .items(
+        Joi.object({
+          name: Joi.string().trim().min(1).required(),
+          description: Joi.string().allow(''),
+          image: Joi.string().uri().allow(''),
+          price: Joi.number().min(0).required(),
+          dietary: Joi.object({
+            vegetarian: Joi.boolean(),
+            vegan: Joi.boolean()
+          }),
+          ingredients: Joi.array().items(Joi.object().unknown(true)),
+          nutrition: Joi.object().unknown(true),
+          upsells: Joi.array().items(
+            Joi.object({
+              label: Joi.string().trim().required(),
+              price: Joi.number().min(0).required()
+            })
+          ),
+          isMeal: Joi.boolean(),
+          order: Joi.number().integer().min(0),
+          isAvailable: Joi.boolean()
+        })
+      )
+      .min(1)
+      .required()
+  }),
   updateItemBody: Joi.object({
     name: Joi.string().trim().min(1),
     description: Joi.string().allow(''),
@@ -420,5 +453,21 @@ export const reviewValidators = {
   }).min(1),
   moderateBody: Joi.object({
     isActive: Joi.boolean().required()
+  })
+};
+
+export const fsaValidators = {
+  searchQuery: Joi.object({
+    name: Joi.string().trim().min(2).required(),
+    postcode: Joi.string().trim().allow('')
+  }),
+  linkBody: Joi.object({
+    fhrsId: Joi.number().integer().positive().required()
+  }),
+  restaurantIdParam: Joi.object({
+    restaurantId: objectId.required()
+  }),
+  fhrsIdParam: Joi.object({
+    fhrsId: Joi.string().pattern(/^\d+$/).required()
   })
 };
