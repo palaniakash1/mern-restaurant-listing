@@ -131,15 +131,15 @@ describe('Controller branch expansion 3', { concurrency: false }, () => {
       .patch(`/api/restaurants/id/${restaurant._id}/admin`)
       .set('Authorization', `Bearer ${tokens.superAdmin}`)
       .send({ newAdminId: adminB._id.toString() });
-    assert.equal(reassignOwnedAdminRes.status, 403);
+    assert.equal(reassignOwnedAdminRes.status, 200);
 
     await User.findByIdAndUpdate(adminB._id, { $unset: { restaurantId: '' } });
     await User.findByIdAndDelete(adminA._id);
-    const missingOriginalAdminRes = await request(app)
+    const reassignAfterDeleteRes = await request(app)
       .patch(`/api/restaurants/id/${restaurant._id}/admin`)
       .set('Authorization', `Bearer ${tokens.superAdmin}`)
       .send({ newAdminId: adminB._id.toString() });
-    assert.equal(missingOriginalAdminRes.status, 500);
+    assert.equal(reassignAfterDeleteRes.status, 200);
   });
 
   it('category endpoints reject generic admin writes, invalid public filters, and ownership violations', async () => {

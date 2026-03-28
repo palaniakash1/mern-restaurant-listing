@@ -138,6 +138,91 @@ test('config throws when required database or jwt env variables are missing', as
   );
 });
 
+test('config parses explicit env overrides and fallback values across runtime sections', async () => {
+  await withEnv(
+    {
+      NODE_ENV: 'production',
+      PORT: '4100',
+      APP_NAME: 'dashboard-api',
+      APP_VERSION: '2.1.0',
+      LOG_LEVEL: 'debug',
+      DATABASE_URL: 'mongodb://localhost/override-db',
+      MONGO: '',
+      JWT_SECRET: 'jwt-secret',
+      JWT_EXPIRE: '',
+      ACCESS_TOKEN_EXPIRE: '4h',
+      JWT_ISSUER: 'issuer-1',
+      JWT_AUDIENCE: 'audience-1',
+      JWT_ROTATION_ENABLED: 'false',
+      JWT_KEYS_DIR: 'custom-keys',
+      JWT_KEY_ROTATION_INTERVAL: '86400000',
+      JWT_KEY_LIFETIME: '172800000',
+      CORS_ORIGINS: 'https://a.example.com, https://b.example.com',
+      METRICS_TOKEN: 'metrics-token',
+      GOOGLE_MAPS_API_KEY: 'maps-key',
+      EMAIL_SERVICE_URL: 'https://email.internal',
+      REFRESH_TOKEN_TTL_DAYS: '30',
+      CSRF_TOKEN_TTL_MS: '86400000',
+      LOGIN_LOCKOUT_THRESHOLD: '7',
+      LOGIN_LOCKOUT_BASE_MS: '60000',
+      LOGIN_LOCKOUT_MAX_MS: '3600000',
+      REDIS_URL: 'redis://localhost:6379',
+      CACHE_TTL: '600',
+      REDIS_CONNECT_TIMEOUT: '5000',
+      OTEL_ENABLED: 'false',
+      OTEL_SERVICE_NAME: 'otel-service',
+      OTEL_EXPORTER_OTLP_ENDPOINT: 'http://localhost:4318',
+      OTEL_EXPORTER_JAEGER_ENDPOINT: 'http://localhost:14268'
+    },
+    async () => {
+      const { default: loadedConfig, isProduction, isTest } = await import(
+        `../config.js?config-matrix=${Date.now()}`
+      );
+
+      assert.equal(loadedConfig.env, 'production');
+      assert.equal(loadedConfig.port, 4100);
+      assert.equal(loadedConfig.appName, 'dashboard-api');
+      assert.equal(loadedConfig.appVersion, '2.1.0');
+      assert.equal(loadedConfig.logLevel, 'debug');
+      assert.equal(loadedConfig.databaseUrl, 'mongodb://localhost/override-db');
+      assert.equal(loadedConfig.jwtExpire, '4h');
+      assert.equal(loadedConfig.jwtIssuer, 'issuer-1');
+      assert.equal(loadedConfig.jwtAudience, 'audience-1');
+      assert.equal(loadedConfig.jwtRotation.enabled, false);
+      assert.equal(loadedConfig.jwtRotation.keysDir, 'custom-keys');
+      assert.equal(loadedConfig.jwtRotation.rotationIntervalMs, 86400000);
+      assert.equal(loadedConfig.jwtRotation.keyLifetimeMs, 172800000);
+      assert.deepEqual(loadedConfig.corsOrigins, [
+        'https://a.example.com',
+        'https://b.example.com'
+      ]);
+      assert.equal(loadedConfig.metricsToken, 'metrics-token');
+      assert.equal(loadedConfig.googleMapsApiKey, 'maps-key');
+      assert.equal(loadedConfig.emailServiceUrl, 'https://email.internal');
+      assert.equal(loadedConfig.refreshTokenTtlDays, 30);
+      assert.equal(loadedConfig.csrf.ttlMs, 86400000);
+      assert.equal(loadedConfig.loginLockout.threshold, 7);
+      assert.equal(loadedConfig.loginLockout.baseMs, 60000);
+      assert.equal(loadedConfig.loginLockout.maxMs, 3600000);
+      assert.equal(loadedConfig.redis.url, 'redis://localhost:6379');
+      assert.equal(loadedConfig.redis.cacheTtlSeconds, 600);
+      assert.equal(loadedConfig.redis.connectTimeoutMs, 5000);
+      assert.equal(loadedConfig.tracing.enabled, false);
+      assert.equal(loadedConfig.tracing.serviceName, 'otel-service');
+      assert.equal(
+        loadedConfig.tracing.exporterUrl,
+        'http://localhost:4318'
+      );
+      assert.equal(
+        loadedConfig.tracing.jaegerEndpoint,
+        'http://localhost:14268'
+      );
+      assert.equal(isProduction, true);
+      assert.equal(typeof isTest, 'boolean');
+    }
+  );
+});
+
 test('paginate covers defaults, lower bounds, upper cap, and next-page calculation branches', () => {
   assert.deepEqual(paginate({ total: 0 }), {
     page: 1,

@@ -112,7 +112,7 @@ describe('Controller branch expansion', { concurrency: false }, () => {
     await clearTestDb();
   });
 
-  it('restaurant endpoints reject duplicate ownership and invalid status transitions', async () => {
+  it('restaurant endpoints allow multiple restaurants per admin and reject invalid status transitions', async () => {
     const { tokens } = await createBaseActors();
 
     const createRestaurantRes = await createRestaurantFixture(
@@ -121,14 +121,20 @@ describe('Controller branch expansion', { concurrency: false }, () => {
     );
     assert.equal(createRestaurantRes.status, 201);
 
-    const duplicateRestaurantRes = await request(app)
+    const secondRestaurantRes = await request(app)
       .post('/api/restaurants')
       .set('Authorization', `Bearer ${tokens.adminA}`)
       .send({
-        ...buildRestaurantPayload('Duplicate Branch Diner'),
-        email: 'duplicate-owner@example.com'
+        ...buildRestaurantPayload('Second Branch Diner'),
+        email: 'second-branch@example.com'
       });
-    assert.ok([400, 403].includes(duplicateRestaurantRes.status));
+    assert.equal(secondRestaurantRes.status, 201);
+
+    const thirdRestaurantRes = await createRestaurantFixture(
+      tokens.adminA,
+      'Third Branch Diner'
+    );
+    assert.equal(thirdRestaurantRes.status, 201);
 
     const restaurantId = createRestaurantRes.body.data._id;
 
