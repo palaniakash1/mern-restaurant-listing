@@ -67,6 +67,8 @@ export const create = async (req, res, next) => {
         type: 'Point',
         coordinates: [location.lng, location.lat]
       };
+    } else if (location?.type === 'Point' && location?.coordinates) {
+      geoLocation = location;
     } else {
       geoLocation = await geocodeAddress(address);
     }
@@ -86,18 +88,14 @@ export const create = async (req, res, next) => {
       let baseSlug = slug;
       let counter = 1;
 
-      while (await Restaurant.findOne({ slug: baseSlug }).session(session)) {
+      while (true) {
+        const existingRestaurant = await Restaurant.findOne({ slug: baseSlug }).session(session);
+        if (!existingRestaurant) break;
         baseSlug = `${slug}-${counter++}`;
       }
 
       let assignedAdminId = req.user.id;
-
-      if (req.user.role === 'admin') {
-        const adminUser = await User.findById(req.user.id).session(session);
-        if (adminUser.restaurantId) {
-          throw errorHandler(403, 'Admin can create only one restaurant');
-        }
-      }
+      let isPrimary = true;
 
       if (req.user.role === 'superAdmin' && adminId) {
         const adminExists = await User.findById(adminId).session(session);
@@ -106,11 +104,12 @@ export const create = async (req, res, next) => {
           throw errorHandler(400, 'Invalid admin selected');
         }
 
-        if (adminExists.restaurantId) {
-          throw errorHandler(403, 'Selected admin already owns a restaurant');
-        }
-
         assignedAdminId = adminId;
+      }
+
+      if (req.user.role === 'admin') {
+        const currentAdmin = await User.findById(req.user.id).session(session);
+        isPrimary = !currentAdmin?.restaurantId && (!currentAdmin?.restaurantIds || currentAdmin.restaurantIds.length === 0);
       }
 
       const buildSearchText = (restaurant) =>
@@ -157,9 +156,16 @@ export const create = async (req, res, next) => {
         session
       });
 
+      const userUpdate = {
+        $addToSet: { restaurantIds: createdRestaurant._id }
+      };
+      if (isPrimary) {
+        userUpdate.restaurantId = createdRestaurant._id;
+      }
+
       await User.findByIdAndUpdate(
         assignedAdminId,
-        { restaurantId: createdRestaurant._id },
+        userUpdate,
         { session }
       );
 
@@ -506,7 +512,10 @@ export const deleteRestaurant = async (req, res, next) => {
       if (restaurant.adminId) {
         await User.findByIdAndUpdate(
           restaurant.adminId,
-          { $unset: { restaurantId: '' } },
+          {
+            $pull: { restaurantIds: restaurant._id },
+            $unset: { restaurantId: restaurant._id }
+          },
           { session }
         );
       }
@@ -557,7 +566,7 @@ export const restoreRestaurant = async (req, res, next) => {
         req.params.id,
         {
           status: 'draft',
-          isActive: false
+          isActive: true
         },
         { new: true, session }
       )
@@ -617,17 +626,26 @@ export const reassignRestaurantAdmin = async (req, res, next) => {
         throw errorHandler(400, 'Invalid admin selected');
       }
 
-      if (newAdmin.restaurantId) {
-        throw errorHandler(403, 'Selected admin already owns a restaurant');
-      }
-
       await User.findByIdAndUpdate(
         oldAdmin._id,
         {
-          $unset: { restaurantId: '' }
+          $pull: { restaurantIds: restaurant._id }
         },
         { session }
       );
+
+      if (oldAdmin.restaurantId?.toString() === id) {
+        const remainingRestaurants = oldAdmin.restaurantIds?.filter(
+          (rid) => rid.toString() !== id
+        ) || [];
+        await User.findByIdAndUpdate(
+          oldAdmin._id,
+          {
+            restaurantId: remainingRestaurants.length > 0 ? remainingRestaurants[0] : null
+          },
+          { session }
+        );
+      }
 
       await Restaurant.findByIdAndUpdate(
         id,
@@ -637,10 +655,12 @@ export const reassignRestaurantAdmin = async (req, res, next) => {
         { session }
       );
 
+      const newAdminHasRestaurants = newAdmin.restaurantIds && newAdmin.restaurantIds.length > 0;
       await User.findByIdAndUpdate(
         newAdmin._id,
         {
-          restaurantId: id
+          $addToSet: { restaurantIds: id },
+          ...(newAdminHasRestaurants ? {} : { restaurantId: id })
         },
         { session }
       );
@@ -674,18 +694,18 @@ export const reassignRestaurantAdmin = async (req, res, next) => {
 };
 
 // ===============================================================================
-// 🔷 GET /api/restaurants/me — Get logged-in admin's restaurant
+// 🔷 GET /api/restaurants/me — Get logged-in admin's restaurant (single/first)
 // ===============================================================================
 
 export const getMyRestaurant = async (req, res, next) => {
   try {
-    if (!req.user.restaurantId) {
+    if (!req.user.restaurantId && (!req.user.restaurantIds || req.user.restaurantIds.length === 0)) {
       return next(errorHandler(404, 'No restaurant assigned to this admin'));
     }
 
-    const restaurant = await Restaurant.findById(req.user.restaurantId).select(
-      '-__v'
-    );
+    const restaurantId = req.user.restaurantId || req.user.restaurantIds[0];
+
+    const restaurant = await Restaurant.findById(restaurantId).select('-__v');
 
     if (!restaurant) {
       return next(errorHandler(404, 'Restaurant not found'));
@@ -700,6 +720,65 @@ export const getMyRestaurant = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: restaurant
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ===============================================================================
+// 🔷 GET /api/restaurants/me/all — Get all restaurants for logged-in admin
+// ===============================================================================
+
+export const getMyRestaurants = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+
+    let restaurantIds = req.user.restaurantIds;
+    if (!restaurantIds || restaurantIds.length === 0) {
+      if (req.user.restaurantId) {
+        restaurantIds = [req.user.restaurantId];
+      } else {
+        return res.status(200).json({
+          success: true,
+          page: 1,
+          limit: 10,
+          total: 0,
+          totalPages: 0,
+          hasNext: false,
+          hasPrev: false,
+          data: []
+        });
+      }
+    }
+
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+
+    if (pageNum < 1 || limitNum < 1) {
+      return next(errorHandler(400, 'Invalid pagination values'));
+    }
+
+    const filter = { _id: { $in: restaurantIds }, adminId: req.user.id };
+    const total = await Restaurant.countDocuments(filter);
+
+    const pagination = paginate({
+      page: pageNum,
+      limit: limitNum,
+      total
+    });
+
+    const restaurants = await Restaurant.find(filter)
+      .select('-__v')
+      .skip(pagination.skip)
+      .limit(pagination.limit)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      ...pagination,
+      data: restaurants
     });
   } catch (error) {
     next(error);
@@ -972,12 +1051,34 @@ export const getTrendingRestaurants = async (req, res, next) => {
 
 export const getAdminRestaurantSummary = async (req, res, next) => {
   try {
-    const restaurantId = req.user.restaurantId;
+    const { restaurantId } = req.query;
+
+    let targetRestaurantIds;
+    if (restaurantId) {
+      targetRestaurantIds = [restaurantId];
+    } else {
+      targetRestaurantIds = req.user.restaurantIds?.length
+        ? req.user.restaurantIds
+        : req.user.restaurantId
+          ? [req.user.restaurantId]
+          : [];
+    }
+
+    if (targetRestaurantIds.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          menuCount: 0,
+          categoryCount: 0,
+          storeManagerCount: 0
+        }
+      });
+    }
 
     const [menuCount, categoryCount, storeManagerCount] = await Promise.all([
-      Menu.countDocuments({ restaurantId, isActive: true }),
-      Category.countDocuments({ restaurantId, isActive: true }),
-      User.countDocuments({ role: 'storeManager', restaurantId })
+      Menu.countDocuments({ restaurantId: { $in: targetRestaurantIds }, isActive: true }),
+      Category.countDocuments({ restaurantId: { $in: targetRestaurantIds }, isActive: true }),
+      User.countDocuments({ role: 'storeManager', restaurantId: { $in: targetRestaurantIds } })
     ]);
 
     res.json({
@@ -990,5 +1091,97 @@ export const getAdminRestaurantSummary = async (req, res, next) => {
     });
   } catch (err) {
     next(err);
+  }
+};
+
+// ===============================================================================
+// 🔷 PATCH /api/restaurants/me/primary/:restaurantId — Set primary restaurant
+// ===============================================================================
+
+export const setPrimaryRestaurant = async (req, res, next) => {
+  try {
+    const { restaurantId } = req.params;
+
+    const restaurant = await Restaurant.findById(restaurantId).lean();
+
+    if (!restaurant) {
+      return next(errorHandler(404, 'Restaurant not found'));
+    }
+
+    const isOwner = restaurant.adminId.toString() === req.user.id;
+    const isSuperAdmin = req.user.role === 'superAdmin';
+
+    if (!isOwner && !isSuperAdmin) {
+      return next(errorHandler(403, 'You do not have permission to manage this restaurant'));
+    }
+
+    const userBelongsToRestaurant = req.user.restaurantIds?.some(
+      (id) => id.toString() === restaurantId
+    ) || req.user.restaurantId?.toString() === restaurantId;
+
+    if (!userBelongsToRestaurant && !isSuperAdmin) {
+      return next(errorHandler(403, 'Restaurant not assigned to this user'));
+    }
+
+    await User.findByIdAndUpdate(req.user.id, {
+      restaurantId: restaurant._id
+    });
+
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      entityType: 'restaurant',
+      entityId: restaurant._id,
+      action: 'SET_PRIMARY',
+      before: { primaryRestaurantId: req.user.restaurantId },
+      after: { primaryRestaurantId: restaurant._id },
+      ipAddress: getClientIp(req)
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Primary restaurant updated successfully',
+      data: { primaryRestaurantId: restaurant._id }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ===============================================================================
+// 🔷 GET /api/restaurants/me/:restaurantId — Get specific restaurant for admin
+// ===============================================================================
+
+export const getMyRestaurantById = async (req, res, next) => {
+  try {
+    const { restaurantId } = req.params;
+
+    const restaurant = await Restaurant.findById(restaurantId).select('-__v');
+
+    if (!restaurant) {
+      return next(errorHandler(404, 'Restaurant not found'));
+    }
+
+    const isOwner = restaurant.adminId.toString() === req.user.id;
+    const isSuperAdmin = req.user.role === 'superAdmin';
+
+    if (!isOwner && !isSuperAdmin) {
+      return next(errorHandler(403, 'You do not have permission to view this restaurant'));
+    }
+
+    const userBelongsToRestaurant = req.user.restaurantIds?.some(
+      (id) => id.toString() === restaurantId
+    ) || req.user.restaurantId?.toString() === restaurantId;
+
+    if (!userBelongsToRestaurant && !isSuperAdmin) {
+      return next(errorHandler(403, 'Restaurant not assigned to this user'));
+    }
+
+    res.status(200).json({
+      success: true,
+      data: restaurant
+    });
+  } catch (error) {
+    next(error);
   }
 };
