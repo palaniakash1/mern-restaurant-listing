@@ -1,0 +1,843 @@
+{
+  "info": {
+    "name": "MERN Restaurant - FSA Ratings API",
+    "description": "Food Standards Agency hygiene rating integration endpoints. This collection tests the FSA integration for fetching, linking, and managing UK Food Hygiene Ratings.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string",
+      "description": "JWT authentication token (admin or superAdmin)"
+    },
+    {
+      "key": "restaurantId",
+      "value": "",
+      "type": "string",
+      "description": "MongoDB ObjectId of test restaurant"
+    },
+    {
+      "key": "fhrsId",
+      "value": "123456",
+      "type": "string",
+      "description": "FHRS ID for testing (use a real UK restaurant ID)"
+    },
+    {
+      "key": "restaurantName",
+      "value": "Pizza Express",
+      "type": "string",
+      "description": "Restaurant name for search testing"
+    },
+    {
+      "key": "postcode",
+      "value": "W1D 3QW",
+      "type": "string",
+      "description": "UK postcode for search testing"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "PUBLIC ENDPOINTS",
+      "description": "Endpoints that do not require authentication",
+      "item": [
+        {
+          "name": "Search FSA Establishments",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/search?name={{restaurantName}}&postcode={{postcode}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "search"],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "{{restaurantName}}",
+                  "description": "Restaurant name to search (min 2 characters)"
+                },
+                {
+                  "key": "postcode",
+                  "value": "{{postcode}}",
+                  "description": "Optional UK postcode for better matching"
+                }
+              ]
+            },
+            "description": "Search for food establishments in the UK Food Hygiene Rating Scheme. Returns best match with confidence score."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has success flag', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success', true);",
+                  "});",
+                  "",
+                  "pm.test('Response contains matched flag in data', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('matched');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search - Name Only (No Postcode)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/search?name={{restaurantName}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "search"],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "{{restaurantName}}"
+                }
+              ]
+            },
+            "description": "Search using only restaurant name, no postcode filter"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Rating by FHRSID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/rating/{{fhrsId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "rating", "{{fhrsId}}"]
+            },
+            "description": "Fetch hygiene rating details using FHRS ID. Results are cached for 24 hours."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has data with rating', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success', true);",
+                  "    pm.expect(jsonData.data).to.have.property('rating');",
+                  "});",
+                  "",
+                  "pm.test('Response has badgeUrl in data', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('badgeUrl');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Rating - Exempt Business",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/rating/12345",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "rating", "12345"]
+            },
+            "description": "Test fetching rating for a business that is exempt from inspection"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 404', function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ERROR CASES - PUBLIC",
+      "description": "Test error handling for public endpoints",
+      "item": [
+        {
+          "name": "Search - Name Too Short",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/search?name=a",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "search"],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "a"
+                }
+              ]
+            },
+            "description": "Validation error - name must be at least 2 characters"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Rating - Not Found",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/rating/99999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "rating", "99999999"]
+            },
+            "description": "404 error when FHRSID does not exist"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404', function() {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Rating - Invalid FHRSID Format",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/rating/abc",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "rating", "abc"]
+            },
+            "description": "400 error for non-numeric FHRSID"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Rating - Negative FHRSID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/rating/-1",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "rating", "-1"]
+            },
+            "description": "400 error for negative FHRSID"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "AUTHENTICATED ENDPOINTS",
+      "description": "Endpoints that require authentication. These will fail without a valid token.",
+      "item": [
+        {
+          "name": "Get Restaurant FSA Status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/restaurant/{{restaurantId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "restaurant", "{{restaurantId}}"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "description": "Get the current FSA rating status for a restaurant. Returns linked status, FHRSID, rating value, and last refresh time."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 401', function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 401]);",
+                  "});",
+                  "",
+                  "pm.test('Response has linked status when authenticated', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (pm.response.code === 200) {",
+                  "        pm.expect(jsonData.data).to.have.property('linked');",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('Response has data object when authenticated', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (pm.response.code === 200) {",
+                  "        pm.expect(jsonData).to.have.property('data');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Link Restaurant to FHRSID",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/restaurant/{{restaurantId}}/link",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "restaurant", "{{restaurantId}}", "link"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"fhrsId\": {{fhrsId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Manually link a restaurant to an FSA establishment by providing the FHRSID. Validates FHRSID exists before linking."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 401', function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 401]);",
+                  "});",
+                  "",
+                  "pm.test('Success message is returned when authenticated', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (pm.response.code === 200) {",
+                  "        pm.expect(jsonData.success).to.equal(true);",
+                  "        pm.expect(jsonData.message).to.include('linked');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auto-Link Restaurant",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/restaurant/{{restaurantId}}/auto-link",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "restaurant", "{{restaurantId}}", "auto-link"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "description": "Automatically search FSA database using restaurant name and postcode, then link if a confident match is found (score >= 0.4)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 401', function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 401]);",
+                  "});",
+                  "",
+                  "pm.test('Response contains linked or multipleOptions when authenticated', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (pm.response.code === 200) {",
+                  "        pm.expect(jsonData.data).to.have.any.keys('linked', 'multipleOptions');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unlink Restaurant",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/restaurant/{{restaurantId}}/link",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "restaurant", "{{restaurantId}}", "link"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "description": "Remove the FSA rating link from a restaurant. Sets fhrsId to null and clears rating data."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 401', function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 401]);",
+                  "});",
+                  "",
+                  "pm.test('Success message is returned when authenticated', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (pm.response.code === 200) {",
+                  "        pm.expect(jsonData.success).to.equal(true);",
+                  "        pm.expect(jsonData.message).to.include('unlinked');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Restaurant Rating",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/restaurant/{{restaurantId}}/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "restaurant", "{{restaurantId}}", "refresh"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "description": "Fetch latest rating from FSA API and update the database. Bypasses cache to get fresh data."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200, 400 or 401', function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 400, 401]);",
+                  "});",
+                  "",
+                  "pm.test('Success message is returned when authenticated', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (pm.response.code === 200) {",
+                  "        pm.expect(jsonData.success).to.equal(true);",
+                  "        pm.expect(jsonData.message).to.include('refreshed');",
+                  "    } else if (pm.response.code === 400) {",
+                  "        pm.expect(jsonData.success).to.equal(false);",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('Data contains rating info when linked', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (pm.response.code === 200) {",
+                  "        pm.expect(jsonData.data).to.have.property('fhrsId');",
+                  "        pm.expect(jsonData.data).to.have.property('rating');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ERROR CASES - AUTHENTICATED",
+      "description": "Test error handling for authenticated endpoints",
+      "item": [
+        {
+          "name": "Unauthorized - No Token",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/restaurant/{{restaurantId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "restaurant", "{{restaurantId}}"]
+            },
+            "description": "Returns restaurant FSA data (public endpoint)"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Link - Invalid FHRSID (Negative)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/restaurant/{{restaurantId}}/link",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "restaurant", "{{restaurantId}}", "link"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"fhrsId\": -1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Validation error - FHRSID must be positive"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error about FHRSID validation', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('Valid FHRSID is required');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Link - Non-existent FHRSID",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/restaurant/{{restaurantId}}/link",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "restaurant", "{{restaurantId}}", "link"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"fhrsId\": 99999999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "404 error - FHRSID does not exist in FSA database"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404 or 502', function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([404, 502]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh - Restaurant Not Linked",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/restaurant/{{restaurantId}}/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "restaurant", "{{restaurantId}}", "refresh"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "description": "400 error when trying to refresh a restaurant that is not linked to FSA"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Status - Restaurant Not Found",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/restaurant/000000000000000000000000",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "restaurant", "000000000000000000000000"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "description": "404 error for non-existent restaurant ID"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404', function() {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "FULL INTEGRATION FLOW",
+      "description": "Complete workflow testing the FSA integration",
+      "item": [
+        {
+          "name": "1. Create - Link Restaurant to FHRSID",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/restaurant/{{restaurantId}}/link",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "restaurant", "{{restaurantId}}", "link"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"fhrsId\": {{fhrsId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "2. Verify - Get Restaurant FSA Status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/restaurant/{{restaurantId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "restaurant", "{{restaurantId}}"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ]
+          }
+        },
+        {
+          "name": "3. Verify - Get Public Rating",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/rating/{{fhrsId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "rating", "{{fhrsId}}"]
+            }
+          }
+        },
+        {
+          "name": "4. Refresh - Update Rating",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/restaurant/{{restaurantId}}/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "restaurant", "{{restaurantId}}", "refresh"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ]
+          }
+        },
+        {
+          "name": "5. Cleanup - Unlink Restaurant",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/fsa/restaurant/{{restaurantId}}/link",
+              "host": ["{{baseUrl}}"],
+              "path": ["fsa", "restaurant", "{{restaurantId}}", "link"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
