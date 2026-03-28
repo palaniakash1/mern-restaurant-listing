@@ -6,6 +6,10 @@ import { initTracing, shutdownTracing } from './tracing.js';
 import { closeRedis, initRedis } from './utils/redisCache.js';
 import { logger } from './utils/logger.js';
 import jwtRotationService from './services/jwtRotation.service.js';
+import {
+  startRatingRefreshJob,
+  stopRatingRefreshJob
+} from './jobs/fsaRatingRefresh.job.js';
 
 let server;
 let isShuttingDown = false;
@@ -40,6 +44,7 @@ const gracefulShutdown = async (signal) => {
   forceShutdownTimer.unref?.();
 
   try {
+    stopRatingRefreshJob();
     await closeServer();
     await mongoose.connection.close();
     await closeRedis();
@@ -71,6 +76,10 @@ const startServer = async () => {
     server = app.listen(config.port, () => {
       logger.info('server.started', { port: config.port });
     });
+
+    if (!isTest && config.env !== 'development') {
+      startRatingRefreshJob(24);
+    }
   } catch (error) {
     logger.error('server.startup.error', { error: error.message });
     await closeRedis();
