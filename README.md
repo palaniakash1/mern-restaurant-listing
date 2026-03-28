@@ -401,3 +401,270 @@ MIT License - See LICENSE file for details
 **Palani Akash**
 
 - GitHub: [@palaniakash1](https://github.com/palaniakash1)
+
+```
+mern-restaurant
+├─ .nyc_output
+│  └─ processinfo
+│     └─ index.json
+├─ .prettierrc
+├─ api
+│  ├─ app.js
+│  ├─ config.js
+│  ├─ controllers
+│  │  ├─ admin.controller.js
+│  │  ├─ auditLog.controller.js
+│  │  ├─ auth.controller.js
+│  │  ├─ category.controller.js
+│  │  ├─ menu.controller.js
+│  │  ├─ restaurant.controller.js
+│  │  ├─ review.controller.js
+│  │  └─ user.controller.js
+│  ├─ docs
+│  │  ├─ admin.swagger.js
+│  │  ├─ auditLog.swagger.js
+│  │  ├─ auth.swagger.js
+│  │  ├─ category.swagger.js
+│  │  ├─ components.js
+│  │  ├─ fsa.swagger.js
+│  │  ├─ joi-validation-guide.md
+│  │  ├─ menu.swagger.js
+│  │  ├─ permission-matrix.md
+│  │  ├─ postman
+│  │  │  ├─ admin-audit.postman_collection.json
+│  │  │  ├─ API_TESTING_CHECKLIST.md
+│  │  │  ├─ auth.postman_collection.json
+│  │  │  ├─ category-enterprise-endpoints.postman_collection.json
+│  │  │  ├─ category_complete.postman_collection.json
+│  │  │  ├─ complete-api-test-data.json
+│  │  │  ├─ create_demo.cjs
+│  │  │  ├─ demo_categories_menus.postman_collection.json
+│  │  │  ├─ demo_categories_v2.json
+│  │  │  ├─ demo_menus_v2.json
+│  │  │  ├─ demo_menu_items.postman_collection.json
+│  │  │  ├─ demo_menu_v2.json
+│  │  │  ├─ demo_restaurants.postman_collection.json
+│  │  │  ├─ demo_restaurants_v2.json
+│  │  │  ├─ demo_simple.json
+│  │  │  ├─ fsa.postman_collection.json
+│  │  │  ├─ menu.postman_collection.json
+│  │  │  ├─ restaurants.postman_collection.json
+│  │  │  ├─ reviews.postman_collection.json
+│  │  │  ├─ STEP_BY_STEP_TESTING.md
+│  │  │  ├─ TEST_DATA_REFERENCE.md
+│  │  │  └─ users.postman_collection.json
+│  │  ├─ restaurant.swagger.js
+│  │  ├─ review.swagger.js
+│  │  ├─ swagger.js
+│  │  ├─ system.swagger.js
+│  │  └─ user.swagger.js
+│  ├─ index.js
+│  ├─ jobs
+│  │  └─ fsaRatingRefresh.job.js
+│  ├─ load-tests
+│  │  ├─ auth-load-test.js
+│  │  ├─ README.md
+│  │  └─ run-k6.js
+│  ├─ middlewares
+│  │  ├─ csrfProtection.js
+│  │  ├─ errorHandler.js
+│  │  ├─ healthCheck.js
+│  │  ├─ idempotency.js
+│  │  ├─ metrics.js
+│  │  ├─ requestLogger.js
+│  │  ├─ validate.js
+│  │  └─ zodValidate.js
+│  ├─ migrations
+│  │  ├─ migrate.js
+│  │  ├─ migrations
+│  │  │  └─ 001_add_indexes.js
+│  │  └─ seeds
+│  │     ├─ 001_sample_users.js
+│  │     └─ demo_data.cjs
+│  ├─ models
+│  │  ├─ auditLog.model.js
+│  │  ├─ category.model.js
+│  │  ├─ menu.model.js
+│  │  ├─ refreshToken.model.js
+│  │  ├─ restaurant.model.js
+│  │  ├─ review.model.js
+│  │  └─ user.model.js
+│  ├─ notes.md
+│  ├─ repositories
+│  │  ├─ admin.repository.js
+│  │  ├─ auth.repository.js
+│  │  └─ user.repository.js
+│  ├─ routes
+│  │  ├─ admin.jwt.route.js
+│  │  ├─ admin.route.js
+│  │  ├─ auditLog.routes.js
+│  │  ├─ auth.route.js
+│  │  ├─ category.route.js
+│  │  ├─ fsa.routes.js
+│  │  ├─ menu.route.js
+│  │  ├─ places.routes.js
+│  │  ├─ restaurant.routes.js
+│  │  ├─ review.route.js
+│  │  ├─ user.route.js
+│  │  └─ v1
+│  │     └─ index.js
+│  ├─ services
+│  │  ├─ admin.service.js
+│  │  ├─ auth.service.js
+│  │  ├─ authOperations.service.js
+│  │  ├─ fsa.service.js
+│  │  ├─ jwtRotation.service.js
+│  │  └─ user.service.js
+│  ├─ tests
+│  │  ├─ admin.repository.test.js
+│  │  ├─ app-request-logger.test.js
+│  │  ├─ auth-controller.unit.test.js
+│  │  ├─ auth-operations.service.test.js
+│  │  ├─ auth.integration.test.js
+│  │  ├─ auth.service.test.js
+│  │  ├─ branch-gap-helpers.unit.test.js
+│  │  ├─ controller-branch-2.integration.test.js
+│  │  ├─ controller-branch-3.integration.test.js
+│  │  ├─ controller-branch-4.integration.test.js
+│  │  ├─ controller-branch.integration.test.js
+│  │  ├─ controller-deep-branches.unit.test.js
+│  │  ├─ e2e-smoke.test.js
+│  │  ├─ ENDPOINT_COVERAGE_MATRIX.md
+│  │  ├─ fsa.controller.test.js
+│  │  ├─ fsa.service.unit.test.js
+│  │  ├─ gap-closure.integration.test.js
+│  │  ├─ helpers
+│  │  │  └─ testDb.js
+│  │  ├─ jwt-rotation.edge.test.js
+│  │  ├─ jwt-tracing-lifecycle.test.js
+│  │  ├─ jwt-tracing.test.js
+│  │  ├─ low-coverage-utils.test.js
+│  │  ├─ platform-core.integration.test.js
+│  │  ├─ rbac.contract.test.js
+│  │  ├─ roles-and-reviews.integration.test.js
+│  │  ├─ route-policy.contract.test.js
+│  │  ├─ runtime-advanced.test.js
+│  │  ├─ runtime-hardening.test.js
+│  │  ├─ runtime-redis.test.js
+│  │  ├─ runtime-unit.test.js
+│  │  ├─ system.integration.test.js
+│  │  ├─ user-admin.service.test.js
+│  │  └─ user-controller.unit.test.js
+│  ├─ tracing.js
+│  ├─ utils
+│  │  ├─ auditLogger.js
+│  │  ├─ controllerHelpers.js
+│  │  ├─ diff.js
+│  │  ├─ error.js
+│  │  ├─ fileLogger.js
+│  │  ├─ generateUniqueSlug.js
+│  │  ├─ geocode.js
+│  │  ├─ googlePlaces.js
+│  │  ├─ logger.js
+│  │  ├─ openNow.js
+│  │  ├─ paginate.js
+│  │  ├─ permissions.js
+│  │  ├─ plugins
+│  │  │  └─ softDeleteRestore.plugin.js
+│  │  ├─ policy.js
+│  │  ├─ rateLimit.js
+│  │  ├─ redisCache.js
+│  │  ├─ restaurantVisibility.js
+│  │  ├─ retry.js
+│  │  ├─ roleGuards.js
+│  │  ├─ sanitizeAuditData.js
+│  │  ├─ secretScanner.js
+│  │  ├─ securityTelemetry.js
+│  │  ├─ verifyUser.js
+│  │  ├─ withTransaction.js
+│  │  └─ zodSchemas.js
+│  └─ validators
+│     └─ index.js
+├─ BACKUP_RESTORE_RUNBOOK.md
+├─ client
+│  ├─ .flowbite-react
+│  │  ├─ class-list.json
+│  │  ├─ config.json
+│  │  └─ init.tsx
+│  ├─ eslint.config.js
+│  ├─ index.html
+│  ├─ package-lock.json
+│  ├─ package.json
+│  ├─ postcss.config.js
+│  ├─ README.md
+│  ├─ src
+│  │  ├─ App.jsx
+│  │  ├─ assets
+│  │  │  ├─ eatwisely.ico
+│  │  │  └─ wavepattern.png
+│  │  ├─ components
+│  │  │  ├─ AddressAutocomplete.jsx
+│  │  │  ├─ Dashboards.jsx
+│  │  │  ├─ DashCategories.jsx
+│  │  │  ├─ DashMenu.jsx
+│  │  │  ├─ DashProfile.jsx
+│  │  │  ├─ DashRestaurants.jsx
+│  │  │  ├─ DashSidebar.jsx
+│  │  │  ├─ DashUsers.jsx
+│  │  │  ├─ Footer.jsx
+│  │  │  ├─ Header.jsx
+│  │  │  ├─ ImageCircleLoader.jsx
+│  │  │  ├─ OAuth.jsx
+│  │  │  └─ PrivateRoute.jsx
+│  │  ├─ firebase.js
+│  │  ├─ index.css
+│  │  ├─ main.jsx
+│  │  ├─ pages
+│  │  │  ├─ About.jsx
+│  │  │  ├─ AutoComplete.jsx
+│  │  │  ├─ Dashboard.jsx
+│  │  │  ├─ Home.jsx
+│  │  │  ├─ Profile.jsx
+│  │  │  ├─ SignIn.jsx
+│  │  │  └─ SignUp.jsx
+│  │  └─ redux
+│  │     ├─ store.js
+│  │     └─ user
+│  │        └─ userSlice.js
+│  ├─ tailwind.config.js
+│  └─ vite.config.js
+├─ COMPLETED_WORK_SUMMARY.md
+├─ coverage
+│  ├─ base.css
+│  ├─ block-navigation.js
+│  ├─ coverage-final.json
+│  ├─ favicon.png
+│  ├─ index.html
+│  ├─ prettify.css
+│  ├─ prettify.js
+│  ├─ sort-arrow-sprite.png
+│  └─ sorter.js
+├─ ENTERPRISE_GAP_CHECKLIST.md
+├─ eslint.config.js
+├─ JWT_KEY_ROTATION.md
+├─ keys
+│  ├─ 0464700e-f4f3-44f2-8614-cfe3049fa59f.key
+│  ├─ 225dd211-a98c-4964-a32f-820df62d4ea6.key
+│  ├─ 23107baf-5010-4268-a57e-559049397776.key
+│  ├─ 4c9b5020-eae9-4977-8a3b-43beede8d6d9.key
+│  ├─ 4d0817e5-0433-4c5a-99c2-118b6a87faef.key
+│  ├─ 50e516d5-00bf-4705-bf5c-3dc04ee576d4.key
+│  ├─ 6a68fa23-6d63-4e65-b304-395881b248d4.key
+│  ├─ 6cc76fe3-e377-43bd-86fb-45ab22dfb861.key
+│  ├─ a1070027-31e3-44d0-8204-f8a6694080b6.key
+│  ├─ af4eb789-53cf-40f9-8ad5-c367cbeee01d.key
+│  ├─ bfbc14b7-4a29-4f08-a762-340976f4a5ab.key
+│  ├─ c49d6fff-dcd3-407f-b2ef-0bb7d63c675e.key
+│  ├─ d2742b40-bdbd-4ac9-911f-eaaf8de43a4a.key
+│  ├─ d4b4aacd-9ade-4238-993a-216800a4b2cc.key
+│  ├─ ea16b998-a35e-4e70-8ee0-09003a8ccb51.key
+│  └─ faf7b8e2-4cd8-4daf-85d6-5184dace4978.key
+├─ package-lock.json
+├─ package.json
+├─ Project_Structure.md
+├─ README.md
+├─ RELEASE_CHECKLIST.md
+├─ ROLLBACK_RUNBOOK.md
+└─ TEST_COVERAGE_TRACKER.md
+
+```
