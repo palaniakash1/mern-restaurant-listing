@@ -25,6 +25,7 @@ export const PERMISSIONS = {
     restaurant: [
       'create',
       'readMine',
+      'readAllMine',
       'readMineSummary',
       'listAll',
       'readById',
@@ -32,7 +33,8 @@ export const PERMISSIONS = {
       'deleteById',
       'updateStatus',
       'restore',
-      'reassignAdmin'
+      'reassignAdmin',
+      'updateMine'
     ],
     category: [
       'readMine',
@@ -84,6 +86,7 @@ export const PERMISSIONS = {
     restaurant: [
       'create',
       'readMine',
+      'readAllMine',
       'readMineSummary',
       'readById',
       'updateById',
@@ -91,6 +94,7 @@ export const PERMISSIONS = {
     ],
     category: [
       'readMine',
+      'bulkStatus',
       'bulkReorder',
       'reorder',
       'checkSlug',
