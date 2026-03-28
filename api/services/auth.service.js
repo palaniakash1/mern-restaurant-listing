@@ -29,7 +29,8 @@ export const buildCookieOptions = () => ({
 export const buildCsrfCookieOptions = () => ({
   httpOnly: false,
   sameSite: 'lax',
-  secure: isProduction
+  secure: isProduction,
+  maxAge: config.csrf.ttlMs
 });
 
 export const toPositiveInt = (value, fallback) => {

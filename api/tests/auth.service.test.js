@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  buildCsrfCookieOptions,
   buildRefreshCookieOptions,
   comparePassword,
   getActiveLockoutUntil,
@@ -90,7 +91,8 @@ test('auth service records failed signin attempts and escalates to lockout', asy
   process.env.LOGIN_LOCKOUT_MAX_MS = originalMaxMs;
 });
 
-test('auth service derives refresh cookie options and session view models', () => {
+test('auth service derives csrf/refresh cookie options and session view models', () => {
+  const csrfOptions = buildCsrfCookieOptions();
   const options = buildRefreshCookieOptions();
   const now = new Date();
   const sessionView = toSessionView(
@@ -109,6 +111,8 @@ test('auth service derives refresh cookie options and session view models', () =
     'hash-1'
   );
 
+  assert.equal(typeof csrfOptions.maxAge, 'number');
+  assert.equal(csrfOptions.httpOnly, false);
   assert.equal(typeof options.maxAge, 'number');
   assert.equal(options.httpOnly, true);
   assert.equal(sessionView.id, 'session-1');
