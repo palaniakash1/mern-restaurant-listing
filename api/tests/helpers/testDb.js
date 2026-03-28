@@ -6,8 +6,20 @@ let mongoReplSet;
 
 export const setupTestDb = async () => {
   process.env.JWT_SECRET = process.env.JWT_SECRET || 'test_jwt_secret';
-  mongoReplSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
-  await mongoose.connect(mongoReplSet.getUri());
+
+  if (!mongoReplSet) {
+    mongoReplSet = await MongoMemoryReplSet.create({
+      replSet: { count: 1 },
+      binary: {
+        // Coverage runs slow process startup enough to hit the default limit.
+        launchTimeout: 30000
+      }
+    });
+  }
+
+  if (mongoose.connection.readyState !== 1) {
+    await mongoose.connect(mongoReplSet.getUri());
+  }
 };
 
 export const clearTestDb = async () => {
@@ -19,9 +31,13 @@ export const clearTestDb = async () => {
 };
 
 export const teardownTestDb = async () => {
-  await mongoose.connection.close();
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.connection.close();
+  }
+
   if (mongoReplSet) {
     await mongoReplSet.stop();
+    mongoReplSet = null;
   }
 };
 
