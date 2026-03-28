@@ -1,0 +1,132 @@
+{
+  "info": {
+    "name": "Demo Menu Items",
+    "description": "Detailed menu items with all fields",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "restaurantId",
+      "value": ""
+    },
+    {
+      "key": "categoryId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. CREATE - Starter (Bruschetta)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"Bruschetta Classica\",\n      \"description\": \"Toasted ciabatta with fresh tomatoes, garlic, basil\",\n      \"price\": 7.5,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": true\n      },\n      \"ingredients\": [\n        {\n          \"name\": \"Ciabatta Bread\",\n          \"allergens\": [\n            \"gluten\"\n          ],\n          \"strict\": true\n        },\n        {\n          \"name\": \"Fresh Tomatoes\",\n          \"allergens\": [],\n          \"removable\": false\n        },\n        {\n          \"name\": \"Fresh Basil\",\n          \"allergens\": [],\n          \"removable\": true\n        }\n      ],\n      \"nutrition\": {\n        \"calories\": {\n          \"value\": 220,\n          \"level\": \"amber\"\n        },\n        \"fat\": {\n          \"value\": 12,\n          \"level\": \"amber\"\n        },\n        \"sugar\": {\n          \"value\": 3,\n          \"level\": \"green\"\n        }\n      },\n      \"order\": 1,\n      \"isAvailable\": true\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "2. CREATE - Main (Grilled Salmon)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"Grilled Atlantic Salmon\",\n      \"description\": \"Fresh salmon with seasonal vegetables and potatoes\",\n      \"price\": 18.99,\n      \"dietary\": {\n        \"vegetarian\": false,\n        \"vegan\": false\n      },\n      \"ingredients\": [\n        {\n          \"name\": \"Atlantic Salmon Fillet\",\n          \"allergens\": [\n            \"fish\"\n          ],\n          \"strict\": true\n        },\n        {\n          \"name\": \"Seasonal Vegetables\",\n          \"allergens\": [],\n          \"removable\": false\n        },\n        {\n          \"name\": \"Lemon Butter Sauce\",\n          \"allergens\": [\n            \"milk\"\n          ],\n          \"removable\": true\n        }\n      ],\n      \"nutrition\": {\n        \"calories\": {\n          \"value\": 520,\n          \"level\": \"red\"\n        },\n        \"fat\": {\n          \"value\": 32,\n          \"level\": \"red\"\n        },\n        \"sugar\": {\n          \"value\": 4,\n          \"level\": \"green\"\n        }\n      },\n      \"isMeal\": true,\n      \"upsells\": [\n        {\n          \"label\": \"Extra Vegetables\",\n          \"price\": 3\n        },\n        {\n          \"label\": \"Garlic Bread\",\n          \"price\": 2.5\n        }\n      ],\n      \"order\": 1,\n      \"isAvailable\": true\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "3. CREATE - Dessert (Chocolate Cake)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"Chocolate Lava Cake\",\n      \"description\": \"Warm chocolate cake with molten center\",\n      \"price\": 8.5,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": false\n      },\n      \"ingredients\": [\n        {\n          \"name\": \"Dark Chocolate\",\n          \"allergens\": [\n            \"soya\"\n          ],\n          \"strict\": true\n        },\n        {\n          \"name\": \"Butter\",\n          \"allergens\": [\n            \"milk\"\n          ],\n          \"strict\": true\n        },\n        {\n          \"name\": \"Eggs\",\n          \"allergens\": [\n            \"egg\"\n          ],\n          \"strict\": true\n        }\n      ],\n      \"order\": 1,\n      \"isAvailable\": true\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "4. CREATE - Drinks with Upsells",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"Coca Cola\",\n      \"price\": 2.5,\n      \"upsells\": [\n        {\n          \"label\": \"330ml Can\",\n          \"price\": 0\n        },\n        {\n          \"label\": \"500ml Bottle\",\n          \"price\": 1\n        }\n      ],\n      \"order\": 1\n    },\n    {\n      \"name\": \"House Red Wine\",\n      \"price\": 6.5,\n      \"allergens\": [\n        \"sulphites\"\n      ],\n      \"upsells\": [\n        {\n          \"label\": \"Small Glass\",\n          \"price\": 0\n        },\n        {\n          \"label\": \"Large Glass\",\n          \"price\": 3\n        },\n        {\n          \"label\": \"Bottle\",\n          \"price\": 22\n        }\n      ],\n      \"order\": 2\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "5. CREATE - Full Menu",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"Ribeye Steak\",\n      \"description\": \"12oz premium ribeye with chips\",\n      \"price\": 28.99,\n      \"ingredients\": [\n        {\n          \"name\": \"Ribeye Steak\",\n          \"allergens\": [],\n          \"strict\": true\n        },\n        {\n          \"name\": \"Peppercorn Sauce\",\n          \"allergens\": [\n            \"milk\"\n          ],\n          \"removable\": true\n        }\n      ],\n      \"isMeal\": true,\n      \"upsells\": [\n        {\n          \"label\": \"Rare\",\n          \"price\": 0\n        },\n        {\n          \"label\": \"Medium\",\n          \"price\": 0\n        },\n        {\n          \"label\": \"Well Done\",\n          \"price\": 0\n        }\n      ],\n      \"order\": 1,\n      \"isAvailable\": true\n    },\n    {\n      \"name\": \"The Plant Burger\",\n      \"description\": \"Beyond Meat patty with vegan cheese\",\n      \"price\": 13.99,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": true\n      },\n      \"order\": 2,\n      \"isAvailable\": true\n    }\n  ]\n}"
+        }
+      }
+    }
+  ]
+}

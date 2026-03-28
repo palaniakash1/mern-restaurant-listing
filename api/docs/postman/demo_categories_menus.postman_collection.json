@@ -1,0 +1,106 @@
+{
+  "info": {
+    "name": "Demo Categories & Menus",
+    "description": "Demo categories and menu items to test restaurant connections"
+  },
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:3000/api"},
+    {"key": "adminToken", "value": ""},
+    {"key": "superAdminToken", "value": ""},
+    {"key": "restaurantId", "value": ""},
+    {"key": "categoryId", "value": ""},
+    {"key": "menuId", "value": ""}
+  ],
+  "item": [
+    {
+      "name": "1. CREATE - Generic Categories (Global)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/categories",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{superAdminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "[\n  {\n    \"name\": \"Starters\",\n    \"slug\": \"starters\",\n    \"isGeneric\": true,\n    \"order\": 1,\n    \"status\": \"published\"\n  },\n  {\n    \"name\": \"Main Courses\",\n    \"slug\": \"main-courses\",\n    \"isGeneric\": true,\n    \"order\": 2,\n    \"status\": \"published\"\n  },\n  {\n    \"name\": \"Desserts\",\n    \"slug\": \"desserts\",\n    \"isGeneric\": true,\n    \"order\": 3,\n    \"status\": \"published\"\n  },\n  {\n    \"name\": \"Drinks\",\n    \"slug\": \"drinks\",\n    \"isGeneric\": true,\n    \"order\": 4,\n    \"status\": \"published\"\n  },\n  {\n    \"name\": \"Sides\",\n    \"slug\": \"sides\",\n    \"isGeneric\": true,\n    \"order\": 5,\n    \"status\": \"published\"\n  }\n]"
+        }
+      }
+    },
+    {
+      "name": "2. CREATE - Restaurant-Specific Category",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/categories",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Chef's Specials\",\n  \"slug\": \"chefs-specials\",\n  \"isGeneric\": false,\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"order\": 0,\n  \"status\": \"published\"\n}"
+        }
+      }
+    },
+    {
+      "name": "3. CREATE - Menu with Items (Full Menu)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"Bruschetta\",\n      \"description\": \"Toasted bread with fresh tomatoes, garlic and basil\",\n      \"price\": 7.50,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": true\n      },\n      \"ingredients\": [\n        {\"name\": \"Bread\", \"allergens\": [\"gluten\"], \"removable\": false},\n        {\"name\": \"Tomatoes\", \"allergens\": [], \"removable\": true},\n        {\"name\": \"Garlic\", \"allergens\": [], \"removable\": true},\n        {\"name\": \"Basil\", \"allergens\": [], \"removable\": true}\n      ],\n      \"nutrition\": {\n        \"calories\": {\"value\": 250, \"level\": \"amber\"},\n        \"fat\": {\"value\": 10, \"level\": \"amber\"},\n        \"sugar\": {\"value\": 3, \"level\": \"green\"}\n      },\n      \"order\": 1,\n      \"isAvailable\": true\n    },\n    {\n      \"name\": \"Chicken Wings\",\n      \"description\": \"Crispy fried chicken wings with choice of sauce\",\n      \"price\": 9.99,\n      \"dietary\": {\n        \"vegetarian\": false,\n        \"vegan\": false\n      },\n      \"ingredients\": [\n        {\"name\": \"Chicken Wings\", \"allergens\": [\"gluten\"], \"removable\": false},\n        {\"name\": \"BBQ Sauce\", \"allergens\": [\"sulphites\"], \"removable\": true}\n      ],\n      \"upsells\": [\n        {\"label\": \"Extra Sauce\", \"price\": 0.50},\n        {\"label\": \"Large Portion\", \"price\": 3.00}\n      ],\n      \"order\": 2,\n      \"isAvailable\": true\n    },\n    {\n      \"name\": \"Grilled Salmon\",\n      \"description\": \"Fresh Atlantic salmon with seasonal vegetables\",\n      \"price\": 18.99,\n      \"dietary\": {\n        \"vegetarian\": false,\n        \"vegan\": false\n      },\n      \"ingredients\": [\n        {\"name\": \"Salmon Fillet\", \"allergens\": [\"fish\"], \"strict\": true},\n        {\"name\": \"Asparagus\", \"allergens\": []},\n        {\"name\": \"Lemon Butter\", \"allergens\": [\"milk\"], \"removable\": true}\n      ],\n      \"nutrition\": {\n        \"calories\": {\"value\": 450, \"level\": \"amber\"},\n        \"fat\": {\"value\": 25, \"level\": \"red\"},\n        \"sugar\": {\"value\": 2, \"level\": \"green\"}\n      },\n      \"isMeal\": true,\n      \"order\": 3,\n      \"isAvailable\": true\n    },\n    {\n      \"name\": \"Chocolate Lava Cake\",\n      \"description\": \"Warm chocolate cake with molten center, served with ice cream\",\n      \"price\": 8.50,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": false\n      },\n      \"ingredients\": [\n        {\"name\": \"Chocolate Cake\", \"allergens\": [\"gluten\", \"egg\", \"milk\"], \"strict\": true}\n      ],\n      \"nutrition\": {\n        \"calories\": {\"value\": 550, \"level\": \"red\"},\n        \"fat\": {\"value\": 30, \"level\": \"red\"},\n        \"sugar\": {\"value\": 45, \"level\": \"red\"}\n      },\n      \"order\": 4,\n      \"isAvailable\": true\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "4. CREATE - Simple Menu (Just Prices)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"House Burger\",\n      \"description\": \"Beef patty with lettuce, tomato and special sauce\",\n      \"price\": 12.99\n    },\n    {\n      \"name\": \"Veggie Burger\",\n      \"description\": \"Plant-based patty with all the toppings\",\n      \"price\": 11.99,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": true\n      }\n    },\n    {\n      \"name\": \"French Fries\",\n      \"description\": \"Crispy golden fries\",\n      \"price\": 4.50\n    },\n    {\n      \"name\": \"Onion Rings\",\n      \"description\": \"Beer-battered onion rings\",\n      \"price\": 5.00\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "5. CREATE - Menu with Allergen Info",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"Fish and Chips\",\n      \"description\": \"Beer-battered cod with chunky chips\",\n      \"price\": 15.99,\n      \"ingredients\": [\n        {\"name\": \"Cod Fish\", \"allergens\": [\"fish\"], \"strict\": true},\n        {\"name\": \"Beer Batter\", \"allergens\": [\"gluten\", \"barley\"], \"strict\": true},\n        {\"name\": \"Potatoes\", \"allergens\": []},\n        {\"name\": \"Mushy Peas\", \"allergens\": []},\n        {\"name\": \"Tartar Sauce\", \"allergens\": [\"egg\", \"mustard\"]}\n      ],\n      \"order\": 1\n    },\n    {\n      \"name\": \"Beef Steak\",\n      \"description\": \"8oz ribeye with peppercorn sauce\",\n      \"price\": 24.99,\n      \"ingredients\": [\n        {\"name\": \"Ribeye Steak\", \"allergens\": [], \"strict\": true},\n        {\"name\": \"Peppercorn Sauce\", \"allergens\": [\"milk\"], \"removable\": true}\n      ],\n      \"order\": 2\n    },\n    {\n      \"name\": \"Prawn Cocktail\",\n      \"description\": \"Fresh prawns in Marie Rose sauce\",\n      \"price\": 9.99,\n      \"ingredients\": [\n        {\"name\": \"Prawns\", \"allergens\": [\"crustaceans\"], \"strict\": true},\n        {\"name\": \"Marie Rose Sauce\", \"allergens\": [\"egg\", \"sulphites\"]}\n      ],\n      \"order\": 3\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "6. CREATE - Drinks Menu with Sizes",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"Coca Cola\",\n      \"price\": 2.50,\n      \"upsells\": [\n        {\"label\": \"Small\", \"price\": 0},\n        {\"label\": \"Medium\", \"price\": 0.50},\n        {\"label\": \"Large\", \"price\": 1.00}\n      ]\n    },\n    {\n      \"name\": \"Fresh Orange Juice\",\n      \"price\": 3.99,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": true\n      }\n    },\n    {\n      \"name\": \"House Red Wine\",\n      \"price\": 6.50,\n      \"allergens\": [\"sulphites\"],\n      \"upsells\": [\n        {\"label\": \"Glass (175ml)\", \"price\": 0},\n        {\"label\": \"Large Glass (250ml)\", \"price\": 2.00},\n        {\"label\": \"Bottle\", \"price\": 18.00}\n      ]\n    },\n    {\n      \"name\": \"Espresso\",\n      \"price\": 2.00,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": true\n      },\n      \"upsells\": [\n        {\"label\": \"Double\", \"price\": 1.00},\n        {\"label\": \"With Oat Milk\", \"price\": 0.70}\n      ]\n    }\n  ]\n}"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "info": {
+    "name": "Demo Menus & Items - FIXED",
+    "description": "Add items to menu - use items array format",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "restaurantId",
+      "value": ""
+    },
+    {
+      "key": "categoryId",
+      "value": ""
+    },
+    {
+      "key": "menuId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Create Menu",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menus",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\"\n}"
+        }
+      }
+    },
+    {
+      "name": "2. Add Multiple Items (must use items key)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menus/{{menuId}}/items",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [\n    {\n      \"name\": \"Grilled Salmon\",\n      \"description\": \"Fresh Atlantic salmon with seasonal vegetables\",\n      \"image\": \"https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400\",\n      \"price\": 18.99,\n      \"dietary\": {\n        \"vegetarian\": false,\n        \"vegan\": false\n      },\n      \"isMeal\": true,\n      \"order\": 1,\n      \"isAvailable\": true\n    },\n    {\n      \"name\": \"Chocolate Lava Cake\",\n      \"description\": \"Warm chocolate cake with molten center\",\n      \"image\": \"https://images.unsplash.com/photo-1624353365286-3f8d62daad51?w=400\",\n      \"price\": 8.5,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": false\n      },\n      \"order\": 2,\n      \"isAvailable\": true\n    }\n  ]\n}"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,237 @@
+{
+  "info": {
+    "name": "Restaurant Demo Data",
+    "description": "Demo data for creating restaurants - use admin token",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "superAdminToken",
+      "value": ""
+    },
+    {
+      "key": "restaurantId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. CREATE - The London Grills",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"The London Grills\",\n  \"tagline\": \"Best food in town\",\n  \"description\": \"A great restaurant at London\",\n  \"address\": {\n    \"addressLine1\": \"25 Main Street\",\n    \"areaLocality\": \"City Centre\",\n    \"city\": \"London\",\n    \"postcode\": \"EC4Y 1AA\",\n    \"country\": \"United Kingdom\"\n  },\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [\n      -0.1,\n      51.5\n    ]\n  },\n  \"openingHours\": {\n    \"monday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"tuesday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"wednesday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"thursday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"friday\": {\n      \"open\": \"12:00\",\n      \"close\": \"00:00\",\n      \"isClosed\": false\n    },\n    \"saturday\": {\n      \"open\": \"12:00\",\n      \"close\": \"00:00\",\n      \"isClosed\": false\n    },\n    \"sunday\": {\n      \"open\": \"12:00\",\n      \"close\": \"22:00\",\n      \"isClosed\": false\n    }\n  },\n  \"contactNumber\": \"+442071234567\",\n  \"email\": \"info@thelondongrills.com\",\n  \"website\": \"https://thelondongrills.com\"\n}"
+        }
+      }
+    },
+    {
+      "name": "2. CREATE - Manhattan Pizza",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Manhattan Pizza\",\n  \"tagline\": \"Best food in town\",\n  \"description\": \"A great restaurant at New York\",\n  \"address\": {\n    \"addressLine1\": \"789 Main Street\",\n    \"areaLocality\": \"City Centre\",\n    \"city\": \"New York\",\n    \"postcode\": \"10001\",\n    \"country\": \"United Kingdom\"\n  },\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [\n      -0.1,\n      51.5\n    ]\n  },\n  \"openingHours\": {\n    \"monday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"tuesday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"wednesday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"thursday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"friday\": {\n      \"open\": \"12:00\",\n      \"close\": \"00:00\",\n      \"isClosed\": false\n    },\n    \"saturday\": {\n      \"open\": \"12:00\",\n      \"close\": \"00:00\",\n      \"isClosed\": false\n    },\n    \"sunday\": {\n      \"open\": \"12:00\",\n      \"close\": \"22:00\",\n      \"isClosed\": false\n    }\n  },\n  \"contactNumber\": \"+442071234567\",\n  \"email\": \"info@manhattanpizza.com\",\n  \"website\": \"https://manhattanpizza.com\"\n}"
+        }
+      }
+    },
+    {
+      "name": "3. CREATE - The Minimal Cafe",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"The Minimal Cafe\",\n  \"tagline\": \"Best food in town\",\n  \"description\": \"A great restaurant at London\",\n  \"address\": {\n    \"addressLine1\": \"45 Main Street\",\n    \"areaLocality\": \"City Centre\",\n    \"city\": \"London\",\n    \"postcode\": \"W1D 2EZ\",\n    \"country\": \"United Kingdom\"\n  },\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [\n      -0.1,\n      51.5\n    ]\n  },\n  \"openingHours\": {\n    \"monday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"tuesday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"wednesday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"thursday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"friday\": {\n      \"open\": \"12:00\",\n      \"close\": \"00:00\",\n      \"isClosed\": false\n    },\n    \"saturday\": {\n      \"open\": \"12:00\",\n      \"close\": \"00:00\",\n      \"isClosed\": false\n    },\n    \"sunday\": {\n      \"open\": \"12:00\",\n      \"close\": \"22:00\",\n      \"isClosed\": false\n    }\n  },\n  \"contactNumber\": \"+442071234567\",\n  \"email\": \"info@theminimalcafe.com\",\n  \"website\": \"https://theminimalcafe.com\"\n}"
+        }
+      }
+    },
+    {
+      "name": "4. CREATE - Sunday Roast House",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Sunday Roast House\",\n  \"tagline\": \"Best food in town\",\n  \"description\": \"A great restaurant at London\",\n  \"address\": {\n    \"addressLine1\": \"12 Main Street\",\n    \"areaLocality\": \"City Centre\",\n    \"city\": \"London\",\n    \"postcode\": \"SW19 5AE\",\n    \"country\": \"United Kingdom\"\n  },\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [\n      -0.1,\n      51.5\n    ]\n  },\n  \"openingHours\": {\n    \"monday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"tuesday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"wednesday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"thursday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"friday\": {\n      \"open\": \"12:00\",\n      \"close\": \"00:00\",\n      \"isClosed\": false\n    },\n    \"saturday\": {\n      \"open\": \"12:00\",\n      \"close\": \"00:00\",\n      \"isClosed\": false\n    },\n    \"sunday\": {\n      \"open\": \"12:00\",\n      \"close\": \"22:00\",\n      \"isClosed\": false\n    }\n  },\n  \"contactNumber\": \"+442071234567\",\n  \"email\": \"info@sundayroasthouse.com\",\n  \"website\": \"https://sundayroasthouse.com\"\n}"
+        }
+      }
+    },
+    {
+      "name": "5. CREATE - The Golden Dragon",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"The Golden Dragon\",\n  \"tagline\": \"Best food in town\",\n  \"description\": \"A great restaurant at London\",\n  \"address\": {\n    \"addressLine1\": \"88 Main Street\",\n    \"areaLocality\": \"City Centre\",\n    \"city\": \"London\",\n    \"postcode\": \"WC2H 7LG\",\n    \"country\": \"United Kingdom\"\n  },\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [\n      -0.1,\n      51.5\n    ]\n  },\n  \"openingHours\": {\n    \"monday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"tuesday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"wednesday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"thursday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"friday\": {\n      \"open\": \"12:00\",\n      \"close\": \"00:00\",\n      \"isClosed\": false\n    },\n    \"saturday\": {\n      \"open\": \"12:00\",\n      \"close\": \"00:00\",\n      \"isClosed\": false\n    },\n    \"sunday\": {\n      \"open\": \"12:00\",\n      \"close\": \"22:00\",\n      \"isClosed\": false\n    }\n  },\n  \"contactNumber\": \"+442071234567\",\n  \"email\": \"info@thegoldendragon.com\",\n  \"website\": \"https://thegoldendragon.com\"\n}"
+        }
+      }
+    },
+    {
+      "name": "6. CREATE - Bella Italia",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Bella Italia\",\n  \"tagline\": \"Best food in town\",\n  \"description\": \"A great restaurant at London\",\n  \"address\": {\n    \"addressLine1\": \"156 Main Street\",\n    \"areaLocality\": \"City Centre\",\n    \"city\": \"London\",\n    \"postcode\": \"W8 7RG\",\n    \"country\": \"United Kingdom\"\n  },\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [\n      -0.1,\n      51.5\n    ]\n  },\n  \"openingHours\": {\n    \"monday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"tuesday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"wednesday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"thursday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"friday\": {\n      \"open\": \"12:00\",\n      \"close\": \"00:00\",\n      \"isClosed\": false\n    },\n    \"saturday\": {\n      \"open\": \"12:00\",\n      \"close\": \"00:00\",\n      \"isClosed\": false\n    },\n    \"sunday\": {\n      \"open\": \"12:00\",\n      \"close\": \"22:00\",\n      \"isClosed\": false\n    }\n  },\n  \"contactNumber\": \"+442071234567\",\n  \"email\": \"info@bellaitalia.com\",\n  \"website\": \"https://bellaitalia.com\"\n}"
+        }
+      }
+    },
+    {
+      "name": "7. CREATE - Midnight Munchies",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Midnight Munchies\",\n  \"tagline\": \"Best food in town\",\n  \"description\": \"A great restaurant at London\",\n  \"address\": {\n    \"addressLine1\": \"1 Main Street\",\n    \"areaLocality\": \"City Centre\",\n    \"city\": \"London\",\n    \"postcode\": \"W1J 0DA\",\n    \"country\": \"United Kingdom\"\n  },\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [\n      -0.1,\n      51.5\n    ]\n  },\n  \"openingHours\": {\n    \"monday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"tuesday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"wednesday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"thursday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"friday\": {\n      \"open\": \"12:00\",\n      \"close\": \"00:00\",\n      \"isClosed\": false\n    },\n    \"saturday\": {\n      \"open\": \"12:00\",\n      \"close\": \"00:00\",\n      \"isClosed\": false\n    },\n    \"sunday\": {\n      \"open\": \"12:00\",\n      \"close\": \"22:00\",\n      \"isClosed\": false\n    }\n  },\n  \"contactNumber\": \"+442071234567\",\n  \"email\": \"info@midnightmunchies.com\",\n  \"website\": \"https://midnightmunchies.com\"\n}"
+        }
+      }
+    },
+    {
+      "name": "8. CREATE - Spice of Birmingham",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Spice of Birmingham\",\n  \"tagline\": \"Best food in town\",\n  \"description\": \"A great restaurant at Birmingham\",\n  \"address\": {\n    \"addressLine1\": \"45 Main Street\",\n    \"areaLocality\": \"City Centre\",\n    \"city\": \"Birmingham\",\n    \"postcode\": \"B1 2HL\",\n    \"country\": \"United Kingdom\"\n  },\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [\n      -0.1,\n      51.5\n    ]\n  },\n  \"openingHours\": {\n    \"monday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"tuesday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"wednesday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"thursday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"friday\": {\n      \"open\": \"12:00\",\n      \"close\": \"00:00\",\n      \"isClosed\": false\n    },\n    \"saturday\": {\n      \"open\": \"12:00\",\n      \"close\": \"00:00\",\n      \"isClosed\": false\n    },\n    \"sunday\": {\n      \"open\": \"12:00\",\n      \"close\": \"22:00\",\n      \"isClosed\": false\n    }\n  },\n  \"contactNumber\": \"+442071234567\",\n  \"email\": \"info@spiceofbirmingham.com\",\n  \"website\": \"https://spiceofbirmingham.com\"\n}"
+        }
+      }
+    },
+    {
+      "name": "9. CREATE - Morning Glory Cafe",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Morning Glory Cafe\",\n  \"tagline\": \"Best food in town\",\n  \"description\": \"A great restaurant at London\",\n  \"address\": {\n    \"addressLine1\": \"78 Main Street\",\n    \"areaLocality\": \"City Centre\",\n    \"city\": \"London\",\n    \"postcode\": \"WC2H 9PA\",\n    \"country\": \"United Kingdom\"\n  },\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [\n      -0.1,\n      51.5\n    ]\n  },\n  \"openingHours\": {\n    \"monday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"tuesday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"wednesday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"thursday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"friday\": {\n      \"open\": \"12:00\",\n      \"close\": \"00:00\",\n      \"isClosed\": false\n    },\n    \"saturday\": {\n      \"open\": \"12:00\",\n      \"close\": \"00:00\",\n      \"isClosed\": false\n    },\n    \"sunday\": {\n      \"open\": \"12:00\",\n      \"close\": \"22:00\",\n      \"isClosed\": false\n    }\n  },\n  \"contactNumber\": \"+442071234567\",\n  \"email\": \"info@morningglorycafe.com\",\n  \"website\": \"https://morningglorycafe.com\"\n}"
+        }
+      }
+    },
+    {
+      "name": "10. CREATE - The Hygienic Kitchen",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"The Hygienic Kitchen\",\n  \"tagline\": \"Best food in town\",\n  \"description\": \"A great restaurant at London\",\n  \"address\": {\n    \"addressLine1\": \"200 Main Street\",\n    \"areaLocality\": \"City Centre\",\n    \"city\": \"London\",\n    \"postcode\": \"NW1 5LA\",\n    \"country\": \"United Kingdom\"\n  },\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [\n      -0.1,\n      51.5\n    ]\n  },\n  \"openingHours\": {\n    \"monday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"tuesday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"wednesday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"thursday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"friday\": {\n      \"open\": \"12:00\",\n      \"close\": \"00:00\",\n      \"isClosed\": false\n    },\n    \"saturday\": {\n      \"open\": \"12:00\",\n      \"close\": \"00:00\",\n      \"isClosed\": false\n    },\n    \"sunday\": {\n      \"open\": \"12:00\",\n      \"close\": \"22:00\",\n      \"isClosed\": false\n    }\n  },\n  \"contactNumber\": \"+442071234567\",\n  \"email\": \"info@thehygienickitchen.com\",\n  \"website\": \"https://thehygienickitchen.com\"\n}"
+        }
+      }
+    }
+  ]
+}

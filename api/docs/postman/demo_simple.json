@@ -1,0 +1,40 @@
+{
+  "info": {
+    "name": "Restaurant Demo Data",
+    "description": "Demo data for creating restaurants",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. CREATE - Restaurant (London)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"The London Grills\",\n  \"tagline\": \"Best steaks in town\",\n  \"description\": \"Premium steakhouse in London\",\n  \"address\": {\n    \"addressLine1\": \"25 Fleet Street\",\n    \"areaLocality\": \"City of London\",\n    \"city\": \"London\",\n    \"postcode\": \"EC4Y 1AA\",\n    \"country\": \"United Kingdom\"\n  },\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [\n      -0.1137,\n      51.5156\n    ]\n  },\n  \"openingHours\": {\n    \"monday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"tuesday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"wednesday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"thursday\": {\n      \"open\": \"12:00\",\n      \"close\": \"23:00\",\n      \"isClosed\": false\n    },\n    \"friday\": {\n      \"open\": \"12:00\",\n      \"close\": \"00:00\",\n      \"isClosed\": false\n    },\n    \"saturday\": {\n      \"open\": \"12:00\",\n      \"close\": \"00:00\",\n      \"isClosed\": false\n    },\n    \"sunday\": {\n      \"open\": \"12:00\",\n      \"close\": \"22:00\",\n      \"isClosed\": false\n    }\n  },\n  \"contactNumber\": \"+442071234567\",\n  \"email\": \"info@londongrills.com\",\n  \"website\": \"https://londongrills.com\"\n}"
+        }
+      }
+    }
+  ]
+}

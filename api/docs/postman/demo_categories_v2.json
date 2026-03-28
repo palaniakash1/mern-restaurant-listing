@@ -1,0 +1,128 @@
+{
+  "info": {
+    "name": "Demo Categories",
+    "description": "Create categories for restaurants",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "restaurantId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Create Generic Category - Starters",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/categories",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Starters\",\n  \"isGeneric\": true,\n  \"order\": 1\n}"
+        }
+      }
+    },
+    {
+      "name": "2. Create Generic Category - Main Courses",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/categories",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Main Courses\",\n  \"isGeneric\": true,\n  \"order\": 2\n}"
+        }
+      }
+    },
+    {
+      "name": "3. Create Generic Category - Desserts",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/categories",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Desserts\",\n  \"isGeneric\": true,\n  \"order\": 3\n}"
+        }
+      }
+    },
+    {
+      "name": "4. Create Generic Category - Drinks",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/categories",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Drinks\",\n  \"isGeneric\": true,\n  \"order\": 4\n}"
+        }
+      }
+    },
+    {
+      "name": "5. Create Restaurant-Specific Category",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/categories",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Chef's Specials\",\n  \"isGeneric\": false,\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"order\": 0\n}"
+        }
+      }
+    }
+  ]
+}

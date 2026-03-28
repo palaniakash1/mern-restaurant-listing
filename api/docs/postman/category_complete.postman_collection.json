@@ -1,0 +1,348 @@
+{
+  "info": {
+    "name": "Category API - Complete",
+    "description": "All category endpoints - CRUD + Enterprise features",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "superAdminToken",
+      "value": ""
+    },
+    {
+      "key": "restaurantId",
+      "value": ""
+    },
+    {
+      "key": "categoryId",
+      "value": ""
+    },
+    {
+      "key": "categoryId2",
+      "value": ""
+    },
+    {
+      "key": "idempotencyKey",
+      "value": "cat-reorder-001"
+    }
+  ],
+  "item": [
+    {
+      "name": "PUBLIC - Get All Categories",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/categories?page=1&limit=10"
+      }
+    },
+    {
+      "name": "ADMIN - Get My Categories",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/categories/my?page=1&limit=10",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADMIN - Create Category (Generic)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/categories",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Starters\",\n  \"isGeneric\": true,\n  \"order\": 1\n}"
+        }
+      }
+    },
+    {
+      "name": "ADMIN - Create Category (Restaurant-Specific)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/categories",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Chef's Specials\",\n  \"isGeneric\": false,\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"order\": 0\n}"
+        }
+      }
+    },
+    {
+      "name": "ADMIN - Get Category by ID",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/categories/{{categoryId}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SUPERADMIN - Get All Categories",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/categories/all?page=1&limit=10",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{superAdminToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADMIN - Update Category",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/categories/{{categoryId}}",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Updated Category Name\",\n  \"order\": 5\n}"
+        }
+      }
+    },
+    {
+      "name": "ADMIN - Update Category Status",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/categories/{{categoryId}}/status",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"isActive\": true\n}"
+        }
+      }
+    },
+    {
+      "name": "ADMIN - Reorder Categories",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/categories/reorder",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "[\n  {\n    \"itemId\": \"{{categoryId}}\",\n    \"order\": 1\n  },\n  {\n    \"itemId\": \"{{categoryId2}}\",\n    \"order\": 2\n  }\n]"
+        }
+      }
+    },
+    {
+      "name": "ADMIN - Soft Delete Category",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/categories/{{categoryId}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SUPERADMIN - Restore Category",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/categories/{{categoryId}}/restore",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{superAdminToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SUPERADMIN - Hard Delete Category",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/categories/{{categoryId}}/hard",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{superAdminToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SUPERADMIN - Get Deleted Categories",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/categories/deleted?page=1&limit=10",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{superAdminToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADMIN - Check Category Slug",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/categories/check-slug",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Main Course\",\n  \"isGeneric\": false,\n  \"restaurantId\": \"{{restaurantId}}\"\n}"
+        }
+      }
+    },
+    {
+      "name": "SUPERADMIN - Export Categories (JSON)",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/categories/export?format=json",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{superAdminToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SUPERADMIN - Export Categories (CSV)",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/categories/export?format=csv",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{superAdminToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SUPERADMIN - Bulk Update Status",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/categories/bulk-status",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{superAdminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ids\": [\n    \"{{categoryId}}\",\n    \"{{categoryId2}}\"\n  ],\n  \"status\": \"published\"\n}"
+        }
+      }
+    },
+    {
+      "name": "SUPERADMIN - Bulk Reorder (Idempotent)",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/categories/bulk-reorder",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{superAdminToken}}"
+          },
+          {
+            "key": "x-idempotency-key",
+            "value": "{{idempotencyKey}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [\n    {\n      \"id\": \"{{categoryId}}\",\n      \"order\": 1\n    },\n    {\n      \"id\": \"{{categoryId2}}\",\n      \"order\": 2\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "SUPERADMIN - Get Category Audit Logs",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/categories/{{categoryId}}/audit?page=1&limit=10",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{superAdminToken}}"
+          }
+        ]
+      }
+    }
+  ]
+}

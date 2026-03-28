@@ -1,0 +1,166 @@
+{
+  "info": {
+    "name": "Restaurant Demo Data",
+    "description": "Demo data for creating restaurants with various configurations"
+  },
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:3000/api"},
+    {"key": "adminToken", "value": ""},
+    {"key": "superAdminToken", "value": ""},
+    {"key": "restaurantId", "value": ""},
+    {"key": "categoryId", "value": ""},
+    {"key": "menuId", "value": ""}
+  ],
+  "item": [
+    {
+      "name": "1. CREATE - Restaurant with Full Address (London)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"The London Grills\",\n  \"tagline\": \"Best steaks in town\",\n  \"description\": \"Premium steakhouse serving the finest cuts of meat in London\",\n  \"address\": {\n    \"addressLine1\": \"25 Fleet Street\",\n    \"addressLine2\": \"Temple\",\n    \"areaLocality\": \"City of London\",\n    \"city\": \"London\",\n    \"countyRegion\": \"Greater London\",\n    \"postcode\": \"EC4Y 1AA\",\n    \"country\": \"United Kingdom\"\n  },\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [-0.1137, 51.5156]\n  },\n  \"openingHours\": {\n    \"monday\": {\"open\": \"12:00\", \"close\": \"23:00\", \"isClosed\": false},\n    \"tuesday\": {\"open\": \"12:00\", \"close\": \"23:00\", \"isClosed\": false},\n    \"wednesday\": {\"open\": \"12:00\", \"close\": \"23:00\", \"isClosed\": false},\n    \"thursday\": {\"open\": \"12:00\", \"close\": \"23:00\", \"isClosed\": false},\n    \"friday\": {\"open\": \"12:00\", \"close\": \"00:00\", \"isClosed\": false},\n    \"saturday\": {\"open\": \"12:00\", \"close\": \"00:00\", \"isClosed\": false},\n    \"sunday\": {\"open\": \"12:00\", \"close\": \"22:00\", \"isClosed\": false}\n  },\n  \"contactNumber\": \"+442071234567\",\n  \"email\": \"info@londongrills.com\",\n  \"website\": \"https://londongrills.com\"\n}"
+        }
+      }
+    },
+    {
+      "name": "2. CREATE - Restaurant with US Address (New York)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Manhattan Pizza Palace\",\n  \"tagline\": \"Authentic Italian Pizza\",\n  \"description\": \"Family-owned pizzeria serving authentic Neapolitan pizza\",\n  \"address\": {\n    \"addressLine1\": \"789 Broadway\",\n    \"addressLine2\": \"Suite 200\",\n    \"areaLocality\": \"Flatiron District\",\n    \"city\": \"New York\",\n    \"countyRegion\": \"NY\",\n    \"postcode\": \"10003\",\n    \"country\": \"United States\"\n  },\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [-73.9906, 40.7405]\n  },\n  \"openingHours\": {\n    \"monday\": {\"open\": \"11:00\", \"close\": \"22:00\", \"isClosed\": false},\n    \"tuesday\": {\"open\": \"11:00\", \"close\": \"22:00\", \"isClosed\": false},\n    \"wednesday\": {\"open\": \"11:00\", \"close\": \"22:00\", \"isClosed\": false},\n    \"thursday\": {\"open\": \"11:00\", \"close\": \"23:00\", \"isClosed\": false},\n    \"friday\": {\"open\": \"11:00\", \"close\": \"23:00\", \"isClosed\": false},\n    \"saturday\": {\"open\": \"12:00\", \"close\": \"23:00\", \"isClosed\": false},\n    \"sunday\": {\"open\": \"12:00\", \"close\": \"21:00\", \"isClosed\": false}\n  },\n  \"contactNumber\": \"+12125551234\",\n  \"email\": \"orders@manhattanpizza.com\",\n  \"website\": \"https://manhattanpizza.com\"\n}"
+        }
+      }
+    },
+    {
+      "name": "3. CREATE - Restaurant with Minimal Address (No location provided - will geocode)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"The Minimal Cafe\",\n  \"tagline\": \"Coffee & More\",\n  \"description\": \"A cozy cafe with great coffee and pastries\",\n  \"address\": {\n    \"addressLine1\": \"45 Oxford Street\",\n    \"areaLocality\": \"West End\",\n    \"city\": \"London\",\n    \"postcode\": \"W1D 2EZ\",\n    \"country\": \"United Kingdom\"\n  },\n  \"openingHours\": {\n    \"monday\": {\"open\": \"07:00\", \"close\": \"19:00\", \"isClosed\": false},\n    \"tuesday\": {\"open\": \"07:00\", \"close\": \"19:00\", \"isClosed\": false},\n    \"wednesday\": {\"open\": \"07:00\", \"close\": \"19:00\", \"isClosed\": false},\n    \"thursday\": {\"open\": \"07:00\", \"close\": \"19:00\", \"isClosed\": false},\n    \"friday\": {\"open\": \"07:00\", \"close\": \"20:00\", \"isClosed\": false},\n    \"saturday\": {\"open\": \"08:00\", \"close\": \"20:00\", \"isClosed\": false},\n    \"sunday\": {\"open\": \"09:00\", \"close\": \"17:00\", \"isClosed\": true}\n  },\n  \"contactNumber\": \"+442071112222\",\n  \"email\": \"hello@minimalcafe.co.uk\"\n}"
+        }
+      }
+    },
+    {
+      "name": "4. CREATE - Restaurant Closed on Weekdays",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Sunday Roast House\",\n  \"tagline\": \"Traditional Sunday Lunch\",\n  \"description\": \"Family-run restaurant specializing in traditional Sunday roasts\",\n  \"address\": {\n    \"addressLine1\": \"12 Church Lane\",\n    \"areaLocality\": \"Wimbledon\",\n    \"city\": \"London\",\n    \"postcode\": \"SW19 5AE\",\n    \"country\": \"United Kingdom\"\n  },\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [-0.2064, 51.4215]\n  },\n  \"openingHours\": {\n    \"monday\": {\"isClosed\": true},\n    \"tuesday\": {\"isClosed\": true},\n    \"wednesday\": {\"isClosed\": true},\n    \"thursday\": {\"isClosed\": true},\n    \"friday\": {\"isClosed\": true},\n    \"saturday\": {\"isClosed\": true},\n    \"sunday\": {\"open\": \"12:00\", \"close\": \"17:00\", \"isClosed\": false}\n  },\n  \"contactNumber\": \"+442089445566\",\n  \"email\": \"info@sundayroast.co.uk\"\n}"
+        }
+      }
+    },
+    {
+      "name": "5. CREATE - Restaurant with Gallery Images",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"The Golden Dragon\",\n  \"tagline\": \"Fine Chinese Cuisine\",\n  \"description\": \"Award-winning Chinese restaurant with exquisite dim sum and main courses\",\n  \"address\": {\n    \"addressLine1\": \"88 Lisle Street\",\n    \"addressLine2\": \"Leicester Square\",\n    \"areaLocality\": \"Chinatown\",\n    \"city\": \"London\",\n    \"countyRegion\": \"Greater London\",\n    \"postcode\": \"WC2H 7LG\",\n    \"country\": \"United Kingdom\"\n  },\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [-0.1276, 51.5107]\n  },\n  \"openingHours\": {\n    \"monday\": {\"open\": \"12:00\", \"close\": \"23:00\", \"isClosed\": false},\n    \"tuesday\": {\"open\": \"12:00\", \"close\": \"23:00\", \"isClosed\": false},\n    \"wednesday\": {\"open\": \"12:00\", \"close\": \"23:00\", \"isClosed\": false},\n    \"thursday\": {\"open\": \"12:00\", \"close\": \"23:00\", \"isClosed\": false},\n    \"friday\": {\"open\": \"12:00\", \"close\": \"00:00\", \"isClosed\": false},\n    \"saturday\": {\"open\": \"12:00\", \"close\": \"00:00\", \"isClosed\": false},\n    \"sunday\": {\"open\": \"12:00\", \"close\": \"22:30\", \"isClosed\": false}\n  },\n  \"contactNumber\": \"+442072345678\",\n  \"email\": \"reservations@goldendragon.london\",\n  \"website\": \"https://goldendragon.london\",\n  \"imageLogo\": \"https://example.com/logo.png\",\n  \"gallery\": [\n    \"https://example.com/gallery/1.jpg\",\n    \"https://example.com/gallery/2.jpg\",\n    \"https://example.com/gallery/3.jpg\",\n    \"https://example.com/gallery/4.jpg\"\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "6. CREATE - Restaurant with Categories (After categories created)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Bella Italia\",\n  \"tagline\": \"Authentic Italian Dining\",\n  \"description\": \"Traditional Italian restaurant with homemade pasta and wood-fired pizzas\",\n  \"address\": {\n    \"addressLine1\": \"156 Kensington High Street\",\n    \"areaLocality\": \"Kensington\",\n    \"city\": \"London\",\n    \"postcode\": \"W8 7RG\",\n    \"country\": \"United Kingdom\"\n  },\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [-0.1937, 51.5010]\n  },\n  \"openingHours\": {\n    \"monday\": {\"open\": \"12:00\", \"close\": \"22:00\", \"isClosed\": false},\n    \"tuesday\": {\"open\": \"12:00\", \"close\": \"22:00\", \"isClosed\": false},\n    \"wednesday\": {\"open\": \"12:00\", \"close\": \"22:00\", \"isClosed\": false},\n    \"thursday\": {\"open\": \"12:00\", \"close\": \"22:00\", \"isClosed\": false},\n    \"friday\": {\"open\": \"12:00\", \"close\": \"23:00\", \"isClosed\": false},\n    \"saturday\": {\"open\": \"12:00\", \"close\": \"23:00\", \"isClosed\": false},\n    \"sunday\": {\"open\": \"12:00\", \"close\": \"21:00\", \"isClosed\": false}\n  },\n  \"contactNumber\": \"+442071234567\",\n  \"email\": \"info@bellaitalia.co.uk\",\n  \"website\": \"https://bellaitalia.co.uk\",\n  \"categories\": [\"{{categoryId}}\"]\n}"
+        }
+      }
+    },
+    {
+      "name": "7. CREATE - Fast Food Restaurant (24/7)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Midnight Munchies\",\n  \"tagline\": \"Late Night Fast Food\",\n  \"description\": \"Burgers, fries and shakes available 24/7\",\n  \"address\": {\n    \"addressLine1\": \"1 Piccadilly Circus\",\n    \"areaLocality\": \"Piccadilly\",\n    \"city\": \"London\",\n    \"postcode\": \"W1J 0DA\",\n    \"country\": \"United Kingdom\"\n  },\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [-0.1341, 51.5100]\n  },\n  \"openingHours\": {\n    \"monday\": {\"open\": \"00:00\", \"close\": \"23:59\", \"isClosed\": false},\n    \"tuesday\": {\"open\": \"00:00\", \"close\": \"23:59\", \"isClosed\": false},\n    \"wednesday\": {\"open\": \"00:00\", \"close\": \"23:59\", \"isClosed\": false},\n    \"thursday\": {\"open\": \"00:00\", \"close\": \"23:59\", \"isClosed\": false},\n    \"friday\": {\"open\": \"00:00\", \"close\": \"23:59\", \"isClosed\": false},\n    \"saturday\": {\"open\": \"00:00\", \"close\": \"23:59\", \"isClosed\": false},\n    \"sunday\": {\"open\": \"00:00\", \"close\": \"23:59\", \"isClosed\": false}\n  },\n  \"contactNumber\": \"+442080008888\",\n  \"email\": \"orders@midnightmunchies.com\"\n}"
+        }
+      }
+    },
+    {
+      "name": "8. CREATE - Restaurant with FSA Rating (FHR Link)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"The Hygienic Kitchen\",\n  \"tagline\": \"Clean & Delicious\",\n  \"description\": \"Restaurant with 5-star food hygiene rating\",\n  \"address\": {\n    \"addressLine1\": \"200 Baker Street\",\n    \"areaLocality\": \"Marylebone\",\n    \"city\": \"London\",\n    \"postcode\": \"NW1 5LA\",\n    \"country\": \"United Kingdom\"\n  },\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [-0.1575, 51.5226]\n  },\n  \"openingHours\": {\n    \"monday\": {\"open\": \"11:00\", \"close\": \"21:00\", \"isClosed\": false},\n    \"tuesday\": {\"open\": \"11:00\", \"close\": \"21:00\", \"isClosed\": false},\n    \"wednesday\": {\"open\": \"11:00\", \"close\": \"21:00\", \"isClosed\": false},\n    \"thursday\": {\"open\": \"11:00\", \"close\": \"21:00\", \"isClosed\": false},\n    \"friday\": {\"open\": \"11:00\", \"close\": \"22:00\", \"isClosed\": false},\n    \"saturday\": {\"open\": \"11:00\", \"close\": \"22:00\", \"isClosed\": false},\n    \"sunday\": {\"open\": \"12:00\", \"close\": \"20:00\", \"isClosed\": false}\n  },\n  \"contactNumber\": \"+442071112233\",\n  \"email\": \"info@hygienickitchen.co.uk\",\n  \"fhrsId\": 123456\n}"
+        }
+      }
+    },
+    {
+      "name": "9. CREATE - Indian Restaurant (Birmingham)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Spice of Birmingham\",\n  \"tagline\": \"Authentic Indian Cuisine\",\n  \"description\": \"Award-winning curry house in the heart of Birmingham\",\n  \"address\": {\n    \"addressLine1\": \"45 Bristol Street\",\n    \"areaLocality\": \"City Centre\",\n    \"city\": \"Birmingham\",\n    \"countyRegion\": \"West Midlands\",\n    \"postcode\": \"B1 2HL\",\n    \"country\": \"United Kingdom\"\n  },\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [-1.8975, 52.4862]\n  },\n  \"openingHours\": {\n    \"monday\": {\"open\": \"17:00\", \"close\": \"23:00\", \"isClosed\": false},\n    \"tuesday\": {\"open\": \"17:00\", \"close\": \"23:00\", \"isClosed\": false},\n    \"wednesday\": {\"open\": \"17:00\", \"close\": \"23:00\", \"isClosed\": false},\n    \"thursday\": {\"open\": \"17:00\", \"close\": \"23:00\", \"isClosed\": false},\n    \"friday\": {\"open\": \"17:00\", \"close\": \"00:00\", \"isClosed\": false},\n    \"saturday\": {\"open\": \"17:00\", \"close\": \"00:00\", \"isClosed\": false},\n    \"sunday\": {\"open\": \"17:00\", \"close\": \"22:00\", \"isClosed\": false}\n  },\n  \"contactNumber\": \"+441212345678\",\n  \"email\": \"info@spiceofbirmingham.co.uk\",\n  \"website\": \"https://spiceofbirmingham.co.uk\"\n}"
+        }
+      }
+    },
+    {
+      "name": "10. CREATE - Cafe with All Day Breakfast",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Morning Glory Cafe\",\n  \"tagline\": \"All Day Breakfast\",\n  \"description\": \"Cozy cafe serving breakfast all day, fresh pastries and artisan coffee\",\n  \"address\": {\n    \"addressLine1\": \"78 Neal Street\",\n    \"addressLine2\": \"Covent Garden\",\n    \"areaLocality\": \"Seven Dials\",\n    \"city\": \"London\",\n    \"postcode\": \"WC2H 9PA\",\n    \"country\": \"United Kingdom\"\n  },\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [-0.1273, 51.5141]\n  },\n  \"openingHours\": {\n    \"monday\": {\"open\": \"06:30\", \"close\": \"18:00\", \"isClosed\": false},\n    \"tuesday\": {\"open\": \"06:30\", \"close\": \"18:00\", \"isClosed\": false},\n    \"wednesday\": {\"open\": \"06:30\", \"close\": \"18:00\", \"isClosed\": false},\n    \"thursday\": {\"open\": \"06:30\", \"close\": \"18:00\", \"isClosed\": false},\n    \"friday\": {\"open\": \"06:30\", \"close\": \"19:00\", \"isClosed\": false},\n    \"saturday\": {\"open\": \"07:00\", \"close\": \"19:00\", \"isClosed\": false},\n    \"sunday\": {\"open\": \"08:00\", \"close\": \"17:00\", \"isClosed\": false}\n  },\n  \"contactNumber\": \"+442078901234\",\n  \"email\": \"hello@morningglorycafe.co.uk\",\n  \"website\": \"https://morningglorycafe.co.uk\"\n}"
+        }
+      }
+    }
+  ]
+}

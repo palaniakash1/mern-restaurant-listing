@@ -1,0 +1,256 @@
+{
+  "info": {
+    "name": "Demo Menu Items",
+    "description": "Detailed menu items with all fields - starters, mains, desserts, drinks"
+  },
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:3000/api"},
+    {"key": "adminToken", "value": ""},
+    {"key": "superAdminToken", "value": ""},
+    {"key": "restaurantId", "value": ""},
+    {"key": "categoryId", "value": ""},
+    {"key": "menuId", "value": ""}
+  ],
+  "item": [
+    {
+      "name": "1. STARTER - Bruschetta (Vegetarian)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"Bruschetta Classica\",\n      \"description\": \"Toasted ciabatta bread topped with fresh tomatoes, garlic, basil and extra virgin olive oil\",\n      \"image\": \"https://example.com/images/bruschetta.jpg\",\n      \"price\": 7.50,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": true\n      },\n      \"ingredients\": [\n        {\"name\": \"Ciabatta Bread\", \"allergens\": [\"gluten\"], \"strict\": true},\n        {\"name\": \"Fresh Tomatoes\", \"allergens\": [], \"removable\": false},\n        {\"name\": \"Garlic\", \"allergens\": [], \"removable\": true},\n        {\"name\": \"Fresh Basil\", \"allergens\": [], \"removable\": true},\n        {\"name\": \"Extra Virgin Olive Oil\", \"allergens\": [], \"removable\": true}\n      ],\n      \"nutrition\": {\n        \"calories\": {\"value\": 220, \"level\": \"amber\"},\n        \"fat\": {\"value\": 12, \"level\": \"amber\"},\n        \"saturates\": {\"value\": 2, \"level\": \"green\"},\n        \"sugar\": {\"value\": 3, \"level\": \"green\"},\n        \"salt\": {\"value\": 0.5, \"level\": \"green\"}\n      },\n      \"order\": 1,\n      \"isAvailable\": true\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "2. STARTER - Chicken Wings (Non-Veg)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"Crispy Chicken Wings\",\n      \"description\": \"Juicy chicken wings fried to golden perfection with your choice of sauce\",\n      \"image\": \"https://example.com/images/wings.jpg\",\n      \"price\": 9.99,\n      \"dietary\": {\n        \"vegetarian\": false,\n        \"vegan\": false\n      },\n      \"ingredients\": [\n        {\"name\": \"Chicken Wings\", \"allergens\": [], \"strict\": true},\n        {\"name\": \"Plain Flour\", \"allergens\": [\"gluten\"], \"strict\": true},\n        {\"name\": \"BBQ Sauce\", \"allergens\": [\"sulphites\"], \"removable\": true},\n        {\"name\": \"Blue Cheese Dip\", \"allergens\": [\"milk\"], \"removable\": true}\n      ],\n      \"nutrition\": {\n        \"calories\": {\"value\": 450, \"level\": \"red\"},\n        \"fat\": {\"value\": 28, \"level\": \"red\"},\n        \"saturates\": {\"value\": 8, \"level\": \"amber\"},\n        \"sugar\": {\"value\": 12, \"level\": \"amber\"},\n        \"salt\": {\"value\": 1.2, \"level\": \"amber\"}\n      },\n      \"upsells\": [\n        {\"label\": \"Extra Sauce\", \"price\": 0.50},\n        {\"label\": \"Large (8 pcs)\", \"price\": 5.00}\n      ],\n      \"order\": 2,\n      \"isAvailable\": true\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "3. STARTER - Prawn Cocktail",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"Classic Prawn Cocktail\",\n      \"description\": \"Fresh Atlantic prawns served in a glass with Marie Rose sauce and lemon\",\n      \"image\": \"https://example.com/images/prawn-cocktail.jpg\",\n      \"price\": 11.99,\n      \"dietary\": {\n        \"vegetarian\": false,\n        \"vegan\": false\n      },\n      \"ingredients\": [\n        {\"name\": \"Atlantic Prawns\", \"allergens\": [\"crustaceans\"], \"strict\": true},\n        {\"name\": \"Marie Rose Sauce\", \"allergens\": [\"egg\", \"mustard\"], \"strict\": true},\n        {\"name\": \"Lettuce\", \"allergens\": [], \"removable\": true},\n        {\"name\": \"Lemon\", \"allergens\": [], \"removable\": true}\n      ],\n      \"nutrition\": {\n        \"calories\": {\"value\": 180, \"level\": \"amber\"},\n        \"fat\": {\"value\": 8, \"level\": \"amber\"},\n        \"saturates\": {\"value\": 1, \"level\": \"green\"},\n        \"sugar\": {\"value\": 4, \"level\": \"green\"},\n        \"salt\": {\"value\": 0.8, \"level\": \"green\"}\n      },\n      \"order\": 3,\n      \"isAvailable\": true\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "4. MAIN - Grilled Salmon with Full Nutrition",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"Grilled Atlantic Salmon\",\n      \"description\": \"Fresh salmon fillet grilled to perfection, served with seasonal vegetables and new potatoes\",\n      \"image\": \"https://example.com/images/salmon.jpg\",\n      \"price\": 18.99,\n      \"dietary\": {\n        \"vegetarian\": false,\n        \"vegan\": false\n      },\n      \"ingredients\": [\n        {\"name\": \"Atlantic Salmon Fillet\", \"allergens\": [\"fish\"], \"strict\": true},\n        {\"name\": \"Seasonal Vegetables\", \"allergens\": [], \"removable\": false},\n        {\"name\": \"New Potatoes\", \"allergens\": [], \"removable\": true},\n        {\"name\": \"Lemon Butter Sauce\", \"allergens\": [\"milk\"], \"removable\": true},\n        {\"name\": \"Fresh Dill\", \"allergens\": [], \"removable\": true}\n      ],\n      \"nutrition\": {\n        \"calories\": {\"value\": 520, \"level\": \"red\"},\n        \"fat\": {\"value\": 32, \"level\": \"red\"},\n        \"saturates\": {\"value\": 8, \"level\": \"amber\"},\n        \"sugar\": {\"value\": 4, \"level\": \"green\"},\n        \"salt\": {\"value\": 0.6, \"level\": \"green\"}\n      },\n      \"isMeal\": true,\n      \"upsells\": [\n        {\"label\": \"Extra Vegetables\", \"price\": 3.00},\n        {\"label\": \"Garlic Bread\", \"price\": 2.50}\n      ],\n      \"order\": 1,\n      \"isAvailable\": true\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "5. MAIN - Beef Steak with Allergens",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"12oz Ribeye Steak\",\n      \"description\": \"Premium ribeye steak, char-grilled to your preference, served with chips and peppercorn sauce\",\n      \"image\": \"https://example.com/images/steak.jpg\",\n      \"price\": 28.99,\n      \"dietary\": {\n        \"vegetarian\": false,\n        \"vegan\": false\n      },\n      \"ingredients\": [\n        {\"name\": \"Ribeye Steak\", \"allergens\": [], \"strict\": true},\n        {\"name\": \"Peppercorn Sauce\", \"allergens\": [\"milk\"], \"removable\": true},\n        {\"name\": \"Chunky Chips\", \"allergens\": [\"gluten\"], \"removable\": true},\n        {\"name\": \"Garlic Butter\", \"allergens\": [\"milk\"], \"removable\": true}\n      ],\n      \"nutrition\": {\n        \"calories\": {\"value\": 750, \"level\": \"red\"},\n        \"fat\": {\"value\": 55, \"level\": \"red\"},\n        \"saturates\": {\"value\": 22, \"level\": \"red\"},\n        \"sugar\": {\"value\": 2, \"level\": \"green\"},\n        \"salt\": {\"value\": 1.5, \"level\": \"red\"}\n      },\n      \"isMeal\": true,\n      \"upsells\": [\n        {\"label\": \"Rare\", \"price\": 0},\n        {\"label\": \"Medium Rare\", \"price\": 0},\n        {\"label\": \"Medium\", \"price\": 0},\n        {\"label\": \"Well Done\", \"price\": 0},\n        {\"label\": \"Truffle Butter\", \"price\": 4.00},\n        {\"label\": \"Side of Salad\", \"price\": 3.50}\n      ],\n      \"order\": 2,\n      \"isAvailable\": true\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "6. MAIN - Fish and Chips (Multiple Allergens)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"Fish and Chips\",\n      \"description\": \"Traditional beer-battered cod served with chunky chips, mushy peas and tartar sauce\",\n      \"image\": \"https://example.com/images/fish-chips.jpg\",\n      \"price\": 15.99,\n      \"dietary\": {\n        \"vegetarian\": false,\n        \"vegan\": false\n      },\n      \"ingredients\": [\n        {\"name\": \"Fresh Cod Fillet\", \"allergens\": [\"fish\"], \"strict\": true},\n        {\"name\": \"Beer Batter\", \"allergens\": [\"gluten\", \"barley\", \"wheat\"], \"strict\": true},\n        {\"name\": \"Chunky Chips\", \"allergens\": [], \"removable\": false},\n        {\"name\": \"Mushy Peas\", \"allergens\": [], \"removable\": true},\n        {\"name\": \"Tartar Sauce\", \"allergens\": [\"egg\", \"mustard\"], \"removable\": true},\n        {\"name\": \"Lemon Wedge\", \"allergens\": [], \"removable\": true}\n      ],\n      \"nutrition\": {\n        \"calories\": {\"value\": 680, \"level\": \"red\"},\n        \"fat\": {\"value\": 35, \"level\": \"red\"},\n        \"saturates\": {\"value\": 6, \"level\": \"amber\"},\n        \"sugar\": {\"value\": 4, \"level\": \"green\"},\n        \"salt\": {\"value\": 1.8, \"level\": \"red\"}\n      },\n      \"isMeal\": true,\n      \"order\": 3,\n      \"isAvailable\": true\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "7. MAIN - Vegan Burger",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"The Plant Burger\",\n      \"description\": \"Beyond Meat plant-based patty with vegan cheese, lettuce, tomato, onion and special sauce\",\n      \"image\": \"https://example.com/images/vegan-burger.jpg\",\n      \"price\": 13.99,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": true\n      },\n      \"ingredients\": [\n        {\"name\": \"Beyond Meat Patty\", \"allergens\": [\"peas\"], \"strict\": true},\n        {\"name\": \"Vegan Cheese\", \"allergens\": [], \"removable\": true},\n        {\"name\": \"Brioche Bun\", \"allergens\": [\"gluten\", \"egg\", \"milk\"], \"removable\": true},\n        {\"name\": \"Fresh Lettuce\", \"allergens\": [], \"removable\": true},\n        {\"name\": \"Tomato\", \"allergens\": [], \"removable\": true},\n        {\"name\": \"Red Onion\", \"allergens\": [], \"removable\": true},\n        {\"name\": \"Vegan Mayo\", \"allergens\": [], \"removable\": true}\n      ],\n      \"nutrition\": {\n        \"calories\": {\"value\": 480, \"level\": \"amber\"},\n        \"fat\": {\"value\": 22, \"level\": \"red\"},\n        \"saturates\": {\"value\": 4, \"level\": \"green\"},\n        \"sugar\": {\"value\": 6, \"level\": \"green\"},\n        \"salt\": {\"value\": 0.9, \"level\": \"amber\"}\n      },\n      \"isMeal\": true,\n      \"upsells\": [\n        {\"label\": \"Add Bacon\", \"price\": 2.00},\n        {\"label\": \"Add Avocado\", \"price\": 1.50},\n        {\"label\": \"Extra Patty\", \"price\": 4.00}\n      ],\n      \"order\": 4,\n      \"isAvailable\": true\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "8. MAIN - Pasta (Wheat Allergen)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"Spaghetti Carbonara\",\n      \"description\": \"Classic Italian pasta with pancetta, egg yolk, Pecorino Romano cheese and black pepper\",\n      \"image\": \"https://example.com/images/carbonara.jpg\",\n      \"price\": 14.99,\n      \"dietary\": {\n        \"vegetarian\": false,\n        \"vegan\": false\n      },\n      \"ingredients\": [\n        {\"name\": \"Spaghetti\", \"allergens\": [\"wheat\", \"gluten\"], \"strict\": true},\n        {\"name\": \"Pancetta\", \"allergens\": [], \"strict\": true},\n        {\"name\": \"Egg Yolk\", \"allergens\": [\"egg\"], \"strict\": true},\n        {\"name\": \"Pecorino Romano\", \"allergens\": [\"milk\"], \"strict\": true},\n        {\"name\": \"Black Pepper\", \"allergens\": [], \"removable\": false}\n      ],\n      \"nutrition\": {\n        \"calories\": {\"value\": 620, \"level\": \"red\"},\n        \"fat\": {\"value\": 28, \"level\": \"red\"},\n        \"saturates\": {\"value\": 12, \"level\": \"red\"},\n        \"sugar\": {\"value\": 3, \"level\": \"green\"},\n        \"salt\": {\"value\": 1.4, \"level\": \"amber\"}\n      },\n      \"isMeal\": true,\n      \"upsells\": [\n        {\"label\": \"Add Chicken\", \"price\": 3.50},\n        {\"label\": \"Add Prawns\", \"price\": 5.00}\n      ],\n      \"order\": 5,\n      \"isAvailable\": true\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "9. DESSERT - Chocolate Lava Cake",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"Chocolate Lava Cake\",\n      \"description\": \"Warm chocolate cake with a molten center, served with vanilla ice cream\",\n      \"image\": \"https://example.com/images/lava-cake.jpg\",\n      \"price\": 8.50,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": false\n      },\n      \"ingredients\": [\n        {\"name\": \"Dark Chocolate\", \"allergens\": [\"soya\"], \"strict\": true},\n        {\"name\": \"Butter\", \"allergens\": [\"milk\"], \"strict\": true},\n        {\"name\": \"Eggs\", \"allergens\": [\"egg\"], \"strict\": true},\n        {\"name\": \"Sugar\", \"allergens\": [], \"strict\": true},\n        {\"name\": \"Flour\", \"allergens\": [\"gluten\"], \"strict\": true},\n        {\"name\": \"Vanilla Ice Cream\", \"allergens\": [\"milk\", \"egg\"], \"removable\": true}\n      ],\n      \"nutrition\": {\n        \"calories\": {\"value\": 580, \"level\": \"red\"},\n        \"fat\": {\"value\": 35, \"level\": \"red\"},\n        \"saturates\": {\"value\": 18, \"level\": \"red\"},\n        \"sugar\": {\"value\": 48, \"level\": \"red\"},\n        \"salt\": {\"value\": 0.4, \"level\": \"green\"}\n      },\n      \"order\": 1,\n      \"isAvailable\": true\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "10. DESSERT - Sticky Toffee Pudding (Multiple Allergens)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"Sticky Toffee Pudding\",\n      \"description\": \"Moist sponge cake with chopped dates, covered in toffee sauce and served with custard\",\n      \"image\": \"https://example.com/images/sticky-toffee.jpg\",\n      \"price\": 7.99,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": false\n      },\n      \"ingredients\": [\n        {\"name\": \"Sponge Cake\", \"allergens\": [\"wheat\", \"gluten\", \"egg\", \"milk\"], \"strict\": true},\n        {\"name\": \"Chopped Dates\", \"allergens\": [], \"strict\": true},\n        {\"name\": \"Toffee Sauce\", \"allergens\": [\"milk\"], \"strict\": true},\n        {\"name\": \"Custard\", \"allergens\": [\"milk\", \"egg\"], \"removable\": true}\n      ],\n      \"nutrition\": {\n        \"calories\": {\"value\": 520, \"level\": \"red\"},\n        \"fat\": {\"value\": 18, \"level\": \"red\"},\n        \"saturates\": {\"value\": 9, \"level\": \"red\"},\n        \"sugar\": {\"value\": 62, \"level\": \"red\"},\n        \"salt\": {\"value\": 0.5, \"level\": \"green\"}\n      },\n      \"order\": 2,\n      \"isAvailable\": true\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "11. DESSERT - Fruit Salad (Healthy Option)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"Fresh Fruit Salad\",\n      \"description\": \"A refreshing mix of seasonal fresh fruits with honey and mint\",\n      \"image\": \"https://example.com/images/fruit-salad.jpg\",\n      \"price\": 6.50,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": true\n      },\n      \"ingredients\": [\n        {\"name\": \"Seasonal Fruits\", \"allergens\": [], \"strict\": false},\n        {\"name\": \"Honey\", \"allergens\": [], \"removable\": true},\n        {\"name\": \"Fresh Mint\", \"allergens\": [], \"removable\": true}\n      ],\n      \"nutrition\": {\n        \"calories\": {\"value\": 120, \"level\": \"green\"},\n        \"fat\": {\"value\": 0.5, \"level\": \"green\"},\n        \"saturates\": {\"value\": 0, \"level\": \"green\"},\n        \"sugar\": {\"value\": 22, \"level\": \"amber\"},\n        \"salt\": {\"value\": 0.02, \"level\": \"green\"}\n      },\n      \"order\": 3,\n      \"isAvailable\": true\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "12. DRINKS - Soft Drinks with Sizes",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"Coca Cola\",\n      \"price\": 2.50,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": true\n      },\n      \"upsells\": [\n        {\"label\": \"330ml Can\", \"price\": 0},\n        {\"label\": \"500ml Bottle\", \"price\": 1.00},\n        {\"label\": \"1L Bottle\", \"price\": 2.00}\n      ],\n      \"order\": 1\n    },\n    {\n      \"name\": \"Diet Coke\",\n      \"price\": 2.50,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": true\n      },\n      \"upsells\": [\n        {\"label\": \"330ml Can\", \"price\": 0},\n        {\"label\": \"500ml Bottle\", \"price\": 1.00}\n      ],\n      \"order\": 2\n    },\n    {\n      \"name\": \"Fresh Orange Juice\",\n      \"price\": 3.99,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": true\n      },\n      \"upsells\": [\n        {\"label\": \"250ml Glass\", \"price\": 0},\n        {\"label\": \"500ml Jug\", \"price\": 2.50}\n      ],\n      \"order\": 3\n    },\n    {\n      \"name\": \"Apple Juice\",\n      \"price\": 3.50,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": true\n      },\n      \"order\": 4\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "13. DRINKS - Alcohol with Upsells",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"House Red Wine\",\n      \"description\": \"Medium-bodied red wine from Spain\",\n      \"price\": 6.50,\n      \"allergens\": [\"sulphites\"],\n      \"nutrition\": {\n        \"calories\": {\"value\": 125, \"level\": \"amber\"},\n        \"sugar\": {\"value\": 2, \"level\": \"green\"}\n      },\n      \"upsells\": [\n        {\"label\": \"Small Glass (175ml)\", \"price\": 0},\n        {\"label\": \"Large Glass (250ml)\", \"price\": 3.00},\n        {\"label\": \"Bottle (750ml)\", \"price\": 22.00}\n      ],\n      \"order\": 5\n    },\n    {\n      \"name\": \"House White Wine\",\n      \"description\": \"Crisp and refreshing white wine from Italy\",\n      \"price\": 6.00,\n      \"allergens\": [\"sulphites\"],\n      \"upsells\": [\n        {\"label\": \"Small Glass (175ml)\", \"price\": 0},\n        {\"label\": \"Large Glass (250ml)\", \"price\": 2.50},\n        {\"label\": \"Bottle (750ml)\", \"price\": 20.00}\n      ],\n      \"order\": 6\n    },\n    {\n      \"name\": \"Lager\",\n      \"description\": \"Refreshing lager\",\n      \"price\": 5.50,\n      \"allergens\": [\"gluten\", \"barley\"],\n      \"upsells\": [\n        {\"label\": \"Half Pint\", \"price\": 0},\n        {\"label\": \"Pint\", \"price\": 2.50},\n        {\"label\": \"Pitcher\", \"price\": 12.00}\n      ],\n      \"order\": 7\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "14. DRINKS - Coffee with Milk Options",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"Espresso\",\n      \"price\": 2.00,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": true\n      },\n      \"upsells\": [\n        {\"label\": \"Double\", \"price\": 1.00}\n      ],\n      \"order\": 8\n    },\n    {\n      \"name\": \"Cappuccino\",\n      \"price\": 3.00,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": false\n      },\n      \"ingredients\": [\n        {\"name\": \"Espresso\", \"allergens\": [], \"strict\": true},\n        {\"name\": \"Steamed Milk\", \"allergens\": [\"milk\"], \"strict\": true}\n      ],\n      \"upsells\": [\n        {\"label\": \"Oat Milk\", \"price\": 0.70},\n        {\"label\": \"Almond Milk\", \"price\": 0.70},\n        {\"label\": \"Soy Milk\", \"price\": 0.50},\n        {\"label\": \"Extra Shot\", \"price\": 0.80}\n      ],\n      \"order\": 9\n    },\n    {\n      \"name\": \"Latte\",\n      \"price\": 3.50,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": false\n      },\n      \"upsells\": [\n        {\"label\": \"Oat Milk\", \"price\": 0.70},\n        {\"label\": \"Almond Milk\", \"price\": 0.70},\n        {\"label\": \"Decaf\", \"price\": 0}\n      ],\n      \"order\": 10\n    },\n    {\n      \"name\": \"Tea\",\n      \"price\": 2.50,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": true\n      },\n      \"upsells\": [\n        {\"label\": \"With Milk\", \"price\": 0},\n        {\"label\": \"With Oat Milk\", \"price\": 0.50},\n        {\"label\": \"Herbal Selection\", \"price\": 0.50}\n      ],\n      \"order\": 11\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "15. SIDES - Various Sides",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"Chunky Chips\",\n      \"description\": \"Hand-cut chips fried to golden perfection\",\n      \"price\": 4.00,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": true\n      },\n      \"ingredients\": [\n        {\"name\": \"Potatoes\", \"allergens\": [], \"strict\": true},\n        {\"name\": \"Vegetable Oil\", \"allergens\": [], \"strict\": true}\n      ],\n      \"nutrition\": {\n        \"calories\": {\"value\": 280, \"level\": \"amber\"},\n        \"fat\": {\"value\": 12, \"level\": \"amber\"},\n        \"saturates\": {\"value\": 1, \"level\": \"green\"},\n        \"sugar\": {\"value\": 1, \"level\": \"green\"},\n        \"salt\": {\"value\": 0.3, \"level\": \"green\"}\n      },\n      \"order\": 1\n    },\n    {\n      \"name\": \"Onion Rings\",\n      \"description\": \"Beer-battered onion rings\",\n      \"price\": 5.00,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": false\n      },\n      \"ingredients\": [\n        {\"name\": \"Onions\", \"allergens\": [], \"strict\": true},\n        {\"name\": \"Beer Batter\", \"allergens\": [\"gluten\", \"barley\"], \"strict\": true}\n      ],\n      \"order\": 2\n    },\n    {\n      \"name\": \"Garlic Bread\",\n      \"price\": 3.50,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": false\n      },\n      \"ingredients\": [\n        {\"name\": \"Ciabatta\", \"allergens\": [\"gluten\"], \"strict\": true},\n        {\"name\": \"Garlic Butter\", \"allergens\": [\"milk\"], \"strict\": true}\n      ],\n      \"order\": 3\n    },\n    {\n      \"name\": \"House Salad\",\n      \"description\": \"Mixed leaves with cherry tomatoes, cucumber and house dressing\",\n      \"price\": 4.50,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": true\n      },\n      \"ingredients\": [\n        {\"name\": \"Mixed Leaves\", \"allergens\": [], \"strict\": true},\n        {\"name\": \"Cherry Tomatoes\", \"allergens\": [], \"removable\": true},\n        {\"name\": \"Cucumber\", \"allergens\": [], \"removable\": true},\n        {\"name\": \"House Dressing\", \"allergens\": [\"mustard\", \"egg\"], \"removable\": true}\n      ],\n      \"nutrition\": {\n        \"calories\": {\"value\": 80, \"level\": \"green\"},\n        \"fat\": {\"value\": 5, \"level\": \"amber\"},\n        \"saturates\": {\"value\": 1, \"level\": \"green\"},\n        \"sugar\": {\"value\": 4, \"level\": \"green\"},\n        \"salt\": {\"value\": 0.5, \"level\": \"green\"}\n      },\n      \"order\": 4\n    },\n    {\n      \"name\": \"Coleslaw\",\n      \"price\": 3.00,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": true\n      },\n      \"ingredients\": [\n        {\"name\": \"Cabbage\", \"allergens\": [], \"strict\": true},\n        {\"name\": \"Carrots\", \"allergens\": [], \"strict\": true},\n        {\"name\": \"Vegan Mayo\", \"allergens\": [], \"strict\": true}\n      ],\n      \"order\": 5\n    },\n    {\n      \"name\": \"Mushy Peas\",\n      \"price\": 2.50,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": true\n      },\n      \"order\": 6\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "16. FULL MENU - Complete Restaurant Menu",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/menu",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{adminToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"{{restaurantId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"status\": \"published\",\n  \"items\": [\n    {\n      \"name\": \"Soup of the Day\",\n      \"description\": \"Ask your server for today's selection, served with crusty bread\",\n      \"price\": 5.99,\n      \"dietary\": {\n        \"vegetarian\": false,\n        \"vegan\": false\n      },\n      \"ingredients\": [\n        {\"name\": \"Chef's Selection\", \"allergens\": [\"celery\", \"gluten\"], \"strict\": true}\n      ],\n      \"upsells\": [\n        {\"label\": \"Bread Roll\", \"price\": 1.00}\n      ],\n      \"order\": 1,\n      \"isAvailable\": true\n    },\n    {\n      \"name\": \"Loaded Nachos\",\n      \"description\": \"Crispy tortilla chips topped with cheese, jalapeños, sour cream and salsa\",\n      \"price\": 8.99,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": false\n      },\n      \"ingredients\": [\n        {\"name\": \"Tortilla Chips\", \"allergens\": [\"gluten\"], \"strict\": true},\n        {\"name\": \"Melted Cheese\", \"allergens\": [\"milk\"], \"strict\": true},\n        {\"name\": \"Jalapeños\", \"allergens\": [], \"removable\": true},\n        {\"name\": \"Sour Cream\", \"allergens\": [\"milk\"], \"removable\": true},\n        {\"name\": \"Salsa\", \"allergens\": [], \"removable\": true}\n      ],\n      \"upsells\": [\n        {\"label\": \"Add Guacamole\", \"price\": 2.00},\n        {\"label\": \"Add Beef\", \"price\": 3.00}\n      ],\n      \"order\": 2,\n      \"isAvailable\": true\n    },\n    {\n      \"name\": \"Grilled Chicken Caesar Salad\",\n      \"description\": \"Grilled chicken breast on Cos lettuce with Caesar dressing, croutons and Parmesan\",\n      \"price\": 12.99,\n      \"dietary\": {\n        \"vegetarian\": false,\n        \"vegan\": false\n      },\n      \"ingredients\": [\n        {\"name\": \"Chicken Breast\", \"allergens\": [], \"strict\": true},\n        {\"name\": \"Cos Lettuce\", \"allergens\": [], \"strict\": false},\n        {\"name\": \"Caesar Dressing\", \"allergens\": [\"egg\", \"fish\", \"milk\"], \"strict\": true},\n        {\"name\": \"Croutons\", \"allergens\": [\"gluten\"], \"strict\": true},\n        {\"name\": \"Parmesan\", \"allergens\": [\"milk\"], \"strict\": true}\n      ],\n      \"nutrition\": {\n        \"calories\": {\"value\": 420, \"level\": \"amber\"},\n        \"fat\": {\"value\": 22, \"level\": \"red\"},\n        \"saturates\": {\"value\": 6, \"level\": \"amber\"},\n        \"sugar\": {\"value\": 3, \"level\": \"green\"},\n        \"salt\": {\"value\": 1.1, \"level\": \"amber\"}\n      },\n      \"order\": 3,\n      \"isAvailable\": true\n    },\n    {\n      \"name\": \"Lamb Rack\",\n      \"description\": \"Herb-crusted rack of lamb with roasted vegetables and mint sauce\",\n      \"price\": 26.99,\n      \"dietary\": {\n        \"vegetarian\": false,\n        \"vegan\": false\n      },\n      \"ingredients\": [\n        {\"name\": \"Lamb Rack\", \"allergens\": [], \"strict\": true},\n        {\"name\": \"Herbs\", \"allergens\": [], \"strict\": true},\n        {\"name\": \"Roasted Vegetables\", \"allergens\": [], \"removable\": false},\n        {\"name\": \"Mint Sauce\", \"allergens\": [], \"removable\": true}\n      ],\n      \"nutrition\": {\n        \"calories\": {\"value\": 580, \"level\": \"red\"},\n        \"fat\": {\"value\": 38, \"level\": \"red\"},\n        \"saturates\": {\"value\": 15, \"level\": \"red\"},\n        \"sugar\": {\"value\": 5, \"level\": \"green\"},\n        \"salt\": {\"value\": 0.8, \"level\": \"amber\"}\n      },\n      \"isMeal\": true,\n      \"order\": 4,\n      \"isAvailable\": true\n    },\n    {\n      \"name\": \"Mushroom Risotto\",\n      \"description\": \"Creamy Arborio rice with wild mushrooms, white wine and truffle oil\",\n      \"price\": 15.99,\n      \"dietary\": {\n        \"vegetarian\": true,\n        \"vegan\": false\n      },\n      \"ingredients\": [\n        {\"name\": \"Arborio Rice\", \"allergens\": [], \"strict\": true},\n        {\"name\": \"Wild Mushrooms\", \"allergens\": [], \"strict\": true},\n        {\"name\": \"White Wine\", \"allergens\": [\"sulphites\"], \"strict\": true},\n        {\"name\": \"Parmesan\", \"allergens\": [\"milk\"], \"strict\": true},\n        {\"name\": \"Truffle Oil\", \"allergens\": [], \"removable\": true}\n      ],\n      \"nutrition\": {\n        \"calories\": {\"value\": 520, \"level\": \"red\"},\n        \"fat\": {\"value\": 18, \"level\": \"red\"},\n        \"saturates\": {\"value\": 8, \"level\": \"amber\"},\n        \"sugar\": {\"value\": 4, \"level\": \"green\"},\n        \"salt\": {\"value\": 0.9, \"level\": \"amber\"}\n      },\n      \"isMeal\": true,\n      \"upsells\": [\n        {\"label\": \"Add Grilled Chicken\", \"price\": 4.00},\n        {\"label\": \"Add Prawns\", \"price\": 6.00}\n      ],\n      \"order\": 5,\n      \"isAvailable\": true\n    }\n  ]\n}"
+        }
+      }
+    }
+  ]
+}
