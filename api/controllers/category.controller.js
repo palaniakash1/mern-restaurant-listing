@@ -588,7 +588,10 @@ export const bulkReorderCategories = async (req, res, next) => {
           idempotentReplay: true
         });
       }
-      throw errorHandler(409, 'Request with this idempotency key is in progress');
+      throw errorHandler(
+        409,
+        'Request with this idempotency key is in progress'
+      );
     }
 
     const result = await withTransaction(async (session) => {
@@ -1222,10 +1225,21 @@ export const updateCategoryStatus = async (req, res, next) => {
         throw errorHandler(400, 'Invalid ID format');
       }
 
-      const { isActive } = req.body;
+      const { status } = req.body;
 
-      if (typeof isActive !== 'boolean') {
-        throw errorHandler(400, 'isActive must be boolean');
+      if (!status) {
+        throw errorHandler(
+          400,
+          'status is required (draft, published, or blocked)'
+        );
+      }
+
+      const allowedStatuses = ['draft', 'blocked', 'published'];
+      if (!allowedStatuses.includes(status)) {
+        throw errorHandler(
+          400,
+          'Invalid status value. Must be draft, published, or blocked'
+        );
       }
 
       const category = await Category.findById(req.params.id).session(session);
@@ -1235,7 +1249,10 @@ export const updateCategoryStatus = async (req, res, next) => {
 
       // Generic → only superAdmin
       if (category.isGeneric && req.user.role !== 'superAdmin') {
-        throw errorHandler(403, 'Only superAdmin');
+        throw errorHandler(
+          403,
+          'Only superAdmin can modify generic categories'
+        );
       }
 
       // Restaurant category → admin must own it
@@ -1244,12 +1261,15 @@ export const updateCategoryStatus = async (req, res, next) => {
         req.user.role === 'admin' &&
         toIdString(category.restaurantId) !== toIdString(req.user.restaurantId)
       ) {
-        throw errorHandler(403, 'Not allowed');
+        throw errorHandler(
+          403,
+          'Not allowed - category does not belong to your restaurant'
+        );
       }
 
-      const before = { isActive: category.isActive };
+      const before = { status: category.status };
 
-      category.isActive = isActive;
+      category.status = status;
       await category.save({ session });
 
       await logAudit({
@@ -1259,7 +1279,7 @@ export const updateCategoryStatus = async (req, res, next) => {
         entityId: category._id,
         action: 'STATUS_CHANGE',
         before,
-        after: { isActive },
+        after: { status: category.status },
         ipAddress: getClientIp(req)
       });
       return category;
@@ -1461,8 +1481,38 @@ export const bulkUpdateCategoryStatus = async (req, res, next) => {
         throw errorHandler(400, 'Invalid status value');
       }
 
+      // Build filter based on role
+      const filter = { _id: { $in: uniqueIds } };
+
+      // Admin can only update their own restaurant's categories
+      if (req.user.role === 'admin') {
+        const categories = await Category.find({
+          _id: { $in: uniqueIds }
+        }).lean();
+
+        // Check ownership - admin can only update categories that belong to their restaurant
+        const adminRestaurantId = req.user.restaurantId?.toString();
+        const unauthorizedCategories = categories.filter(
+          (c) =>
+            !c.isGeneric && c.restaurantId?.toString() !== adminRestaurantId
+        );
+
+        if (unauthorizedCategories.length > 0) {
+          throw errorHandler(
+            403,
+            'You can only update categories for your own restaurant'
+          );
+        }
+
+        // Include non-generic categories from admin's restaurant
+        filter.$or = [
+          { isGeneric: true },
+          { restaurantId: req.user.restaurantId }
+        ];
+      }
+
       const updateResult = await Category.updateMany(
-        { _id: { $in: uniqueIds } },
+        filter,
         { $set: { status } },
         { session }
       );
