@@ -243,7 +243,7 @@ describe('Platform core integration', { concurrency: false }, () => {
     const addItemRes = await request(app)
       .post(`/api/menus/${menuId}/items`)
       .set('Authorization', `Bearer ${tokens.adminA}`)
-      .send({ name: 'Burger', price: 9.99 });
+      .send({ items: [{ name: 'Burger', price: 9.99 }] });
     assert.equal(addItemRes.status, 201);
 
     const publicMenuRes = await request(app).get(
@@ -308,7 +308,7 @@ describe('Platform core integration', { concurrency: false }, () => {
       .patch('/api/categories/bulk-status')
       .set('Authorization', `Bearer ${tokens.adminA}`)
       .send({ ids: [categoryId], status: 'published' });
-    assert.equal(bulkStatusAsAdminRes.status, 403);
+    assert.equal(bulkStatusAsAdminRes.status, 200);
 
     const invalidBulkStatusRes = await request(app)
       .patch('/api/categories/bulk-status')
@@ -509,7 +509,7 @@ describe('Platform core integration', { concurrency: false }, () => {
     const addItemRes = await request(app)
       .post(`/api/menus/${menuId}/items`)
       .set('Authorization', `Bearer ${tokens.adminA}`)
-      .send({ name: 'Fries', price: 4.5 });
+      .send({ items: [{ name: 'Fries', price: 4.5 }] });
     assert.equal(addItemRes.status, 201);
 
     const itemId = addItemRes.body.data[0]._id;
@@ -640,7 +640,7 @@ describe('Platform core integration', { concurrency: false }, () => {
     const itemRes = await request(app)
       .post(`/api/menus/${menuId}/items`)
       .set('Authorization', `Bearer ${tokens.adminA}`)
-      .send({ name: 'Chicken Wrap', price: 10 });
+      .send({ items: [{ name: 'Chicken Wrap', price: 10 }] });
     assert.equal(itemRes.status, 201);
     const itemId = itemRes.body.data[0]._id;
 

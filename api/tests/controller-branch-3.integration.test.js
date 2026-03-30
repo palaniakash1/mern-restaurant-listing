@@ -246,7 +246,7 @@ describe('Controller branch expansion 3', { concurrency: false }, () => {
     const duplicateItemRes = await request(app)
       .post(`/api/menus/${menu._id}/items`)
       .set('Authorization', `Bearer ${tokens.adminA}`)
-      .send({ name: 'burger', price: 12 });
+      .send({ items: [{ name: 'burger', price: 12 }] });
     assert.equal(duplicateItemRes.status, 409);
 
     const itemId = menu.items[0]._id;

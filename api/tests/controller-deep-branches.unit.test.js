@@ -88,8 +88,6 @@ const restoreAll = () => {
   }
 };
 
-let withTransactionMock;
-
 const mockWithTransaction = (impl) => {
   const original = withTransaction.default || withTransaction;
   const mockFn = impl || (async (fn) => fn({
@@ -113,7 +111,6 @@ const mockWithTransaction = (impl) => {
       delete withTransaction.default;
     });
   }
-  withTransactionMock = mockFn;
 };
 
 const createMockResponse = () => {
@@ -1093,7 +1090,7 @@ test('category controller covers slug, audit, status, restore, export, and hard-
   result = await invoke(updateCategoryStatus, {
     user: { role: 'admin', id: userId, restaurantId },
     params: { id: categoryId },
-    body: { isActive: true }
+    body: { status: 'published' }
   });
   assert.equal(result.nextError.statusCode, 403);
 
@@ -1328,7 +1325,7 @@ test('category controller covers slug, audit, status, restore, export, and hard-
   result = await invoke(updateCategoryStatus, {
     user: { role: 'admin', id: userId, restaurantId },
     params: { id: categoryId },
-    body: { isActive: true }
+    body: { status: 'published' }
   });
   assert.equal(result.nextError.statusCode, 404);
 
@@ -2257,7 +2254,7 @@ test('category controller covers remaining ownership, restore, and validation ed
   result = await invoke(updateCategoryStatus, {
     user: { role: 'admin', id: userId, restaurantId },
     params: { id: genericCategoryId },
-    body: { isActive: false }
+    body: { status: 'blocked' }
   });
   assert.equal(result.nextError.statusCode, 403);
 

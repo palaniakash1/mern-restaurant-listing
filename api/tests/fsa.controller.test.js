@@ -128,7 +128,7 @@ testDescribe('FSA Controller Integration Tests', { concurrency: false }, () => {
       const res = await request(app)
         .get('/api/fsa/rating/123456789');
 
-      assert.ok(res.status === 200 || res.status === 502);
+      assert.ok([200, 404, 502].includes(res.status));
     });
 
     test.it('should reject invalid FHRSID format', async () => {

@@ -223,7 +223,7 @@ describe('Controller branch expansion', { concurrency: false }, () => {
     const itemRes = await request(app)
       .post(`/api/menus/${menuId}/items`)
       .set('Authorization', `Bearer ${tokens.adminA}`)
-      .send({ name: 'Wrap', price: 9.5 });
+      .send({ items: [{ name: 'Wrap', price: 9.5 }] });
     assert.equal(itemRes.status, 201);
     const itemId = itemRes.body.data[0]._id;
 
