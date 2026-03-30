@@ -172,7 +172,7 @@
  *     summary: Search FSA establishments (Public)
  *     description: >
  *       Search for food establishments in the UK Food Hygiene Rating Scheme (FHRS).
- *       
+ *
  *       **Key features:**
  *       - Public endpoint - no authentication required
  *       - Search by restaurant name (required, min 2 characters)
@@ -180,7 +180,7 @@
  *       - Returns best match with confidence score
  *       - Returns multiple options if similar matches found (confidence within 20% of best)
  *       - Results cached in Redis for performance
- *       
+ *
  *       **Matching algorithm considers:**
  *       - Name similarity (normalized comparison)
  *       - Business type matching
@@ -194,7 +194,7 @@
  *           type: string
  *           minLength: 2
  *         example: Pizza Express
- * 
+ *
  *       - in: query
  *         name: postcode
  *         required: false
@@ -202,7 +202,7 @@
  *         schema:
  *           type: string
  *         example: W1D 3QW
- * 
+ *
  *     responses:
  *       200:
  *         description: Search completed successfully
@@ -223,7 +223,7 @@
  *                   rating: "5"
  *                 multipleOptions: null
  *                 score: 0.92
- * 
+ *
  *       400:
  *         description: Validation error - name too short or missing
  *         content:
@@ -233,7 +233,7 @@
  *             example:
  *               success: false
  *               error: '"name" must be at least 2 characters'
- * 
+ *
  *       500:
  *         description: Server error
  *         content:
@@ -253,9 +253,9 @@
  *     tags: [FSA Ratings]
  *     summary: Get FSA rating by FHRSID (Public)
  *     description: >
- *       Fetch hygiene rating details for a specific food establishment using its 
+ *       Fetch hygiene rating details for a specific food establishment using its
  *       FHRS (Food Hygiene Rating Scheme) ID.
- *       
+ *
  *       **Key features:**
  *       - Public endpoint - no authentication required
  *       - Results cached for 24 hours in Redis
@@ -265,7 +265,7 @@
  *         - Individual scores (Hygiene, Structural, Confidence in Management)
  *         - Pre-generated badge URL
  *       - Falls back to FSA API on cache miss
- *       
+ *
  *       **Use cases:**
  *       - Display rating on public restaurant pages
  *       - Fetch latest rating data
@@ -278,7 +278,7 @@
  *           type: integer
  *           minimum: 1
  *         example: 123456
- * 
+ *
  *     responses:
  *       200:
  *         description: Rating found
@@ -295,7 +295,7 @@
  *                 ratingDate: "2024-01-15"
  *                 hygieneScore: 5
  *               badgeUrl: "https://ratings.food.gov.uk/images/badges/fhrs/3/fhrs-badge-5.svg"
- * 
+ *
  *       400:
  *         description: Invalid FHRSID format
  *         content:
@@ -305,7 +305,7 @@
  *             example:
  *               success: false
  *               error: '"fhrsId" must be a positive integer'
- * 
+ *
  *       404:
  *         description: Establishment not found in FSA database
  *         content:
@@ -315,7 +315,7 @@
  *             example:
  *               success: false
  *               error: "Establishment not found"
- * 
+ *
  *       500:
  *         description: Server error
  *         content:
@@ -336,9 +336,9 @@
  *     summary: Get restaurant's FSA rating status
  *     description: >
  *       Retrieve the current FSA rating link status for a restaurant.
- *       
+ *
  *       **Authentication required:** Bearer token
- *       
+ *
  *       **Returns:**
  *       - Whether the restaurant is linked to an FSA establishment
  *       - Current FHRSID (if linked)
@@ -347,7 +347,7 @@
  *       - Last refresh timestamp
  *     security:
  *       - bearerAuth: []
- * 
+ *
  *     parameters:
  *       - in: path
  *         name: restaurantId
@@ -356,7 +356,7 @@
  *         schema:
  *           type: string
  *         example: 65a1f9c8a9c123456789abcd
- * 
+ *
  *     responses:
  *       200:
  *         description: Status retrieved successfully
@@ -372,14 +372,14 @@
  *                 rating: "5"
  *                 badgeUrl: "https://ratings.food.gov.uk/images/badges/fhrs/3/fhrs-badge-5.svg"
  *                 lastRefreshed: "2024-01-20T10:30:00.000Z"
- * 
+ *
  *       401:
  *         description: Authentication required
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- * 
+ *
  *       404:
  *         description: Restaurant not found
  *         content:
@@ -400,22 +400,22 @@
  *     summary: Link restaurant to FSA rating
  *     description: >
  *       Manually link a restaurant to an FSA establishment by providing the FHRSID.
- *       
+ *
  *       **Authentication required:** Bearer token
- *       
+ *
  *       **What happens:**
  *       - Validates the FHRSID exists in FSA database
  *       - Fetches current rating data
  *       - Updates restaurant document with FHRSID and rating
  *       - Generates badge URL for display
  *       - Sets lastRefreshed timestamp
- *       
+ *
  *       **Validation:**
  *       - FHRSID must be a positive integer
  *       - FHRSID must exist in FSA database
  *     security:
  *       - bearerAuth: []
- * 
+ *
  *     parameters:
  *       - in: path
  *         name: restaurantId
@@ -424,7 +424,7 @@
  *         schema:
  *           type: string
  *         example: 65a1f9c8a9c123456789abcd
- * 
+ *
  *     requestBody:
  *       required: true
  *       content:
@@ -433,7 +433,7 @@
  *             $ref: '#/components/schemas/LinkFSARequest'
  *           example:
  *             fhrsId: 123456
- * 
+ *
  *     responses:
  *       200:
  *         description: Successfully linked
@@ -450,7 +450,7 @@
  *                   example: "Restaurant linked to FSA rating successfully"
  *                 data:
  *                   $ref: '#/components/schemas/FSARestaurantStatus'
- * 
+ *
  *       400:
  *         description: Validation error - invalid FHRSID
  *         content:
@@ -460,14 +460,14 @@
  *             example:
  *               success: false
  *               error: '"fhrsId" must be a positive integer'
- * 
+ *
  *       401:
  *         description: Authentication required
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- * 
+ *
  *       404:
  *         description: Restaurant or FSA establishment not found
  *         content:
@@ -487,11 +487,11 @@
  *     tags: [FSA Ratings]
  *     summary: Auto-match and link restaurant
  *     description: >
- *       Automatically search for the restaurant in FSA database using its name and 
+ *       Automatically search for the restaurant in FSA database using its name and
  *       postcode, then link if a confident match is found.
- *       
+ *
  *       **Authentication required:** Bearer token
- *       
+ *
  *       **What happens:**
  *       - Fetches restaurant data from database
  *       - Searches FSA API using restaurant name and postcode
@@ -499,7 +499,7 @@
  *       - If match score >= 0.4: Auto-links to best match
  *       - If match score < 0.4: Returns no match
  *       - If multiple matches with similar scores: Returns all options
- *       
+ *
  *       **Match score thresholds:**
  *       - >= 0.8: High confidence, auto-link
  *       - 0.4-0.8: Medium confidence, auto-link
@@ -507,7 +507,7 @@
  *       - Within 20% of best: Multiple options returned
  *     security:
  *       - bearerAuth: []
- * 
+ *
  *     parameters:
  *       - in: path
  *         name: restaurantId
@@ -516,7 +516,7 @@
  *         schema:
  *           type: string
  *         example: 65a1f9c8a9c123456789abcd
- * 
+ *
  *     responses:
  *       200:
  *         description: Auto-link result (success or multiple options)
@@ -552,14 +552,14 @@
  *                       name: "Similar Name Branch 1"
  *                     - fhrsId: 123457
  *                       name: "Similar Name Branch 2"
- * 
+ *
  *       401:
  *         description: Authentication required
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- * 
+ *
  *       404:
  *         description: Restaurant not found
  *         content:
@@ -580,19 +580,19 @@
  *     summary: Unlink restaurant from FSA rating
  *     description: >
  *       Remove the FSA rating link from a restaurant.
- *       
+ *
  *       **Authentication required:** Bearer token
- *       
+ *
  *       **What happens:**
  *       - Sets fhrsId to null
  *       - Clears fsaRating.value
  *       - Clears fsaRating.lastRefreshed
  *       - Clears fsaRating.isManuallyLinked flag
- *       
+ *
  *       **Note:** This does NOT delete the restaurant, only removes the FSA link.
  *     security:
  *       - bearerAuth: []
- * 
+ *
  *     parameters:
  *       - in: path
  *         name: restaurantId
@@ -601,7 +601,7 @@
  *         schema:
  *           type: string
  *         example: 65a1f9c8a9c123456789abcd
- * 
+ *
  *     responses:
  *       200:
  *         description: Successfully unlinked
@@ -616,14 +616,14 @@
  *                 message:
  *                   type: string
  *                   example: "Restaurant unlinked from FSA rating successfully"
- * 
+ *
  *       401:
  *         description: Authentication required
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- * 
+ *
  *       404:
  *         description: Restaurant not found
  *         content:
@@ -644,25 +644,25 @@
  *     summary: Refresh restaurant FSA rating
  *     description: >
  *       Fetch the latest rating from FSA API and update the database.
- *       
+ *
  *       **Authentication required:** Bearer token
- *       
+ *
  *       **What happens:**
  *       - Validates restaurant has a linked FHRSID
  *       - Bypasses cache, fetches fresh data from FSA API
  *       - Updates fsaRating.value with latest rating
  *       - Updates fsaRating.lastRefreshed timestamp
  *       - Regenerates badgeUrl
- *       
+ *
  *       **Use cases:**
  *       - Manual refresh before important dates
  *       - Verify rating hasn't changed
  *       - Update stale cached data
- *       
+ *
  *       **Note:** This does NOT update cache for public GET endpoints.
  *     security:
  *       - bearerAuth: []
- * 
+ *
  *     parameters:
  *       - in: path
  *         name: restaurantId
@@ -671,7 +671,7 @@
  *         schema:
  *           type: string
  *         example: 65a1f9c8a9c123456789abcd
- * 
+ *
  *     responses:
  *       200:
  *         description: Rating refreshed successfully
@@ -688,14 +688,14 @@
  *                   example: "Rating refreshed successfully"
  *                 data:
  *                   $ref: '#/components/schemas/FSARestaurantStatus'
- * 
+ *
  *       401:
  *         description: Authentication required
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- * 
+ *
  *       404:
  *         description: Restaurant not found or not linked to FSA
  *         content:
