@@ -267,8 +267,18 @@ describe('Gap closure integration', { concurrency: false }, () => {
     const statusRes = await request(app)
       .patch(`/api/categories/${categoryId}/status`)
       .set('Authorization', `Bearer ${tokens.admin}`)
-      .send({ isActive: false });
+      .send({ status: 'blocked' });
     assert.equal(statusRes.status, 200);
+
+    const softDeleteRes = await request(app)
+      .delete(`/api/categories/${categoryId}`)
+      .set('Authorization', `Bearer ${tokens.admin}`);
+    assert.equal(softDeleteRes.status, 200);
+
+    const deletedRes = await request(app)
+      .get('/api/categories/deleted')
+      .set('Authorization', `Bearer ${tokens.superAdmin}`);
+    assert.equal(deletedRes.status, 200);
 
     const restoreRes = await request(app)
       .patch(`/api/categories/${categoryId}/restore`)
@@ -284,16 +294,6 @@ describe('Gap closure integration', { concurrency: false }, () => {
       .get(`/api/categories/${categoryId}`)
       .set('Authorization', `Bearer ${tokens.admin}`);
     assert.equal(getByIdRes.status, 200);
-
-    const softDeleteRes = await request(app)
-      .delete(`/api/categories/${categoryId}`)
-      .set('Authorization', `Bearer ${tokens.admin}`);
-    assert.equal(softDeleteRes.status, 200);
-
-    const deletedRes = await request(app)
-      .get('/api/categories/deleted')
-      .set('Authorization', `Bearer ${tokens.superAdmin}`);
-    assert.equal(deletedRes.status, 200);
 
     const exportRes = await request(app)
       .get('/api/categories/export?format=json')
