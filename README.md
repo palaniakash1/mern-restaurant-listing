@@ -24,6 +24,7 @@ Enterprise-grade RESTful API for a restaurant listing platform built with Node.j
 - JWT-based authentication (access token + CSRF protection for cookie auth)
 - Role-based access control (RBAC)
 - Multi-tenant restaurant management
+- FSA (Food Standards Agency) restaurant matching and rating sync
 - Menu and category management
 - Review and rating system
 - Audit logging
@@ -86,6 +87,7 @@ api/
 | **Auth**        | 6         | Signup, signin, signout, session, OAuth, password change |
 | **Users**       | 11        | CRUD, role management, restaurant assignment             |
 | **Restaurants** | 16        | CRUD, nearby search, featured, trending                  |
+| **FSA**         | 6         | Search, rating lookup, link/unlink, refresh             |
 | **Categories**  | 18        | CRUD, bulk operations, soft delete                       |
 | **Menus**       | 14        | CRUD, items, reorder, restore                            |
 | **Reviews**     | 8         | CRUD, moderation, ratings                                |
@@ -276,6 +278,8 @@ The API uses Redis for caching public read endpoints to improve performance. If 
 | Endpoint                                  | Description               |
 | ----------------------------------------- | ------------------------- |
 | `GET /api/restaurants/featured`           | Featured restaurants list |
+| `GET /api/fsa/rating/:fhrsId`             | FSA rating lookups        |
+| `GET /api/places/autocomplete`            | Address suggestions       |
 | `GET /api/categories`                     | Public categories list    |
 | `GET /api/menus/restaurant/:id`           | Restaurant menu items     |
 | `GET /api/reviews/restaurant/:id`         | Restaurant reviews        |
@@ -352,6 +356,8 @@ DELETE /api/restaurants/id/:id           - Delete (owner)
 PATCH /api/restaurants/id/:id/status     - Update status (superAdmin)
 PATCH /api/restaurants/id/:id/restore    - Restore (superAdmin)
 ```
+
+Restaurant creation accepts an optional `fsa` object for explicit FHRS linking, and if `fsa.fhrsId` is omitted the backend now attempts a single-match FSA auto-link using the restaurant name and postcode.
 
 ### Categories
 
