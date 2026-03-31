@@ -1,17 +1,13 @@
-import { PERMISSIONS } from './permissions.js';
+import { hasPermission } from './permissions.js';
 import { errorHandler } from './error.js';
 
 export const can = (action, resource) => {
   return (req, res, next) => {
-    const role = req.user?.role;
-
-    if (!role) {
+    if (!req.user?.role) {
       return next(errorHandler(401, 'Unauthorized'));
     }
 
-    const allowed = PERMISSIONS[role]?.[resource];
-
-    if (!allowed || !allowed.includes(action)) {
+    if (!hasPermission(req.user, resource, action)) {
       return next(errorHandler(403, 'Permission denied'));
     }
 
@@ -21,19 +17,14 @@ export const can = (action, resource) => {
 
 export const canAny = (actions, resource) => {
   return (req, res, next) => {
-    const role = req.user?.role;
-
-    if (!role) {
+    if (!req.user?.role) {
       return next(errorHandler(401, 'Unauthorized'));
     }
 
-    const allowed = PERMISSIONS[role]?.[resource];
-    if (!Array.isArray(allowed)) {
-      return next(errorHandler(403, 'Permission denied'));
-    }
-
-    const hasPermission = actions.some((action) => allowed.includes(action));
-    if (!hasPermission) {
+    const isAllowed = actions.some((action) =>
+      hasPermission(req.user, resource, action)
+    );
+    if (!isAllowed) {
       return next(errorHandler(403, 'Permission denied'));
     }
 

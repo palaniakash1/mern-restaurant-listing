@@ -1,149 +1,287 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useSelector } from 'react-redux';
-import { Table, Alert } from 'flowbite-react';
-import { Button, Spinner, Modal } from 'flowbite-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { Alert, Button, Modal, Spinner, Table } from 'flowbite-react';
 import imageCompression from 'browser-image-compression';
-import {
-  updateStart,
-  updateSuccess,
-  updateFailure
-  // deleteUserStart,
-  // deleteUserSuccess,
-  // deleteUserFailure
-} from '../redux/user/userSlice';
-import { useDispatch } from 'react-redux';
-
 import {
   getDownloadURL,
   getStorage,
   ref,
   uploadBytesResumable
 } from 'firebase/storage';
-import { app } from '../firebase';
-import ImageCircleLoader from '../components/ImageCircleLoader';
-
 import {
+  HiOutlineExclamationCircle,
   HiOutlineX,
   HiPencilAlt,
-  HiTrash,
-  HiOutlineExclamationCircle
+  HiTrash
 } from 'react-icons/hi';
+
+import { app } from '../firebase';
+import {
+  buildPermissionPayload,
+  buildPermissionStateFromPayload,
+  buildPermissionStateForRole,
+  countEnabledPermissions,
+  PERMISSION_GROUPS
+} from '../constants/permissionTemplates';
+import {
+  updateFailure,
+  updateStart,
+  updateSuccess
+} from '../redux/user/userSlice';
+
+const DEFAULT_ROLE = 'admin';
+
+const buildCreateForm = () => ({
+  userName: '',
+  email: '',
+  password: '',
+  role: DEFAULT_ROLE,
+  isActive: true
+});
+
+const areEqual = (left, right) => JSON.stringify(left) === JSON.stringify(right);
+
+const getPermissionModeLabel = (user) =>
+  user?.customPermissions ? 'Custom Access' : 'Role Template';
+
+function SwitchField({ checked, onChange, srLabel }) {
+  return (
+    <label className="relative inline-flex cursor-pointer items-center">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        className="peer sr-only"
+      />
+      <div className="h-7 w-12 rounded-full bg-slate-300 transition peer-checked:bg-[#8fa31e] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#d8e89d] after:absolute after:left-[4px] after:top-[4px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-5" />
+      <span className="sr-only">{srLabel}</span>
+    </label>
+  );
+}
 
 export default function DashUsers() {
   const { currentUser } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
+  const filePickerRef = useRef();
+
   const [users, setUsers] = useState([]);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const [imageFile, setImageFile] = useState(null);
-  const [imageFileUploadingProgress, setImageFileUploadingProgress] =
-    useState(null);
-  const [imageFileUrl, setImageFileUrl] = useState(null);
 
-  const [totalUsers, setTotalUsers] = useState(0);
-  const [showModal, setShowModal] = useState(null);
-  const dispatch = useDispatch();
-  const [imageFileUploadingError, setImageFileUploadingError] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [createForm, setCreateForm] = useState(buildCreateForm);
+  const [createPermissionState, setCreatePermissionState] = useState(
+    buildPermissionStateForRole(DEFAULT_ROLE)
+  );
+  const [createSubmitting, setCreateSubmitting] = useState(false);
+  const [createError, setCreateError] = useState(null);
+  const [createSuccess, setCreateSuccess] = useState(null);
 
-  // Drawer States
+  const [showModal, setShowModal] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [formData, setFormData] = useState({});
-
+  const [editPermissionState, setEditPermissionState] = useState({});
   const [updateUserError, setUpdateUserError] = useState(null);
-  const [imageFileUploading, setImageFileUploading] = useState(false);
   const [updateUserSuccess, setUpdateUserSuccess] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [imageFileUrl, setImageFileUrl] = useState(null);
+  const [imageFileUploading, setImageFileUploading] = useState(false);
+  const [imageFileUploadingProgress, setImageFileUploadingProgress] =
+    useState(null);
+  const [imageFileUploadingError, setImageFileUploadingError] =
+    useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const filePickerRef = useRef();
+  const fetchUsers = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch(`/api/users?page=${page}&limit=${limit}`, {
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to load users');
+      }
+      setUsers(data.data || []);
+      setTotalPages(Math.max(1, data.totalPages || 1));
+      setTotalUsers(data.total || 0);
+    } catch (fetchError) {
+      setError(fetchError.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [limit, page]);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(`/api/users?page=${page}&limit=${limit}`, {
-          credentials: 'include'
-        });
-        const data = await res.json();
-
-        if (res.ok) {
-          setUsers(data.data);
-          setTotalPages(Math.ceil(data.totalUser / limit));
-          setTotalUsers(data.totalUser);
-        }
-      } catch (error) {
-        setError(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (currentUser.role === 'superAdmin') {
+    if (currentUser?.role === 'superAdmin') {
       fetchUsers();
     }
-  }, [currentUser?.role, page, limit]);
+  }, [currentUser?.role, fetchUsers]);
 
-  const handleImageChange = async (e) => {
-    const file = e.target.files[0];
+  const handleCreateInputChange = (event) => {
+    const { id, value } = event.target;
+    setCreateForm((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const handleRoleTemplateChange = (event) => {
+    const nextRole = event.target.value;
+    setCreateForm((prev) => ({ ...prev, role: nextRole }));
+    setCreatePermissionState(buildPermissionStateForRole(nextRole));
+  };
+
+  const resetPermissionsToRoleTemplate = () => {
+    setCreatePermissionState(buildPermissionStateForRole(createForm.role));
+  };
+
+  const setAllPermissions = (enabled) => {
+    setCreatePermissionState((prev) =>
+      Object.fromEntries(
+        Object.keys(prev).map((permissionKey) => [permissionKey, enabled])
+      )
+    );
+  };
+
+  const togglePermission = (permissionKey) => {
+    setCreatePermissionState((prev) => ({
+      ...prev,
+      [permissionKey]: !prev[permissionKey]
+    }));
+  };
+
+  const handleCreateUser = async (event) => {
+    event.preventDefault();
+    setCreateSubmitting(true);
+    setCreateError(null);
+    setCreateSuccess(null);
+
+    try {
+      const customPayload = buildPermissionPayload(createPermissionState);
+      const roleTemplatePayload = buildPermissionPayload(
+        buildPermissionStateForRole(createForm.role)
+      );
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...createForm,
+          permissions: areEqual(customPayload, roleTemplatePayload)
+            ? null
+            : customPayload
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to create user');
+      }
+      setCreateSuccess(
+        `${data.user.userName} created with ${
+          data.permissionMode === 'custom' ? 'custom access' : 'role template access'
+        }.`
+      );
+      setCreateForm(buildCreateForm());
+      setCreatePermissionState(buildPermissionStateForRole(DEFAULT_ROLE));
+      await fetchUsers();
+    } catch (createUserError) {
+      setCreateError(createUserError.message);
+    } finally {
+      setCreateSubmitting(false);
+    }
+  };
+
+  const handleEditClick = (user) => {
+    setSelectedUser(user);
+    setFormData({
+      userName: user.userName,
+      email: user.email,
+      profilePicture: user.profilePicture,
+      password: '',
+      role: user.role,
+      isActive: user.isActive
+    });
+    setEditPermissionState(
+      buildPermissionStateFromPayload(user.customPermissions, user.role)
+    );
+    setImageFileUrl(user.profilePicture || null);
+    setUpdateUserError(null);
+    setUpdateUserSuccess(null);
+    setIsDrawerOpen(true);
+  };
+
+  const handleEditChange = (event) => {
+    const { id, value } = event.target;
+    setFormData((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const handleEditRoleTemplateChange = (event) => {
+    const nextRole = event.target.value;
+    setFormData((prev) => ({ ...prev, role: nextRole }));
+    setEditPermissionState(buildPermissionStateForRole(nextRole));
+  };
+
+  const resetEditPermissionsToRoleTemplate = () => {
+    setEditPermissionState(buildPermissionStateForRole(formData.role));
+  };
+
+  const toggleEditPermission = (permissionKey) => {
+    setEditPermissionState((prev) => ({
+      ...prev,
+      [permissionKey]: !prev[permissionKey]
+    }));
+  };
+
+  const setAllEditPermissions = (enabled) => {
+    setEditPermissionState((prev) =>
+      Object.fromEntries(
+        Object.keys(prev).map((permissionKey) => [permissionKey, enabled])
+      )
+    );
+  };
+
+  const handleImageChange = async (event) => {
+    const file = event.target.files?.[0];
     if (!file) return;
-
-    // ❌ 1. Reject non-image files
     if (!file.type.startsWith('image/')) {
       setImageFileUploadingError('Only image files are allowed.');
-      e.target.value = null; // reset input
+      event.target.value = null;
       return;
     }
-    // Define our 2MB limit (2 * 1024 * 1024 bytes)
     const limitInBytes = 2 * 1024 * 1024;
-    console.log((file.size / (1024 * 1024)).toFixed(2) + ' MB');
-
-    // 2. Conditional Compression
-    if (file.size > limitInBytes) {
-      console.log('File is large. Starting compression...');
-
-      const options = {
-        maxSizeMB: 2,
-        maxWidthOrHeight: 1920,
-        useWebWorker: true
-      };
-
-      try {
-        setImageFileUploading(true);
-        setImageFileUploadingError(null);
-
-        const compressedFile = await imageCompression(file, options);
-
-        // Use the compressed file
+    try {
+      setImageFileUploading(true);
+      setImageFileUploadingError(null);
+      if (file.size > limitInBytes) {
+        const compressedFile = await imageCompression(file, {
+          maxSizeMB: 2,
+          maxWidthOrHeight: 1920,
+          useWebWorker: true
+        });
         setImageFile(compressedFile);
         setImageFileUrl(URL.createObjectURL(compressedFile));
-        console.log((compressedFile.size / (1024 * 1024)).toFixed(2) + ' MB');
-      } catch (error) {
-        console.error(error);
-        setImageFileUploadingError('Compression failed. Try a smaller photo.');
-      } finally {
-        setImageFileUploading(false);
+      } else {
+        setImageFile(file);
+        setImageFileUrl(URL.createObjectURL(file));
       }
-    } else {
-      // 3. File is already small, skip compression and use original
-      console.log('File is under 2MB. Skipping compression.');
-      setImageFile(file);
-      setImageFileUrl(URL.createObjectURL(file));
-      setImageFileUploadingError(null);
+    } catch {
+      setImageFileUploadingError('Compression failed. Try a smaller photo.');
+    } finally {
+      setImageFileUploading(false);
     }
-    // ✅ 2. Clear old errors
-    setImageFileUploadingError(null);
   };
 
   const uploadImage = useCallback(() => {
     if (!imageFile) return;
-    setIsUploading(true); // 👈 START upload UI
+    setIsUploading(true);
     setImageFileUploading(true);
     setImageFileUploadingError(null);
     const storage = getStorage(app);
-    const fileName = new Date().getTime() + imageFile.name;
-    const storageRef = ref(storage, fileName);
+    const storageRef = ref(storage, `${Date.now()}-${imageFile.name}`);
     const uploadTask = uploadBytesResumable(storageRef, imageFile);
     uploadTask.on(
       'state_changed',
@@ -152,22 +290,19 @@ export default function DashUsers() {
           (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
         setImageFileUploadingProgress(Math.round(progress));
       },
-      // eslint-disable-next-line no-unused-vars
-      (error) => {
+      () => {
         setIsUploading(false);
         setImageFileUploadingProgress(null);
         setImageFile(null);
         setImageFileUrl(null);
-        setImageFileUploadingError(
-          `couldn't upload image (image size exceeds 2MB)`
-        );
+        setImageFileUploadingError("Couldn't upload image.");
         setImageFileUploading(false);
       },
       () => {
         getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
           setImageFileUrl(downloadURL);
-          setIsUploading(false);
           setFormData((prev) => ({ ...prev, profilePicture: downloadURL }));
+          setIsUploading(false);
           setImageFileUploading(false);
         });
       }
@@ -175,222 +310,408 @@ export default function DashUsers() {
   }, [imageFile]);
 
   useEffect(() => {
-    if (imageFile) {
-      uploadImage();
-    }
+    if (imageFile) uploadImage();
   }, [imageFile, uploadImage]);
 
-  // =================================================
-  // DrawerOpen Module
-  // =================================================
-
-  const handleEditClick = (user) => {
-    setSelectedUser(user);
-    setIsDrawerOpen(true);
-    setFormData({
-      userName: user.userName,
-      email: user.email,
-      role: user.role,
-      profilePicture: user.profilePicture
-    });
-    // Reset status messages when opening for a new user
+  const handleUpdateUser = async (event) => {
+    event.preventDefault();
+    setLoading(true);
     setUpdateUserError(null);
     setUpdateUserSuccess(null);
-  };
-
-  // =================================================
-  // capture change Module
-  // =================================================
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value });
-  };
-  console.log(formData);
-
-  // =================================================
-  // Update Module
-  // =================================================
-
-  const handleUpdateUser = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
     try {
-      setUpdateUserError(null);
-      // setUpdateUserSuccess(null);
-      if (Object.keys(formData).length === 0) {
-        setUpdateUserError(`No changes made to update`);
-        return;
+      if (!selectedUser?._id) throw new Error('Select a user to update');
+      if (imageFileUploading) {
+        throw new Error('Please wait for the image upload to finish');
       }
 
-      if (imageFileUploading) {
-        setUpdateUserError('please wait for the image to uploaded');
-        return;
-      }
+      const customPayload = buildPermissionPayload(editPermissionState);
+      const roleTemplatePayload = buildPermissionPayload(
+        buildPermissionStateForRole(formData.role)
+      );
 
       dispatch(updateStart());
-      const res = await fetch(`/api/users/update/${selectedUser._id}`, {
-        method: 'PUT',
-        headers: {
-          'content-type': 'application/json'
-        },
-        body: JSON.stringify(formData)
+      const res = await fetch(`/api/admin/users/${selectedUser._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...formData,
+          password: formData.password || undefined,
+          permissions: areEqual(customPayload, roleTemplatePayload)
+            ? null
+            : customPayload
+        })
       });
-
       const data = await res.json();
       if (!res.ok) {
         dispatch(updateFailure(data.message));
-        setUpdateUserError(data.message);
-      } else {
-        dispatch(updateSuccess(data));
-        setUpdateUserSuccess(`User Profile updated successfully!`);
+        throw new Error(data.message || 'Failed to update user');
       }
-      // BUG FIX: Update the local users list so the table reflects changes instantly
+      if (
+        currentUser &&
+        (currentUser._id === selectedUser._id || currentUser.id === selectedUser._id)
+      ) {
+        dispatch(updateSuccess(data.user));
+      }
       setUsers((prev) =>
-        prev.map((u) =>
-          u._id === selectedUser._id ? { ...u, ...formData } : u
+        prev.map((user) =>
+          user._id === selectedUser._id
+            ? {
+              ...user,
+              ...data.user,
+              _id: user._id,
+              customPermissions: data.user.customPermissions
+            }
+            : user
         )
       );
-
-      // Optional: Close drawer after delay
-      setTimeout(() => setIsDrawerOpen(false), 2000);
-    } catch (error) {
-      dispatch(updateFailure(error.message));
-      setUpdateUserError(error.message);
+      setUpdateUserSuccess('Staff profile updated successfully.');
+      setTimeout(() => setIsDrawerOpen(false), 1200);
+    } catch (updateError) {
+      dispatch(updateFailure(updateError.message));
+      setUpdateUserError(updateError.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // =================================================
-  // Delete user Module
-  // =================================================
   const handleDeleteUser = async () => {
+    if (!selectedUser?._id) return;
     try {
-      const res = await fetch(`/api/users/delete/${selectedUser._id}`, {
+      const res = await fetch(`/api/users/${selectedUser._id}`, {
         method: 'DELETE',
         credentials: 'include'
       });
-
       const data = await res.json();
-
       if (!res.ok) {
-        setError(data.message);
-        return;
+        throw new Error(data.message || 'Failed to delete user');
       }
-
-      // ✅ Update UI instantly
-      setUsers((prev) => prev.filter((u) => u._id !== selectedUser._id));
-
+      setUsers((prev) => prev.filter((user) => user._id !== selectedUser._id));
+      setTotalUsers((prev) => Math.max(0, prev - 1));
+      setSuccess('User deleted successfully.');
       setShowModal(false);
       setSelectedUser(null);
-    } catch (error) {
-      setError(error.message);
+    } catch (deleteError) {
+      setError(deleteError.message);
     }
   };
-
-  // =================================================
-  // pagination Module
-  // =================================================
 
   const getPagination = (current, total) => {
-    const pages = new Set();
-
-    pages.add(1);
-    pages.add(total);
-
-    for (let i = current - 1; i <= current + 1; i++) {
-      if (i > 1 && i < total) {
-        pages.add(i);
-      }
+    const pages = new Set([1, total]);
+    for (let pageNumber = current - 1; pageNumber <= current + 1; pageNumber += 1) {
+      if (pageNumber > 1 && pageNumber < total) pages.add(pageNumber);
     }
-
-    return [...pages].sort((a, b) => a - b);
+    return [...pages].sort((left, right) => left - right);
   };
 
+  if (currentUser?.role !== 'superAdmin') {
+    return (
+      <div className="rounded-2xl border border-red-100 bg-white p-6 shadow-sm">
+        <Alert color="failure">
+          Only the super admin can access the staff creation and permission
+          management module.
+        </Alert>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-3 w-full">
+    <div className="w-full space-y-6 p-3">
       {error && (
-        <Alert
-          color="failure"
-          onDismiss={() => setError(null)}
-          className="mb-4"
-        >
+        <Alert color="failure" onDismiss={() => setError(null)}>
           {error}
         </Alert>
       )}
       {success && (
-        <Alert
-          color="success"
-          onDismiss={() => setSuccess(null)}
-          className="mb-4"
-        >
+        <Alert color="success" onDismiss={() => setSuccess(null)}>
           {success}
         </Alert>
       )}
-      {/* TABLE VIEW */}
-      <div className="hidden md:block overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="p-5 bg-[#8fa31e] text-white flex justify-between items-center">
+
+      <section className="overflow-hidden rounded-3xl border border-[#dce6b7] bg-white shadow-sm">
+        <div className="border-b border-[#e8efcd] bg-gradient-to-r from-[#8fa31e] to-[#a4b738] px-6 py-5 text-white">
+          <p className="text-xs uppercase tracking-[0.24em] text-white/75">
+            Super Admin Access
+          </p>
+          <h2 className="text-2xl font-bold">Create Staff Profile</h2>
+          <p className="mt-1 text-sm text-white/80">
+            Create privileged users and tailor their dashboard access with role
+            templates and permission toggles.
+          </p>
+        </div>
+
+        <div className="grid gap-6 p-6 xl:grid-cols-[340px_minmax(0,1fr)]">
+          <form
+            onSubmit={handleCreateUser}
+            className="space-y-5 rounded-2xl border border-gray-200 bg-[#fbfcf6] p-5"
+          >
+            <div>
+              <h3 className="text-lg font-semibold text-slate-800">
+                Personal Details
+              </h3>
+              <p className="mt-1 text-sm text-slate-500">
+                This section is restricted to the platform super admin.
+              </p>
+            </div>
+
+            {createError && <Alert color="failure">{createError}</Alert>}
+            {createSuccess && <Alert color="success">{createSuccess}</Alert>}
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-slate-700">
+                Username
+              </span>
+              <input
+                id="userName"
+                value={createForm.userName}
+                onChange={handleCreateInputChange}
+                placeholder="e.g. sarahsmith"
+                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm shadow-sm focus:border-[#8fa31e] focus:outline-none focus:ring-2 focus:ring-[#d8e89d]"
+                required
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-slate-700">
+                Email (Login ID)
+              </span>
+              <input
+                id="email"
+                type="email"
+                value={createForm.email}
+                onChange={handleCreateInputChange}
+                placeholder="sarah@company.com"
+                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm shadow-sm focus:border-[#8fa31e] focus:outline-none focus:ring-2 focus:ring-[#d8e89d]"
+                required
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-slate-700">
+                Temporary Password
+              </span>
+              <input
+                id="password"
+                type="password"
+                value={createForm.password}
+                onChange={handleCreateInputChange}
+                placeholder="Minimum 8 chars, 1 capital, 1 number"
+                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm shadow-sm focus:border-[#8fa31e] focus:outline-none focus:ring-2 focus:ring-[#d8e89d]"
+                required
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-slate-700">
+                Role Template (Auto-fill)
+              </span>
+              <select
+                id="role"
+                value={createForm.role}
+                onChange={handleRoleTemplateChange}
+                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm shadow-sm focus:border-[#8fa31e] focus:outline-none focus:ring-2 focus:ring-[#d8e89d]"
+              >
+                <option value="admin">Admin</option>
+                <option value="storeManager">Store Manager</option>
+              </select>
+            </label>
+
+            <label className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-800">
+                  Account Status
+                </p>
+                <p className="text-xs text-slate-500">
+                  New user starts {createForm.isActive ? 'active' : 'inactive'}.
+                </p>
+              </div>
+              <SwitchField
+                checked={createForm.isActive}
+                onChange={() =>
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    isActive: !prev.isActive
+                  }))
+                }
+                srLabel="Toggle account status"
+              />
+            </label>
+
+            <div className="rounded-2xl border border-dashed border-[#cad98a] bg-[#f6fadf] p-4">
+              <p className="text-sm font-semibold text-slate-800">
+                Permission Summary
+              </p>
+              <p className="mt-1 text-sm text-slate-600">
+                {countEnabledPermissions(createPermissionState)} permissions
+                enabled across grouped access cards.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={resetPermissionsToRoleTemplate}
+                className="rounded-xl border border-[#8fa31e] px-4 py-2 text-sm font-semibold text-[#556b2f] transition hover:bg-[#f0f6d4]"
+              >
+                Reset To Role Template
+              </button>
+              <button
+                type="button"
+                onClick={() => setAllPermissions(true)}
+                className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Select All
+              </button>
+              <button
+                type="button"
+                onClick={() => setAllPermissions(false)}
+                className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Clear All
+              </button>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={createSubmitting}
+              className="w-full !bg-[#4f6f1b] hover:!bg-[#3d5614]"
+            >
+              {createSubmitting ? <Spinner size="sm" /> : 'Save User Profile'}
+            </Button>
+          </form>
+
+          <div className="space-y-5">
+            <div className="rounded-2xl border border-gray-200 bg-[#fbfcfe] p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-800">
+                    Operational Permissions
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Role template changes auto-fill these switches, and you can
+                    fine-tune them before saving.
+                  </p>
+                </div>
+                <span className="rounded-full bg-[#eef4d3] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#556b2f]">
+                  {createForm.role === 'admin'
+                    ? 'Admin Template'
+                    : 'Store Manager Template'}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+              {PERMISSION_GROUPS.map((group) => (
+                <section
+                  key={group.id}
+                  className="rounded-2xl border border-gray-200 bg-white shadow-sm"
+                >
+                  <div className="border-b border-gray-100 px-5 py-4">
+                    <h4 className="font-semibold text-slate-800">
+                      {group.title}
+                    </h4>
+                  </div>
+                  <div className="divide-y divide-gray-100">
+                    {group.permissions.map((permission) => (
+                      <div
+                        key={permission.key}
+                        className="flex items-start justify-between gap-4 px-5 py-4"
+                      >
+                        <div>
+                          <p className="text-sm font-semibold text-slate-800">
+                            {permission.label}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {permission.description}
+                          </p>
+                        </div>
+                        <SwitchField
+                          checked={Boolean(createPermissionState[permission.key])}
+                          onChange={() => togglePermission(permission.key)}
+                          srLabel={`Toggle ${permission.label}`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="hidden overflow-x-auto rounded-3xl border border-gray-100 bg-white shadow-sm md:block">
+        <div className="flex items-center justify-between bg-[#8fa31e] px-5 py-4 text-white">
           <h2 className="text-xl font-bold uppercase">System Users</h2>
-          <span className="text-sm bg-white/20 px-3 py-1 rounded-full">
+          <span className="rounded-full bg-white/20 px-3 py-1 text-sm">
             {totalUsers} users
           </span>
         </div>
-        <Table hoverable className="shadow-md bg-white min-w-[900px]">
+
+        <Table hoverable className="min-w-[960px] bg-white shadow-none">
           <Table.Head>
             <Table.HeadCell>Profile</Table.HeadCell>
             <Table.HeadCell>Username</Table.HeadCell>
             <Table.HeadCell>Email</Table.HeadCell>
             <Table.HeadCell>Role</Table.HeadCell>
-            {/* <Table.HeadCell>Edit</Table.HeadCell> */}
+            <Table.HeadCell>Access Mode</Table.HeadCell>
+            <Table.HeadCell>Status</Table.HeadCell>
             <Table.HeadCell>Delete</Table.HeadCell>
           </Table.Head>
-
           <Table.Body className="divide-y">
             {users.map((user) => (
-              <Table.Row key={user._id} onClick={() => handleEditClick(user)}>
+              <Table.Row
+                key={user._id}
+                className="cursor-pointer"
+                onClick={() => handleEditClick(user)}
+              >
                 <Table.Cell>
                   <img
                     src={user.profilePicture}
                     alt={user.userName}
-                    className="w-10 h-10 rounded-full object-cover"
+                    className="h-10 w-10 rounded-full object-cover"
                   />
                 </Table.Cell>
-
                 <Table.Cell className="font-medium text-gray-900">
                   {user.userName}
                 </Table.Cell>
-
                 <Table.Cell>{user.email}</Table.Cell>
-
                 <Table.Cell>
-                  <span
-                    className={`px-2 py-1 rounded-md text-xs font-bold ${
-                      user.role === 'superAdmin'
-                        ? 'bg-purple-100 text-purple-700'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
+                  <span className="rounded-md bg-gray-100 px-2 py-1 text-xs font-bold text-gray-700">
                     {user.role.toUpperCase()}
                   </span>
                 </Table.Cell>
-
-                {/* <Table.Cell>
-                  <button
-                    onClick={() => handleEditClick(user)}
-                    className="text-[#8fa31e] flex items-center gap-1 font-bold"
+                <Table.Cell>
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      user.customPermissions
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-emerald-100 text-emerald-800'
+                    }`}
                   >
-                    <HiPencilAlt /> Edit
-                  </button>
-                </Table.Cell> */}
-
+                    {getPermissionModeLabel(user)}
+                  </span>
+                </Table.Cell>
+                <Table.Cell>
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      user.isActive
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'bg-red-100 text-red-700'
+                    }`}
+                  >
+                    {user.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </Table.Cell>
                 <Table.Cell>
                   <button
-                    onClick={() => {
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
                       setSelectedUser(user);
                       setShowModal(true);
                     }}
-                    className="text-red-600 flex items-center gap-1 font-bold text-center justify-center"
+                    className="flex items-center justify-center gap-1 font-bold text-red-600"
                   >
                     <HiTrash />
                   </button>
@@ -399,193 +720,145 @@ export default function DashUsers() {
             ))}
           </Table.Body>
         </Table>
+
         {loading && (
-          <p className="text-center py-6 text-gray-500 w-full bg-white">
+          <p className="bg-white py-6 text-center text-gray-500">
             Loading users...
           </p>
         )}
-        {/* ADVANCED PAGINATION */}
+
         {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-2 my-8 flex-wrap">
-            {/* PREV */}
+          <div className="my-8 flex flex-wrap items-center justify-center gap-2">
             <button
+              type="button"
               disabled={page === 1}
-              onClick={() => setPage((p) => p - 1)}
-              className={`
-        px-4 py-2 rounded-md border text-sm font-medium
-        transition-all
-        ${
-          page === 1
-            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-            : 'bg-red-600 text-white hover:bg-[#CC0001]'
-        }
-      `}
+              onClick={() => setPage((prev) => prev - 1)}
+              className={`rounded-md border px-4 py-2 text-sm font-medium transition-all ${
+                page === 1
+                  ? 'cursor-not-allowed bg-gray-100 text-gray-400'
+                  : 'bg-red-600 text-white hover:bg-[#CC0001]'
+              }`}
             >
               &lt; Prev
             </button>
 
-            {/* PAGE NUMBERS */}
-            {getPagination(page, totalPages).map((p, index, arr) => {
-              const prev = arr[index - 1];
-
+            {getPagination(page, totalPages).map((pageNumber, index, pages) => {
+              const previousPage = pages[index - 1];
               return (
-                <React.Fragment key={p}>
-                  {/* DOTS */}
-                  {prev && p - prev > 1 && (
-                    <span className="px-2 text-gray-400 select-none">…</span>
+                <React.Fragment key={pageNumber}>
+                  {previousPage && pageNumber - previousPage > 1 && (
+                    <span className="select-none px-2 text-gray-400">...</span>
                   )}
-
-                  {/* PAGE BUTTON */}
                   <button
-                    onClick={() => setPage(p)}
-                    className={`
-              w-10 h-10 rounded-md flex items-center justify-center
-              text-sm font-semibold transition-all
-              ${
-                page === p
-                  ? 'bg-emerald-600 text-white shadow-md'
-                  : 'bg-white border hover:bg-gray-100'
-              }
-            `}
+                    type="button"
+                    onClick={() => setPage(pageNumber)}
+                    className={`flex h-10 w-10 items-center justify-center rounded-md text-sm font-semibold transition-all ${
+                      page === pageNumber
+                        ? 'bg-emerald-600 text-white shadow-md'
+                        : 'border bg-white hover:bg-gray-100'
+                    }`}
                   >
-                    {p}
+                    {pageNumber}
                   </button>
                 </React.Fragment>
               );
             })}
 
-            {/* NEXT */}
             <button
+              type="button"
               disabled={page === totalPages}
-              onClick={() => setPage((p) => p + 1)}
-              className={`
-        px-4 py-2 rounded-md border text-sm font-medium
-        transition-all
-        ${
-          page === totalPages
-            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-            : 'bg-red-600 text-white hover:bg-[#CC0001]'
-        }
-      `}
+              onClick={() => setPage((prev) => prev + 1)}
+              className={`rounded-md border px-4 py-2 text-sm font-medium transition-all ${
+                page === totalPages
+                  ? 'cursor-not-allowed bg-gray-100 text-gray-400'
+                  : 'bg-red-600 text-white hover:bg-[#CC0001]'
+              }`}
             >
               Next &gt;
             </button>
           </div>
         )}
-      </div>
+      </section>
 
-      {/* MOBILE VIEW */}
-      <div className="md:hidden flex flex-col gap-4">
+      <section className="space-y-4 md:hidden">
         {loading && (
-          <p className="text-center py-6 text-gray-500">Loading users...</p>
+          <p className="py-6 text-center text-gray-500">Loading users...</p>
         )}
         {users.map((user) => (
-          <div
-            key={user._id}
-            className="bg-white rounded-lg shadow-md p-4 flex gap-4 items-start"
-          >
-            <img
-              src={user.profilePicture}
-              alt={user.userName}
-              className="w-12 h-12 rounded-full object-cover"
-            />
-
-            <div className="flex-1 space-y-1">
-              <p className="font-semibold text-gray-900">{user.userName}</p>
-              <p className="text-sm text-gray-600">{user.email}</p>
-
-              <span className="inline-block text-xs px-2 py-1 rounded bg-gray-100">
-                {user.role}
-              </span>
-
-              <div className="flex gap-4 mt-3">
-                <button
-                  onClick={() => handleEditClick(user)}
-                  className="text-[#8fa31e] flex items-center gap-1 font-bold"
-                >
-                  <HiPencilAlt /> Edit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowModal(true)}
-                  className=" w-1/2 flex items-center justify-center gap-2 !bg-[#CC0001] hover:!bg-[#ea2020] text-white px-4 py-2 rounded-[4px] font-medium transition-colors"
-                >
-                  <HiTrash className="text-lg" />
-                  Delete
-                </button>
+          <div key={user._id} className="rounded-2xl bg-white p-4 shadow-md">
+            <div className="flex gap-4">
+              <img
+                src={user.profilePicture}
+                alt={user.userName}
+                className="h-12 w-12 rounded-full object-cover"
+              />
+              <div className="flex-1 space-y-2">
+                <p className="font-semibold text-gray-900">{user.userName}</p>
+                <p className="text-sm text-gray-600">{user.email}</p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="rounded bg-gray-100 px-2 py-1 text-xs">
+                    {user.role}
+                  </span>
+                  <span className="rounded bg-[#eef4d3] px-2 py-1 text-xs text-[#556b2f]">
+                    {getPermissionModeLabel(user)}
+                  </span>
+                </div>
+                <div className="flex gap-4 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => handleEditClick(user)}
+                    className="flex items-center gap-1 font-bold text-[#8fa31e]"
+                  >
+                    <HiPencilAlt /> Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedUser(user);
+                      setShowModal(true);
+                    }}
+                    className="flex items-center gap-2 rounded-[4px] bg-[#CC0001] px-4 py-2 font-medium text-white transition-colors hover:bg-[#ea2020]"
+                  >
+                    <HiTrash className="text-lg" />
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         ))}
-        {/* PAGINATION */}
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-2 mt-6">
-            <button
-              disabled={page === 1}
-              onClick={() => setPage((prev) => prev - 1)}
-              className="px-3 py-1 border rounded disabled:opacity-50"
-            >
-              Prev
-            </button>
+      </section>
 
-            {[...Array(totalPages)].map((_, index) => {
-              const pageNumber = index + 1;
-              return (
-                <button
-                  key={pageNumber}
-                  onClick={() => setPage(pageNumber)}
-                  className={`px-3 py-1 border rounded ${
-                    page === pageNumber
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-white'
-                  }`}
-                >
-                  {pageNumber}
-                </button>
-              );
-            })}
-
-            <button
-              disabled={page === totalPages}
-              onClick={() => setPage((prev) => prev + 1)}
-              className="px-3 py-1 border rounded disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-        )}
-      </div>
-      {/* DRAWER OVERLAY */}
       <div
         className={`fixed inset-0 z-50 transition-opacity duration-300 ${
           isDrawerOpen
             ? 'bg-black/40 opacity-100'
-            : 'bg-transparent opacity-0 pointer-events-none'
+            : 'pointer-events-none bg-transparent opacity-0'
         }`}
       >
-        {/* DRAWER PANEL */}
         <div
-          className={`absolute top-0 right-0 w-full max-w-sm h-full bg-white shadow-2xl
-    transition-transform duration-500 ${
-      isDrawerOpen ? 'translate-x-0' : 'translate-x-full'
-    }`}
+          className={`absolute right-0 top-0 h-full w-full max-w-sm bg-white shadow-2xl transition-transform duration-500 ${
+            isDrawerOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
         >
           {selectedUser && (
-            <div className="p-6 h-full flex flex-col">
-              {/* HEADER */}
-              <div className="flex justify-between items-center border-b pb-4 mb-6">
-                <h3 className="text-xl font-bold">Edit User</h3>
-                <button onClick={() => setIsDrawerOpen(false)}>
+            <div className="flex h-full flex-col p-6">
+              <div className="mb-6 flex items-center justify-between border-b pb-4">
+                <div>
+                  <h3 className="text-xl font-bold">Edit User</h3>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Update role, status, and custom permissions as super admin.
+                  </p>
+                </div>
+                <button type="button" onClick={() => setIsDrawerOpen(false)}>
                   <HiOutlineX />
                 </button>
               </div>
 
-              {/* FORM */}
-              <form onSubmit={handleUpdateUser} className="space-y-4 flex-1">
-                {/* IMAGE */}
+              <form onSubmit={handleUpdateUser} className="flex-1 space-y-4">
                 <div
-                  className="relative w-32 h-32 mx-auto cursor-pointer"
-                  onClick={() => filePickerRef.current.click()}
+                  className="relative mx-auto h-32 w-32 cursor-pointer"
+                  onClick={() => filePickerRef.current?.click()}
                 >
                   <input
                     type="file"
@@ -595,79 +868,187 @@ export default function DashUsers() {
                     hidden
                   />
                   <img
-                    src={selectedUser.profilePicture}
+                    src={imageFileUrl || selectedUser.profilePicture}
                     alt="user"
-                    className="w-full h-full rounded-full object-cover border"
+                    className="h-full w-full rounded-full border object-cover"
                   />
                 </div>
 
-                {/* USERNAME */}
+                {imageFileUploading && (
+                  <p className="text-center text-xs text-slate-500">
+                    Uploading image... {imageFileUploadingProgress || 0}%
+                  </p>
+                )}
+                {imageFileUploadingError && (
+                  <Alert color="failure">{imageFileUploadingError}</Alert>
+                )}
+                {isUploading && (
+                  <p className="text-center text-xs text-slate-500">
+                    Finalizing upload...
+                  </p>
+                )}
+
                 <input
                   id="userName"
                   value={formData.userName || ''}
-                  onChange={handleChange}
-                  className="w-full p-3 border rounded"
+                  onChange={handleEditChange}
+                  className="w-full rounded border p-3"
                   placeholder="Username"
                 />
-
-                {/* EMAIL */}
                 <input
                   id="email"
                   value={formData.email || ''}
-                  onChange={handleChange}
-                  className="w-full p-3 border rounded"
+                  onChange={handleEditChange}
+                  className="w-full rounded border p-3"
                   placeholder="Email"
                 />
-
-                {/* ROLE */}
+                <input
+                  id="password"
+                  type="password"
+                  value={formData.password || ''}
+                  onChange={handleEditChange}
+                  className="w-full rounded border p-3"
+                  placeholder="Optional new password"
+                />
                 <select
                   id="role"
-                  value={formData.role || 'user'}
-                  onChange={handleChange}
-                  className="w-full p-3 border rounded"
+                  value={formData.role || DEFAULT_ROLE}
+                  onChange={handleEditRoleTemplateChange}
+                  className="w-full rounded border p-3"
                 >
-                  <option value="superAdmin">SuperAdmin</option>
                   <option value="admin">Admin</option>
                   <option value="storeManager">Store Manager</option>
-                  <option value="user">User</option>
                 </select>
+
+                <div className="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">
+                      Account Status
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      This user is currently {formData.isActive ? 'active' : 'inactive'}.
+                    </p>
+                  </div>
+                  <SwitchField
+                    checked={Boolean(formData.isActive)}
+                    onChange={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        isActive: !prev.isActive
+                      }))
+                    }
+                    srLabel="Toggle edit account status"
+                  />
+                </div>
+
+                <div className="rounded-xl border border-dashed border-[#cad98a] bg-[#f6fadf] p-3">
+                  <p className="text-sm font-semibold text-slate-800">
+                    Permission Summary
+                  </p>
+                  <p className="text-sm text-slate-600">
+                    {countEnabledPermissions(editPermissionState)} permissions enabled.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={resetEditPermissionsToRoleTemplate}
+                  className="w-full rounded-xl border border-[#8fa31e] px-4 py-2 text-sm font-semibold text-[#556b2f] transition hover:bg-[#f0f6d4]"
+                >
+                  Reset Edit Permissions To Role Template
+                </button>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAllEditPermissions(true)}
+                    className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Select All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAllEditPermissions(false)}
+                    className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Clear All
+                  </button>
+                </div>
+
+                <div className="max-h-[280px] space-y-3 overflow-y-auto pr-1">
+                  {PERMISSION_GROUPS.map((group) => (
+                    <section
+                      key={`edit-${group.id}`}
+                      className="rounded-xl border border-gray-200"
+                    >
+                      <div className="border-b border-gray-100 px-3 py-2">
+                        <h4 className="text-sm font-semibold text-slate-800">
+                          {group.title}
+                        </h4>
+                      </div>
+                      <div className="divide-y divide-gray-100">
+                        {group.permissions.map((permission) => (
+                          <div
+                            key={`edit-${permission.key}`}
+                            className="flex items-start justify-between gap-3 px-3 py-3"
+                          >
+                            <div>
+                              <p className="text-sm font-semibold text-slate-800">
+                                {permission.label}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {permission.description}
+                              </p>
+                            </div>
+                            <SwitchField
+                              checked={Boolean(editPermissionState[permission.key])}
+                              onChange={() => toggleEditPermission(permission.key)}
+                              srLabel={`Toggle ${permission.label} for edit`}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  ))}
+                </div>
 
                 <Button
                   type="submit"
                   disabled={loading}
                   className="w-full !bg-[#8fa31e]"
                 >
-                  {loading ? <Spinner size="sm" /> : 'Edit User'}
+                  {loading ? <Spinner size="sm" /> : 'Save Changes'}
                 </Button>
+
+                {updateUserError && <Alert color="failure">{updateUserError}</Alert>}
+                {updateUserSuccess && (
+                  <Alert color="success">{updateUserSuccess}</Alert>
+                )}
               </form>
-              <Modal
-                show={showModal}
-                onClose={() => setShowModal(false)}
-                popup
-                size="md"
-              >
-                <Modal.Header />
-                <Modal.Body>
-                  <div className="text-center">
-                    <HiOutlineExclamationCircle className="h-14 w-14 text-gray-400 mb-4 mx-auto" />
-                    <h3 className="mb-5 text-lg text-gray-500">
-                      Are you sure you want to delete this user?
-                    </h3>
-                    <div className="flex justify-center gap-4">
-                      <Button color="failure" onClick={handleDeleteUser}>
-                        Yes, I'm sure
-                      </Button>
-                      <Button color="gray" onClick={() => setShowModal(false)}>
-                        No, Cancel
-                      </Button>
-                    </div>
-                  </div>
-                </Modal.Body>
-              </Modal>
             </div>
           )}
         </div>
       </div>
+
+      <Modal show={showModal} onClose={() => setShowModal(false)} popup size="md">
+        <Modal.Header />
+        <Modal.Body>
+          <div className="text-center">
+            <HiOutlineExclamationCircle className="mx-auto mb-4 h-14 w-14 text-gray-400" />
+            <h3 className="mb-5 text-lg text-gray-500">
+              Are you sure you want to delete this user?
+            </h3>
+            <div className="flex justify-center gap-4">
+              <Button color="failure" onClick={handleDeleteUser}>
+                Yes, I&apos;m sure
+              </Button>
+              <Button color="gray" onClick={() => setShowModal(false)}>
+                No, Cancel
+              </Button>
+            </div>
+          </div>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 }

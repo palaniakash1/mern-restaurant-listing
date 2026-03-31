@@ -156,12 +156,29 @@ export const authValidators = {
 };
 
 export const adminValidators = {
+  idParam: userIdParam,
   createPrivilegedUser: Joi.object({
     userName: Joi.string().trim().min(3).max(30).lowercase().required(),
     email: Joi.string().trim().email().required(),
     password: Joi.string().pattern(PASSWORD_REGEX).required(),
-    role: Joi.string().valid('admin', 'storeManager').required()
+    role: Joi.string().valid('admin', 'storeManager').required(),
+    permissions: Joi.object()
+      .pattern(Joi.string(), Joi.array().items(Joi.string()).unique())
+      .default(null),
+    isActive: Joi.boolean().default(true)
+  }),
+  updatePrivilegedUser: Joi.object({
+    userName: Joi.string().trim().min(3).max(30).lowercase(),
+    email: Joi.string().trim().email(),
+    password: Joi.string().pattern(PASSWORD_REGEX),
+    role: Joi.string().valid('admin', 'storeManager'),
+    permissions: Joi.object()
+      .pattern(Joi.string(), Joi.array().items(Joi.string()).unique())
+      .allow(null),
+    isActive: Joi.boolean(),
+    profilePicture: Joi.string().uri().allow('')
   })
+    .min(1)
 };
 
 export const userValidators = {

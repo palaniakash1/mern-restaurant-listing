@@ -38,6 +38,10 @@ const userSchema = new mongoose.Schema(
       required: true,
       index: true
     },
+    customPermissions: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null
+    },
 
     // =========================
     // Relationships

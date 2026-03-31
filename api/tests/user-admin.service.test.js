@@ -6,7 +6,10 @@ import bcryptjs from 'bcryptjs';
 import User from '../models/user.model.js';
 import Restaurant from '../models/restaurant.model.js';
 import AuditLog from '../models/auditLog.model.js';
-import { createPrivilegedUser } from '../services/admin.service.js';
+import {
+  createPrivilegedUser,
+  updatePrivilegedUser
+} from '../services/admin.service.js';
 import {
   assignStoreManagerRestaurant,
   createStoreManagerUser,
@@ -127,6 +130,29 @@ test('admin service provisions privileged users and enforces actor/duplicate gua
   assert.equal(created.user.userName, 'prodadmin');
   assert.equal(created.user.email, 'prodadmin@example.com');
 
+  const customCreated = await createPrivilegedUser({
+    actor: { id: superAdmin._id.toString(), role: 'superAdmin' },
+    body: {
+      userName: 'ScopedManager',
+      email: 'ScopedManager@Example.com',
+      password: 'Password1',
+      role: 'storeManager',
+      permissions: {
+        auth: ['session'],
+        menu: ['readById', 'toggleAvailability']
+      },
+      isActive: false
+    },
+    req
+  });
+
+  assert.equal(customCreated.user.role, 'storeManager');
+  assert.equal(customCreated.user.isActive, false);
+  assert.deepEqual(customCreated.user.customPermissions, {
+    auth: ['session'],
+    menu: ['readById', 'toggleAvailability']
+  });
+
   await assert.rejects(
     createPrivilegedUser({
       actor: { id: superAdmin._id.toString(), role: 'superAdmin' },
@@ -135,6 +161,70 @@ test('admin service provisions privileged users and enforces actor/duplicate gua
         email: 'ProdAdmin@Example.com',
         password: 'Password1',
         role: 'admin'
+      },
+      req
+    }),
+    (error) => error.statusCode === 400
+  );
+
+  await assert.rejects(
+    createPrivilegedUser({
+      actor: { id: superAdmin._id.toString(), role: 'superAdmin' },
+      body: {
+        userName: 'InvalidScoped',
+        email: 'invalidscoped@example.com',
+        password: 'Password1',
+        role: 'storeManager',
+        permissions: {
+          audit: ['read']
+        }
+      },
+      req
+    }),
+    (error) => error.statusCode === 400
+  );
+});
+
+test('admin service updates privileged users with role, status, and custom permissions', async () => {
+  const superAdmin = await createUser({ role: 'superAdmin' });
+  const target = await createUser({
+    role: 'admin',
+    userName: 'editadmin',
+    email: 'editadmin@example.com'
+  });
+  const req = buildReq();
+
+  const updated = await updatePrivilegedUser({
+    actor: { id: superAdmin._id.toString(), role: 'superAdmin' },
+    targetUserId: target._id.toString(),
+    body: {
+      userName: 'editedadmin',
+      email: 'editedadmin@example.com',
+      role: 'storeManager',
+      isActive: false,
+      permissions: {
+        auth: ['session'],
+        menu: ['readById']
+      }
+    },
+    req
+  });
+
+  assert.equal(updated.user.role, 'storeManager');
+  assert.equal(updated.user.isActive, false);
+  assert.deepEqual(updated.user.customPermissions, {
+    auth: ['session'],
+    menu: ['readById']
+  });
+
+  await assert.rejects(
+    updatePrivilegedUser({
+      actor: { id: superAdmin._id.toString(), role: 'superAdmin' },
+      targetUserId: target._id.toString(),
+      body: {
+        permissions: {
+          audit: ['read']
+        }
       },
       req
     }),

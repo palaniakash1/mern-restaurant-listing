@@ -144,3 +144,60 @@ export const PERMISSIONS = {
     review: ['readMine', 'readById', 'create', 'update', 'delete']
   }
 };
+
+const isPermissionTree = (value) =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+export const clonePermissionsForRole = (role) => {
+  const defaults = PERMISSIONS[role] || {};
+  return Object.fromEntries(
+    Object.entries(defaults).map(([resource, actions]) => [resource, [...actions]])
+  );
+};
+
+export const hasCustomPermissionOverrides = (permissions) =>
+  isPermissionTree(permissions) && Object.keys(permissions).length > 0;
+
+export const normalizePermissionOverrides = (role, requestedPermissions = {}) => {
+  const defaults = PERMISSIONS[role] || {};
+
+  if (!hasCustomPermissionOverrides(requestedPermissions)) {
+    return null;
+  }
+
+  const normalized = {};
+
+  for (const [resource, actions] of Object.entries(requestedPermissions)) {
+    const allowedActions = defaults[resource];
+    if (!Array.isArray(allowedActions)) {
+      continue;
+    }
+
+    const uniqueValidActions = [...new Set(actions || [])].filter((action) =>
+      allowedActions.includes(action)
+    );
+
+    if (uniqueValidActions.length) {
+      normalized[resource] = uniqueValidActions.sort();
+    }
+  }
+
+  return hasCustomPermissionOverrides(normalized) ? normalized : null;
+};
+
+export const resolvePermissionsForUser = (user = {}) => {
+  if (user.role === 'superAdmin') {
+    return clonePermissionsForRole('superAdmin');
+  }
+
+  if (hasCustomPermissionOverrides(user.customPermissions)) {
+    return normalizePermissionOverrides(user.role, user.customPermissions) || {};
+  }
+
+  return clonePermissionsForRole(user.role);
+};
+
+export const hasPermission = (user, resource, action) => {
+  const resolvedPermissions = resolvePermissionsForUser(user);
+  return Boolean(resolvedPermissions[resource]?.includes(action));
+};

@@ -1,7 +1,10 @@
 import express from 'express';
 import { verifyToken } from '../utils/verifyUser.js';
 import { can } from '../utils/policy.js';
-import { createUserBySuperAdmin } from '../controllers/admin.controller.js';
+import {
+  createUserBySuperAdmin,
+  updateUserBySuperAdmin
+} from '../controllers/admin.controller.js';
 import { validate } from '../middlewares/validate.js';
 import { adminValidators } from '../validators/index.js';
 import jwtAdminRoutes from './admin.jwt.route.js';
@@ -39,6 +42,14 @@ router.post(
   can('createPrivilegedUser', 'admin'),
   validate(adminValidators.createPrivilegedUser),
   createUserBySuperAdmin
+);
+router.patch(
+  '/users/:id',
+  verifyToken,
+  can('createPrivilegedUser', 'admin'),
+  validate(adminValidators.idParam, 'params'),
+  validate(adminValidators.updatePrivilegedUser),
+  updateUserBySuperAdmin
 );
 
 // JWT Management routes

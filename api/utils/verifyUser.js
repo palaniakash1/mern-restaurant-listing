@@ -34,7 +34,7 @@ export const verifyToken = async (req, res, next) => {
 
     // FETCH FRESH USER DATA
     const user = await User.findById(decoded.id).select(
-      '_id role restaurantId isActive'
+      '_id role restaurantId isActive customPermissions'
     );
     if (!user) {
       return next(errorHandler(401, 'User not found'));
@@ -47,7 +47,8 @@ export const verifyToken = async (req, res, next) => {
     req.user = {
       id: user._id.toString(),
       role: user.role,
-      restaurantId: user.restaurantId ? user.restaurantId.toString() : null
+      restaurantId: user.restaurantId ? user.restaurantId.toString() : null,
+      customPermissions: user.customPermissions || null
     };
     req.authSource = authSource;
 
