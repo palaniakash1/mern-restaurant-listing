@@ -2,8 +2,12 @@ import axios from 'axios';
 import config from '../config.js';
 import { errorHandler } from './error.js';
 import { logger } from './logger.js';
+import { getJson, setJson } from './redisCache.js';
 
 const PLACES_API_BASE_URL = 'https://maps.googleapis.com/maps/api/place';
+const AUTOCOMPLETE_TTL_SECONDS = 10 * 60;
+const PLACE_DETAILS_TTL_SECONDS = 24 * 60 * 60;
+const SEARCH_TTL_SECONDS = 10 * 60;
 
 export const placeAutocomplete = async (input, language = 'en') => {
   if (!config.googleMapsApiKey) {
@@ -14,12 +18,19 @@ export const placeAutocomplete = async (input, language = 'en') => {
     throw errorHandler(400, 'Input must be at least 2 characters');
   }
 
+  const normalizedInput = input.trim();
+  const cacheKey = `places:autocomplete:${language}:${normalizedInput.toLowerCase()}`;
+  const cached = await getJson(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   try {
     const response = await axios.get(
       `${PLACES_API_BASE_URL}/autocomplete/json`,
       {
         params: {
-          input: input.trim(),
+          input: normalizedInput,
           types: 'address',
           language,
           key: config.googleMapsApiKey
@@ -41,7 +52,7 @@ export const placeAutocomplete = async (input, language = 'en') => {
 
     const predictions = response.data.predictions || [];
 
-    return {
+    const result = {
       success: true,
       data: predictions.map((prediction) => ({
         placeId: prediction.place_id,
@@ -49,7 +60,7 @@ export const placeAutocomplete = async (input, language = 'en') => {
         structuredFormat: {
           mainText: prediction.structured_formatting?.main_text || '',
           secondaryText:
-            prediction.structured_formatization?.secondary_text || ''
+            prediction.structured_formatting?.secondary_text || ''
         },
         matchedSubstrings:
           prediction.matched_substrings?.map((m) => ({
@@ -58,6 +69,9 @@ export const placeAutocomplete = async (input, language = 'en') => {
           })) || []
       }))
     };
+
+    await setJson(cacheKey, result, AUTOCOMPLETE_TTL_SECONDS);
+    return result;
   } catch (error) {
     if (error.statusCode) throw error;
     logger.error('places_api.autocomplete_exception', {
@@ -75,6 +89,12 @@ export const getPlaceDetails = async (placeId) => {
 
   if (!placeId) {
     throw errorHandler(400, 'Place ID is required');
+  }
+
+  const cacheKey = `places:details:${placeId}`;
+  const cached = await getJson(cacheKey);
+  if (cached) {
+    return cached;
   }
 
   try {
@@ -120,7 +140,7 @@ export const getPlaceDetails = async (placeId) => {
       country: getComponent(['country']) || ''
     };
 
-    return {
+    const responsePayload = {
       success: true,
       data: {
         placeId: result.place_id,
@@ -144,6 +164,9 @@ export const getPlaceDetails = async (placeId) => {
         types: result.types
       }
     };
+
+    await setJson(cacheKey, responsePayload, PLACE_DETAILS_TTL_SECONDS);
+    return responsePayload;
   } catch (error) {
     if (error.statusCode) throw error;
     logger.error('places_api.details_exception', {
@@ -163,6 +186,12 @@ export const searchPlaces = async (query, location = null, radius = 5000) => {
     throw errorHandler(400, 'Search query is required');
   }
 
+  const cacheKey = `places:search:${query.trim().toLowerCase()}:${location ? `${location.lat},${location.lng}` : 'none'}:${radius}`;
+  const cached = await getJson(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   try {
     const params = {
       query,
@@ -178,7 +207,10 @@ export const searchPlaces = async (query, location = null, radius = 5000) => {
       params
     });
 
-    if (response.data.status !== 'OK') {
+    if (
+      response.data.status !== 'OK' &&
+      response.data.status !== 'ZERO_RESULTS'
+    ) {
       logger.error('places_api.search_error', {
         query,
         status: response.data.status,
@@ -189,7 +221,7 @@ export const searchPlaces = async (query, location = null, radius = 5000) => {
 
     const results = response.data.results || [];
 
-    return {
+    const responsePayload = {
       success: true,
       data: results.map((place) => ({
         placeId: place.place_id,
@@ -205,6 +237,9 @@ export const searchPlaces = async (query, location = null, radius = 5000) => {
         types: place.types
       }))
     };
+
+    await setJson(cacheKey, responsePayload, SEARCH_TTL_SECONDS);
+    return responsePayload;
   } catch (error) {
     if (error.statusCode) throw error;
     logger.error('places_api.search_exception', {

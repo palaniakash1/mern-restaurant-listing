@@ -11,6 +11,69 @@ import { getJson, setJson } from '../utils/redisCache.js';
 
 const FSA_RATING_CACHE_TTL = 24 * 60 * 60;
 
+const toRestaurantAddress = (address = {}) => {
+  const line1 = address.line1?.trim() || '';
+  const line2 = address.line2?.trim() || '';
+  const line3 = address.line3?.trim() || '';
+
+  return {
+    addressLine1: line1,
+    addressLine2: line2,
+    areaLocality: line2 || line3,
+    city: line3 || line2,
+    countyRegion: '',
+    postcode: address.postcode || '',
+    country: 'United Kingdom'
+  };
+};
+
+const formatAddressLabel = (address = {}) =>
+  [address.line1, address.line2, address.line3, address.postcode]
+    .filter(Boolean)
+    .join(', ');
+
+const normalizeEstablishmentOption = (establishment) => {
+  if (!establishment) {
+    return null;
+  }
+
+  const normalizedAddress = {
+    line1: establishment.AddressLine1 || '',
+    line2: establishment.AddressLine2 || '',
+    line3: establishment.AddressLine3 || '',
+    postcode: establishment.PostCode || ''
+  };
+
+  return {
+    fhrsId: establishment.FHRSID,
+    name: establishment.BusinessName,
+    rating: establishment.RatingValue,
+    ratingDate: establishment.RatingDate || null,
+    address: normalizedAddress,
+    addressLabel: formatAddressLabel(normalizedAddress),
+    restaurantAddress: toRestaurantAddress(normalizedAddress),
+    scores: {
+      hygiene: establishment.Scores?.Hygiene ?? null,
+      structural: establishment.Scores?.Structural ?? null,
+      confidenceInManagement:
+        establishment.Scores?.ConfidenceInManagement ?? null
+    }
+  };
+};
+
+const normalizeMatchedResult = (result) => {
+  if (!result) {
+    return null;
+  }
+
+  return {
+    ...result,
+    addressLabel: formatAddressLabel(result.address),
+    restaurantAddress: toRestaurantAddress(result.address),
+    badgeUrl: generateBadgeUrl(result.rating)
+  };
+};
+
 export const searchFSA = async (req, res, next) => {
   try {
     const { name, postcode } = req.query;
@@ -36,8 +99,9 @@ export const searchFSA = async (req, res, next) => {
       success: true,
       data: {
         matched: result.matched,
-        result: result.data,
-        multipleOptions: result.multipleOptions,
+        result: normalizeMatchedResult(result.data),
+        multipleOptions:
+          result.multipleOptions?.map(normalizeEstablishmentOption) || [],
         score: result.score,
         message: result.message || null
       }

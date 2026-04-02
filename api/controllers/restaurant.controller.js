@@ -14,6 +14,10 @@ import { diffObject } from '../utils/diff.js';
 import { logAudit } from '../utils/auditLogger.js';
 import { getClientIp } from '../utils/controllerHelpers.js';
 import { getOrFetch } from '../utils/redisCache.js';
+import {
+  getRatingByFHRSID,
+  searchAndMatchEstablishment
+} from '../services/fsa.service.js';
 
 // ===============================================================================
 // 🔷 POST /api/restaurants — Create a new restaurant
@@ -31,12 +35,14 @@ export const create = async (req, res, next) => {
       description,
       address,
       location,
+      fsa,
       openingHours,
       contactNumber,
       email,
       website,
       imageLogo,
       gallery,
+      videoUrl,
       isFeatured,
       isTrending,
       adminId
@@ -84,6 +90,44 @@ export const create = async (req, res, next) => {
         throw errorHandler(403, `${field} cannot be set during creation`);
       }
     }
+    const resolveFsaLinkage = async () => {
+      if (fsa?.fhrsId) {
+        const result = await getRatingByFHRSID(Number(fsa.fhrsId));
+        if (!result.success) {
+          throw errorHandler(502, 'Failed to verify FHRSID with FSA API');
+        }
+
+        return {
+          fhrsId: Number(fsa.fhrsId),
+          fsaRating: {
+            value: result.data.rating,
+            lastRefreshed: new Date(),
+            isManuallyLinked: fsa.isManuallyLinked !== false
+          }
+        };
+      }
+
+      if (fsa?.skipLookup) {
+        return null;
+      }
+
+      const result = await searchAndMatchEstablishment(name, address?.postcode);
+      if (!result.success || !result.matched || result.multipleOptions) {
+        return null;
+      }
+
+      return {
+        fhrsId: result.data.fhrsId,
+        fsaRating: {
+          value: result.data.rating,
+          lastRefreshed: new Date(),
+          isManuallyLinked: false
+        }
+      };
+    };
+
+    const fsaLinkage = await resolveFsaLinkage();
+
     const restaurant = await withTransaction(async (session) => {
       let baseSlug = slug;
       let counter = 1;
@@ -138,7 +182,9 @@ export const create = async (req, res, next) => {
         website,
         imageLogo,
         gallery,
-        adminId: assignedAdminId
+        videoUrl,
+        adminId: assignedAdminId,
+        ...(fsaLinkage || {})
       };
 
       if (req.user.role === 'superAdmin') {
@@ -406,7 +452,8 @@ export const updateRestaurant = async (req, res, next) => {
         'email',
         'website',
         'imageLogo',
-        'gallery'
+        'gallery',
+        'videoUrl'
       ];
 
       const updates = {};

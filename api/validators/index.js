@@ -82,9 +82,15 @@ const restaurantCreateBody = Joi.object({
   email: Joi.string().email().allow(''),
   website: Joi.string().uri().allow(''),
   imageLogo: Joi.string().uri().allow(''),
-  gallery: Joi.array().items(Joi.string().uri()).max(20),
+  gallery: Joi.array().items(Joi.string().uri()).max(10),
+  videoUrl: Joi.string().uri().allow(''),
   categories: Joi.array().items(objectId).max(50),
   adminId: objectId,
+  fsa: Joi.object({
+    fhrsId: Joi.number().integer().positive(),
+    isManuallyLinked: Joi.boolean(),
+    skipLookup: Joi.boolean()
+  }),
   timezone: Joi.string().trim().default('UTC'),
   status: Joi.string().valid('draft', 'published', 'blocked'),
   isActive: Joi.boolean(),
@@ -109,7 +115,8 @@ const restaurantUpdateBody = Joi.object({
   email: Joi.string().email().allow(''),
   website: Joi.string().uri().allow(''),
   imageLogo: Joi.string().uri().allow(''),
-  gallery: Joi.array().items(Joi.string().uri()).max(20),
+  gallery: Joi.array().items(Joi.string().uri()).max(10),
+  videoUrl: Joi.string().uri().allow(''),
   categories: Joi.array().items(objectId).max(50),
   timezone: Joi.string().trim()
 }).min(1);
@@ -486,5 +493,13 @@ export const fsaValidators = {
   }),
   fhrsIdParam: Joi.object({
     fhrsId: Joi.string().pattern(/^\d+$/).required()
+  })
+};
+
+export const mediaValidators = {
+  signatureBody: Joi.object({
+    folder: Joi.string().trim().min(1).required(),
+    resourceType: Joi.string().valid('image', 'video').required(),
+    publicId: Joi.string().trim().allow('')
   })
 };

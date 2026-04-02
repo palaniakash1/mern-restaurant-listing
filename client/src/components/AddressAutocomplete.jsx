@@ -1,36 +1,121 @@
-import { Autocomplete } from "@react-google-maps/api";
-import { useRef } from "react";
+import { useEffect, useState } from "react";
+import { Spinner } from "flowbite-react";
 
-export default function AddressAutocomplete({ onSelect }) {
-  const autoRef = useRef(null);
+export default function AddressAutocomplete({
+  value,
+  onChange,
+  onSelect,
+  disabled = false,
+  placeholder = "Search address or postcode",
+}) {
+  const [suggestions, setSuggestions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const onLoad = (autocomplete) => {
-    autoRef.current = autocomplete;
-  };
+  useEffect(() => {
+    if (disabled || !value || value.trim().length < 3) {
+      setSuggestions([]);
+      setLoading(false);
+      setError(null);
+      return undefined;
+    }
 
-  const onPlaceChanged = () => {
-    const place = autoRef.current.getPlace();
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await fetch(
+          `/api/places/autocomplete?input=${encodeURIComponent(value.trim())}`,
+          {
+            credentials: "include",
+            signal: controller.signal,
+          },
+        );
+        const data = await res.json();
 
-    if (!place.geometry) return;
+        if (!res.ok) {
+          throw new Error(data.message || "Failed to fetch address suggestions");
+        }
 
-    const lat = place.geometry.location.lat();
-    const lng = place.geometry.location.lng();
+        setSuggestions(data.data || []);
+      } catch (fetchError) {
+        if (fetchError.name !== "AbortError") {
+          setError(fetchError.message);
+          setSuggestions([]);
+        }
+      } finally {
+        setLoading(false);
+      }
+    }, 350);
 
-    onSelect({
-      lat,
-      lng,
-      formattedAddress: place.formatted_address,
-      components: place.address_components,
-    });
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
+  }, [disabled, value]);
+
+  const handleSelect = async (suggestion) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch(`/api/places/details/${suggestion.placeId}`, {
+        credentials: "include",
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to fetch place details");
+      }
+
+      setSuggestions([]);
+      onSelect?.(data.data, suggestion);
+    } catch (fetchError) {
+      setError(fetchError.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <Autocomplete onLoad={onLoad} onPlaceChanged={onPlaceChanged}>
+    <div className="space-y-2">
       <input
         type="text"
-        placeholder="Enter restaurant location"
-        className="border p-2 w-full"
+        value={value}
+        onChange={(event) => onChange?.(event.target.value)}
+        placeholder={placeholder}
+        disabled={disabled}
+        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-[#8fa31e] focus:outline-none focus:ring-2 focus:ring-[#d9e6a5] disabled:bg-gray-100"
       />
-    </Autocomplete>
+
+      {loading && (
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <Spinner size="sm" />
+          Searching saved map suggestions...
+        </div>
+      )}
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      {suggestions.length > 0 && (
+        <div className="max-h-56 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+          {suggestions.map((suggestion) => (
+            <button
+              key={suggestion.placeId}
+              type="button"
+              onClick={() => handleSelect(suggestion)}
+              className="flex w-full flex-col border-b border-gray-100 px-3 py-2 text-left last:border-b-0 hover:bg-[#f6fdeb]"
+            >
+              <span className="text-sm font-semibold text-gray-800">
+                {suggestion.structuredFormat?.mainText || suggestion.description}
+              </span>
+              <span className="text-xs text-gray-500">
+                {suggestion.structuredFormat?.secondaryText || suggestion.description}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

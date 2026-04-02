@@ -12,6 +12,7 @@ const buildQueryString = (params) => {
 const FSA_API_BASE_URL = 'https://api.ratings.food.gov.uk';
 const FSA_API_VERSION = '2';
 const CACHE_TTL_ESTABLISHMENT = 12 * 60 * 60;
+const CACHE_TTL_SEARCH = 60 * 60;
 
 export const normalizeString = (str) => {
   if (!str || typeof str !== 'string') return '';
@@ -92,6 +93,13 @@ const extractBusinessType = (name) => {
 };
 
 export const searchEstablishments = async (name, postcode = null) => {
+  const cacheKey = `fsa:search:${normalizeString(name)}:${normalizePostcode(postcode) || 'none'}`;
+  const cached = await getJson(cacheKey);
+  if (cached) {
+    logger.debug('fsa_api.search_cache_hit', { name, postcode });
+    return cached;
+  }
+
   const queryParams = buildQueryString({ name, postcode });
   const url = `${FSA_API_BASE_URL}/Establishments?${queryParams}&pageSize=50`;
 
@@ -103,6 +111,7 @@ export const searchEstablishments = async (name, postcode = null) => {
       }
     });
 
+    await setJson(cacheKey, res.data, CACHE_TTL_SEARCH);
     return res.data;
   } catch (error) {
     logger.error('fsa_api.search_http_error', { url, error: error.message });
