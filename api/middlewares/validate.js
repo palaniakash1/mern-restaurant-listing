@@ -14,6 +14,7 @@ const fieldLabels = {
   website: 'Website URL',
   imageLogo: 'Logo image',
   gallery: 'Gallery images',
+  videoUrl: 'Video URL',
   categories: 'Categories',
   adminId: 'Admin ID',
   status: 'Status',
@@ -139,4 +140,3 @@ export const validate =
       }
       return next();
     };
-

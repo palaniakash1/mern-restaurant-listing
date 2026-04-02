@@ -19,6 +19,7 @@ import reviewRoutes from '../review.route.js';
 import adminRoutes from '../admin.route.js';
 import auditLogRoutes from '../auditLog.routes.js';
 import placesRoutes from '../places.routes.js';
+import mediaRoutes from '../media.routes.js';
 
 const router = Router();
 
@@ -37,5 +38,6 @@ router.use('/reviews', reviewRoutes);
 router.use('/admin', adminRoutes);
 router.use('/auditlogs', auditLogRoutes);
 router.use('/places', placesRoutes);
+router.use('/media', mediaRoutes);
 
 export default router;

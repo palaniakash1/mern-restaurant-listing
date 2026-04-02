@@ -70,6 +70,13 @@ const config = {
     cacheTtlSeconds: toPositiveInt(process.env.CACHE_TTL, 300),
     connectTimeoutMs: toPositiveInt(process.env.REDIS_CONNECT_TIMEOUT, 2000)
   },
+  cloudinary: {
+    cloudName: toOptionalString(process.env.CLOUDINARY_CLOUD_NAME),
+    apiKey: toOptionalString(process.env.CLOUDINARY_API_KEY),
+    apiSecret: toOptionalString(process.env.CLOUDINARY_API_SECRET),
+    uploadFolder:
+      toOptionalString(process.env.CLOUDINARY_UPLOAD_FOLDER) || 'restaurants'
+  },
   tracing: {
     enabled: String(process.env.OTEL_ENABLED || 'true') !== 'false',
     serviceName:

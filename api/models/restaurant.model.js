@@ -75,6 +75,7 @@ const restaurantSchema = new mongoose.Schema(
         'https://firebasestorage.googleapis.com/v0/b/mern-restaurant-b5fb7.firebasestorage.app/o/1766387131263eatwisely%20food%20placeholder%20(1).jpg?alt=media&token=9c262556-bbdc-4d02-8175-6c92fada6aee'
     },
     gallery: [{ type: String }],
+    videoUrl: { type: String },
 
     rating: { type: Number, default: 0, min: 0, max: 5 },
     reviewCount: { type: Number, default: 0 },
