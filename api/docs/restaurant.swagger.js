@@ -133,6 +133,19 @@
  *           type: string
  *           description: Assign restaurant to admin (SuperAdmin only)
  *           example: 65a1f9c8a9c123456789abcd
+ *         fsa:
+ *           type: object
+ *           description: Optional FSA linkage metadata
+ *           properties:
+ *             fhrsId:
+ *               type: integer
+ *               example: 123456
+ *             isManuallyLinked:
+ *               type: boolean
+ *               example: true
+ *             skipLookup:
+ *               type: boolean
+ *               example: false
  */
 
 // ================================================================================================
@@ -151,6 +164,8 @@
  *       - Admin can create only **one** restaurant
  *       - SuperAdmin can assign the restaurant to any admin
  *       - SuperAdmin can set `isFeatured` and `isTrending`
+ *       - Optional `fsa.fhrsId` links the restaurant to a verified FHRS record during creation
+ *       - Without `fsa.fhrsId`, the backend attempts a single-match FSA lookup using name and postcode
  *     security:
  *       - bearerAuth: []
  *     requestBody:

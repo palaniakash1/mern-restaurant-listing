@@ -7,13 +7,18 @@ import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import "flowbite/dist/flowbite.css";
 import { BrowserRouter } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext.jsx";
 
 createRoot(document.getElementById("root")).render(
-  <PersistGate persistor={persistor}>
-    <Provider store={store}>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </Provider>
-  </PersistGate>
+  <StrictMode>
+    <PersistGate persistor={persistor}>
+      <Provider store={store}>
+        <BrowserRouter>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </BrowserRouter>
+      </Provider>
+    </PersistGate>
+  </StrictMode>
 );

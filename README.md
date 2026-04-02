@@ -87,7 +87,7 @@ api/
 | **Auth**        | 6         | Signup, signin, signout, session, OAuth, password change |
 | **Users**       | 11        | CRUD, role management, restaurant assignment             |
 | **Restaurants** | 16        | CRUD, nearby search, featured, trending                  |
-| **FSA**         | 6         | Search, rating lookup, link/unlink, refresh             |
+| **FSA**         | 6         | Search, rating lookup, link/unlink, refresh              |
 | **Categories**  | 18        | CRUD, bulk operations, soft delete                       |
 | **Menus**       | 14        | CRUD, items, reorder, restore                            |
 | **Reviews**     | 8         | CRUD, moderation, ratings                                |
