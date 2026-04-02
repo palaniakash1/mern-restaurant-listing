@@ -1,16 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  signInStart,
-  signInSuccess,
-  signInFailure,
-  clearError,
-} from "../redux/user/userSlice";
-import { useDispatch, useSelector } from "react-redux";
 import OAuth from "../components/OAuth";
 import wavepattern from "../assets/wavepattern.png";
 import logo from "../assets/eatwisely.ico";
 import { Alert } from "flowbite-react";
+import { useAuth } from "../context/AuthContext";
 
 const EyeIcon = (props) => (
   <svg
@@ -52,10 +46,11 @@ const EyeOffIcon = (props) => (
 
 export default function SignIn() {
   const [formData, setFormData] = useState({});
-  const { loading, error } = useSelector((state) => state.user);
-  const dispatch = useDispatch();
+  const { login, isLoading, error: authError, clearError } = useAuth();
   const navigate = useNavigate();
   const [localError, setLocalError] = useState(null);
+
+  const error = authError;
 
   // State to hold the password value
   const [password, setPassword] = useState("");
@@ -63,7 +58,12 @@ export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
-    if (error) dispatch(clearError());
+    if (error) {
+      clearError();
+    }
+    if (localError) {
+      setLocalError(null);
+    }
     setFormData({
       ...formData,
       [e.target.id]: e.target.value,
@@ -77,30 +77,18 @@ export default function SignIn() {
     e.preventDefault();
 
     if (!formData.email || !formData.password) {
-      dispatch(signInFailure("Please fill in all fields"));
+      setLocalError("Please fill in all fields");
       return;
     }
-    try {
-      dispatch(signInStart());
-      const res = await fetch("/api/auth/signin", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-      const data = await res.json();
-      if (data.success === false) {
-        dispatch(signInFailure(data.message));
-        return;
-      }
-      if (res.ok) {
-        dispatch(signInSuccess(data));
-        navigate("/");
-      }
-    } catch (error) {
-      dispatch(signInFailure(error.message));
+
+    const result = await login(formData.email, formData.password);
+
+    if (result.success) {
+      navigate("/");
+      return;
     }
+
+    setLocalError(result.error);
   };
 
   // Toggles the showPassword state
@@ -225,7 +213,7 @@ export default function SignIn() {
                   color="failure"
                   onDismiss={() => {
                     setLocalError(null);
-                    dispatch(clearError());
+                    clearError();
                   }}
                   className="m-4"
                 >
@@ -234,10 +222,10 @@ export default function SignIn() {
                 </Alert>
               )}
               <button
-                disabled={loading}
+                disabled={isLoading}
                 className=" p-2 rounded-[5px] !bg-[#8fa31e] hover:!bg-[#7a8c1a] text-white !rounded-[4px] border-none"
               >
-                {loading ? "Logging in..." : "Login"}
+                {isLoading ? "Logging in..." : "Login"}
               </button>
               <OAuth />
             </form>

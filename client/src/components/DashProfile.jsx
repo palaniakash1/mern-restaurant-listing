@@ -1,237 +1,180 @@
 import imageCompression from 'browser-image-compression';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Button, TextInput, Modal, Select } from 'flowbite-react';
-import { useSelector } from 'react-redux';
-import {
-  getDownloadURL,
-  getStorage,
-  ref,
-  uploadBytesResumable
-} from 'firebase/storage';
-import { app } from '../firebase';
-import ImageCircleLoader from '../components/ImageCircleLoader';
-import {
-  updateStart,
-  updateSuccess,
-  updateFailure,
-  deleteUserStart,
-  deleteUserSuccess,
-  deleteUserFailure,
-  signOutSuccess
-} from '../redux/user/userSlice';
-import { useDispatch } from 'react-redux';
+import React, { useEffect, useRef, useState } from 'react';
+import { Alert, Button, Modal } from 'flowbite-react';
 import { HiOutlineExclamationCircle, HiTrash } from 'react-icons/hi';
-import { Link } from 'react-router-dom';
 import { VscSignOut } from 'react-icons/vsc';
+import ImageCircleLoader from '../components/ImageCircleLoader';
+import { useAuth } from '../context/AuthContext';
+import { uploadToCloudinary } from '../utils/cloudinaryUpload';
+import { buildCsrfHeaders } from '../utils/http';
 
 export default function DashProfile() {
-  const { currentUser, error, loading } = useSelector((state) => state.user);
+  const { user: currentUser, updateUser, logout, isLoading, error: authError } = useAuth();
+  const filePickerRef = useRef();
+
+  const loading = isLoading;
+  const error = authError;
   const [imageFile, setImageFile] = useState(null);
   const [imageFileUrl, setImageFileUrl] = useState(null);
   const [imageFileUploadingProgress, setImageFileUploadingProgress] =
     useState(null);
   const [imageFileUploadingError, setImageFileUploadingError] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
   const [imageFileUploading, setImageFileUploading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [updateUserSuccess, setUpdateUserSuccess] = useState(null);
   const [updateUserError, setUpdateUserError] = useState(null);
-  const [showModal, setShowModal] = useState(null);
-
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [formData, setFormData] = useState({});
+  const userId = currentUser?._id || currentUser?.id;
 
-  const filePickerRef = useRef();
-  const dispatch = useDispatch();
-
-  console.log(imageFileUploadingProgress, imageFileUploadingError);
-
-  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB in bytes
-
-  const handleImageChange = async (e) => {
-    const file = e.target.files[0];
+  const handleImageChange = async (event) => {
+    const file = event.target.files?.[0];
     if (!file) return;
 
-    // ❌ 1. Reject non-image files
     if (!file.type.startsWith('image/')) {
       setImageFileUploadingError('Only image files are allowed.');
-      e.target.value = null; // reset input
+      event.target.value = null;
       return;
     }
-    // Define our 2MB limit (2 * 1024 * 1024 bytes)
-    const limitInBytes = 2 * 1024 * 1024;
-    console.log((file.size / (1024 * 1024)).toFixed(2) + ' MB');
 
-    // 2. Conditional Compression
-    if (file.size > limitInBytes) {
-      console.log('File is large. Starting compression...');
-
-      const options = {
-        maxSizeMB: 2,
-        maxWidthOrHeight: 1920,
-        useWebWorker: true
-      };
-
-      try {
-        setImageFileUploading(true);
-        setImageFileUploadingError(null);
-
-        const compressedFile = await imageCompression(file, options);
-
-        // Use the compressed file
-        setImageFile(compressedFile);
-        setImageFileUrl(URL.createObjectURL(compressedFile));
-        console.log((compressedFile.size / (1024 * 1024)).toFixed(2) + ' MB');
-      } catch (error) {
-        console.error(error);
-        setImageFileUploadingError('Compression failed. Try a smaller photo.');
-      } finally {
-        setImageFileUploading(false);
-      }
-    } else {
-      // 3. File is already small, skip compression and use original
-      console.log('File is under 2MB. Skipping compression.');
-      setImageFile(file);
-      setImageFileUrl(URL.createObjectURL(file));
+    try {
       setImageFileUploadingError(null);
-    }
-    // ✅ 2. Clear old errors
-    setImageFileUploadingError(null);
-  };
+      const preparedFile =
+        file.size > 2 * 1024 * 1024
+          ? await imageCompression(file, {
+              maxSizeMB: 2,
+              maxWidthOrHeight: 1920,
+              useWebWorker: true
+            })
+          : file;
 
-  const uploadImage = useCallback(() => {
-    if (!imageFile) return;
-    setIsUploading(true); // 👈 START upload UI
-    setImageFileUploading(true);
-    setImageFileUploadingError(null);
-    const storage = getStorage(app);
-    const fileName = new Date().getTime() + imageFile.name;
-    const storageRef = ref(storage, fileName);
-    const uploadTask = uploadBytesResumable(storageRef, imageFile);
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        const progress =
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setImageFileUploadingProgress(Math.round(progress));
-      },
-      // eslint-disable-next-line no-unused-vars
-      (error) => {
-        setIsUploading(false);
-        setImageFileUploadingProgress(null);
-        setImageFile(null);
-        setImageFileUrl(null);
-        setImageFileUploadingError(
-          `couldn't upload image (image size exceeds 2MB)`
-        );
-        setImageFileUploading(false);
-      },
-      () => {
-        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-          setImageFileUrl(downloadURL);
-          setIsUploading(false);
-          setFormData((prev) => ({ ...prev, profilePicture: downloadURL }));
-          setImageFileUploading(false);
-        });
-      }
-    );
-  }, [imageFile]);
+      setImageFile(preparedFile);
+      setImageFileUrl(URL.createObjectURL(preparedFile));
+    } catch {
+      setImageFileUploadingError('Compression failed. Try a smaller photo.');
+    } finally {
+      event.target.value = null;
+    }
+  };
 
   useEffect(() => {
-    if (imageFile) {
-      uploadImage();
-    }
-  }, [imageFile, uploadImage]);
+    const uploadImage = async () => {
+      if (!imageFile) return;
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value });
+      setIsUploading(true);
+      setImageFileUploading(true);
+      setImageFileUploadingProgress(20);
+      setImageFileUploadingError(null);
+
+      try {
+        const uploaded = await uploadToCloudinary({
+          file: imageFile,
+          folder: 'users/profiles',
+          resourceType: 'image',
+          publicIdPrefix: 'profile-picture'
+        });
+
+        setImageFileUploadingProgress(100);
+        setImageFileUrl(uploaded.url);
+        setFormData((prev) => ({ ...prev, profilePicture: uploaded.url }));
+      } catch (uploadError) {
+        setImageFile(null);
+        setImageFileUrl(null);
+        setImageFileUploadingProgress(null);
+        setImageFileUploadingError(
+          uploadError.message || "Couldn't upload image."
+        );
+      } finally {
+        setIsUploading(false);
+        setImageFileUploading(false);
+      }
+    };
+
+    uploadImage();
+  }, [imageFile]);
+
+  const handleChange = (event) => {
+    setFormData({ ...formData, [event.target.id]: event.target.value });
   };
-  console.log(formData);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setUpdateUserError(null);
     setUpdateUserSuccess(null);
 
     if (Object.keys(formData).length === 0) {
-      setUpdateUserError(`No changes made to update`);
+      setUpdateUserError('No changes made to update');
       return;
     }
 
     if (imageFileUploading) {
-      setUpdateUserError('please wait for the image to uploaded');
+      setUpdateUserError('Please wait for the profile photo upload to finish.');
       return;
     }
 
     try {
-      dispatch(updateStart());
-      const res = await fetch(`/api/users/update/${currentUser._id}`, {
-        method: 'PUT',
-        headers: {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: 'PATCH',
+        headers: buildCsrfHeaders({
           'content-type': 'application/json'
-        },
+        }),
+        credentials: 'include',
         body: JSON.stringify(formData)
       });
-
       const data = await res.json();
+
       if (!res.ok) {
-        dispatch(updateFailure(data.message));
         setUpdateUserError(data.message);
-      } else {
-        dispatch(updateSuccess(data));
-        setUpdateUserSuccess(`User Profile updated successfully!`);
+        return;
       }
-    } catch (error) {
-      dispatch(updateFailure(error.message));
-      setUpdateUserError(error.message);
+
+      updateUser(data.data);
+      setUpdateUserSuccess('User profile updated successfully.');
+    } catch (submitError) {
+      setUpdateUserError(submitError.message);
     }
   };
 
-  // =================================================
-  // Delete User Module
-  // =================================================
   const handleDeleteUser = async () => {
-    setShowModal(false);
+    setShowDeleteModal(false);
+
     try {
-      dispatch(deleteUserStart());
-      const res = await fetch(`/api/users/delete/${currentUser._id}`, {
-        method: 'DELETE'
+      const res = await fetch(`/api/users/${userId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: buildCsrfHeaders()
       });
-      const data = await res.json();
+      await res.json();
+
       if (!res.ok) {
-        dispatch(deleteUserFailure(data.message));
-      } else {
-        dispatch(deleteUserSuccess(data));
+        return;
       }
-    } catch (error) {
-      dispatch(deleteUserFailure(error.message));
+
+      logout();
+    } catch (deleteError) {
+      console.log(deleteError);
     }
   };
 
   const handleSignOut = async () => {
     try {
-      const res = await fetch(`/api/users/signout`, {
-        method: 'POST'
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        console.log(data.message);
-      } else {
-        dispatch(signOutSuccess());
-      }
-    } catch (error) {
-      console.log(error);
+      await logout();
+    } catch {
+      // Keep the UI calm here; sidebar signout remains available too.
     }
   };
 
+  if (!userId) {
+    return <div className="p-4">Loading...</div>;
+  }
+
   return (
     <>
-      <div className="p-3 w-full max-w-full mx-auto">
+      <div className="mx-auto w-full max-w-full p-3">
         <form onSubmit={handleSubmit}>
-          {/* MAIN PROFILE CARD */}
-          <div className="bg-white rounded-3xl p-6 lg:p-10 shadow-sm border border-gray-100 flex flex-col lg:flex-row gap-10 items-start relative">
-            {/* LEFT SIDE: IMAGE PICKER */}
+          <div className="relative flex flex-col items-start gap-10 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm lg:flex-row lg:p-10">
             <div
-              className="relative w-36 h-36 flex-shrink-0 cursor-pointer group"
+              className="group relative h-36 w-36 flex-shrink-0 cursor-pointer"
               onClick={() => filePickerRef.current.click()}
             >
               <input
@@ -242,7 +185,7 @@ export default function DashProfile() {
                 hidden
               />
 
-              <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#DEF7EC] shadow-inner relative">
+              <div className="relative h-full w-full overflow-hidden rounded-full border-4 border-[#DEF7EC] shadow-inner">
                 {isUploading && (
                   <div className="absolute inset-0 z-10">
                     <ImageCircleLoader
@@ -253,20 +196,17 @@ export default function DashProfile() {
                 <img
                   src={imageFileUrl || currentUser.profilePicture}
                   alt="user"
-                  className="w-full h-full object-cover"
+                  className="h-full w-full object-cover"
                 />
-                {/* Hover overlay */}
-                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                  <span className="text-white text-xs font-medium">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition-opacity group-hover:opacity-100">
+                  <span className="text-xs font-medium text-white">
                     Change Photo
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* RIGHT SIDE: FORM FIELDS */}
-            <div className="flex-1 w-full grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
-              {/* Row 1: Name and Email */}
+            <div className="grid w-full flex-1 grid-cols-1 gap-x-8 gap-y-6 lg:grid-cols-2">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-500">
                   Name
@@ -277,7 +217,7 @@ export default function DashProfile() {
                   placeholder="Enter name"
                   defaultValue={currentUser.userName}
                   onChange={handleChange}
-                  className="w-full border-gray-200 p-3 !rounded-[5px] bg-white focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
+                  className="w-full rounded-[5px] border-gray-200 bg-white p-3 focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                 />
               </div>
 
@@ -291,11 +231,10 @@ export default function DashProfile() {
                   placeholder="name@gmail.com"
                   defaultValue={currentUser.email}
                   onChange={handleChange}
-                  className="w-full border-gray-200 p-3 !rounded-[5px] bg-white focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
+                  className="w-full rounded-[5px] border-gray-200 bg-white p-3 focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                 />
               </div>
 
-              {/* Row 2: Password and Role */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-500">
                   Password
@@ -305,138 +244,100 @@ export default function DashProfile() {
                   id="password"
                   placeholder="********"
                   onChange={handleChange}
-                  className="w-full border-gray-200 p-3 !rounded-[5px] bg-white focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
+                  className="w-full rounded-[5px] border-gray-200 bg-white p-3 focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                 />
               </div>
-              {/* role */}
+
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-500">
                   Role
                 </label>
-                <select
-                  id="role"
-                  defaultValue={currentUser.role}
+                <input
+                  value={currentUser.role}
                   disabled
-                  className="w-full border-gray-200 p-3 !rounded-[5px] bg-white focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
-                >
-                  <option value="superAdmin">SuperAdmin</option>
-                  <option value="admin">Admin</option>
-                  <option value="storeManager">Store Manager</option>
-                  <option value="user">User</option>
-                </select>
+                  className="w-full rounded-[5px] border-gray-200 bg-white p-3 text-gray-500"
+                />
               </div>
 
-              {/* BOTTOM ACTIONS (DELETE & SIGN OUT) */}
-              <div className="lg:col-span-2 flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center mt-4 border-t pt-6">
-                {/* UPDATE BUTTON */}
+              <div className="mt-4 flex flex-col gap-4 border-t pt-6 lg:col-span-2 lg:flex-row lg:items-center lg:justify-between">
                 <Button
                   type="submit"
-                  className=" w-full lg:w-[30%] !bg-[#8fa31e] hover:!bg-[#7a8c1a] text-white !rounded-[4px] border-none"
+                  className="w-full border-none !bg-[#8fa31e] text-white hover:!bg-[#7a8c1a] lg:w-[30%]"
                   disabled={loading || imageFileUploading}
                 >
-                  {loading ? 'loading...' : 'Update'}
+                  {loading ? 'Loading...' : 'Update'}
                 </Button>
 
-                {/* DELETE + SIGN OUT */}
-                <div className=" w-full flex gap-3 lg:w-[30%] lg:gap-5">
-                  <button
+                <div className="flex w-full flex-col gap-3 lg:w-auto lg:flex-row">
+                  <Button
+                    color="failure"
                     type="button"
-                    onClick={() => setShowModal(true)}
-                    className=" w-1/2 flex items-center justify-center gap-2 !bg-[#CC0001] hover:!bg-[#ea2020] text-white px-4 py-2 rounded-[4px] font-medium transition-colors"
+                    onClick={() => setShowDeleteModal(true)}
+                    className="w-full lg:w-auto"
                   >
-                    <HiTrash className="text-lg" />
-                    Delete
-                  </button>
+                    <HiTrash className="mr-2 h-4 w-4" />
+                    Delete Account
+                  </Button>
 
-                  <button
+                  <Button
+                    color="light"
                     type="button"
                     onClick={handleSignOut}
-                    className="
-        w-1/2
-        flex items-center justify-center gap-2
-        border border-gray-300
-        text-gray-700
-        px-4 py-2
-        rounded-[4px]
-        font-medium
-        hover:bg-gray-50
-        transition-colors
-      "
+                    className="w-full lg:w-auto"
                   >
-                    <VscSignOut className="text-lg text-red-500" />
-                    Sign out
-                  </button>
+                    <VscSignOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </Button>
                 </div>
               </div>
+
+              {updateUserSuccess && (
+                <Alert color="success" className="lg:col-span-2">
+                  {updateUserSuccess}
+                </Alert>
+              )}
+
+              {updateUserError && (
+                <Alert color="failure" className="lg:col-span-2">
+                  {updateUserError}
+                </Alert>
+              )}
+
+              {imageFileUploadingError && (
+                <Alert color="failure" className="lg:col-span-2">
+                  {imageFileUploadingError}
+                </Alert>
+              )}
+
+              {error && (
+                <Alert color="failure" className="lg:col-span-2">
+                  {error}
+                </Alert>
+              )}
             </div>
           </div>
         </form>
-        {/* FEEDBACK ALERTS */}
-        <div className="mt-6 max-w-full space-y-3">
-          {/* Image Upload Error */}
-          {imageFileUploadingError && (
-            <Alert
-              color="failure"
-              onDismiss={() => setImageFileUploadingError(null)}
-            >
-              {imageFileUploadingError}
-            </Alert>
-          )}
-
-          {/* Profile Update Success */}
-          {updateUserSuccess && (
-            <Alert color="success" onDismiss={() => setUpdateUserSuccess(null)}>
-              {updateUserSuccess}
-            </Alert>
-          )}
-
-          {/* Profile Update Error (Logic Error) */}
-          {updateUserError && (
-            <Alert color="failure" onDismiss={() => setUpdateUserError(null)}>
-              {updateUserError}
-            </Alert>
-          )}
-
-          {/* General Redux/API Error */}
-          {error && (
-            <Alert
-              color="failure"
-              // Note: Usually 'error' from Redux should be cleared via an action,
-              // but for UI dismissal, we can check if your slice has a clearError action.
-              // If not, this X will show but won't hide unless the page refreshes.
-              onDismiss={() => setUpdateUserError(null)}
-            >
-              {error}
-            </Alert>
-          )}
-        </div>
-
-        {/* DELETE MODAL */}
-        <Modal
-          show={showModal}
-          onClose={() => setShowModal(false)}
-          popup
-          size="md"
-        >
-          <Modal.Header />
-          <Modal.Body>
-            <div className="text-center">
-              <HiOutlineExclamationCircle className="h-14 w-14 text-gray-400 mb-4 mx-auto" />
-              <h3 className="mb-5 text-lg text-gray-500">
-                Are you sure you want to delete your account?
-              </h3>
-              <div className="flex justify-center gap-4">
-                <Button color="failure" onClick={handleDeleteUser}>
-                  Yes, I'm sure
-                </Button>
-                <Button color="gray" onClick={() => setShowModal(false)}>
-                  No, Cancel
-                </Button>
-              </div>
-            </div>
-          </Modal.Body>
-        </Modal>
       </div>
+
+      <Modal show={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
+        <Modal.Header>Delete Account</Modal.Header>
+        <Modal.Body>
+          <div className="flex flex-col items-center gap-4 text-center">
+            <HiOutlineExclamationCircle className="h-16 w-16 text-red-500" />
+            <p className="text-sm text-gray-600">
+              This action will permanently remove your account.
+            </p>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button color="failure" onClick={handleDeleteUser}>
+            Yes, delete
+          </Button>
+          <Button color="gray" onClick={() => setShowDeleteModal(false)}>
+            Cancel
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </>
   );
 }

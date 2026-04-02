@@ -1,16 +1,35 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "flowbite-react";
-import { GoogleAuthProvider, signInWithPopup, getAuth } from "firebase/auth";
+import { GoogleAuthProvider, signInWithPopup, getAuth, onAuthStateChanged } from "firebase/auth";
 import { app } from "../firebase";
-import { useDispatch } from "react-redux";
-import { signInSuccess } from "../redux/user/userSlice";
 import { useNavigate } from "react-router-dom";
 import { AiFillGoogleCircle } from "react-icons/ai";
+import { useAuth } from "../context/AuthContext";
 
 export default function OAuth() {
   const auth = getAuth(app);
-  const dispatch = useDispatch();
+  const { loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          const result = await loginWithGoogle({
+            name: firebaseUser.displayName,
+            email: firebaseUser.email,
+            googlePhotoUrl: firebaseUser.photoURL,
+          });
+          if (result.success) {
+            navigate("/");
+          }
+        } catch {
+          // Context handles auth errors.
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, [auth, loginWithGoogle, navigate]);
 
   const handleGoogleClick = async () => {
     const provider = new GoogleAuthProvider();
@@ -18,26 +37,11 @@ export default function OAuth() {
       prompt: "select_account",
     });
     try {
-      const resultFromGoogle = await signInWithPopup(auth, provider);
-
-      const res = await fetch("/api/auth/google", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          name: resultFromGoogle.user.displayName,
-          email: resultFromGoogle.user.email,
-          googlePhotoUrl: resultFromGoogle.user.photoURL,
-        }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        dispatch(signInSuccess(data));
-        navigate("/");
-      } else {
-        console.error("OAuth sign-in failed");
-      }
+      await signInWithPopup(auth, provider);
     } catch (error) {
-      console.log(error);
+      if (error.code !== 'auth/popup-closed-by-user') {
+        console.log(error);
+      }
     }
   };
 

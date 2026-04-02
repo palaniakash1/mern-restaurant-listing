@@ -1,13 +1,8 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Sidebar } from "flowbite-react";
-import { HiOutlineLogout, HiUser, HiX, HiUsers, HiHome } from "react-icons/hi";
+import { HiX } from "react-icons/hi";
 import { useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { FaPizzaSlice } from "react-icons/fa";
-import { MdApartment, MdBuild, MdFastfood } from "react-icons/md";
-import { useDispatch } from "react-redux";
-import { signOutSuccess } from "../redux/user/userSlice";
-import { useSelector } from "react-redux";
 import logo from "../assets/eatwisely.ico";
 import { LuLayoutDashboard } from "react-icons/lu";
 import { CgProfile } from "react-icons/cg";
@@ -17,14 +12,13 @@ import { MdOutlineFastfood } from "react-icons/md";
 import { BiFoodMenu } from "react-icons/bi";
 import { VscSignOut } from "react-icons/vsc";
 import { MdOutlineReviews } from "react-icons/md";
+import { useAuth } from "../context/AuthContext";
 
 export default function DashSidebar({ onClose }) {
-  const { currentUser } = useSelector((state) => state.user);
+  const { user: currentUser, logout } = useAuth();
   const location = useLocation();
-  const dispatch = useDispatch();
   const [tab, setTab] = useState("");
 
-  // Helper function to handle repeated styles
   const getItemClass = (itemTab) => `
     w-full !rounded-none transition-all duration-200
     ${
@@ -45,15 +39,7 @@ export default function DashSidebar({ onClose }) {
 
   const handleSignOut = async () => {
     try {
-      const res = await fetch(`/api/auth/signout`, {
-        method: "POST",
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        console.log(data.message);
-      } else {
-        dispatch(signOutSuccess());
-      }
+      await logout();
     } catch (error) {
       console.log(error);
     }

@@ -4,6 +4,7 @@ import wavepattern from "../assets/wavepattern.png";
 // import OAuth from "../components/OAuth";
 import logo from "../assets/eatwisely.ico";
 import { Alert } from "flowbite-react";
+import { useAuth } from "../context/AuthContext";
 
 const EyeIcon = (props) => (
   <svg
@@ -45,8 +46,7 @@ const EyeOffIcon = (props) => (
 
 export default function SignUp() {
   const [formData, setFormData] = useState({});
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const { register, isLoading, error, clearError } = useAuth();
   const navigate = useNavigate();
 
   // State to hold the password value
@@ -56,6 +56,9 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
+    if (error) {
+      clearError();
+    }
     setFormData({
       ...formData,
       [e.target.id]: e.target.value,
@@ -68,27 +71,10 @@ export default function SignUp() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    try {
-      setLoading(true);
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-      const data = await res.json();
-      if (data.success === false) {
-        setLoading(false);
-        setError(data.message);
-        return;
-      }
-      setLoading(false);
-      setError(null);
+    const result = await register(formData);
+
+    if (result.success) {
       navigate("/sign-in");
-    } catch (error) {
-      setLoading(false);
-      setError(error.message);
     }
   };
 
@@ -222,16 +208,16 @@ export default function SignUp() {
               </div>
               {/* Combined Error Alert */}
               {error && (
-                <Alert color="failure" onDismiss={() => setError(null)}>
+                <Alert color="failure" onDismiss={clearError}>
                   {error}
                 </Alert>
               )}
 
               <button
-                disabled={loading}
+                disabled={isLoading}
                 className=" p-2 rounded-[5px] !bg-[#8fa31e] hover:!bg-[#7a8c1a] text-white !rounded-[4px] border-none"
               >
-                {loading ? "Sigining up..." : "Sign Up"}
+                {isLoading ? "Sigining up..." : "Sign Up"}
               </button>
               {/* <OAuth /> */}
             </form>

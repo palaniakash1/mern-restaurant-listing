@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
   useContext,
@@ -5,6 +6,7 @@ import {
   useEffect,
   useCallback
 } from 'react';
+import { useDispatch } from 'react-redux';
 import {
   signin,
   signout as apiSignout,
@@ -13,6 +15,12 @@ import {
   validateSession
 } from '../services/authService';
 import { useState } from 'react';
+import {
+  clearError as clearReduxError,
+  signInFailure as signInFailureRedux,
+  signInSuccess as signInSuccessRedux,
+  signOutSuccess as signOutSuccessRedux
+} from '../redux/user/userSlice';
 
 /**
  * =============================================================================
@@ -157,6 +165,7 @@ const initialState = {
 
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
+  const reduxDispatch = useDispatch();
 
   // =============================================================================
   // SESSION RESTORATION ON APP LOAD
@@ -176,6 +185,8 @@ export function AuthProvider({ children }) {
     );
 
     if (isAuthPage) {
+      reduxDispatch(signOutSuccessRedux());
+      reduxDispatch(clearReduxError());
       dispatch({ type: ACTIONS.INIT, payload: null });
       setInitialized(true);
       return;
@@ -184,6 +195,8 @@ export function AuthProvider({ children }) {
     validateSession()
       .then((sessionData) => {
         if (sessionData) {
+          reduxDispatch(signInSuccessRedux(sessionData));
+          reduxDispatch(clearReduxError());
           dispatch({
             type: ACTIONS.INIT,
             payload: {
@@ -192,17 +205,21 @@ export function AuthProvider({ children }) {
             }
           });
         } else {
+          reduxDispatch(signOutSuccessRedux());
+          reduxDispatch(clearReduxError());
           dispatch({ type: ACTIONS.INIT, payload: null });
         }
       })
       .catch((error) => {
         console.error('Auth initialization failed:', error);
+        reduxDispatch(signOutSuccessRedux());
+        reduxDispatch(clearReduxError());
         dispatch({ type: ACTIONS.INIT, payload: null });
       })
       .finally(() => {
         setInitialized(true);
       });
-  }, [initialized]);
+  }, [initialized, reduxDispatch]);
 
   // =============================================================================
   // AUTH ACTIONS
@@ -230,6 +247,8 @@ export function AuthProvider({ children }) {
         type: ACTIONS.SIGNIN_SUCCESS,
         payload: { user, role }
       });
+      reduxDispatch(signInSuccessRedux(user));
+      reduxDispatch(clearReduxError());
 
       return { success: true, user };
     } catch (error) {
@@ -237,9 +256,10 @@ export function AuthProvider({ children }) {
         type: ACTIONS.SIGNIN_FAILURE,
         payload: error.message
       });
+      reduxDispatch(signInFailureRedux(error.message));
       return { success: false, error: error.message };
     }
-  }, []);
+  }, [reduxDispatch]);
 
   /**
    * SIGNUP ACTION
@@ -255,15 +275,18 @@ export function AuthProvider({ children }) {
     try {
       await signup(userData);
       dispatch({ type: ACTIONS.SIGNIN_FAILURE, payload: null });
+      reduxDispatch(clearReduxError());
+      reduxDispatch(signOutSuccessRedux());
       return { success: true };
     } catch (error) {
       dispatch({
         type: ACTIONS.SIGNIN_FAILURE,
         payload: error.message
       });
+      reduxDispatch(signInFailureRedux(error.message));
       return { success: false, error: error.message };
     }
-  }, []);
+  }, [reduxDispatch]);
 
   /**
    * GOOGLE SIGNIN ACTION
@@ -281,6 +304,8 @@ export function AuthProvider({ children }) {
         type: ACTIONS.SIGNIN_SUCCESS,
         payload: { user, role }
       });
+      reduxDispatch(signInSuccessRedux(user));
+      reduxDispatch(clearReduxError());
 
       return { success: true, user };
     } catch (error) {
@@ -288,9 +313,10 @@ export function AuthProvider({ children }) {
         type: ACTIONS.SIGNIN_FAILURE,
         payload: error.message
       });
+      reduxDispatch(signInFailureRedux(error.message));
       return { success: false, error: error.message };
     }
-  }, []);
+  }, [reduxDispatch]);
 
   /**
    * LOGOUT ACTION
@@ -306,11 +332,13 @@ export function AuthProvider({ children }) {
     try {
       await apiSignout();
     } finally {
+      reduxDispatch(signOutSuccessRedux());
+      reduxDispatch(clearReduxError());
       dispatch({ type: ACTIONS.SIGNOUT });
       sessionStorage.setItem('isLoggingOut', 'true');
       window.location.href = '/sign-in';
     }
-  }, []);
+  }, [reduxDispatch]);
 
   /**
    * UPDATE USER ACTION
@@ -329,8 +357,10 @@ export function AuthProvider({ children }) {
           role: state.role
         }
       });
+      reduxDispatch(signInSuccessRedux({ ...state.user, ...userData }));
+      reduxDispatch(clearReduxError());
     },
-    [state.user, state.role]
+    [reduxDispatch, state.user, state.role]
   );
 
   /**
@@ -339,8 +369,9 @@ export function AuthProvider({ children }) {
    * Usage: clearError()
    */
   const clearError = useCallback(() => {
+    reduxDispatch(clearReduxError());
     dispatch({ type: ACTIONS.CLEAR_ERROR });
-  }, []);
+  }, [reduxDispatch]);
 
   // =============================================================================
   // CONTEXT VALUE
@@ -364,7 +395,7 @@ export function AuthProvider({ children }) {
     clearError,
 
     // Helpers
-    hasPermission: (permission) => {
+    hasPermission: () => {
       if (!state.user) return false;
       // This would check against ROLE_PERMISSIONS
       return true;
@@ -410,5 +441,4 @@ export function useAuth() {
 // NAMED EXPORTS
 // =============================================================================
 
-export { AuthContext };
 export default AuthProvider;
