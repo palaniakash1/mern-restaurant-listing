@@ -1,41 +1,22 @@
-import { useEffect, useState } from "react";
-import { Sidebar } from "flowbite-react";
-import { HiX } from "react-icons/hi";
-import { useLocation } from "react-router-dom";
-import { Link } from "react-router-dom";
-import logo from "../assets/eatwisely.ico";
-import { LuLayoutDashboard } from "react-icons/lu";
-import { CgProfile } from "react-icons/cg";
-import { TbUsers } from "react-icons/tb";
-import { PiBuildingApartment } from "react-icons/pi";
-import { MdOutlineFastfood } from "react-icons/md";
-import { BiFoodMenu } from "react-icons/bi";
-import { VscSignOut } from "react-icons/vsc";
-import { MdOutlineReviews } from "react-icons/md";
-import { useAuth } from "../context/AuthContext";
+import { useMemo } from 'react';
+import { Avatar, Badge, Sidebar } from 'flowbite-react';
+import { HiX } from 'react-icons/hi';
+import { HiArrowLeftOnRectangle } from 'react-icons/hi2';
+import { Link, useLocation } from 'react-router-dom';
+import logo from '../assets/eatwisely.ico';
+import { useAuth } from '../context/AuthContext';
+import { getRoleLabel } from '../utils/permissions';
+import { getVisibleDashboardTabs } from '../constants/dashboardTabs';
 
 export default function DashSidebar({ onClose }) {
   const { user: currentUser, logout } = useAuth();
   const location = useLocation();
-  const [tab, setTab] = useState("");
-
-  const getItemClass = (itemTab) => `
-    w-full !rounded-none transition-all duration-200
-    ${
-      tab === itemTab
-        ? "!bg-red-700 !text-white"
-        : "bg-transparent !text-white hover:!bg-red-600 hover:!text-white"
-    }
-  `;
-
-  useEffect(() => {
-    const urlParams = new URLSearchParams(location.search);
-    const tabFromUrl = urlParams.get("tab");
-    if (tabFromUrl) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTab(tabFromUrl);
-    }
-  }, [location.search]);
+  const urlParams = new URLSearchParams(location.search);
+  const tab = urlParams.get('tab') || 'dashboard';
+  const visibleTabs = useMemo(
+    () => getVisibleDashboardTabs(currentUser),
+    [currentUser]
+  );
 
   const handleSignOut = async () => {
     try {
@@ -46,136 +27,100 @@ export default function DashSidebar({ onClose }) {
   };
 
   return (
-    <Sidebar
-      className="
-        w-64 h-full
-        shadow-md [&>div]:bg-[#8fa31e] [&>div]:p-0 [&>div]:rounded-none"
-    >
-      {/* ================= HEADER ================= */}
-      {/* This gives identity + control */}
-      <div className="flex items-center justify-between px-4 py-3 border-b-2 border-white/20 ">
-        {/* LOGO / BRAND */}
-        <Link to="/">
+    <Sidebar className="h-full rounded-[2rem] border border-[#dfe7c9] shadow-[0_20px_70px_rgba(58,79,21,0.18)] [&>div]:h-full [&>div]:rounded-[2rem] [&>div]:bg-[linear-gradient(180deg,#23411f_0%,#3d601a_52%,#8fa31e_100%)] [&>div]:p-0">
+      <div className="flex items-center justify-between border-b border-white/10 px-5 py-5">
+        <Link to="/" className="flex items-center gap-3">
           <img
             src={logo}
             alt="Logo"
-            className="w-[110px] h-auto object-contain"
+            className="h-11 w-11 rounded-2xl border border-white/15 bg-white/10 object-contain p-1.5"
           />
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/70">
+              EatWisely
+            </p>
+            <p className="text-lg font-bold text-white">Operations</p>
+          </div>
         </Link>
-
-        {/* CLOSE BUTTON — MOBILE ONLY */}
-        {/* On desktop sidebar is persistent, so no close button */}
         <button
           onClick={onClose}
-          className="md:hidden text-white text-2xl hover:text-red-500"
+          className="rounded-2xl border border-white/10 bg-white/10 p-2 text-2xl text-white hover:bg-white/15 lg:hidden"
         >
           <HiX />
         </button>
       </div>
 
-      <Sidebar.Items className="mt-4">
+      <div className="mx-4 mt-4 rounded-[1.5rem] border border-white/10 bg-white/10 p-4 text-white shadow-inner backdrop-blur">
+        <div className="flex items-center gap-3">
+          <Avatar
+            rounded
+            img={currentUser?.profilePicture}
+            placeholderInitials={(currentUser?.userName || 'U').slice(0, 2).toUpperCase()}
+          />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold">
+              {currentUser?.userName || 'User'}
+            </p>
+            <p className="truncate text-xs text-white/70">{currentUser?.email}</p>
+          </div>
+        </div>
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <Badge color="failure" className="border-0">
+            {getRoleLabel(currentUser?.role)}
+          </Badge>
+          {currentUser?.customPermissions && (
+            <span className="text-[11px] uppercase tracking-[0.2em] text-white/65">
+              Custom scope
+            </span>
+          )}
+        </div>
+      </div>
+
+      <Sidebar.Items className="mt-4 px-3 pb-4">
         <Sidebar.ItemGroup className="flex flex-col gap-1">
-          {/* Dashboard */}
-          <Sidebar.Item
-            as={Link}
-            to="/dashboard?tab=dashboard"
-            active={tab === "dashboard"}
-            icon={() => <LuLayoutDashboard className="text-white text-xl" />}
-            className={getItemClass("dashboard")}
-          >
-            Dashboard
-          </Sidebar.Item>
-          {/* PROFILE */}
-          <Sidebar.Item
-            as={Link}
-            to="/dashboard?tab=profile"
-            active={tab === "profile"}
-            label={currentUser.role}
-            labelColor="red"
-            icon={() => <CgProfile className="text-white text-xl" />}
-            className={getItemClass("profile")}
-          >
-            Profile
-          </Sidebar.Item>
-          {/* users */}
-          {currentUser?.role === "superAdmin" && (
+          {visibleTabs.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Sidebar.Item
+                key={item.id}
+                as={Link}
+                to={`/dashboard?tab=${item.id}`}
+                active={tab === item.id}
+                icon={() => <Icon className="text-xl" />}
+                className={`w-full rounded-[1.1rem] border transition-all ${
+                  tab === item.id
+                    ? '!border-[#f0f5dd] !bg-white !text-[#1e3316] shadow-md'
+                    : '!border-transparent !bg-transparent !text-white/90 hover:!bg-white/10 hover:!text-white'
+                }`}
+              >
+                {item.label}
+              </Sidebar.Item>
+            );
+          })}
+
+          <div className="mt-4 rounded-[1.5rem] border border-white/10 bg-[#ffffff12] p-4 text-white/80">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/65">
+              Access scope
+            </p>
+            <p className="mt-2 text-sm leading-6">
+              {currentUser?.role === 'superAdmin' &&
+                'Full platform control across users, restaurants, menus, categories, and review moderation.'}
+              {currentUser?.role === 'admin' &&
+                'Restaurant-scoped management for stores, menus, categories, reviews, and assigned store managers.'}
+              {currentUser?.role === 'storeManager' &&
+                'Operational menu management with item updates, availability changes, and read access to restaurant feedback.'}
+              {currentUser?.role === 'user' &&
+                'Personal profile and review workspace for posting, editing, and deleting your own reviews.'}
+            </p>
+          </div>
+
+          <div className="border-t border-white/10 pt-3">
             <Sidebar.Item
-              as={Link}
-              to="/dashboard?tab=users"
-              icon={() => <TbUsers className="text-white text-xl" />}
-              active={tab === "users"}
-              className={getItemClass("users")}
+              icon={() => <HiArrowLeftOnRectangle className="text-xl" />}
+              className="group w-full rounded-[1.1rem] border border-transparent !bg-transparent !text-white/90 hover:!bg-[#b62828] hover:!text-white"
+              onClick={handleSignOut}
             >
-              Users
-            </Sidebar.Item>
-          )}
-          {/* restaurants */}
-          {["superAdmin", "admin"].includes(currentUser?.role) && (
-            <Sidebar.Item
-              as={Link}
-              to="/dashboard?tab=restaurants"
-              icon={() => (
-                <PiBuildingApartment className="text-white text-xl" />
-              )}
-              active={tab === "restaurants"}
-              className={getItemClass("restaurants")}
-            >
-              Restaurants
-            </Sidebar.Item>
-          )}
-          {/* Categories */}
-          {["superAdmin", "admin", "storeManager"].includes(
-            currentUser?.role,
-          ) && (
-            <Sidebar.Item
-              as={Link}
-              to="/dashboard?tab=categories"
-              icon={() => <MdOutlineFastfood className="text-white text-xl" />}
-              active={tab === "categories"}
-              className={getItemClass("categories")}
-            >
-              Categories
-            </Sidebar.Item>
-          )}
-          {/* menu */}
-          {["superAdmin", "admin", "storeManager"].includes(
-            currentUser?.role,
-          ) && (
-            <Sidebar.Item
-              as={Link}
-              to="/dashboard?tab=menu"
-              icon={() => <BiFoodMenu className="text-white text-xl" />}
-              active={tab === "menu"}
-              className={getItemClass("menu")}
-            >
-              Menu
-            </Sidebar.Item>
-          )}
-          {/* reviews */}
-          {["superAdmin", "admin", "storeManager", "user"].includes(
-            currentUser?.role,
-          ) && (
-            <Sidebar.Item
-              as={Link}
-              to="/dashboard?tab=reviews"
-              icon={() => <MdOutlineReviews className="text-white text-xl" />}
-              active={tab === "reviews"}
-              className={getItemClass("reviews")}
-            >
-              Reviews
-            </Sidebar.Item>
-          )}
-          <div className="border-t border-white/20 mt-4 pt-4">
-            <Sidebar.Item
-              icon={() => (
-                <VscSignOut className="text-red-500 text-2xl group-hover:text-white" />
-              )}
-              className="group !rounded-none !text-white hover:!bg-red-600 cursor-pointer"
-              onClick={() => {
-                handleSignOut();
-              }}
-            >
-              Signout
+              Sign out
             </Sidebar.Item>
           </div>
         </Sidebar.ItemGroup>

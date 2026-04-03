@@ -14,6 +14,7 @@ import {
   googleSignIn,
   validateSession
 } from '../services/authService';
+import { hasPermission as userHasPermission } from '../utils/permissions';
 import { useState } from 'react';
 import {
   clearError as clearReduxError,
@@ -395,11 +396,8 @@ export function AuthProvider({ children }) {
     clearError,
 
     // Helpers
-    hasPermission: () => {
-      if (!state.user) return false;
-      // This would check against ROLE_PERMISSIONS
-      return true;
-    }
+    hasPermission: (resource, action) =>
+      userHasPermission(state.user, resource, action)
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

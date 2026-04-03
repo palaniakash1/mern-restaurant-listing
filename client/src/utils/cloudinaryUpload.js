@@ -63,6 +63,7 @@ export const uploadToCloudinary = async ({
   folder,
   resourceType = "image",
   publicIdPrefix = "file",
+  onProgress,
 }) => {
   const preparedFile =
     resourceType === "video" ? await prepareVideo(file) : await prepareImage(file);
@@ -84,19 +85,37 @@ export const uploadToCloudinary = async ({
     formData.append("public_id", signatureData.publicId);
   }
 
-  const uploadRes = await fetch(
-    `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/${resourceType}/upload`,
-    {
-      method: "POST",
-      body: formData,
-    },
-  );
+  const uploadData = await new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(
+      "POST",
+      `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/${resourceType}/upload`,
+    );
 
-  const uploadData = await uploadRes.json();
+    xhr.upload.addEventListener("progress", (event) => {
+      if (!event.lengthComputable || typeof onProgress !== "function") {
+        return;
+      }
 
-  if (!uploadRes.ok) {
-    throw new Error(uploadData.error?.message || "Upload failed.");
-  }
+      onProgress(Math.round((event.loaded / event.total) * 100));
+    });
+
+    xhr.onload = () => {
+      try {
+        const parsed = JSON.parse(xhr.responseText);
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(parsed);
+          return;
+        }
+        reject(new Error(parsed.error?.message || "Upload failed."));
+      } catch {
+        reject(new Error("Upload failed."));
+      }
+    };
+
+    xhr.onerror = () => reject(new Error("Upload failed."));
+    xhr.send(formData);
+  });
 
   return {
     url: uploadData.secure_url,

@@ -1,153 +1,257 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSelector } from "react-redux";
-import { Alert, Badge, Button, Modal, Spinner, Table } from "flowbite-react";
-import { HiOutlineTrash, HiOutlineUpload, HiX } from "react-icons/hi";
-import AddressAutocomplete from "./AddressAutocomplete";
-import { uploadToCloudinary } from "../utils/cloudinaryUpload";
-import { buildCsrfHeaders } from "../utils/http";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Label,
+  Modal,
+  Select,
+  Spinner,
+  Table,
+  TextInput,
+  Textarea
+} from 'flowbite-react';
+import {
+  HiOutlineArrowPath,
+  HiOutlineBuildingStorefront,
+  HiOutlinePencilSquare,
+  HiOutlinePlus,
+  HiOutlineTrash
+} from 'react-icons/hi2';
+import AddressAutocomplete from './AddressAutocomplete';
+import { apiDelete, apiGet, apiPatch, apiPost } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
+import { hasPermission } from '../utils/permissions';
+import { uploadToCloudinary } from '../utils/cloudinaryUpload';
+import ImageFrameLoader from './ImageFrameLoader';
 
-const initialFormState = {
-  name: "",
-  tagline: "",
-  description: "",
-  contactNumber: "",
-  email: "",
-  website: "",
-  adminId: "",
-  imageLogo: "",
-  gallery: [],
-  videoUrl: "",
+const buildRestaurantForm = () => ({
+  name: '',
+  tagline: '',
+  description: '',
+  contactNumber: '',
+  email: '',
+  website: '',
+  imageLogo: '',
+  adminId: '',
   address: {
-    addressLine1: "",
-    addressLine2: "",
-    areaLocality: "",
-    city: "",
-    countyRegion: "",
-    postcode: "",
-    country: "United Kingdom",
+    addressLine1: '',
+    addressLine2: '',
+    areaLocality: '',
+    city: '',
+    countyRegion: '',
+    postcode: '',
+    country: 'United Kingdom'
   },
   location: null,
-};
+  fsaSelection: null
+});
 
-const emptyFsaState = {
-  loading: false,
-  error: null,
-  matched: false,
-  result: null,
-  options: [],
-  selected: null,
-  score: null,
-};
-
-const buildAddressSearchValue = (address) =>
+const formatAddress = (address = {}) =>
   [
     address.addressLine1,
     address.addressLine2,
     address.areaLocality,
     address.city,
-    address.postcode,
+    address.postcode
   ]
     .filter(Boolean)
-    .join(", ");
+    .join(', ');
 
-const formatRestaurantAddress = (address = {}) =>
-  [
-    address.addressLine1,
-    address.addressLine2,
-    address.areaLocality,
-    address.city,
-    address.postcode,
-  ]
-    .filter(Boolean)
-    .join(", ");
+function LogoUpload({ value, progress, uploading, onSelect }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-[#23411f]">Brand logo</p>
+          <p className="text-xs text-gray-500">
+            Upload a polished restaurant logo with preview.
+          </p>
+        </div>
+        <label className="cursor-pointer">
+          <input
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) onSelect(file);
+              event.target.value = '';
+            }}
+          />
+          <span className="inline-flex rounded-xl border border-[#d8dfc0] bg-white px-3 py-2 text-sm font-semibold text-[#23411f] shadow-sm">
+            Choose logo
+          </span>
+        </label>
+      </div>
 
-const getSelectableFsaOptions = (result, options) => {
-  const merged = [];
-  const seen = new Set();
+      <div className="relative h-44 overflow-hidden rounded-[1.5rem] border border-[#dce6c1] bg-[#f7faef]">
+        {value ? (
+          <img src={value} alt="Restaurant logo" className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full items-center justify-center text-sm text-gray-400">
+            Logo preview will appear here
+          </div>
+        )}
+        {uploading && (
+          <ImageFrameLoader
+            progress={progress}
+            label="Uploading logo"
+            className="rounded-[1.5rem]"
+          />
+        )}
+      </div>
+    </div>
+  );
+}
 
-  [result, ...(options || [])].forEach((option) => {
-    if (!option?.fhrsId || seen.has(option.fhrsId)) {
-      return;
-    }
+function SearchableAdminPicker({
+  selectedAdmin,
+  selectedAdminId,
+  onSelect,
+  fetchAdmins
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [admins, setAdmins] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-    seen.add(option.fhrsId);
-    merged.push(option);
-  });
+  useEffect(() => {
+    if (!open) return;
 
-  return merged;
-};
+    let ignore = false;
+
+    const load = async () => {
+      try {
+        setLoading(true);
+        const results = await fetchAdmins(query);
+        if (!ignore) {
+          setAdmins(results);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
+    load();
+
+    return () => {
+      ignore = true;
+    };
+  }, [fetchAdmins, open, query]);
+
+  return (
+    <div className="relative space-y-2">
+      <Label>Assign admin</Label>
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        className="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 text-left text-sm shadow-sm"
+      >
+        <span className={selectedAdminId ? 'text-[#23411f]' : 'text-gray-400'}>
+          {selectedAdmin?.userName || 'Select available admin'}
+        </span>
+        <HiOutlineArrowPath className={`h-4 w-4 ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute z-20 w-full rounded-[1.25rem] border border-[#dce6c1] bg-white p-3 shadow-xl">
+          <TextInput
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search admins"
+          />
+          <div className="mt-3 max-h-60 space-y-2 overflow-y-auto">
+            {loading && (
+              <div className="flex items-center gap-2 px-2 py-3 text-sm text-gray-500">
+                <Spinner size="sm" />
+                Searching admins...
+              </div>
+            )}
+            {!loading &&
+              admins.map((admin) => (
+                <button
+                  key={admin._id}
+                  type="button"
+                  onClick={() => {
+                    onSelect(admin);
+                    setOpen(false);
+                  }}
+                  className="flex w-full flex-col rounded-xl border border-transparent bg-[#fbfcf7] px-3 py-3 text-left hover:border-[#dce6c1] hover:bg-[#f6fbe9]"
+                >
+                  <span className="text-sm font-semibold text-[#23411f]">
+                    {admin.userName}
+                  </span>
+                  <span className="text-xs text-gray-500">{admin.email}</span>
+                </button>
+              ))}
+            {!loading && admins.length === 0 && (
+              <p className="px-2 py-3 text-sm text-gray-500">
+                No available admins match this search.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function DashRestaurants() {
-  const { currentUser } = useSelector((state) => state.user);
+  const { user: currentUser } = useAuth();
   const [restaurants, setRestaurants] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [formData, setFormData] = useState(initialFormState);
-  const [addressSearch, setAddressSearch] = useState("");
-  const [fsaState, setFsaState] = useState(emptyFsaState);
-  const [mediaUploading, setMediaUploading] = useState({
-    logo: false,
-    gallery: false,
-    video: false,
-  });
-  const [mediaError, setMediaError] = useState(null);
+  const [modalMode, setModalMode] = useState(null);
+  const [selectedRestaurant, setSelectedRestaurant] = useState(null);
+  const [formData, setFormData] = useState(buildRestaurantForm());
+  const [addressSearch, setAddressSearch] = useState('');
+  const [logoProgress, setLogoProgress] = useState(0);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [selectedAdmin, setSelectedAdmin] = useState(null);
+  const [fsaOptions, setFsaOptions] = useState([]);
+  const [fsaLoading, setFsaLoading] = useState(false);
 
-  const canManageRestaurants = ["admin", "superAdmin"].includes(currentUser?.role);
-  const canAssignAdmin = currentUser?.role === "superAdmin";
-  const selectableFsaOptions = useMemo(
-    () => getSelectableFsaOptions(fsaState.result, fsaState.options),
-    [fsaState.result, fsaState.options],
-  );
+  const canCreateRestaurant = hasPermission(currentUser, 'restaurant', 'create');
+  const canUpdateRestaurant = hasPermission(currentUser, 'restaurant', 'updateById');
+  const canDeleteRestaurant = hasPermission(currentUser, 'restaurant', 'deleteById');
+  const canUpdateStatus = hasPermission(currentUser, 'restaurant', 'updateStatus');
+  const canRestoreRestaurant = hasPermission(currentUser, 'restaurant', 'restore');
+  const canReassignAdmin = hasPermission(currentUser, 'restaurant', 'reassignAdmin');
 
   const listEndpoint = useMemo(() => {
-    if (currentUser?.role === "superAdmin") {
+    if (currentUser?.role === 'superAdmin') {
       return `/api/restaurants/all?page=${page}&limit=10`;
     }
-
-    if (currentUser?.role === "admin") {
+    if (currentUser?.role === 'admin') {
       return `/api/restaurants/me/all?page=${page}&limit=10`;
     }
-
     return null;
   }, [currentUser?.role, page]);
 
-  const resetCreateForm = () => {
-    setFormData(initialFormState);
-    setAddressSearch("");
-    setFsaState(emptyFsaState);
-    setMediaUploading({
-      logo: false,
-      gallery: false,
-      video: false,
-    });
-    setMediaError(null);
-    setError(null);
-  };
+  const publishedCount = restaurants.filter((item) => item.status === 'published').length;
+  const draftCount = restaurants.filter((item) => item.status === 'draft').length;
+  const blockedCount = restaurants.filter((item) => item.status === 'blocked').length;
 
   const fetchRestaurants = useCallback(async () => {
     if (!listEndpoint) {
+      setLoading(false);
       return;
     }
 
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(listEndpoint, {
-        credentials: "include",
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to load restaurants");
-      }
-
+      const data = await apiGet(listEndpoint);
       setRestaurants(data.data || []);
-      setTotalPages(data.totalPages || 1);
+      setTotalPages(Math.max(1, data.totalPages || 1));
     } catch (fetchError) {
       setError(fetchError.message);
     } finally {
@@ -160,259 +264,207 @@ export default function DashRestaurants() {
   }, [fetchRestaurants]);
 
   useEffect(() => {
-    const shouldSearch = formData.name.trim().length >= 2;
-
-    if (!shouldSearch || !isCreateOpen) {
-      setFsaState((current) => ({
-        ...emptyFsaState,
-        selected: current.selected,
-      }));
-      return undefined;
+    if (!modalMode) return;
+    if (!formData.name || formData.name.trim().length < 2) {
+      setFsaOptions([]);
+      return;
     }
 
-    const controller = new AbortController();
+    let ignore = false;
     const timeoutId = window.setTimeout(async () => {
       try {
-        setFsaState((current) => ({
-          ...current,
-          loading: true,
-          error: null,
-        }));
-
-        const query = new URLSearchParams({
-          name: formData.name.trim(),
-        });
-
-        if (formData.address.postcode.trim()) {
-          query.set("postcode", formData.address.postcode.trim());
+        setFsaLoading(true);
+        const params = new URLSearchParams({ name: formData.name.trim() });
+        if (formData.address.postcode) {
+          params.set('postcode', formData.address.postcode);
         }
-
-        const res = await fetch(`/api/fsa/search?${query.toString()}`, {
-          credentials: "include",
-          signal: controller.signal,
-        });
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.message || "Failed to search FSA");
+        const data = await apiGet(`/api/fsa/search?${params.toString()}`);
+        if (!ignore) {
+          const payload = data.data || {};
+          const options = [
+            ...(payload.result ? [payload.result] : []),
+            ...(payload.multipleOptions || [])
+          ];
+          setFsaOptions(options);
         }
-
-        const payload = data.data || {};
-        setFsaState((current) => {
-          const availableOptions = getSelectableFsaOptions(
-            payload.result || null,
-            payload.multipleOptions || [],
-          );
-          const preservedSelection =
-            current.selected &&
-            availableOptions.find(
-              (option) => option.fhrsId === current.selected.fhrsId,
-            );
-
-          return {
-            loading: false,
-            error: null,
-            matched: Boolean(payload.matched),
-            result: payload.result || null,
-            options: availableOptions,
-            selected: preservedSelection || null,
-            score: payload.score ?? null,
-          };
-        });
-      } catch (fetchError) {
-        if (fetchError.name !== "AbortError") {
-          setFsaState((current) => ({
-            ...current,
-            loading: false,
-            error: fetchError.message,
-            matched: false,
-            result: null,
-            options: [],
-          }));
+      } catch {
+        if (!ignore) {
+          setFsaOptions([]);
+        }
+      } finally {
+        if (!ignore) {
+          setFsaLoading(false);
         }
       }
     }, 450);
 
     return () => {
-      controller.abort();
+      ignore = true;
       window.clearTimeout(timeoutId);
     };
-  }, [formData.name, formData.address.postcode, isCreateOpen]);
+  }, [formData.address.postcode, formData.name, modalMode]);
 
-  const updateAddress = (field, value) => {
+  const fetchAvailableAdmins = useCallback(async (query = '') => {
+    if (!canReassignAdmin && currentUser?.role !== 'superAdmin') {
+      return [];
+    }
+    const data = await apiGet(
+      `/api/users/admins?page=1&limit=50&q=${encodeURIComponent(query)}`
+    );
+    return data.data || [];
+  }, [canReassignAdmin, currentUser?.role]);
+
+  const resetModalState = () => {
+    setModalMode(null);
+    setSelectedRestaurant(null);
+    setFormData(buildRestaurantForm());
+    setAddressSearch('');
+    setLogoProgress(0);
+    setLogoUploading(false);
+    setSelectedAdmin(null);
+    setFsaOptions([]);
+  };
+
+  const handleLogoUpload = async (file) => {
+    if (!file.type.startsWith('image/')) {
+      setError('Please choose a valid image file.');
+      return;
+    }
+
     setFormData((current) => ({
       ...current,
+      imageLogo: URL.createObjectURL(file)
+    }));
+    setLogoUploading(true);
+    setLogoProgress(10);
+
+    try {
+      const uploaded = await uploadToCloudinary({
+        file,
+        folder: 'restaurants/logos',
+        resourceType: 'image',
+        publicIdPrefix: 'restaurant-logo',
+        onProgress: (progress) => setLogoProgress(progress)
+      });
+      setLogoProgress(100);
+      setFormData((current) => ({
+        ...current,
+        imageLogo: uploaded.url
+      }));
+    } catch (uploadError) {
+      setError(uploadError.message);
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  const openCreateModal = () => {
+    resetModalState();
+    setModalMode('create');
+  };
+
+  const openEditModal = (restaurant) => {
+    resetModalState();
+    setSelectedRestaurant(restaurant);
+    setModalMode('edit');
+    setFormData({
+      name: restaurant.name || '',
+      tagline: restaurant.tagline || '',
+      description: restaurant.description || '',
+      contactNumber: restaurant.contactNumber || '',
+      email: restaurant.email || '',
+      website: restaurant.website || '',
+      imageLogo: restaurant.imageLogo || '',
+      adminId: restaurant.adminId || '',
       address: {
-        ...current.address,
-        [field]: value,
+        addressLine1: restaurant.address?.addressLine1 || '',
+        addressLine2: restaurant.address?.addressLine2 || '',
+        areaLocality: restaurant.address?.areaLocality || '',
+        city: restaurant.address?.city || '',
+        countyRegion: restaurant.address?.countyRegion || '',
+        postcode: restaurant.address?.postcode || '',
+        country: restaurant.address?.country || 'United Kingdom'
       },
-    }));
+      location: restaurant.address?.location
+        ? {
+            lat: restaurant.address.location.coordinates?.[1],
+            lng: restaurant.address.location.coordinates?.[0]
+          }
+        : null,
+      fsaSelection: restaurant.fhrsId
+        ? { fhrsId: restaurant.fhrsId, rating: restaurant.fsaRating?.value }
+        : null
+    });
+    setAddressSearch(formatAddress(restaurant.address));
   };
 
-  const handleFieldChange = (field, value) => {
-    setFormData((current) => ({
-      ...current,
-      [field]: value,
-    }));
-  };
-
-  const setUploadingState = (field, value) => {
-    setMediaUploading((current) => ({
-      ...current,
-      [field]: value,
-    }));
-  };
-
-  const handleLogoUpload = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
-
-    try {
-      setMediaError(null);
-      setUploadingState("logo", true);
-      const uploaded = await uploadToCloudinary({
-        file,
-        folder: "restaurants/logos",
-        resourceType: "image",
-        publicIdPrefix: "restaurant-logo",
-      });
-
-      setFormData((current) => ({
-        ...current,
-        imageLogo: uploaded.url,
-      }));
-    } catch (uploadError) {
-      setMediaError(uploadError.message);
-    } finally {
-      setUploadingState("logo", false);
-      event.target.value = "";
-    }
-  };
-
-  const handleGalleryUpload = async (event) => {
-    const files = Array.from(event.target.files || []);
-    if (files.length === 0) {
-      return;
-    }
-
-    const remainingSlots = 10 - formData.gallery.length;
-    if (remainingSlots <= 0) {
-      setMediaError("You can add up to 10 gallery photos.");
-      event.target.value = "";
-      return;
-    }
-
-    try {
-      setMediaError(null);
-      setUploadingState("gallery", true);
-      const uploadTargets = files.slice(0, remainingSlots);
-      const uploadedFiles = [];
-
-      for (const file of uploadTargets) {
-        const uploaded = await uploadToCloudinary({
-          file,
-          folder: "restaurants/gallery",
-          resourceType: "image",
-          publicIdPrefix: "restaurant-gallery",
-        });
-        uploadedFiles.push(uploaded.url);
-      }
-
-      setFormData((current) => ({
-        ...current,
-        gallery: [...current.gallery, ...uploadedFiles],
-      }));
-    } catch (uploadError) {
-      setMediaError(uploadError.message);
-    } finally {
-      setUploadingState("gallery", false);
-      event.target.value = "";
-    }
-  };
-
-  const handleVideoUpload = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
-
-    try {
-      setMediaError(null);
-      setUploadingState("video", true);
-      const uploaded = await uploadToCloudinary({
-        file,
-        folder: "restaurants/videos",
-        resourceType: "video",
-        publicIdPrefix: "restaurant-video",
-      });
-
-      setFormData((current) => ({
-        ...current,
-        videoUrl: uploaded.url,
-      }));
-    } catch (uploadError) {
-      setMediaError(uploadError.message);
-    } finally {
-      setUploadingState("video", false);
-      event.target.value = "";
-    }
-  };
-
-  const removeGalleryImage = (imageUrl) => {
-    setFormData((current) => ({
-      ...current,
-      gallery: current.gallery.filter((item) => item !== imageUrl),
-    }));
-  };
-
-  const applyAddressSuggestion = (placeDetails) => {
-    setAddressSearch(placeDetails.formattedAddress || "");
+  const applyAddressDetails = (placeDetails) => {
+    setAddressSearch(placeDetails.formattedAddress || '');
     setFormData((current) => ({
       ...current,
       address: {
         ...current.address,
-        ...placeDetails.address,
+        ...placeDetails.address
       },
       location: placeDetails.location
         ? {
             lat: placeDetails.location.coordinates[1],
-            lng: placeDetails.location.coordinates[0],
+            lng: placeDetails.location.coordinates[0]
           }
-        : current.location,
+        : current.location
     }));
   };
 
-  const applyFsaCandidate = (candidate) => {
-    const fsaAddress = candidate.restaurantAddress || {};
-    const nextAddress = {
-      addressLine1: fsaAddress.addressLine1 || "",
-      addressLine2: fsaAddress.addressLine2 || "",
-      areaLocality: fsaAddress.areaLocality || "",
-      city: fsaAddress.city || "",
-      countyRegion: fsaAddress.countyRegion || "",
-      postcode: fsaAddress.postcode || "",
-      country: fsaAddress.country || "United Kingdom",
-    };
-
-    setFsaState((current) => ({
-      ...current,
-      selected: candidate,
-    }));
-    setAddressSearch(candidate.addressLabel || buildAddressSearchValue(nextAddress));
-
+  const applyFsaOption = (option) => {
+    const fsaAddress = option.restaurantAddress || {};
     setFormData((current) => ({
       ...current,
-      name: candidate.name || current.name,
+      name: option.name || current.name,
       address: {
         ...current.address,
-        ...nextAddress,
+        addressLine1: fsaAddress.addressLine1 || current.address.addressLine1,
+        addressLine2: fsaAddress.addressLine2 || current.address.addressLine2,
+        areaLocality: fsaAddress.areaLocality || current.address.areaLocality,
+        city: fsaAddress.city || current.address.city,
+        countyRegion: fsaAddress.countyRegion || current.address.countyRegion,
+        postcode: fsaAddress.postcode || current.address.postcode,
+        country: fsaAddress.country || current.address.country
       },
+      fsaSelection: option
     }));
   };
 
-  const handleCreateRestaurant = async (event) => {
+  const buildRestaurantPayload = () => {
+    const payload = {
+      name: formData.name,
+      tagline: formData.tagline,
+      description: formData.description,
+      contactNumber: formData.contactNumber,
+      email: formData.email,
+      website: formData.website,
+      imageLogo: formData.imageLogo,
+      address: formData.address
+    };
+
+    if (formData.location?.lat !== undefined && formData.location?.lng !== undefined) {
+      payload.location = formData.location;
+    }
+
+    if (currentUser?.role === 'superAdmin' && selectedAdmin?._id) {
+      payload.adminId = selectedAdmin._id;
+    }
+
+    if (formData.fsaSelection?.fhrsId) {
+      payload.fsa = {
+        fhrsId: Number(formData.fsaSelection.fhrsId),
+        isManuallyLinked: true
+      };
+    }
+
+    return payload;
+  };
+
+  const handleCreateOrUpdateRestaurant = async (event) => {
     event.preventDefault();
 
     try {
@@ -420,78 +472,26 @@ export default function DashRestaurants() {
       setError(null);
       setSuccess(null);
 
-      if (!formData.name.trim() || formData.name.trim().length < 2) {
-        throw new Error("Restaurant name must be at least 2 characters");
-      }
-      if (!formData.address.addressLine1.trim() || formData.address.addressLine1.trim().length < 2) {
-        throw new Error("Address line 1 is required (minimum 2 characters)");
-      }
-      if (!formData.address.areaLocality.trim() || formData.address.areaLocality.trim().length < 2) {
-        throw new Error("Area/Locality is required");
-      }
-      if (!formData.address.city.trim() || formData.address.city.trim().length < 2) {
-        throw new Error("City is required");
-      }
-      if (!formData.address.postcode.trim() || formData.address.postcode.trim().length < 2) {
-        throw new Error("Postcode is required");
+      if (modalMode === 'create') {
+        await apiPost('/api/restaurants', buildRestaurantPayload());
+        setSuccess('Restaurant created successfully.');
       }
 
-      const payload = {
-        name: formData.name.trim(),
-        tagline: formData.tagline.trim(),
-        description: formData.description.trim(),
-        contactNumber: formData.contactNumber.trim(),
-        email: formData.email.trim(),
-        website: formData.website.trim(),
-        imageLogo: formData.imageLogo,
-        gallery: formData.gallery,
-        videoUrl: formData.videoUrl,
-        address: {
-          addressLine1: formData.address.addressLine1.trim(),
-          addressLine2: formData.address.addressLine2.trim(),
-          areaLocality: formData.address.areaLocality.trim(),
-          city: formData.address.city.trim(),
-          countyRegion: formData.address.countyRegion.trim(),
-          postcode: formData.address.postcode.trim(),
-          country: formData.address.country.trim() || "United Kingdom",
-        },
-      };
-
-      if (formData.location) {
-        payload.location = formData.location;
+      if (modalMode === 'edit' && selectedRestaurant) {
+        await apiPatch(`/api/restaurants/id/${selectedRestaurant._id}`, buildRestaurantPayload());
+        if (
+          canReassignAdmin &&
+          selectedAdmin?._id &&
+          selectedAdmin._id !== selectedRestaurant.adminId
+        ) {
+          await apiPatch(`/api/restaurants/id/${selectedRestaurant._id}/admin`, {
+            newAdminId: selectedAdmin._id
+          });
+        }
+        setSuccess('Restaurant updated successfully.');
       }
 
-    if (canAssignAdmin && formData.adminId.trim()) {
-        payload.adminId = formData.adminId.trim();
-      }
-
-      if (mediaUploading.logo || mediaUploading.gallery || mediaUploading.video) {
-        throw new Error("Please wait for your uploads to finish.");
-      }
-
-      if (fsaState.selected?.fhrsId) {
-        payload.fsa = {
-          fhrsId: fsaState.selected.fhrsId,
-          isManuallyLinked: true,
-        };
-      }
-
-      const res = await fetch("/api/restaurants", {
-        method: "POST",
-        headers: buildCsrfHeaders({ "Content-Type": "application/json" }),
-        credentials: "include",
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        console.error("Restaurant create error:", data);
-        throw new Error(data.message || "Failed to create restaurant");
-      }
-
-      setSuccess("Restaurant created successfully.");
-      setIsCreateOpen(false);
-      resetCreateForm();
+      resetModalState();
       await fetchRestaurants();
     } catch (submitError) {
       setError(submitError.message);
@@ -500,557 +500,557 @@ export default function DashRestaurants() {
     }
   };
 
-  const handleDeleteRestaurant = async (restaurantId) => {
-    const shouldDelete = window.confirm(
-      "Delete this restaurant? It will be blocked and can be restored later by a super admin.",
-    );
-
-    if (!shouldDelete) {
-      return;
-    }
+  const handleDeleteRestaurant = async (restaurant) => {
+    const confirmed = window.confirm(`Delete ${restaurant.name}?`);
+    if (!confirmed) return;
 
     try {
       setError(null);
       setSuccess(null);
-      const res = await fetch(`/api/restaurants/id/${restaurantId}`, {
-        method: "DELETE",
-        credentials: "include",
-        headers: buildCsrfHeaders(),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to delete restaurant");
-      }
-
-      setSuccess("Restaurant deleted successfully.");
+      await apiDelete(`/api/restaurants/id/${restaurant._id}`);
+      setSuccess('Restaurant deleted successfully.');
       await fetchRestaurants();
     } catch (deleteError) {
       setError(deleteError.message);
     }
   };
 
-  if (!canManageRestaurants) {
+  const handleStatusChange = async (restaurant, status) => {
+    try {
+      setError(null);
+      setSuccess(null);
+      await apiPatch(`/api/restaurants/id/${restaurant._id}/status`, { status });
+      setSuccess(`Restaurant moved to ${status}.`);
+      await fetchRestaurants();
+    } catch (statusError) {
+      setError(statusError.message);
+    }
+  };
+
+  const handleRestoreRestaurant = async (restaurant) => {
+    try {
+      setError(null);
+      setSuccess(null);
+      await apiPatch(`/api/restaurants/id/${restaurant._id}/restore`, {});
+      setSuccess('Restaurant restored successfully.');
+      await fetchRestaurants();
+    } catch (restoreError) {
+      setError(restoreError.message);
+    }
+  };
+
+  if (!listEndpoint) {
     return (
-      <p className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-gray-500">
-        You are not authorized to manage restaurants.
-      </p>
+      <Card className="border border-[#dce6c1] bg-white shadow-sm">
+        <p className="text-sm text-gray-600">
+          Your current role does not have access to restaurant operations.
+        </p>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {error && <Alert color="failure">{error}</Alert>}
-      {success && <Alert color="success">{success}</Alert>}
-      {mediaError && <Alert color="failure">{mediaError}</Alert>}
+    <>
+      <div className="space-y-5">
+        {error && <Alert color="failure">{error}</Alert>}
+        {success && <Alert color="success">{success}</Alert>}
 
-      <div className="flex flex-col gap-3 rounded-2xl border border-[#dce8ba] bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-[#556b2f]">Restaurants</h2>
-          <p className="text-sm text-gray-500">
-            Add your place, pick it from the suggestions, and we will fill in what we can.
-          </p>
-        </div>
-        <Button
-          className="!bg-[#8fa31e]"
-          onClick={() => {
-            resetCreateForm();
-            setIsCreateOpen(true);
-          }}
-        >
-          Create Restaurant
-        </Button>
-      </div>
-
-      <div className="overflow-hidden rounded-2xl border border-[#dce8ba] bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-[#edf3d6] bg-[#f6fdeb] px-5 py-4">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-[#7b8d25]">
-              Managed restaurants
-            </p>
-            <p className="text-xs text-gray-500">{restaurants.length} visible on this page</p>
+        <Card className="border border-[#dce6c1] bg-white shadow-sm">
+          <div className="grid gap-5 xl:grid-cols-[1.1fr,0.9fr]">
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[#b62828]">
+                Restaurant command center
+              </p>
+              <h2 className="text-2xl font-bold text-[#23411f] sm:text-3xl">
+                Enterprise restaurant operations
+              </h2>
+              <p className="max-w-2xl text-sm leading-7 text-gray-600">
+                Create, edit, govern, and review restaurants with FSA assistance,
+                brand asset upload, and privilege-aware ownership control.
+              </p>
+            </div>
+            <div className="rounded-[1.75rem] bg-[linear-gradient(135deg,#b62828_0%,#8fa31e_100%)] p-5 text-white shadow-inner">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/75">
+                Operational view
+              </p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl bg-white/12 p-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-white/70">Total</p>
+                  <p className="mt-2 text-3xl font-bold">{restaurants.length}</p>
+                </div>
+                <div className="rounded-2xl bg-white/12 p-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-white/70">
+                    Published
+                  </p>
+                  <p className="mt-2 text-3xl font-bold">{publishedCount}</p>
+                </div>
+                <div className="rounded-2xl bg-white/12 p-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-white/70">Blocked</p>
+                  <p className="mt-2 text-3xl font-bold">{blockedCount}</p>
+                </div>
+              </div>
+            </div>
           </div>
-          {loading && <Spinner size="sm" />}
+        </Card>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Card className="border border-[#dce6c1] bg-white shadow-sm">
+            <p className="text-sm text-gray-500">Draft restaurants</p>
+            <p className="mt-2 text-3xl font-bold text-[#23411f]">{draftCount}</p>
+          </Card>
+          <Card className="border border-[#dce6c1] bg-white shadow-sm">
+            <p className="text-sm text-gray-500">Owner control</p>
+            <p className="mt-2 text-sm font-semibold text-[#23411f]">
+              {canReassignAdmin ? 'Super admin reassignment enabled' : 'Scoped to owned stores'}
+            </p>
+          </Card>
+          <Card className="border border-[#dce6c1] bg-white shadow-sm">
+            <p className="text-sm text-gray-500">Status governance</p>
+            <p className="mt-2 text-sm font-semibold text-[#23411f]">
+              {canUpdateStatus ? 'Publish, draft, and block controls available' : 'Read/write only for owned records'}
+            </p>
+          </Card>
         </div>
 
-        <Table hoverable>
-          <Table.Head>
-            <Table.HeadCell>Name</Table.HeadCell>
-            <Table.HeadCell>Location</Table.HeadCell>
-            <Table.HeadCell>FSA</Table.HeadCell>
-            <Table.HeadCell>Status</Table.HeadCell>
-            <Table.HeadCell>Actions</Table.HeadCell>
-          </Table.Head>
-          <Table.Body className="divide-y">
-            {restaurants.map((restaurant) => (
-              <Table.Row key={restaurant._id} className="bg-white">
-                <Table.Cell>
-                  <div className="space-y-1">
-                    <p className="font-semibold text-gray-900">{restaurant.name}</p>
-                    <p className="text-xs text-gray-500">{restaurant.email || "No email"}</p>
-                  </div>
-                </Table.Cell>
-                <Table.Cell className="max-w-xs text-sm text-gray-600">
-                  {formatRestaurantAddress(restaurant.address) || "No address"}
-                </Table.Cell>
-                <Table.Cell>
-                  {restaurant.fhrsId ? (
-                    <div className="space-y-1">
-                      <Badge color="success">
-                        FHRS {restaurant.fsaRating?.value || "Pending"}
+        <Card className="border border-[#dce6c1] bg-white shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-[#23411f]">Restaurant registry</h3>
+              <p className="text-sm text-gray-500">
+                Premium control surface for restaurant records in your scope.
+              </p>
+            </div>
+            {canCreateRestaurant && (
+              <Button
+                className="bg-[#8fa31e] hover:bg-[#78871c]"
+                onClick={openCreateModal}
+              >
+                <HiOutlinePlus className="mr-2 h-4 w-4" />
+                Add restaurant
+              </Button>
+            )}
+          </div>
+
+          {loading && (
+            <div className="mt-4 flex items-center gap-2 rounded-2xl bg-[#f7faef] px-4 py-3 text-sm text-[#4e5e20]">
+              <Spinner size="sm" />
+              Loading restaurants...
+            </div>
+          )}
+
+          <div className="mt-5 hidden overflow-x-auto md:block">
+            <Table hoverable>
+              <Table.Head>
+                <Table.HeadCell>Restaurant</Table.HeadCell>
+                <Table.HeadCell>Location</Table.HeadCell>
+                <Table.HeadCell>FSA</Table.HeadCell>
+                <Table.HeadCell>Status</Table.HeadCell>
+                <Table.HeadCell>Actions</Table.HeadCell>
+              </Table.Head>
+              <Table.Body className="divide-y">
+                {restaurants.map((restaurant) => (
+                  <Table.Row key={restaurant._id}>
+                    <Table.Cell>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-[#f7faef]">
+                          {restaurant.imageLogo ? (
+                            <img
+                              src={restaurant.imageLogo}
+                              alt={restaurant.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <HiOutlineBuildingStorefront className="h-6 w-6 text-[#7e9128]" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-[#23411f]">{restaurant.name}</p>
+                          <p className="text-xs text-gray-500">
+                            {restaurant.email || 'No email'}
+                          </p>
+                        </div>
+                      </div>
+                    </Table.Cell>
+                    <Table.Cell className="max-w-xs text-sm text-gray-600">
+                      {formatAddress(restaurant.address) || 'No address'}
+                    </Table.Cell>
+                    <Table.Cell>
+                      {restaurant.fhrsId ? (
+                        <div className="space-y-1">
+                          <Badge color="success">
+                            FHRS {restaurant.fsaRating?.value || 'Linked'}
+                          </Badge>
+                          <p className="text-xs text-gray-500">ID: {restaurant.fhrsId}</p>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">Not linked</span>
+                      )}
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Badge color={restaurant.status === 'published' ? 'success' : restaurant.status === 'blocked' ? 'failure' : 'warning'}>
+                        {restaurant.status}
                       </Badge>
-                      <p className="text-xs text-gray-500">ID: {restaurant.fhrsId}</p>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-gray-400">Not linked</span>
-                  )}
-                </Table.Cell>
-                <Table.Cell>
-                  <Badge color={restaurant.status === "published" ? "success" : "warning"}>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <div className="flex flex-wrap gap-2">
+                        {canUpdateRestaurant && (
+                          <Button color="light" size="xs" onClick={() => openEditModal(restaurant)}>
+                            <HiOutlinePencilSquare className="mr-1 h-4 w-4" />
+                            Edit
+                          </Button>
+                        )}
+                        {canUpdateStatus && restaurant.status !== 'published' && (
+                          <Button size="xs" color="success" onClick={() => handleStatusChange(restaurant, 'published')}>
+                            Publish
+                          </Button>
+                        )}
+                        {canUpdateStatus && restaurant.status !== 'draft' && restaurant.status !== 'blocked' && (
+                          <Button size="xs" color="warning" onClick={() => handleStatusChange(restaurant, 'draft')}>
+                            Draft
+                          </Button>
+                        )}
+                        {canUpdateStatus && restaurant.status !== 'blocked' && (
+                          <Button size="xs" color="failure" onClick={() => handleStatusChange(restaurant, 'blocked')}>
+                            Block
+                          </Button>
+                        )}
+                        {canRestoreRestaurant && restaurant.status === 'blocked' && (
+                          <Button size="xs" color="light" onClick={() => handleRestoreRestaurant(restaurant)}>
+                            Restore
+                          </Button>
+                        )}
+                        {canDeleteRestaurant && (
+                          <Button color="failure" size="xs" onClick={() => handleDeleteRestaurant(restaurant)}>
+                            <HiOutlineTrash className="mr-1 h-4 w-4" />
+                            Delete
+                          </Button>
+                        )}
+                      </div>
+                    </Table.Cell>
+                  </Table.Row>
+                ))}
+              </Table.Body>
+            </Table>
+          </div>
+
+          <div className="mt-5 space-y-3 md:hidden">
+            {restaurants.map((restaurant) => (
+              <div
+                key={restaurant._id}
+                className="rounded-[1.5rem] border border-[#e6eccf] bg-[#fbfcf7] p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-[#23411f]">{restaurant.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {formatAddress(restaurant.address) || 'No address'}
+                    </p>
+                  </div>
+                  <Badge color={restaurant.status === 'published' ? 'success' : restaurant.status === 'blocked' ? 'failure' : 'warning'}>
                     {restaurant.status}
                   </Badge>
-                </Table.Cell>
-                <Table.Cell>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteRestaurant(restaurant._id)}
-                    className="inline-flex items-center gap-1 text-sm font-semibold text-red-600 hover:text-red-700"
-                  >
-                    <HiOutlineTrash />
-                    Delete
-                  </button>
-                </Table.Cell>
-              </Table.Row>
+                </div>
+              </div>
             ))}
-            {!loading && restaurants.length === 0 && (
-              <Table.Row>
-                <Table.Cell colSpan={5} className="py-10 text-center text-sm text-gray-500">
-                  No restaurants found yet.
-                </Table.Cell>
-              </Table.Row>
-            )}
-          </Table.Body>
-        </Table>
+          </div>
+
+          <div className="mt-5 flex items-center justify-between gap-3 text-sm">
+            <span className="text-gray-500">
+              Page {page} of {Math.max(1, totalPages)}
+            </span>
+            <div className="flex gap-2">
+              <Button
+                color="light"
+                size="xs"
+                disabled={page === 1}
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+              >
+                Previous
+              </Button>
+              <Button
+                color="light"
+                size="xs"
+                disabled={page >= totalPages}
+                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        </Card>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex justify-center gap-2">
-          <Button
-            size="xs"
-            color="light"
-            disabled={page === 1}
-            onClick={() => setPage((current) => current - 1)}
-          >
-            Previous
-          </Button>
-          <span className="rounded-lg bg-white px-3 py-2 text-sm text-gray-600 shadow-sm">
-            Page {page} of {totalPages}
-          </span>
-          <Button
-            size="xs"
-            color="light"
-            disabled={page === totalPages}
-            onClick={() => setPage((current) => current + 1)}
-          >
-            Next
-          </Button>
-        </div>
-      )}
-
-      <Modal show={isCreateOpen} onClose={() => setIsCreateOpen(false)} size="4xl">
-        <Modal.Header>Create Restaurant</Modal.Header>
+      <Modal
+        show={modalMode === 'create' || modalMode === 'edit'}
+        onClose={resetModalState}
+        size="7xl"
+      >
+        <Modal.Header>
+          {modalMode === 'edit' ? 'Update restaurant workspace' : 'Create restaurant workspace'}
+        </Modal.Header>
         <Modal.Body>
-          <form className="space-y-6" onSubmit={handleCreateRestaurant}>
-            <section className="space-y-3 rounded-xl border border-[#edf3d6] bg-[#f9fceb] p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-[#556b2f]">Find your restaurant</h3>
-                  <p className="text-sm text-gray-500">
-                    Start typing your restaurant name. Choose the right one from the list, or skip this and enter the details yourself.
-                  </p>
-                </div>
-                {fsaState.loading && <Spinner size="sm" />}
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="space-y-1">
-                  <span className="text-sm font-medium text-gray-700">Restaurant name</span>
-                  <input
-                    required
-                    value={formData.name}
-                    onChange={(event) => handleFieldChange("name", event.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#8fa31e] focus:outline-none focus:ring-2 focus:ring-[#d9e6a5]"
-                    placeholder="Example: Soho Brew Cafe"
-                  />
-                </label>
-
-                <label className="space-y-1">
-                  <span className="text-sm font-medium text-gray-700">Postcode</span>
-                  <input
-                    value={formData.address.postcode}
-                    onChange={(event) => updateAddress("postcode", event.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#8fa31e] focus:outline-none focus:ring-2 focus:ring-[#d9e6a5]"
-                    placeholder="Optional, but it helps us find the right place faster"
-                  />
-                </label>
-              </div>
-
-              {fsaState.error && <p className="text-sm text-red-600">{fsaState.error}</p>}
-
-              {selectableFsaOptions.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-700">
-                    We found these possible matches. Choose the one that belongs to you.
-                  </p>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {selectableFsaOptions.map((option, index) => (
-                      <button
-                        key={option.fhrsId}
-                        type="button"
-                        onClick={() => applyFsaCandidate(option)}
-                        className={`rounded-xl border p-4 text-left transition ${
-                          fsaState.selected?.fhrsId === option.fhrsId
-                            ? "border-[#8fa31e] bg-[#f6fdeb]"
-                            : "border-gray-200 bg-white hover:border-[#c7d883]"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-semibold text-gray-900">{option.name}</span>
-                          {option.rating && <Badge color="success">{option.rating}</Badge>}
-                        </div>
-                        {index === 0 && fsaState.score && (
-                          <p className="mt-2 text-xs font-medium text-[#7b8d25]">
-                            Recommended match
-                          </p>
-                        )}
-                        <p className="mt-2 text-sm text-gray-600">
-                          {option.addressLabel || "Address unavailable"}
-                        </p>
-                        <p className="mt-1 text-xs text-gray-400">Food hygiene ID: {option.fhrsId}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {fsaState.selected && (
-                <div className="rounded-xl border border-[#dce8ba] bg-white p-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-semibold text-gray-900">
-                      Selected: {fsaState.selected.name}
-                    </p>
-                    {fsaState.selected.rating && (
-                      <Badge color="success">Food hygiene rating {fsaState.selected.rating}</Badge>
-                    )}
-                  </div>
-                  <p className="mt-2 text-sm text-gray-600">
-                    We have filled the form with the details available from this record.
-                  </p>
-                </div>
-              )}
-            </section>
-
-            <section className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold text-[#556b2f]">Basic details</h3>
-                <p className="text-sm text-gray-500">
-                  Check what we filled in and add anything missing.
-                </p>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="space-y-1">
-                  <span className="text-sm font-medium text-gray-700">Tagline</span>
-                  <input
-                    value={formData.tagline}
-                    onChange={(event) => handleFieldChange("tagline", event.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                    placeholder="Healthy food, happy people"
-                  />
-                </label>
-
-                <label className="space-y-1">
-                  <span className="text-sm font-medium text-gray-700">Phone</span>
-                  <input
-                    required
-                    value={formData.contactNumber}
-                    onChange={(event) => handleFieldChange("contactNumber", event.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                    placeholder="+44 20 7000 0000"
-                  />
-                </label>
-
-                <label className="space-y-1 md:col-span-2">
-                  <span className="text-sm font-medium text-gray-700">Description</span>
-                  <textarea
-                    value={formData.description}
-                    onChange={(event) => handleFieldChange("description", event.target.value)}
-                    rows={3}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                    placeholder="Tell customers what makes this restaurant special"
-                  />
-                </label>
-
-                <label className="space-y-1">
-                  <span className="text-sm font-medium text-gray-700">Email</span>
-                  <input
-                    required
-                    type="email"
-                    value={formData.email}
-                    onChange={(event) => handleFieldChange("email", event.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                    placeholder="hello@restaurant.com"
-                  />
-                </label>
-
-                <label className="space-y-1">
-                  <span className="text-sm font-medium text-gray-700">Website</span>
-                  <input
-                    value={formData.website}
-                    onChange={(event) => handleFieldChange("website", event.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                    placeholder="https://restaurant.com"
-                  />
-                </label>
-
-                {canAssignAdmin && (
-                  <label className="space-y-1 md:col-span-2">
-                    <span className="text-sm font-medium text-gray-700">Assign admin ID</span>
-                    <input
-                      value={formData.adminId}
-                      onChange={(event) => handleFieldChange("adminId", event.target.value)}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                      placeholder="Optional ObjectId for admin assignment"
-                    />
-                  </label>
-                )}
-              </div>
-            </section>
-
-            <section className="space-y-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
-              <div>
-                <h3 className="text-lg font-semibold text-[#556b2f]">Photos and video</h3>
-                <p className="text-sm text-gray-500">
-                  Add your logo, a few photos, and one short video to make your page feel complete.
-                </p>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900">Logo</p>
-                      <p className="text-sm text-gray-500">Best for your main brand image.</p>
-                    </div>
-                    {mediaUploading.logo && <Spinner size="sm" />}
-                  </div>
-                  {formData.imageLogo ? (
-                    <img
-                      src={formData.imageLogo}
-                      alt="Restaurant logo"
-                      className="h-28 w-28 rounded-xl object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-28 w-28 items-center justify-center rounded-xl border border-dashed border-gray-300 text-xs text-gray-400">
-                      No logo yet
-                    </div>
-                  )}
-                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[#8fa31e] px-3 py-2 text-sm font-medium text-white">
-                    <HiOutlineUpload />
-                    Upload logo
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleLogoUpload}
-                    />
-                  </label>
-                </div>
-
-                <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900">Main video</p>
-                      <p className="text-sm text-gray-500">One short video, up to 50MB.</p>
-                    </div>
-                    {mediaUploading.video && <Spinner size="sm" />}
-                  </div>
-                  {formData.videoUrl ? (
-                    <video
-                      src={formData.videoUrl}
-                      controls
-                      className="h-40 w-full rounded-xl bg-black object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-gray-300 text-sm text-gray-400">
-                      No video uploaded yet
-                    </div>
-                  )}
-                  <div className="flex gap-2">
-                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[#8fa31e] px-3 py-2 text-sm font-medium text-white">
-                      <HiOutlineUpload />
-                      Upload video
-                      <input
-                        type="file"
-                        accept="video/*"
-                        className="hidden"
-                        onChange={handleVideoUpload}
-                      />
-                    </label>
-                    {formData.videoUrl && (
-                      <button
-                        type="button"
-                        onClick={() => handleFieldChange("videoUrl", "")}
-                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-gray-900">Gallery photos</p>
-                    <p className="text-sm text-gray-500">
-                      Add up to 10 photos of your food, space, or team.
-                    </p>
-                  </div>
-                  {mediaUploading.gallery && <Spinner size="sm" />}
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
-                  {formData.gallery.map((imageUrl) => (
-                    <div key={imageUrl} className="relative">
-                      <img
-                        src={imageUrl}
-                        alt="Restaurant gallery"
-                        className="h-28 w-full rounded-xl object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeGalleryImage(imageUrl)}
-                        className="absolute right-2 top-2 rounded-full bg-white/90 p-1 text-gray-700 shadow"
-                      >
-                        <HiX />
-                      </button>
-                    </div>
-                  ))}
-
-                  {formData.gallery.length === 0 && (
-                    <div className="flex h-28 items-center justify-center rounded-xl border border-dashed border-gray-300 text-sm text-gray-400">
-                      No gallery photos yet
-                    </div>
-                  )}
-                </div>
-
-                <label className="inline-flex w-fit cursor-pointer items-center gap-2 rounded-lg bg-[#8fa31e] px-3 py-2 text-sm font-medium text-white">
-                  <HiOutlineUpload />
-                  Add gallery photos
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={handleGalleryUpload}
-                  />
-                </label>
-              </div>
-            </section>
-
-            <section className="space-y-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
-              <div>
-                <h3 className="text-lg font-semibold text-[#556b2f]">Address</h3>
-                <p className="text-sm text-gray-500">
-                  Search for your address, or type it in yourself if you prefer.
-                </p>
-              </div>
-
-              <AddressAutocomplete
-                value={addressSearch}
-                onChange={setAddressSearch}
-                onSelect={applyAddressSuggestion}
+          <form className="space-y-6" onSubmit={handleCreateOrUpdateRestaurant}>
+            <div className="grid gap-6 xl:grid-cols-[0.88fr,1.12fr]">
+              <LogoUpload
+                value={formData.imageLogo}
+                progress={logoProgress}
+                uploading={logoUploading}
+                onSelect={handleLogoUpload}
               />
 
-              {formData.location && (
-                <div className="rounded-lg border border-[#dce8ba] bg-white px-3 py-2 text-sm text-gray-600">
-                  Location saved for map use: {formData.location.lat}, {formData.location.lng}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="restaurantName">Restaurant name</Label>
+                  <TextInput
+                    id="restaurantName"
+                    value={formData.name}
+                    onChange={(event) =>
+                      setFormData((current) => ({ ...current, name: event.target.value }))
+                    }
+                    required
+                  />
                 </div>
-              )}
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="space-y-1 md:col-span-2">
-                  <span className="text-sm font-medium text-gray-700">Address line 1</span>
-                  <input
+                <div className="space-y-2">
+                  <Label htmlFor="restaurantTagline">Tagline</Label>
+                  <TextInput
+                    id="restaurantTagline"
+                    value={formData.tagline}
+                    onChange={(event) =>
+                      setFormData((current) => ({ ...current, tagline: event.target.value }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="restaurantContact">Contact number</Label>
+                  <TextInput
+                    id="restaurantContact"
+                    value={formData.contactNumber}
+                    onChange={(event) =>
+                      setFormData((current) => ({
+                        ...current,
+                        contactNumber: event.target.value
+                      }))
+                    }
                     required
-                    value={formData.address.addressLine1}
-                    onChange={(event) => updateAddress("addressLine1", event.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                   />
-                </label>
-
-                <label className="space-y-1 md:col-span-2">
-                  <span className="text-sm font-medium text-gray-700">Address line 2</span>
-                  <input
-                    value={formData.address.addressLine2}
-                    onChange={(event) => updateAddress("addressLine2", event.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  />
-                </label>
-
-                <label className="space-y-1">
-                  <span className="text-sm font-medium text-gray-700">Area / locality</span>
-                  <input
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="restaurantEmail">Email</Label>
+                  <TextInput
+                    id="restaurantEmail"
+                    type="email"
+                    value={formData.email}
+                    onChange={(event) =>
+                      setFormData((current) => ({ ...current, email: event.target.value }))
+                    }
                     required
-                    value={formData.address.areaLocality}
-                    onChange={(event) => updateAddress("areaLocality", event.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                   />
-                </label>
-
-                <label className="space-y-1">
-                  <span className="text-sm font-medium text-gray-700">City</span>
-                  <input
-                    required
-                    value={formData.address.city}
-                    onChange={(event) => updateAddress("city", event.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="restaurantWebsite">Website</Label>
+                  <TextInput
+                    id="restaurantWebsite"
+                    value={formData.website}
+                    onChange={(event) =>
+                      setFormData((current) => ({ ...current, website: event.target.value }))
+                    }
                   />
-                </label>
-
-                <label className="space-y-1">
-                  <span className="text-sm font-medium text-gray-700">County / region</span>
-                  <input
-                    value={formData.address.countyRegion}
-                    onChange={(event) => updateAddress("countyRegion", event.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="restaurantDescription">Description</Label>
+                  <Textarea
+                    id="restaurantDescription"
+                    rows={4}
+                    value={formData.description}
+                    onChange={(event) =>
+                      setFormData((current) => ({
+                        ...current,
+                        description: event.target.value
+                      }))
+                    }
                   />
-                </label>
-
-                <label className="space-y-1">
-                  <span className="text-sm font-medium text-gray-700">Country</span>
-                  <input
-                    value={formData.address.country}
-                    onChange={(event) => updateAddress("country", event.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  />
-                </label>
+                </div>
               </div>
-            </section>
+            </div>
+
+            <div className="grid gap-6 xl:grid-cols-[1fr,1fr]">
+              <div className="space-y-4 rounded-[1.5rem] border border-[#e4ebce] bg-[#fbfcf7] p-4">
+                <div>
+                  <p className="text-sm font-semibold text-[#23411f]">Address intelligence</p>
+                  <p className="text-xs text-gray-500">
+                    Search and hydrate the restaurant address using map lookup.
+                  </p>
+                </div>
+                <AddressAutocomplete
+                  value={addressSearch}
+                  onChange={setAddressSearch}
+                  onSelect={applyAddressDetails}
+                />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <TextInput
+                    placeholder="Address line 1"
+                    value={formData.address.addressLine1}
+                    onChange={(event) =>
+                      setFormData((current) => ({
+                        ...current,
+                        address: { ...current.address, addressLine1: event.target.value }
+                      }))
+                    }
+                    required
+                  />
+                  <TextInput
+                    placeholder="Address line 2"
+                    value={formData.address.addressLine2}
+                    onChange={(event) =>
+                      setFormData((current) => ({
+                        ...current,
+                        address: { ...current.address, addressLine2: event.target.value }
+                      }))
+                    }
+                  />
+                  <TextInput
+                    placeholder="Area / locality"
+                    value={formData.address.areaLocality}
+                    onChange={(event) =>
+                      setFormData((current) => ({
+                        ...current,
+                        address: { ...current.address, areaLocality: event.target.value }
+                      }))
+                    }
+                    required
+                  />
+                  <TextInput
+                    placeholder="City"
+                    value={formData.address.city}
+                    onChange={(event) =>
+                      setFormData((current) => ({
+                        ...current,
+                        address: { ...current.address, city: event.target.value }
+                      }))
+                    }
+                    required
+                  />
+                  <TextInput
+                    placeholder="County / region"
+                    value={formData.address.countyRegion}
+                    onChange={(event) =>
+                      setFormData((current) => ({
+                        ...current,
+                        address: { ...current.address, countyRegion: event.target.value }
+                      }))
+                    }
+                  />
+                  <TextInput
+                    placeholder="Postcode"
+                    value={formData.address.postcode}
+                    onChange={(event) =>
+                      setFormData((current) => ({
+                        ...current,
+                        address: { ...current.address, postcode: event.target.value }
+                      }))
+                    }
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4 rounded-[1.5rem] border border-[#e4ebce] bg-[#fbfcf7] p-4">
+                <div>
+                  <p className="text-sm font-semibold text-[#23411f]">Compliance and ownership</p>
+                  <p className="text-xs text-gray-500">
+                    Link FSA data and, for super admin, choose the restaurant owner.
+                  </p>
+                </div>
+
+                {currentUser?.role === 'superAdmin' && (
+                  <SearchableAdminPicker
+                    selectedAdmin={selectedAdmin}
+                    selectedAdminId={selectedAdmin?._id}
+                    fetchAdmins={fetchAvailableAdmins}
+                    onSelect={(admin) => {
+                      setSelectedAdmin(admin);
+                      setFormData((current) => ({ ...current, adminId: admin._id }));
+                    }}
+                  />
+                )}
+
+                <div className="space-y-2">
+                  <Label>FSA suggestions</Label>
+                  <div className="max-h-56 space-y-2 overflow-y-auto rounded-[1.25rem] border border-[#dce6c1] bg-white p-3">
+                    {fsaLoading && (
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <Spinner size="sm" />
+                        Checking FSA matches...
+                      </div>
+                    )}
+                    {!fsaLoading &&
+                      fsaOptions.map((option) => (
+                        <button
+                          key={option.fhrsId}
+                          type="button"
+                          onClick={() => applyFsaOption(option)}
+                          className="flex w-full flex-col rounded-xl border border-transparent bg-[#fbfcf7] px-3 py-3 text-left hover:border-[#dce6c1] hover:bg-[#f6fbe9]"
+                        >
+                          <span className="text-sm font-semibold text-[#23411f]">
+                            {option.name}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            FHRS {option.rating} · {option.addressLabel || option.postcode || 'No postcode'}
+                          </span>
+                        </button>
+                      ))}
+                    {!fsaLoading && fsaOptions.length === 0 && (
+                      <p className="text-sm text-gray-500">
+                        FSA suggestions will appear once the restaurant name and postcode are available.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-[1.25rem] border border-[#dce6c1] bg-white p-4">
+                  <p className="text-sm font-semibold text-[#23411f]">Preview</p>
+                  <div className="mt-3 overflow-hidden rounded-[1.25rem] border border-[#eef2df]">
+                    <div className="h-32 bg-[linear-gradient(135deg,#f6fbe9_0%,#fff1f1_100%)]">
+                      {formData.imageLogo && (
+                        <img
+                          src={formData.imageLogo}
+                          alt={formData.name || 'Restaurant'}
+                          className="h-full w-full object-cover"
+                        />
+                      )}
+                    </div>
+                    <div className="space-y-2 p-4">
+                      <p className="text-lg font-semibold text-[#23411f]">
+                        {formData.name || 'Restaurant name'}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {formData.tagline || 'Tagline will appear here'}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {formatAddress(formData.address) || 'Address preview'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <div className="flex justify-end gap-3">
-              <Button color="light" type="button" onClick={() => setIsCreateOpen(false)}>
+              <Button color="gray" onClick={resetModalState}>
                 Cancel
               </Button>
-              <Button type="submit" className="!bg-[#8fa31e]" isProcessing={submitting}>
-                Create restaurant
+              <Button
+                type="submit"
+                className="bg-[#8fa31e] hover:bg-[#78871c]"
+                isProcessing={submitting}
+                disabled={logoUploading}
+              >
+                {modalMode === 'edit' ? 'Save restaurant' : 'Create restaurant'}
               </Button>
             </div>
           </form>
         </Modal.Body>
       </Modal>
-    </div>
+    </>
   );
 }
