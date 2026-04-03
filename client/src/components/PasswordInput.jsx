@@ -62,7 +62,7 @@ export default function PasswordInput({
       <TextInput
         {...props}
         type={isVisible ? "text" : "password"}
-        className="[&_input]:pr-12"
+        className="[&_input]:pr-12 focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
       />
       <button
         type="button"

@@ -250,6 +250,7 @@ export default function DashCategories() {
                     }))
                   }
                   required
+                  className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                 />
               </div>
 
@@ -267,6 +268,7 @@ export default function DashCategories() {
                         order: event.target.value
                       }))
                     }
+                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                   />
                 </div>
                 {user?.role === 'superAdmin' && (
@@ -281,6 +283,7 @@ export default function DashCategories() {
                           isGeneric: event.target.value === 'generic'
                         }))
                       }
+                      className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                     >
                       <option value="restaurant">Restaurant specific</option>
                       <option value="generic">Generic platform category</option>
@@ -302,6 +305,7 @@ export default function DashCategories() {
                       }))
                     }
                     required
+                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                   >
                     <option value="">Select restaurant</option>
                     {restaurants.map((restaurant) => (
@@ -445,6 +449,7 @@ export default function DashCategories() {
                     name: event.target.value
                   }))
                 }
+                className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
               />
             </div>
             <div className="space-y-2">
@@ -460,6 +465,7 @@ export default function DashCategories() {
                     order: event.target.value
                   }))
                 }
+                className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
               />
             </div>
           </div>

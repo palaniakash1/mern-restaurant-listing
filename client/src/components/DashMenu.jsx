@@ -282,6 +282,7 @@ export default function DashMenu() {
               value={selectedRestaurantId}
               onChange={(event) => setSelectedRestaurantId(event.target.value)}
               disabled={restaurants.length === 0}
+              className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
             >
               <option value="">Select restaurant</option>
               {restaurants.map((restaurant) => (
@@ -329,6 +330,7 @@ export default function DashMenu() {
                     }))
                   }
                   required
+                  className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                 >
                   <option value="">Select category</option>
                   {categories.map((category) => (
@@ -467,6 +469,7 @@ export default function DashMenu() {
                     name: event.target.value
                   }))
                 }
+                className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
               />
             </div>
             <div className="space-y-2">
@@ -481,6 +484,7 @@ export default function DashMenu() {
                     description: event.target.value
                   }))
                 }
+                className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
               />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -498,6 +502,7 @@ export default function DashMenu() {
                       price: event.target.value
                     }))
                   }
+                  className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                 />
               </div>
               <div className="space-y-2">
@@ -511,6 +516,7 @@ export default function DashMenu() {
                       image: event.target.value
                     }))
                   }
+                  className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                 />
               </div>
             </div>
@@ -525,6 +531,7 @@ export default function DashMenu() {
                     isAvailable: event.target.value === 'available'
                   }))
                 }
+                className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
               >
                 <option value="available">Available</option>
                 <option value="unavailable">Unavailable</option>

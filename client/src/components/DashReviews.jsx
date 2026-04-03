@@ -240,6 +240,7 @@ export default function DashReviews() {
                 value={selectedRestaurantId}
                 onChange={(event) => setSelectedRestaurantId(event.target.value)}
                 disabled={restaurants.length === 0}
+                className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
               >
                 <option value="">Select restaurant</option>
                 {restaurants.map((restaurant) => (
@@ -303,6 +304,7 @@ export default function DashReviews() {
                     }))
                   }
                   required
+                  className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                 >
                   <option value="">Choose a restaurant</option>
                   {restaurants.map((restaurant) => (
@@ -323,6 +325,7 @@ export default function DashReviews() {
                       rating: event.target.value
                     }))
                   }
+                  className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                 >
                   {[5, 4, 3, 2, 1].map((rating) => (
                     <option key={rating} value={rating}>
@@ -344,6 +347,7 @@ export default function DashReviews() {
                     }))
                   }
                   placeholder="Tell other diners what stood out."
+                  className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                 />
               </div>
               <Button
@@ -501,6 +505,7 @@ export default function DashReviews() {
                     rating: event.target.value
                   }))
                 }
+                className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
               >
                 {[5, 4, 3, 2, 1].map((rating) => (
                   <option key={rating} value={rating}>
@@ -521,6 +526,7 @@ export default function DashReviews() {
                     comment: event.target.value
                   }))
                 }
+                className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
               />
             </div>
           </div>

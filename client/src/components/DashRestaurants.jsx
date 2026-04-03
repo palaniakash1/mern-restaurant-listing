@@ -691,6 +691,7 @@ export default function DashRestaurants() {
               <Select
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
+                className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
               >
                 <option value="all">All statuses</option>
                 <option value="published">Published</option>
@@ -1005,6 +1006,7 @@ export default function DashRestaurants() {
                       }))
                     }
                     required
+                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1018,6 +1020,7 @@ export default function DashRestaurants() {
                         tagline: event.target.value
                       }))
                     }
+                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1032,6 +1035,7 @@ export default function DashRestaurants() {
                       }))
                     }
                     required
+                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1047,6 +1051,7 @@ export default function DashRestaurants() {
                       }))
                     }
                     required
+                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                   />
                 </div>
                 <div className="space-y-2 sm:col-span-2">
@@ -1060,6 +1065,7 @@ export default function DashRestaurants() {
                         website: event.target.value
                       }))
                     }
+                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                   />
                 </div>
                 <div className="space-y-2 sm:col-span-2">
@@ -1074,6 +1080,7 @@ export default function DashRestaurants() {
                         description: event.target.value
                       }))
                     }
+                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                   />
                 </div>
               </div>
@@ -1108,6 +1115,7 @@ export default function DashRestaurants() {
                       }))
                     }
                     required
+                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                   />
                   <TextInput
                     placeholder="Address line 2"
@@ -1121,6 +1129,7 @@ export default function DashRestaurants() {
                         }
                       }))
                     }
+                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                   />
                   <TextInput
                     placeholder="Area / locality"
@@ -1135,6 +1144,7 @@ export default function DashRestaurants() {
                       }))
                     }
                     required
+                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                   />
                   <TextInput
                     placeholder="City"
@@ -1149,6 +1159,7 @@ export default function DashRestaurants() {
                       }))
                     }
                     required
+                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                   />
                   <TextInput
                     placeholder="County / region"
@@ -1162,6 +1173,7 @@ export default function DashRestaurants() {
                         }
                       }))
                     }
+                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                   />
                   <TextInput
                     placeholder="Postcode"
@@ -1176,6 +1188,7 @@ export default function DashRestaurants() {
                       }))
                     }
                     required
+                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                   />
                 </div>
               </div>

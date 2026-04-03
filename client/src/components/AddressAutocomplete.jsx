@@ -85,7 +85,7 @@ export default function AddressAutocomplete({
         onChange={(event) => onChange?.(event.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-[#8fa31e] focus:outline-none focus:ring-2 focus:ring-[#d9e6a5] disabled:bg-gray-100"
+        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-[#8fa31e] focus:outline-none focus:ring-2 focus:ring-[#8fa31e] disabled:bg-gray-100"
       />
 
       {loading && (

@@ -565,7 +565,7 @@ export default function DashUsers() {
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
+              <Select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)} className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]">
                 <option value="all">All roles</option>
                 <option value="admin">Admins</option>
                 <option value="storeManager">Store managers</option>
@@ -573,6 +573,7 @@ export default function DashUsers() {
               <Select
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
+                className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
               >
                 <option value="all">All statuses</option>
                 <option value="active">Active</option>
@@ -586,6 +587,7 @@ export default function DashUsers() {
                     setPage(1);
                   }}
                   placeholder="Search users"
+                  className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                 />
               )}
               {(canCreatePrivilegedUser || canCreateStoreManager) && (
@@ -825,6 +827,7 @@ export default function DashUsers() {
                           }))
                     }
                     required
+                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                   />
                 </div>
 
@@ -846,6 +849,7 @@ export default function DashUsers() {
                           }))
                     }
                     required
+                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                   />
                 </div>
 
@@ -884,6 +888,7 @@ export default function DashUsers() {
                         id="role"
                         value={superAdminForm.role}
                         onChange={(event) => handleRoleChange(event.target.value)}
+                        className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                       >
                         <option value="admin">Admin</option>
                         <option value="storeManager">Store Manager</option>
@@ -968,6 +973,7 @@ export default function DashUsers() {
                 id="assignmentRestaurant"
                 value={assignmentRestaurantId}
                 onChange={(event) => setAssignmentRestaurantId(event.target.value)}
+                className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
               >
                 <option value="">Select restaurant</option>
                 {restaurants.map((restaurant) => (

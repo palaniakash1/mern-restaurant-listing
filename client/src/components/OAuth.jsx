@@ -49,7 +49,7 @@ export default function OAuth() {
     <Button
       type="button"
       outline
-      className=" uppercase !bg-[#8fa31e] hover:!bg-[#7a8c1a] text-white !rounded-lg border-none"
+      className=" uppercase !bg-[#8fa31e] hover:!bg-[#7a8c1a] text-white !rounded-lg border-none focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
       onClick={handleGoogleClick}
     >
       <AiFillGoogleCircle className="w-6 h-6 mr-2" />

@@ -319,6 +319,7 @@ export default function DashAuditLogs() {
                   id="entityType"
                   value={entityType}
                   onChange={(event) => setEntityType(event.target.value)}
+                  className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                 >
                   {ENTITY_OPTIONS.map((option) => (
                     <option key={option.value || 'all'} value={option.value}>
@@ -333,6 +334,7 @@ export default function DashAuditLogs() {
                   id="action"
                   value={action}
                   onChange={(event) => setAction(event.target.value)}
+                  className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                 >
                   {ACTION_OPTIONS.map((option) => (
                     <option key={option.value || 'all'} value={option.value}>
