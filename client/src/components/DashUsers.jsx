@@ -91,7 +91,7 @@ function UploadPreview({
           event.target.value = '';
         }}
       />
-      <div className="relative aspect-square w-full max-w-[260px] overflow-hidden rounded-[1.5rem] border border-[#dce6c1] bg-[#f7faef]">
+      <div className="relative aspect-square w-full max-w-[260px] overflow-hidden rounded-[1.5rem] border !border-[#dce6c1] bg-[#f7faef]">
         {value ? (
           <img src={value} alt={title} className="h-full w-full object-cover" />
         ) : (
@@ -484,7 +484,7 @@ export default function DashUsers() {
 
   if (!listEndpoint) {
     return (
-      <Card className="border border-[#dce6c1] bg-white shadow-sm">
+      <Card className="border !border-[#dce6c1] bg-white shadow-sm">
         <p className="text-sm text-gray-600">
           Your current role does not have access to the user operations workspace.
         </p>
@@ -498,7 +498,7 @@ export default function DashUsers() {
         {error && <Alert color="failure">{error}</Alert>}
         {success && <Alert color="success">{success}</Alert>}
 
-        <Card className="border border-[#dce6c1] bg-white shadow-sm">
+        <Card className="border !border-[#dce6c1] bg-white shadow-sm">
           <div className="grid gap-5 xl:grid-cols-[1.1fr,0.9fr]">
             <div className="space-y-3">
               <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[#b62828]">
@@ -536,25 +536,25 @@ export default function DashUsers() {
         </Card>
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Card className="border border-[#dce6c1] bg-white shadow-sm">
+          <Card className="border !border-[#dce6c1] bg-white shadow-sm">
             <p className="text-sm text-gray-500">Visible users</p>
             <p className="mt-2 text-3xl font-bold text-[#23411f]">{users.length}</p>
           </Card>
-          <Card className="border border-[#dce6c1] bg-white shadow-sm">
+          <Card className="border !border-[#dce6c1] bg-white shadow-sm">
             <p className="text-sm text-gray-500">Admins</p>
             <p className="mt-2 text-3xl font-bold text-[#23411f]">{visibleAdmins}</p>
           </Card>
-          <Card className="border border-[#dce6c1] bg-white shadow-sm">
+          <Card className="border !border-[#dce6c1] bg-white shadow-sm">
             <p className="text-sm text-gray-500">Store managers</p>
             <p className="mt-2 text-3xl font-bold text-[#23411f]">{visibleManagers}</p>
           </Card>
-          <Card className="border border-[#dce6c1] bg-white shadow-sm">
+          <Card className="border !border-[#dce6c1] bg-white shadow-sm">
             <p className="text-sm text-gray-500">Restaurants in scope</p>
             <p className="mt-2 text-3xl font-bold text-[#23411f]">{restaurants.length}</p>
           </Card>
         </div>
 
-        <Card className="border border-[#dce6c1] bg-white shadow-sm">
+        <Card className="border !border-[#dce6c1] bg-white shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h3 className="text-lg font-semibold text-[#23411f]">User table</h3>
@@ -691,13 +691,13 @@ export default function DashUsers() {
                     <Table.Cell>
                       <div className="flex flex-wrap gap-2">
                         {canCreatePrivilegedUser && ['admin', 'storeManager'].includes(user.role) && (
-                          <Button color="light" size="xs" onClick={() => openEditModal(user)}>
+                          <Button size="xs" className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]" onClick={() => openEditModal(user)}>
                             <HiOutlinePencilSquare className="mr-1 h-4 w-4" />
                             Edit
                           </Button>
                         )}
                         {canAssignStoreManager && user.role === 'storeManager' && (
-                          <Button color="light" size="xs" onClick={() => openAssignModal(user)}>
+                          <Button size="xs" className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]" onClick={() => openAssignModal(user)}>
                             Manage
                           </Button>
                         )}

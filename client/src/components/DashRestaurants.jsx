@@ -86,7 +86,7 @@ function LogoUpload({ value, progress, uploading, onSelect }) {
         </label>
       </div>
 
-      <div className="relative h-44 overflow-hidden rounded-[1.5rem] border border-[#dce6c1] bg-[#f7faef]">
+      <div className="relative h-44 overflow-hidden rounded-[1.5rem] border !border-[#dce6c1] bg-[#f7faef]">
         {value ? (
           <img
             src={value}
@@ -162,7 +162,7 @@ function SearchableAdminPicker({
       </button>
 
       {open && (
-        <div className="absolute z-20 w-full rounded-[1.25rem] border border-[#dce6c1] bg-white p-3 shadow-xl">
+        <div className="absolute z-20 w-full rounded-[1.25rem] border !border-[#dce6c1] bg-white p-3 shadow-xl">
           <TextInput
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -184,7 +184,7 @@ function SearchableAdminPicker({
                     onSelect(admin);
                     setOpen(false);
                   }}
-                  className="flex w-full flex-col rounded-xl border border-transparent bg-[#fbfcf7] px-3 py-3 text-left hover:!border-[#dce6c1] hover:!bg-[#f6fbe9]"
+                  className="flex w-full flex-col rounded-xl border border-transparent bg-[#fbfcf7] px-3 py-3 text-left hover:!!border-[#dce6c1] hover:!bg-[#f6fbe9]"
                 >
                   <span className="text-sm font-semibold text-[#23411f]">
                     {admin.userName}
@@ -593,7 +593,7 @@ export default function DashRestaurants() {
 
   if (!listEndpoint) {
     return (
-      <Card className="border border-[#dce6c1] bg-white shadow-sm">
+      <Card className="border !border-[#dce6c1] bg-white shadow-sm">
         <p className="text-sm text-gray-600">
           Your current role does not have access to restaurant operations.
         </p>
@@ -607,7 +607,7 @@ export default function DashRestaurants() {
         {error && <Alert color="failure">{error}</Alert>}
         {success && <Alert color="success">{success}</Alert>}
 
-        <Card className="border border-[#dce6c1] bg-white shadow-sm">
+        <Card className="border !border-[#dce6c1] bg-white shadow-sm">
           <div className="grid gap-5 xl:grid-cols-[1.1fr,0.9fr]">
             <div className="space-y-3">
               <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[#b62828]">
@@ -653,13 +653,13 @@ export default function DashRestaurants() {
         </Card>
 
         <div className="grid gap-4 sm:grid-cols-3">
-          <Card className="border border-[#dce6c1] bg-white shadow-sm">
+          <Card className="border !border-[#dce6c1] bg-white shadow-sm">
             <p className="text-sm text-gray-500">Draft restaurants</p>
             <p className="mt-2 text-3xl font-bold text-[#23411f]">
               {draftCount}
             </p>
           </Card>
-          <Card className="border border-[#dce6c1] bg-white shadow-sm">
+          <Card className="border !border-[#dce6c1] bg-white shadow-sm">
             <p className="text-sm text-gray-500">Owner control</p>
             <p className="mt-2 text-sm font-semibold text-[#23411f]">
               {canReassignAdmin
@@ -667,7 +667,7 @@ export default function DashRestaurants() {
                 : 'Scoped to owned stores'}
             </p>
           </Card>
-          <Card className="border border-[#dce6c1] bg-white shadow-sm">
+          <Card className="border !border-[#dce6c1] bg-white shadow-sm">
             <p className="text-sm text-gray-500">Status governance</p>
             <p className="mt-2 text-sm font-semibold text-[#23411f]">
               {canUpdateStatus
@@ -677,7 +677,7 @@ export default function DashRestaurants() {
           </Card>
         </div>
 
-        <Card className="border border-[#dce6c1] bg-white shadow-sm">
+        <Card className="border !border-[#dce6c1] bg-white shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h3 className="text-lg font-semibold text-[#23411f]">
@@ -837,8 +837,8 @@ export default function DashRestaurants() {
                       <div className="flex flex-wrap gap-2">
                         {canUpdateRestaurant && (
                           <Button
-                            color="light"
                             size="xs"
+                            className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                             onClick={() => openEditModal(restaurant)}
                           >
                             <HiOutlinePencilSquare className="mr-1 h-4 w-4" />
@@ -1208,7 +1208,7 @@ export default function DashRestaurants() {
 
                 <div className="space-y-2">
                   <Label>FSA suggestions</Label>
-                  <div className="max-h-56 space-y-2 overflow-y-auto rounded-[1.25rem] border border-[#dce6c1] bg-white p-3">
+                  <div className="max-h-56 space-y-2 overflow-y-auto rounded-[1.25rem] border !border-[#dce6c1] bg-white p-3">
                     {fsaLoading && (
                       <div className="flex items-center gap-2 text-sm text-gray-500">
                         <Spinner size="sm" />
@@ -1221,7 +1221,7 @@ export default function DashRestaurants() {
                           key={option.fhrsId}
                           type="button"
                           onClick={() => applyFsaOption(option)}
-                          className="flex w-full flex-col rounded-xl border border-transparent !bg-[#fbfcf7] px-3 py-3 text-left hover:!border-[#dce6c1] hover:!bg-[#f6fbe9]"
+                          className="flex w-full flex-col rounded-xl border border-transparent !bg-[#fbfcf7] px-3 py-3 text-left hover:!!border-[#dce6c1] hover:!bg-[#f6fbe9]"
                         >
                           <span className="text-sm font-semibold text-[#23411f]">
                             {option.name}
@@ -1243,7 +1243,7 @@ export default function DashRestaurants() {
                   </div>
                 </div>
 
-                <div className="rounded-[1.25rem] border border-[#dce6c1] bg-white p-4">
+                <div className="rounded-[1.25rem] border !border-[#dce6c1] bg-white p-4">
                   <p className="text-sm font-semibold text-[#23411f]">
                     Preview
                   </p>

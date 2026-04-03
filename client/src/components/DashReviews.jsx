@@ -213,7 +213,7 @@ export default function DashReviews() {
       {success && <Alert color="success">{success}</Alert>}
 
       <div className="grid gap-4 xl:grid-cols-[1.1fr,0.9fr]">
-        <Card className="border border-[#dce6c1] bg-white shadow-sm">
+        <Card className="border !border-[#dce6c1] bg-white shadow-sm">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#b62828]">
               Review workspace
@@ -283,7 +283,7 @@ export default function DashReviews() {
         </Card>
 
         {canCreateReview && (
-          <Card className="border border-[#dce6c1] bg-white shadow-sm">
+          <Card className="border !border-[#dce6c1] bg-white shadow-sm">
             <div className="space-y-1">
               <h3 className="text-lg font-semibold text-[#23411f]">Post a review</h3>
               <p className="text-sm text-gray-500">
@@ -360,7 +360,7 @@ export default function DashReviews() {
       </div>
 
       {canReadOwnReviews && (
-        <Card className="border border-[#dce6c1] bg-white shadow-sm">
+        <Card className="border !border-[#dce6c1] bg-white shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="text-lg font-semibold text-[#23411f]">Your reviews</h3>
@@ -428,7 +428,7 @@ export default function DashReviews() {
       )}
 
       {(canBrowseRestaurantReviews || (!isCustomer && reviews.length > 0)) && (
-        <Card className="border border-[#dce6c1] bg-white shadow-sm">
+        <Card className="border !border-[#dce6c1] bg-white shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="text-lg font-semibold text-[#23411f]">Restaurant reviews</h3>

@@ -242,7 +242,7 @@ export default function DashAuditLogs() {
 
   if (!canReadAuditLogs) {
     return (
-      <Card className="border border-[#dce6c1] bg-white shadow-sm">
+      <Card className="border !border-[#dce6c1] bg-white shadow-sm">
         <p className="text-sm text-gray-600">
           Your current role does not have access to audit log monitoring.
         </p>
@@ -255,7 +255,7 @@ export default function DashAuditLogs() {
       <div className="space-y-5">
         {error && <Alert color="failure">{error}</Alert>}
 
-        <Card className="border border-[#dce6c1] bg-white shadow-sm">
+        <Card className="border !border-[#dce6c1] bg-white shadow-sm">
           <div className="grid gap-5 xl:grid-cols-[1.15fr,0.85fr]">
             <div className="space-y-3">
               <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[#b62828]">
@@ -275,25 +275,25 @@ export default function DashAuditLogs() {
         </Card>
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Card className="border border-[#dce6c1] bg-white shadow-sm">
+          <Card className="border !border-[#dce6c1] bg-white shadow-sm">
             <p className="text-sm text-gray-500">Page records</p>
             <p className="mt-2 text-3xl font-bold text-[#23411f]">
               {summary.records}
             </p>
           </Card>
-          <Card className="border border-[#dce6c1] bg-white shadow-sm">
+          <Card className="border !border-[#dce6c1] bg-white shadow-sm">
             <p className="text-sm text-gray-500">Auth events</p>
             <p className="mt-2 text-3xl font-bold text-[#23411f]">
               {summary.authEvents}
             </p>
           </Card>
-          <Card className="border border-[#dce6c1] bg-white shadow-sm">
+          <Card className="border !border-[#dce6c1] bg-white shadow-sm">
             <p className="text-sm text-gray-500">Operational changes</p>
             <p className="mt-2 text-3xl font-bold text-[#23411f]">
               {summary.operationalChanges}
             </p>
           </Card>
-          <Card className="border border-[#dce6c1] bg-white shadow-sm">
+          <Card className="border !border-[#dce6c1] bg-white shadow-sm">
             <p className="text-sm text-gray-500">Unique actors</p>
             <p className="mt-2 text-3xl font-bold text-[#23411f]">
               {summary.uniqueActors}
@@ -301,7 +301,7 @@ export default function DashAuditLogs() {
           </Card>
         </div>
 
-        <Card className="border border-[#dce6c1] bg-white shadow-sm">
+        <Card className="border !border-[#dce6c1] bg-white shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h3 className="text-lg font-semibold text-[#23411f]">
@@ -374,7 +374,7 @@ export default function DashAuditLogs() {
           )}
 
           {!loading && !countLoading && logs.length === 0 && (
-            <div className="mt-4 rounded-[1.5rem] border border-dashed border-[#dce6c1] bg-[#fbfcf7] p-8 text-center text-sm text-gray-500">
+            <div className="mt-4 rounded-[1.5rem] border border-dashed !border-[#dce6c1] bg-[#fbfcf7] p-8 text-center text-sm text-gray-500">
               No audit entries matched the current filters.
             </div>
           )}

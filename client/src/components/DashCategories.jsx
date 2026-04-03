@@ -173,7 +173,7 @@ export default function DashCategories() {
 
   if (!listEndpoint) {
     return (
-      <Card className="border border-[#dce6c1] bg-white shadow-sm">
+      <Card className="border !border-[#dce6c1] bg-white shadow-sm">
         <p className="text-sm text-gray-600">
           Your current role does not have category management access.
         </p>
@@ -187,7 +187,7 @@ export default function DashCategories() {
       {success && <Alert color="success">{success}</Alert>}
 
       <div className="grid gap-4 xl:grid-cols-[1.15fr,0.85fr]">
-        <Card className="border border-[#dce6c1] bg-white shadow-sm">
+        <Card className="border !border-[#dce6c1] bg-white shadow-sm">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#b62828]">
               Category management
@@ -230,7 +230,7 @@ export default function DashCategories() {
         </Card>
 
         {canCreateCategory && (
-          <Card className="border border-[#dce6c1] bg-white shadow-sm">
+          <Card className="border !border-[#dce6c1] bg-white shadow-sm">
             <div className="space-y-1">
               <h3 className="text-lg font-semibold text-[#23411f]">Create category</h3>
               <p className="text-sm text-gray-500">
@@ -325,7 +325,7 @@ export default function DashCategories() {
         )}
       </div>
 
-      <Card className="border border-[#dce6c1] bg-white shadow-sm">
+      <Card className="border !border-[#dce6c1] bg-white shadow-sm">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h3 className="text-lg font-semibold text-[#23411f]">Category inventory</h3>
@@ -370,8 +370,8 @@ export default function DashCategories() {
                     <div className="flex flex-wrap gap-2">
                       {canUpdateCategory && (
                         <Button
-                          color="light"
                           size="xs"
+                          className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                           onClick={() =>
                             setEditingCategory({
                               _id: category._id,

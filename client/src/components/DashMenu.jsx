@@ -263,7 +263,7 @@ export default function DashMenu() {
       {success && <Alert color="success">{success}</Alert>}
 
       <div className="grid gap-4 xl:grid-cols-[1.15fr,0.85fr]">
-        <Card className="border border-[#dce6c1] bg-white shadow-sm">
+        <Card className="border !border-[#dce6c1] bg-white shadow-sm">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#b62828]">
               Menu operations
@@ -311,7 +311,7 @@ export default function DashMenu() {
         </Card>
 
         {canCreateMenu && (
-          <Card className="border border-[#dce6c1] bg-white shadow-sm">
+          <Card className="border !border-[#dce6c1] bg-white shadow-sm">
             <div className="space-y-1">
               <h3 className="text-lg font-semibold text-[#23411f]">Create menu</h3>
               <p className="text-sm text-gray-500">Create one menu per restaurant category.</p>
@@ -351,7 +351,7 @@ export default function DashMenu() {
         )}
       </div>
 
-      <Card className="border border-[#dce6c1] bg-white shadow-sm">
+      <Card className="border !border-[#dce6c1] bg-white shadow-sm">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h3 className="text-lg font-semibold text-[#23411f]">Active menus</h3>

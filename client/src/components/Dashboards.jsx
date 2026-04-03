@@ -170,7 +170,7 @@ export default function Dashboards() {
 
   return (
     <div className="space-y-5">
-      <Card className="overflow-hidden border border-[#dce6c1] bg-white shadow-[0_25px_80px_rgba(60,79,25,0.08)]">
+      <Card className="overflow-hidden border !border-[#dce6c1] bg-white shadow-[0_25px_80px_rgba(60,79,25,0.08)]">
         <div className="grid gap-5 lg:grid-cols-[1.2fr,0.8fr]">
           <div className="space-y-3">
             <Badge color="failure" className="w-fit border-0">
@@ -208,7 +208,7 @@ export default function Dashboards() {
           Array.from({ length: 4 }).map((_, index) => (
             <Card
               key={index}
-              className="border border-[#dce6c1] bg-white shadow-sm"
+              className="border !border-[#dce6c1] bg-white shadow-sm"
             >
               <div className="flex items-center gap-3 text-[#4d6518]">
                 <Spinner size="sm" />
@@ -223,7 +223,7 @@ export default function Dashboards() {
             return (
               <Card
                 key={card.label}
-                className="border border-[#dce6c1] bg-white shadow-sm"
+                className="border !border-[#dce6c1] bg-white shadow-sm"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -242,7 +242,7 @@ export default function Dashboards() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.15fr,0.85fr]">
-        <Card className="border border-[#dce6c1] bg-white shadow-sm">
+        <Card className="border !border-[#dce6c1] bg-white shadow-sm">
           <h3 className="text-lg font-semibold text-[#23411f]">
             What this dashboard covers
           </h3>
@@ -280,7 +280,7 @@ export default function Dashboards() {
           </div>
         </Card>
 
-        <Card className="border border-[#dce6c1] bg-white shadow-sm">
+        <Card className="border !border-[#dce6c1] bg-white shadow-sm">
           <h3 className="text-lg font-semibold text-[#23411f]">At a glance</h3>
           <div className="mt-4 space-y-4 text-sm text-gray-600">
             <div className="rounded-2xl border border-[#ebf0d7] p-4">
