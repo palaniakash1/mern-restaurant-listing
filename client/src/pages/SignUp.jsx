@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import wavepattern from "../assets/wavepattern.png";
-// import OAuth from "../components/OAuth";
+import OAuth from "../components/OAuth";
 import logo from "../assets/eatwisely.ico";
 import { Alert } from "flowbite-react";
 import { useAuth } from "../context/AuthContext";
@@ -219,7 +219,7 @@ export default function SignUp() {
               >
                 {isLoading ? "Sigining up..." : "Sign Up"}
               </button>
-              {/* <OAuth /> */}
+              <OAuth />
             </form>
 
             {/* Bottom Link */}
