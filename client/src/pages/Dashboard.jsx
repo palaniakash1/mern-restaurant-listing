@@ -48,7 +48,7 @@ export default function Dashboard() {
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col px-3 pb-6 pt-3 sm:px-4 lg:px-0 lg:pr-5">
-          <div className="sticky top-0 z-30 rounded-b-[1.75rem] border border-white/50 bg-white/80 px-4 py-4 shadow-[0_18px_60px_rgba(77,103,22,0.12)] backdrop-blur lg:mt-4 lg:rounded-[2rem]">
+          <div className="sticky top-5 z-30 rounded-b-[1.75rem] border border-white/50 bg-white/80 px-4 py-4 shadow-[0_18px_60px_rgba(77,103,22,0.12)] backdrop-blur lg:mt-4 lg:rounded-[2rem]">
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
