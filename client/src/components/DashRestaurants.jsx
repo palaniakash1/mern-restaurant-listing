@@ -209,6 +209,7 @@ export default function DashRestaurants() {
   const [success, setSuccess] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [statusFilter, setStatusFilter] = useState('all');
   const [modalMode, setModalMode] = useState(null);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [formData, setFormData] = useState(buildRestaurantForm());
@@ -218,6 +219,7 @@ export default function DashRestaurants() {
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [fsaOptions, setFsaOptions] = useState([]);
   const [fsaLoading, setFsaLoading] = useState(false);
+  const [pendingDeleteRestaurant, setPendingDeleteRestaurant] = useState(null);
 
   const canCreateRestaurant = hasPermission(currentUser, 'restaurant', 'create');
   const canUpdateRestaurant = hasPermission(currentUser, 'restaurant', 'updateById');
@@ -239,6 +241,10 @@ export default function DashRestaurants() {
   const publishedCount = restaurants.filter((item) => item.status === 'published').length;
   const draftCount = restaurants.filter((item) => item.status === 'draft').length;
   const blockedCount = restaurants.filter((item) => item.status === 'blocked').length;
+  const filteredRestaurants = useMemo(() => {
+    if (statusFilter === 'all') return restaurants;
+    return restaurants.filter((item) => item.status === statusFilter);
+  }, [restaurants, statusFilter]);
 
   const fetchRestaurants = useCallback(async () => {
     if (!listEndpoint) {
@@ -501,14 +507,12 @@ export default function DashRestaurants() {
   };
 
   const handleDeleteRestaurant = async (restaurant) => {
-    const confirmed = window.confirm(`Delete ${restaurant.name}?`);
-    if (!confirmed) return;
-
     try {
       setError(null);
       setSuccess(null);
       await apiDelete(`/api/restaurants/id/${restaurant._id}`);
       setSuccess('Restaurant deleted successfully.');
+      setPendingDeleteRestaurant(null);
       await fetchRestaurants();
     } catch (deleteError) {
       setError(deleteError.message);
@@ -620,15 +624,60 @@ export default function DashRestaurants() {
                 Premium control surface for restaurant records in your scope.
               </p>
             </div>
-            {canCreateRestaurant && (
-              <Button
-                className="bg-[#8fa31e] hover:bg-[#78871c]"
-                onClick={openCreateModal}
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
               >
-                <HiOutlinePlus className="mr-2 h-4 w-4" />
-                Add restaurant
-              </Button>
-            )}
+                <option value="all">All statuses</option>
+                <option value="published">Published</option>
+                <option value="draft">Draft</option>
+                <option value="blocked">Blocked</option>
+              </Select>
+              {canCreateRestaurant && (
+                <Button
+                  className="bg-[#8fa31e] hover:bg-[#78871c]"
+                  onClick={openCreateModal}
+                >
+                  <HiOutlinePlus className="mr-2 h-4 w-4" />
+                  Add restaurant
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+            <button
+              type="button"
+              onClick={() => setStatusFilter('all')}
+              className={statusFilter === 'all' ? 'font-semibold text-[#23411f]' : 'text-[#2563eb]'}
+            >
+              All ({restaurants.length})
+            </button>
+            <span className="text-gray-300">|</span>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('published')}
+              className={statusFilter === 'published' ? 'font-semibold text-[#23411f]' : 'text-[#2563eb]'}
+            >
+              Published ({publishedCount})
+            </button>
+            <span className="text-gray-300">|</span>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('draft')}
+              className={statusFilter === 'draft' ? 'font-semibold text-[#23411f]' : 'text-[#2563eb]'}
+            >
+              Draft ({draftCount})
+            </button>
+            <span className="text-gray-300">|</span>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('blocked')}
+              className={statusFilter === 'blocked' ? 'font-semibold text-[#23411f]' : 'text-[#2563eb]'}
+            >
+              Blocked ({blockedCount})
+            </button>
           </div>
 
           {loading && (
@@ -648,7 +697,7 @@ export default function DashRestaurants() {
                 <Table.HeadCell>Actions</Table.HeadCell>
               </Table.Head>
               <Table.Body className="divide-y">
-                {restaurants.map((restaurant) => (
+                {filteredRestaurants.map((restaurant) => (
                   <Table.Row key={restaurant._id}>
                     <Table.Cell>
                       <div className="flex items-center gap-3">
@@ -720,7 +769,11 @@ export default function DashRestaurants() {
                           </Button>
                         )}
                         {canDeleteRestaurant && (
-                          <Button color="failure" size="xs" onClick={() => handleDeleteRestaurant(restaurant)}>
+                          <Button
+                            color="failure"
+                            size="xs"
+                            onClick={() => setPendingDeleteRestaurant(restaurant)}
+                          >
                             <HiOutlineTrash className="mr-1 h-4 w-4" />
                             Delete
                           </Button>
@@ -734,7 +787,7 @@ export default function DashRestaurants() {
           </div>
 
           <div className="mt-5 space-y-3 md:hidden">
-            {restaurants.map((restaurant) => (
+            {filteredRestaurants.map((restaurant) => (
               <div
                 key={restaurant._id}
                 className="rounded-[1.5rem] border border-[#e6eccf] bg-[#fbfcf7] p-4"
@@ -1050,6 +1103,32 @@ export default function DashRestaurants() {
             </div>
           </form>
         </Modal.Body>
+      </Modal>
+
+      <Modal
+        show={Boolean(pendingDeleteRestaurant)}
+        onClose={() => setPendingDeleteRestaurant(null)}
+      >
+        <Modal.Header>Delete restaurant</Modal.Header>
+        <Modal.Body>
+          <p className="text-sm text-gray-600">
+            Are you sure you want to delete `{pendingDeleteRestaurant?.name}`?
+            Clicking outside this modal will cancel the action.
+          </p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            color="failure"
+            onClick={() =>
+              pendingDeleteRestaurant && handleDeleteRestaurant(pendingDeleteRestaurant)
+            }
+          >
+            Confirm delete
+          </Button>
+          <Button color="gray" onClick={() => setPendingDeleteRestaurant(null)}>
+            Cancel
+          </Button>
+        </Modal.Footer>
       </Modal>
     </>
   );
