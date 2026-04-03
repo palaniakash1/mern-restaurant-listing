@@ -154,7 +154,7 @@ PORT=3000
 NODE_ENV=development
 DATABASE_URL=mongodb://localhost:27017/restaurant
 JWT_SECRET=your-secret-key
-JWT_EXPIRE=1h
+JWT_EXPIRE=12h
 CORS_ORIGINS=http://localhost:5173,http://localhost:3000
 METRICS_TOKEN=optional-strong-token
 ```

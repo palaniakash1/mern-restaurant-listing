@@ -24,7 +24,7 @@ test('jwt rotation service still verifies legacy static-secret tokens', () => {
   const legacyToken = jwt.sign(
     { id: '507f1f77bcf86cd799439011', role: 'admin' },
     process.env.JWT_SECRET,
-    { expiresIn: '1h' }
+    { expiresIn: '12h' }
   );
 
   const decoded = jwtRotationService.verifyToken(legacyToken);

@@ -224,7 +224,7 @@ class JWTKeyRotationService {
   signToken(payload, options = {}) {
     const {
       fallbackSecret = config.jwtSecret,
-      expiresIn = '1h',
+      expiresIn = '12h',
       ...restOptions
     } = options;
 

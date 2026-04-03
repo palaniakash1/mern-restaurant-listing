@@ -63,7 +63,7 @@ test('jwt rotation service exposes fallback signing, metadata, and current-key g
 
     const fallbackToken = jwtRotationService.signToken(
       { id: 'user-1', role: 'user' },
-      { fallbackSecret: 'fallback-secret', expiresIn: '1h' }
+      { fallbackSecret: 'fallback-secret', expiresIn: '12h' }
     );
     const fallbackPayload = jwt.verify(fallbackToken, 'fallback-secret');
     assert.equal(fallbackPayload.id, 'user-1');
@@ -82,7 +82,7 @@ test('jwt rotation service exposes fallback signing, metadata, and current-key g
 
     const rotatedToken = jwtRotationService.signToken(
       { id: 'user-2', role: 'admin' },
-      { expiresIn: '1h' }
+      { expiresIn: '12h' }
     );
     const verifiedPayload = jwtRotationService.verifyToken(rotatedToken);
     const metadata = jwtRotationService.getKeyMetadata();
@@ -128,7 +128,7 @@ test('jwt rotation service covers expired, manual rotation, and revocation branc
         keyid: expiredKey.kid,
         issuer: config.jwtIssuer,
         audience: config.jwtAudience,
-        expiresIn: '1h'
+        expiresIn: '12h'
       }
     );
 

@@ -191,7 +191,7 @@ const token = jwtRotationService.signToken(
     role: user.role
   },
   {
-    expiresIn: '1h'
+    expiresIn: '12h'
   }
 );
 

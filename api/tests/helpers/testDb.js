@@ -42,5 +42,5 @@ export const teardownTestDb = async () => {
 };
 
 export const signTestToken = (payload) => {
-  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '12h' });
 };
