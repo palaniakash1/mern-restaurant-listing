@@ -4,6 +4,7 @@ import { Alert, Button, Modal } from 'flowbite-react';
 import { HiOutlineExclamationCircle, HiTrash } from 'react-icons/hi';
 import { VscSignOut } from 'react-icons/vsc';
 import ImageCircleLoader from '../components/ImageCircleLoader';
+import PasswordInput from '../components/PasswordInput';
 import { useAuth } from '../context/AuthContext';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
 import { buildCsrfHeaders } from '../utils/http';
@@ -239,12 +240,11 @@ export default function DashProfile() {
                 <label className="text-sm font-semibold text-gray-500">
                   Password
                 </label>
-                <input
-                  type="password"
+                <PasswordInput
                   id="password"
                   placeholder="********"
                   onChange={handleChange}
-                  className="w-full rounded-[5px] border-gray-200 bg-white p-3 focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
+                  className="w-full"
                 />
               </div>
 
