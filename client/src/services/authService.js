@@ -1,5 +1,7 @@
 import { buildCsrfHeaders } from '../utils/http';
 
+let refreshSessionPromise = null;
+
 const parseJsonSafely = async (response) => {
   const text = await response.text();
 
@@ -57,18 +59,26 @@ export const googleSignIn = async (googleData) => {
 };
 
 export const refreshSession = async () => {
-  const res = await fetch('/api/auth/refresh', {
-    method: 'POST',
-    credentials: 'include',
-    headers: buildCsrfHeaders()
-  });
-  const data = await parseJsonSafely(res);
+  if (!refreshSessionPromise) {
+    refreshSessionPromise = (async () => {
+      const res = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        credentials: 'include',
+        headers: buildCsrfHeaders()
+      });
+      const data = await parseJsonSafely(res);
 
-  if (!res.ok) {
-    return null;
+      if (!res.ok) {
+        return null;
+      }
+
+      return data;
+    })().finally(() => {
+      refreshSessionPromise = null;
+    });
   }
 
-  return data;
+  return refreshSessionPromise;
 };
 
 export const validateSession = async (options = {}) => {
