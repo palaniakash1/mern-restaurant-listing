@@ -38,7 +38,7 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 function Metric({ label, value }) {
   return (
-    <Card className="border border-[#dce6c1] bg-white shadow-sm">
+    <Card className="border !border-[#dce6c1] bg-white shadow-sm">
       <p className="text-sm text-gray-500">{label}</p>
       <p className="mt-2 text-3xl font-bold text-[#23411f]">{value}</p>
     </Card>
@@ -69,7 +69,7 @@ function UploadPreview({ value, progress, uploading, onSelect }) {
           event.target.value = '';
         }}
       />
-      <div className="relative aspect-square w-full max-w-[260px] overflow-hidden rounded-[1.5rem] border border-[#dce6c1] bg-[#f7faef]">
+      <div className="relative aspect-square w-full max-w-[260px] overflow-hidden rounded-[1.5rem] border !border-[#dce6c1] bg-[#f7faef]">
         {value ? <img src={value} alt="Preview" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-sm text-gray-400">Image preview will appear here</div>}
         {uploading && <ImageFrameLoader progress={progress} label="Uploading asset" className="rounded-[1.5rem]" />}
       </div>
@@ -79,7 +79,7 @@ function UploadPreview({ value, progress, uploading, onSelect }) {
 
 function PermissionEditor({ state, onToggle, onReset, role }) {
   return (
-    <div className="space-y-4 rounded-[1.5rem] border border-[#e4ebce] bg-[#fbfcf7] p-4">
+    <div className="space-y-4 rounded-[1.5rem] border !border-[#e4ebce] bg-[#fbfcf7] p-4">
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-[#23411f]">Access design</p>
@@ -89,7 +89,7 @@ function PermissionEditor({ state, onToggle, onReset, role }) {
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         {PERMISSION_GROUPS.map((group) => (
-          <div key={group.id} className="rounded-[1.25rem] border border-[#ebf0d7] bg-white p-4">
+          <div key={group.id} className="rounded-[1.25rem] border !border-[#ebf0d7] bg-white p-4">
             <p className="text-sm font-semibold text-[#23411f]">{group.title}</p>
             <div className="mt-3 space-y-3">
               {group.permissions.map((permission) => (
@@ -354,7 +354,7 @@ export default function DashUsers() {
   };
 
   if (!listEndpoint) {
-    return <Card className="border border-[#dce6c1] bg-white shadow-sm"><p className="text-sm text-gray-600">Your current role does not have access to the user operations workspace.</p></Card>;
+    return <Card className="border !border-[#dce6c1] bg-white shadow-sm"><p className="text-sm text-gray-600">Your current role does not have access to the user operations workspace.</p></Card>;
   }
 
   return (
@@ -363,7 +363,7 @@ export default function DashUsers() {
         {error && <Alert color="failure">{error}</Alert>}
         {success && <Alert color="success">{success}</Alert>}
 
-        <Card className="border border-[#dce6c1] bg-white shadow-sm">
+        <Card className="border !border-[#dce6c1] bg-white shadow-sm">
           <div className="grid gap-5 xl:grid-cols-[1.05fr,0.95fr]">
             <div className="space-y-3">
               <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[#b62828]">User command center</p>
@@ -390,7 +390,7 @@ export default function DashUsers() {
           <Metric label="Custom access" value={counts.custom} />
         </div>
 
-        <Card className="border border-[#dce6c1] bg-white shadow-sm">
+        <Card className="border !border-[#dce6c1] bg-white shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h3 className="text-lg font-semibold text-[#23411f]">User table</h3>
@@ -418,7 +418,7 @@ export default function DashUsers() {
           </div>
 
           {loading && <div className="mt-4 flex items-center gap-2 rounded-2xl bg-[#f7faef] px-4 py-3 text-sm text-[#4e5e20]"><Spinner size="sm" />Loading users...</div>}
-          {!loading && filteredUsers.length === 0 && <div className="mt-5 rounded-[1.5rem] border border-dashed border-[#dce6c1] bg-[#fbfcf7] p-8 text-center text-sm text-gray-500">No users matched the current filters.</div>}
+          {!loading && filteredUsers.length === 0 && <div className="mt-5 rounded-[1.5rem] border border-dashed !border-[#dce6c1] bg-[#fbfcf7] p-8 text-center text-sm text-gray-500">No users matched the current filters.</div>}
 
           {!loading && filteredUsers.length > 0 && (
             <>
@@ -449,7 +449,7 @@ export default function DashUsers() {
                 {filteredUsers.map((user) => {
                   const restaurantName = restaurantLookup.get(user.restaurantId) || restaurantLookup.get(user.restaurantId?._id) || user.restaurantId?.name || user.restaurantId || 'Unassigned';
                   return (
-                    <div key={getUserId(user)} className="rounded-[1.5rem] border border-[#e6eccf] bg-[#fbfcf7] p-4">
+                    <div key={getUserId(user)} className="rounded-[1.5rem] border !border-[#e6eccf] bg-[#fbfcf7] p-4">
                       <div className="flex items-start gap-3">
                         {user.profilePicture ? <img src={user.profilePicture} alt={user.userName} className="h-12 w-12 rounded-2xl object-cover" /> : <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#edf4dc] text-sm font-bold text-[#5b6d1a]">{user.userName?.charAt(0)?.toUpperCase() || '?'}</div>}
                         <div className="min-w-0 flex-1">
@@ -483,14 +483,14 @@ export default function DashUsers() {
             </div>
 
             <div className="grid gap-6 xl:grid-cols-[0.9fr,1.1fr]">
-              {canCreatePrivilegedUser ? <UploadPreview value={imagePreviewUrl || privilegedForm.profilePicture} progress={imageUploadProgress} uploading={imageUploading} onSelect={handleImageUpload} /> : <div className="rounded-[1.5rem] border border-[#e4ebce] bg-[#fbfcf7] p-5 text-sm text-gray-600"><p className="font-semibold text-[#23411f]">Store manager contract</p><p className="mt-2 leading-7">The current backend endpoint for admin-created store managers does not accept profile images during creation, so this modal stays aligned with the live API.</p></div>}
+              {canCreatePrivilegedUser ? <UploadPreview value={imagePreviewUrl || privilegedForm.profilePicture} progress={imageUploadProgress} uploading={imageUploading} onSelect={handleImageUpload} /> : <div className="rounded-[1.5rem] border !border-[#e4ebce] bg-[#fbfcf7] p-5 text-sm text-gray-600"><p className="font-semibold text-[#23411f]">Store manager contract</p><p className="mt-2 leading-7">The current backend endpoint for admin-created store managers does not accept profile images during creation, so this modal stays aligned with the live API.</p></div>}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2"><Label htmlFor="userName">Username</Label><TextInput id="userName" value={currentForm.userName} onChange={(event) => canCreatePrivilegedUser ? setPrivilegedForm((current) => ({ ...current, userName: event.target.value })) : setManagerForm((current) => ({ ...current, userName: event.target.value }))} required /></div>
                 <div className="space-y-2"><Label htmlFor="email">Email</Label><TextInput id="email" type="email" value={currentForm.email} onChange={(event) => canCreatePrivilegedUser ? setPrivilegedForm((current) => ({ ...current, email: event.target.value })) : setManagerForm((current) => ({ ...current, email: event.target.value }))} required /></div>
                 <div className="space-y-2"><Label htmlFor="password">{modalMode === 'edit' ? 'Password reset' : 'Temporary password'}</Label><PasswordInput id="password" value={currentForm.password} onChange={(event) => canCreatePrivilegedUser ? setPrivilegedForm((current) => ({ ...current, password: event.target.value })) : setManagerForm((current) => ({ ...current, password: event.target.value }))} placeholder={modalMode === 'edit' ? 'Leave blank to keep current password' : 'Minimum 8 chars, 1 capital, 1 number'} required={modalMode === 'create'} /></div>
                 {canCreatePrivilegedUser && <>
                   <div className="space-y-2"><Label htmlFor="role">Role</Label><Select id="role" value={privilegedForm.role} onChange={(event) => { setPrivilegedForm((current) => ({ ...current, role: event.target.value })); setPermissionState(buildPermissionStateForRole(event.target.value)); }}><option value="admin">Admin</option><option value="storeManager">Store Manager</option></Select></div>
-                  <div className="space-y-2 sm:col-span-2"><Label>Status</Label><div className="rounded-[1rem] border border-[#e4ebce] bg-[#fbfcf7] px-4 py-3"><ToggleSwitch checked={privilegedForm.isActive} label={privilegedForm.isActive ? 'Active account' : 'Inactive account'} onChange={(checked) => setPrivilegedForm((current) => ({ ...current, isActive: checked }))} /></div></div>
+                  <div className="space-y-2 sm:col-span-2"><Label>Status</Label><div className="rounded-[1rem] border !border-[#e4ebce] bg-[#fbfcf7] px-4 py-3"><ToggleSwitch checked={privilegedForm.isActive} label={privilegedForm.isActive ? 'Active account' : 'Inactive account'} onChange={(checked) => setPrivilegedForm((current) => ({ ...current, isActive: checked }))} /></div></div>
                 </>}
               </div>
             </div>
