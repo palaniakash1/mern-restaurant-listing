@@ -7,6 +7,7 @@ import {
   useCallback
 } from 'react';
 import { useDispatch } from 'react-redux';
+import { getAuth, signOut as firebaseSignOut } from 'firebase/auth';
 import {
   signin,
   signout as apiSignout,
@@ -22,6 +23,7 @@ import {
   signInSuccess as signInSuccessRedux,
   signOutSuccess as signOutSuccessRedux
 } from '../redux/user/userSlice';
+import { app } from '../firebase';
 
 /**
  * =============================================================================
@@ -167,6 +169,7 @@ const initialState = {
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
   const reduxDispatch = useDispatch();
+  const firebaseAuth = getAuth(app);
 
   // =============================================================================
   // SESSION RESTORATION ON APP LOAD
@@ -338,13 +341,14 @@ export function AuthProvider({ children }) {
     try {
       await apiSignout();
     } finally {
+      await firebaseSignOut(firebaseAuth).catch(() => {});
       reduxDispatch(signOutSuccessRedux());
       reduxDispatch(clearReduxError());
       dispatch({ type: ACTIONS.SIGNOUT });
       sessionStorage.setItem('isLoggingOut', 'true');
       window.location.href = '/sign-in';
     }
-  }, [reduxDispatch]);
+  }, [firebaseAuth, reduxDispatch]);
 
   /**
    * UPDATE USER ACTION

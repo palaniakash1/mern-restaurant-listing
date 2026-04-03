@@ -102,7 +102,7 @@ router.post('/refresh', refreshLimiter, refreshSession);
 // ===============================================================================
 // 🔷 POST /api/auth/signout
 // ===============================================================================
-router.post('/signout', verifyToken, can('signout', 'auth'), signout);
+router.post('/signout', signout);
 router.post('/signout-all', verifyToken, can('signout', 'auth'), signoutAllSessions);
 router.get('/session', verifyToken, can('session', 'auth'), getSession);
 router.get('/sessions', verifyToken, can('session', 'auth'), listSessions);

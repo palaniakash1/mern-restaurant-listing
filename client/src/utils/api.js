@@ -1,4 +1,5 @@
 import { buildCsrfHeaders } from './http';
+import { refreshSession } from '../services/authService';
 
 const parseJsonSafely = async (response) => {
   const text = await response.text();
@@ -14,7 +15,16 @@ const parseJsonSafely = async (response) => {
   }
 };
 
-export const apiRequest = async (url, options = {}) => {
+const createHttpError = (message, status) => {
+  const error = new Error(message);
+  error.status = status;
+  return error;
+};
+
+const isAuthRefreshRequest = (url) =>
+  typeof url === 'string' && url.startsWith('/api/auth/refresh');
+
+const runRequest = async (url, options = {}) => {
   const {
     method = 'GET',
     body,
@@ -41,10 +51,27 @@ export const apiRequest = async (url, options = {}) => {
   const payload = await parseJsonSafely(response);
 
   if (!response.ok) {
-    throw new Error(payload?.message || 'Request failed');
+    throw createHttpError(payload?.message || 'Request failed', response.status);
   }
 
   return payload;
+};
+
+export const apiRequest = async (url, options = {}) => {
+  try {
+    return await runRequest(url, options);
+  } catch (error) {
+    if (error.status !== 401 || isAuthRefreshRequest(url)) {
+      throw error;
+    }
+
+    const refreshed = await refreshSession();
+    if (!refreshed) {
+      throw error;
+    }
+
+    return runRequest(url, options);
+  }
 };
 
 export const apiGet = (url, options = {}) =>
@@ -61,4 +88,3 @@ export const apiPut = (url, body, options = {}) =>
 
 export const apiDelete = (url, options = {}) =>
   apiRequest(url, { ...options, method: 'DELETE' });
-

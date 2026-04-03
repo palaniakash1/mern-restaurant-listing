@@ -1,5 +1,5 @@
 import imageCompression from "browser-image-compression";
-import { buildCsrfHeaders } from "./http";
+import { apiPost } from "./api";
 
 const MAX_IMAGE_SIZE_MB = 2;
 const MAX_VIDEO_SIZE_MB = 50;
@@ -36,24 +36,11 @@ const prepareVideo = async (file) => {
 };
 
 const getUploadSignature = async ({ folder, resourceType, publicId }) => {
-  const res = await fetch("/api/media/signature", {
-    method: "POST",
-    headers: buildCsrfHeaders({
-      "Content-Type": "application/json",
-    }),
-    credentials: "include",
-    body: JSON.stringify({
-      folder,
-      resourceType,
-      publicId,
-    }),
+  const data = await apiPost("/api/media/signature", {
+    folder,
+    resourceType,
+    publicId,
   });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Failed to prepare upload.");
-  }
 
   return data.data;
 };

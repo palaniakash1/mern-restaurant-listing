@@ -6,8 +6,8 @@ import { VscSignOut } from 'react-icons/vsc';
 import ImageCircleLoader from '../components/ImageCircleLoader';
 import PasswordInput from '../components/PasswordInput';
 import { useAuth } from '../context/AuthContext';
+import { apiDelete, apiPatch } from '../utils/api';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
-import { buildCsrfHeaders } from '../utils/http';
 
 export default function DashProfile() {
   const { user: currentUser, updateUser, logout, isLoading, error: authError } = useAuth();
@@ -114,21 +114,7 @@ export default function DashProfile() {
     }
 
     try {
-      const res = await fetch(`/api/users/${userId}`, {
-        method: 'PATCH',
-        headers: buildCsrfHeaders({
-          'content-type': 'application/json'
-        }),
-        credentials: 'include',
-        body: JSON.stringify(formData)
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        setUpdateUserError(data.message);
-        return;
-      }
-
+      const data = await apiPatch(`/api/users/${userId}`, formData);
       updateUser(data.data);
       setUpdateUserSuccess('User profile updated successfully.');
     } catch (submitError) {
@@ -140,18 +126,8 @@ export default function DashProfile() {
     setShowDeleteModal(false);
 
     try {
-      const res = await fetch(`/api/users/${userId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: buildCsrfHeaders()
-      });
-      await res.json();
-
-      if (!res.ok) {
-        return;
-      }
-
-      logout();
+      await apiDelete(`/api/users/${userId}`);
+      await logout();
     } catch (deleteError) {
       console.log(deleteError);
     }

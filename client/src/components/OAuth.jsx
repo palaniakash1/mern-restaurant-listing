@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { Button } from "flowbite-react";
-import { GoogleAuthProvider, signInWithPopup, getAuth, onAuthStateChanged } from "firebase/auth";
+import { GoogleAuthProvider, signInWithPopup, getAuth, signOut as firebaseSignOut } from "firebase/auth";
 import { app } from "../firebase";
 import { useNavigate } from "react-router-dom";
 import { AiFillGoogleCircle } from "react-icons/ai";
@@ -12,24 +12,8 @@ export default function OAuth() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        try {
-          const result = await loginWithGoogle({
-            name: firebaseUser.displayName,
-            email: firebaseUser.email,
-            googlePhotoUrl: firebaseUser.photoURL,
-          });
-          if (result.success) {
-            navigate("/");
-          }
-        } catch {
-          // Context handles auth errors.
-        }
-      }
-    });
-    return () => unsubscribe();
-  }, [auth, loginWithGoogle, navigate]);
+    firebaseSignOut(auth).catch(() => {});
+  }, [auth]);
 
   const handleGoogleClick = async () => {
     const provider = new GoogleAuthProvider();
@@ -37,7 +21,19 @@ export default function OAuth() {
       prompt: "select_account",
     });
     try {
-      await signInWithPopup(auth, provider);
+      const credential = await signInWithPopup(auth, provider);
+      const firebaseUser = credential.user;
+      const result = await loginWithGoogle({
+        name: firebaseUser.displayName,
+        email: firebaseUser.email,
+        googlePhotoUrl: firebaseUser.photoURL,
+      });
+
+      await firebaseSignOut(auth).catch(() => {});
+
+      if (result.success) {
+        navigate("/");
+      }
     } catch (error) {
       if (error.code !== 'auth/popup-closed-by-user') {
         console.log(error);
