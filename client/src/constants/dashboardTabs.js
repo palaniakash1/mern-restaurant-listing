@@ -5,13 +5,24 @@ import {
   HiOutlineUserGroup,
   HiOutlineClipboardDocumentList,
   HiOutlineStar,
-  HiOutlineUserCircle
+  HiOutlineUserCircle,
+  HiOutlineShieldCheck
 } from 'react-icons/hi2';
 import { hasAnyPermission, hasPermission } from '../utils/permissions';
 
 export const DASHBOARD_TABS = [
-  { id: 'dashboard', label: 'Overview', icon: HiOutlineSquares2X2, isVisible: () => true },
-  { id: 'profile', label: 'Profile', icon: HiOutlineUserCircle, isVisible: () => true },
+  {
+    id: 'dashboard',
+    label: 'Overview',
+    icon: HiOutlineSquares2X2,
+    isVisible: () => true
+  },
+  {
+    id: 'profile',
+    label: 'Profile',
+    icon: HiOutlineUserCircle,
+    isVisible: () => true
+  },
   {
     id: 'users',
     label: 'Users',
@@ -68,9 +79,14 @@ export const DASHBOARD_TABS = [
         ['review', 'moderate'],
         ['review', 'create']
       ]) || hasPermission(user, 'review', 'delete')
+  },
+  {
+    id: 'audit',
+    label: 'Audit Logs',
+    icon: HiOutlineShieldCheck,
+    isVisible: (user) => hasPermission(user, 'audit', 'read')
   }
 ];
 
 export const getVisibleDashboardTabs = (user) =>
   DASHBOARD_TABS.filter((tab) => tab.isVisible(user));
-

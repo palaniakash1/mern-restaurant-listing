@@ -10,7 +10,8 @@ import { useAuth } from '../context/AuthContext';
 import { apiGet } from '../utils/api';
 import { getRoleLabel, hasPermission } from '../utils/permissions';
 
-const pluralize = (value, label) => `${value} ${label}${value === 1 ? '' : 's'}`;
+const pluralize = (value, label) =>
+  `${value} ${label}${value === 1 ? '' : 's'}`;
 
 export default function Dashboards() {
   const { user } = useAuth();
@@ -66,7 +67,9 @@ export default function Dashboards() {
         }
 
         if (user?.role === 'storeManager' && user.restaurantId) {
-          const menus = await apiGet(`/api/menu/restaurant/${user.restaurantId}?page=1&limit=50`);
+          const menus = await apiGet(
+            `/api/menu/restaurant/${user.restaurantId}?page=1&limit=50`
+          );
           if (!ignore) {
             setSummary({
               restaurants: 1,
@@ -177,8 +180,9 @@ export default function Dashboards() {
               Role-aware operations dashboard
             </h2>
             <p className="max-w-2xl text-sm leading-7 text-gray-600 sm:text-base">
-              This control center follows the backend RBAC model, so each user only
-              sees the modules and actions they are actually allowed to manage.
+              This control center follows the backend RBAC model, so each user
+              only sees the modules and actions they are actually allowed to
+              manage.
             </p>
           </div>
           <div className="rounded-[1.75rem] bg-[linear-gradient(135deg,#b62828_0%,#8fa31e_100%)] p-5 text-white shadow-inner">
@@ -202,7 +206,10 @@ export default function Dashboards() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {loading &&
           Array.from({ length: 4 }).map((_, index) => (
-            <Card key={index} className="border border-[#dce6c1] bg-white shadow-sm">
+            <Card
+              key={index}
+              className="border border-[#dce6c1] bg-white shadow-sm"
+            >
               <div className="flex items-center gap-3 text-[#4d6518]">
                 <Spinner size="sm" />
                 Loading metrics...
@@ -214,11 +221,16 @@ export default function Dashboards() {
           cards.map((card) => {
             const Icon = card.icon;
             return (
-              <Card key={card.label} className="border border-[#dce6c1] bg-white shadow-sm">
+              <Card
+                key={card.label}
+                className="border border-[#dce6c1] bg-white shadow-sm"
+              >
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-sm text-gray-500">{card.label}</p>
-                    <p className="mt-2 text-3xl font-bold text-[#23411f]">{card.value}</p>
+                    <p className="mt-2 text-3xl font-bold text-[#23411f]">
+                      {card.value}
+                    </p>
                   </div>
                   <div className={`rounded-2xl p-3 ${card.tone}`}>
                     <Icon className="h-6 w-6" />
@@ -231,26 +243,38 @@ export default function Dashboards() {
 
       <div className="grid gap-4 xl:grid-cols-[1.15fr,0.85fr]">
         <Card className="border border-[#dce6c1] bg-white shadow-sm">
-          <h3 className="text-lg font-semibold text-[#23411f]">What this dashboard covers</h3>
+          <h3 className="text-lg font-semibold text-[#23411f]">
+            What this dashboard covers
+          </h3>
           <div className="mt-4 grid gap-3">
             {hasPermission(user, 'admin', 'createPrivilegedUser') && (
               <div className="rounded-2xl bg-[#fff5f5] p-4 text-sm text-[#6f1b1b]">
-                Super Admin tools include privileged user creation, cross-restaurant governance, and ownership reassignment.
+                Super Admin tools include privileged user creation,
+                cross-restaurant governance, and ownership reassignment.
               </div>
             )}
             {hasPermission(user, 'restaurant', 'readAllMine') && (
               <div className="rounded-2xl bg-[#f5faeb] p-4 text-sm text-[#4d6518]">
-                Restaurant management is scoped to the current operator, so admins only work with the stores they own.
+                Restaurant management is scoped to the current operator, so
+                admins only work with the stores they own.
               </div>
             )}
             {hasPermission(user, 'menu', 'addItem') && (
               <div className="rounded-2xl bg-[#eef4ff] p-4 text-sm text-[#1f4f8c]">
-                Menu operations support menu creation, menu item changes, and availability toggles for authorized users.
+                Menu operations support menu creation, menu item changes, and
+                availability toggles for authorized users.
               </div>
             )}
             {hasPermission(user, 'review', 'moderate') && (
               <div className="rounded-2xl bg-[#fbf6ea] p-4 text-sm text-[#6f5a12]">
-                Review moderation lets admins and super admins approve or hide reviews inside their allowed scope.
+                Review moderation lets admins and super admins approve or hide
+                reviews inside their allowed scope.
+              </div>
+            )}
+            {hasPermission(user, 'audit', 'read') && (
+              <div className="rounded-2xl bg-[#f4f1ff] p-4 text-sm text-[#5b3fb0]">
+                Audit monitoring exposes change history and activity trails
+                within the exact scope allowed by your role.
               </div>
             )}
           </div>
@@ -261,7 +285,9 @@ export default function Dashboards() {
           <div className="mt-4 space-y-4 text-sm text-gray-600">
             <div className="rounded-2xl border border-[#ebf0d7] p-4">
               <p className="font-semibold text-[#23411f]">Signed in as</p>
-              <p className="mt-1">{user?.email || 'No session email available'}</p>
+              <p className="mt-1">
+                {user?.email || 'No session email available'}
+              </p>
             </div>
             {summary?.rating !== null && summary?.rating !== undefined && (
               <div className="rounded-2xl border border-[#ebf0d7] p-4">
@@ -276,7 +302,9 @@ export default function Dashboards() {
               </div>
             )}
             {error && (
-              <div className="rounded-2xl bg-[#fff5f5] p-4 text-[#8e1d1d]">{error}</div>
+              <div className="rounded-2xl bg-[#fff5f5] p-4 text-[#8e1d1d]">
+                {error}
+              </div>
             )}
           </div>
         </Card>

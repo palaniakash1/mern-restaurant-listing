@@ -88,7 +88,11 @@ function LogoUpload({ value, progress, uploading, onSelect }) {
 
       <div className="relative h-44 overflow-hidden rounded-[1.5rem] border border-[#dce6c1] bg-[#f7faef]">
         {value ? (
-          <img src={value} alt="Restaurant logo" className="h-full w-full object-cover" />
+          <img
+            src={value}
+            alt="Restaurant logo"
+            className="h-full w-full object-cover"
+          />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-gray-400">
             Logo preview will appear here
@@ -221,12 +225,36 @@ export default function DashRestaurants() {
   const [fsaLoading, setFsaLoading] = useState(false);
   const [pendingDeleteRestaurant, setPendingDeleteRestaurant] = useState(null);
 
-  const canCreateRestaurant = hasPermission(currentUser, 'restaurant', 'create');
-  const canUpdateRestaurant = hasPermission(currentUser, 'restaurant', 'updateById');
-  const canDeleteRestaurant = hasPermission(currentUser, 'restaurant', 'deleteById');
-  const canUpdateStatus = hasPermission(currentUser, 'restaurant', 'updateStatus');
-  const canRestoreRestaurant = hasPermission(currentUser, 'restaurant', 'restore');
-  const canReassignAdmin = hasPermission(currentUser, 'restaurant', 'reassignAdmin');
+  const canCreateRestaurant = hasPermission(
+    currentUser,
+    'restaurant',
+    'create'
+  );
+  const canUpdateRestaurant = hasPermission(
+    currentUser,
+    'restaurant',
+    'updateById'
+  );
+  const canDeleteRestaurant = hasPermission(
+    currentUser,
+    'restaurant',
+    'deleteById'
+  );
+  const canUpdateStatus = hasPermission(
+    currentUser,
+    'restaurant',
+    'updateStatus'
+  );
+  const canRestoreRestaurant = hasPermission(
+    currentUser,
+    'restaurant',
+    'restore'
+  );
+  const canReassignAdmin = hasPermission(
+    currentUser,
+    'restaurant',
+    'reassignAdmin'
+  );
 
   const listEndpoint = useMemo(() => {
     if (currentUser?.role === 'superAdmin') {
@@ -238,9 +266,15 @@ export default function DashRestaurants() {
     return null;
   }, [currentUser?.role, page]);
 
-  const publishedCount = restaurants.filter((item) => item.status === 'published').length;
-  const draftCount = restaurants.filter((item) => item.status === 'draft').length;
-  const blockedCount = restaurants.filter((item) => item.status === 'blocked').length;
+  const publishedCount = restaurants.filter(
+    (item) => item.status === 'published'
+  ).length;
+  const draftCount = restaurants.filter(
+    (item) => item.status === 'draft'
+  ).length;
+  const blockedCount = restaurants.filter(
+    (item) => item.status === 'blocked'
+  ).length;
   const filteredRestaurants = useMemo(() => {
     if (statusFilter === 'all') return restaurants;
     return restaurants.filter((item) => item.status === statusFilter);
@@ -310,15 +344,18 @@ export default function DashRestaurants() {
     };
   }, [formData.address.postcode, formData.name, modalMode]);
 
-  const fetchAvailableAdmins = useCallback(async (query = '') => {
-    if (!canReassignAdmin && currentUser?.role !== 'superAdmin') {
-      return [];
-    }
-    const data = await apiGet(
-      `/api/users/admins?page=1&limit=50&q=${encodeURIComponent(query)}`
-    );
-    return data.data || [];
-  }, [canReassignAdmin, currentUser?.role]);
+  const fetchAvailableAdmins = useCallback(
+    async (query = '') => {
+      if (!canReassignAdmin && currentUser?.role !== 'superAdmin') {
+        return [];
+      }
+      const data = await apiGet(
+        `/api/users/admins?page=1&limit=50&q=${encodeURIComponent(query)}`
+      );
+      return data.data || [];
+    },
+    [canReassignAdmin, currentUser?.role]
+  );
 
   const resetModalState = () => {
     setModalMode(null);
@@ -452,7 +489,10 @@ export default function DashRestaurants() {
       address: formData.address
     };
 
-    if (formData.location?.lat !== undefined && formData.location?.lng !== undefined) {
+    if (
+      formData.location?.lat !== undefined &&
+      formData.location?.lng !== undefined
+    ) {
       payload.location = formData.location;
     }
 
@@ -484,15 +524,21 @@ export default function DashRestaurants() {
       }
 
       if (modalMode === 'edit' && selectedRestaurant) {
-        await apiPatch(`/api/restaurants/id/${selectedRestaurant._id}`, buildRestaurantPayload());
+        await apiPatch(
+          `/api/restaurants/id/${selectedRestaurant._id}`,
+          buildRestaurantPayload()
+        );
         if (
           canReassignAdmin &&
           selectedAdmin?._id &&
           selectedAdmin._id !== selectedRestaurant.adminId
         ) {
-          await apiPatch(`/api/restaurants/id/${selectedRestaurant._id}/admin`, {
-            newAdminId: selectedAdmin._id
-          });
+          await apiPatch(
+            `/api/restaurants/id/${selectedRestaurant._id}/admin`,
+            {
+              newAdminId: selectedAdmin._id
+            }
+          );
         }
         setSuccess('Restaurant updated successfully.');
       }
@@ -523,7 +569,9 @@ export default function DashRestaurants() {
     try {
       setError(null);
       setSuccess(null);
-      await apiPatch(`/api/restaurants/id/${restaurant._id}/status`, { status });
+      await apiPatch(`/api/restaurants/id/${restaurant._id}/status`, {
+        status
+      });
       setSuccess(`Restaurant moved to ${status}.`);
       await fetchRestaurants();
     } catch (statusError) {
@@ -569,8 +617,9 @@ export default function DashRestaurants() {
                 Enterprise restaurant operations
               </h2>
               <p className="max-w-2xl text-sm leading-7 text-gray-600">
-                Create, edit, govern, and review restaurants with FSA assistance,
-                brand asset upload, and privilege-aware ownership control.
+                Create, edit, govern, and review restaurants with FSA
+                assistance, brand asset upload, and privilege-aware ownership
+                control.
               </p>
             </div>
             <div className="rounded-[1.75rem] bg-[linear-gradient(135deg,#b62828_0%,#8fa31e_100%)] p-5 text-white shadow-inner">
@@ -579,8 +628,12 @@ export default function DashRestaurants() {
               </p>
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
                 <div className="rounded-2xl bg-white/12 p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-white/70">Total</p>
-                  <p className="mt-2 text-3xl font-bold">{restaurants.length}</p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-white/70">
+                    Total
+                  </p>
+                  <p className="mt-2 text-3xl font-bold">
+                    {restaurants.length}
+                  </p>
                 </div>
                 <div className="rounded-2xl bg-white/12 p-4">
                   <p className="text-xs uppercase tracking-[0.2em] text-white/70">
@@ -589,7 +642,9 @@ export default function DashRestaurants() {
                   <p className="mt-2 text-3xl font-bold">{publishedCount}</p>
                 </div>
                 <div className="rounded-2xl bg-white/12 p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-white/70">Blocked</p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-white/70">
+                    Blocked
+                  </p>
                   <p className="mt-2 text-3xl font-bold">{blockedCount}</p>
                 </div>
               </div>
@@ -600,18 +655,24 @@ export default function DashRestaurants() {
         <div className="grid gap-4 sm:grid-cols-3">
           <Card className="border border-[#dce6c1] bg-white shadow-sm">
             <p className="text-sm text-gray-500">Draft restaurants</p>
-            <p className="mt-2 text-3xl font-bold text-[#23411f]">{draftCount}</p>
+            <p className="mt-2 text-3xl font-bold text-[#23411f]">
+              {draftCount}
+            </p>
           </Card>
           <Card className="border border-[#dce6c1] bg-white shadow-sm">
             <p className="text-sm text-gray-500">Owner control</p>
             <p className="mt-2 text-sm font-semibold text-[#23411f]">
-              {canReassignAdmin ? 'Super admin reassignment enabled' : 'Scoped to owned stores'}
+              {canReassignAdmin
+                ? 'Super admin reassignment enabled'
+                : 'Scoped to owned stores'}
             </p>
           </Card>
           <Card className="border border-[#dce6c1] bg-white shadow-sm">
             <p className="text-sm text-gray-500">Status governance</p>
             <p className="mt-2 text-sm font-semibold text-[#23411f]">
-              {canUpdateStatus ? 'Publish, draft, and block controls available' : 'Read/write only for owned records'}
+              {canUpdateStatus
+                ? 'Publish, draft, and block controls available'
+                : 'Read/write only for owned records'}
             </p>
           </Card>
         </div>
@@ -619,7 +680,9 @@ export default function DashRestaurants() {
         <Card className="border border-[#dce6c1] bg-white shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-[#23411f]">Restaurant registry</h3>
+              <h3 className="text-lg font-semibold text-[#23411f]">
+                Restaurant registry
+              </h3>
               <p className="text-sm text-gray-500">
                 Premium control surface for restaurant records in your scope.
               </p>
@@ -636,7 +699,7 @@ export default function DashRestaurants() {
               </Select>
               {canCreateRestaurant && (
                 <Button
-                  className="bg-[#8fa31e] hover:bg-[#78871c]"
+                  className="!bg-[#8fa31e] hover:!bg-[#78871c]"
                   onClick={openCreateModal}
                 >
                   <HiOutlinePlus className="mr-2 h-4 w-4" />
@@ -650,7 +713,11 @@ export default function DashRestaurants() {
             <button
               type="button"
               onClick={() => setStatusFilter('all')}
-              className={statusFilter === 'all' ? 'font-semibold text-[#23411f]' : 'text-[#2563eb]'}
+              className={
+                statusFilter === 'all'
+                  ? 'font-semibold text-[#23411f]'
+                  : 'text-[#2563eb]'
+              }
             >
               All ({restaurants.length})
             </button>
@@ -658,7 +725,11 @@ export default function DashRestaurants() {
             <button
               type="button"
               onClick={() => setStatusFilter('published')}
-              className={statusFilter === 'published' ? 'font-semibold text-[#23411f]' : 'text-[#2563eb]'}
+              className={
+                statusFilter === 'published'
+                  ? 'font-semibold text-[#23411f]'
+                  : 'text-[#2563eb]'
+              }
             >
               Published ({publishedCount})
             </button>
@@ -666,7 +737,11 @@ export default function DashRestaurants() {
             <button
               type="button"
               onClick={() => setStatusFilter('draft')}
-              className={statusFilter === 'draft' ? 'font-semibold text-[#23411f]' : 'text-[#2563eb]'}
+              className={
+                statusFilter === 'draft'
+                  ? 'font-semibold text-[#23411f]'
+                  : 'text-[#2563eb]'
+              }
             >
               Draft ({draftCount})
             </button>
@@ -674,7 +749,11 @@ export default function DashRestaurants() {
             <button
               type="button"
               onClick={() => setStatusFilter('blocked')}
-              className={statusFilter === 'blocked' ? 'font-semibold text-[#23411f]' : 'text-[#2563eb]'}
+              className={
+                statusFilter === 'blocked'
+                  ? 'font-semibold text-[#23411f]'
+                  : 'text-[#2563eb]'
+              }
             >
               Blocked ({blockedCount})
             </button>
@@ -713,7 +792,9 @@ export default function DashRestaurants() {
                           )}
                         </div>
                         <div>
-                          <p className="font-semibold text-[#23411f]">{restaurant.name}</p>
+                          <p className="font-semibold text-[#23411f]">
+                            {restaurant.name}
+                          </p>
                           <p className="text-xs text-gray-500">
                             {restaurant.email || 'No email'}
                           </p>
@@ -729,50 +810,96 @@ export default function DashRestaurants() {
                           <Badge color="success">
                             FHRS {restaurant.fsaRating?.value || 'Linked'}
                           </Badge>
-                          <p className="text-xs text-gray-500">ID: {restaurant.fhrsId}</p>
+                          <p className="text-xs text-gray-500">
+                            ID: {restaurant.fhrsId}
+                          </p>
                         </div>
                       ) : (
-                        <span className="text-xs text-gray-400">Not linked</span>
+                        <span className="text-xs text-gray-400">
+                          Not linked
+                        </span>
                       )}
                     </Table.Cell>
                     <Table.Cell>
-                      <Badge color={restaurant.status === 'published' ? 'success' : restaurant.status === 'blocked' ? 'failure' : 'warning'}>
+                      <Badge
+                        color={
+                          restaurant.status === 'published'
+                            ? 'success'
+                            : restaurant.status === 'blocked'
+                              ? 'failure'
+                              : 'warning'
+                        }
+                      >
                         {restaurant.status}
                       </Badge>
                     </Table.Cell>
                     <Table.Cell>
                       <div className="flex flex-wrap gap-2">
                         {canUpdateRestaurant && (
-                          <Button color="light" size="xs" onClick={() => openEditModal(restaurant)}>
+                          <Button
+                            color="light"
+                            size="xs"
+                            onClick={() => openEditModal(restaurant)}
+                          >
                             <HiOutlinePencilSquare className="mr-1 h-4 w-4" />
                             Edit
                           </Button>
                         )}
-                        {canUpdateStatus && restaurant.status !== 'published' && (
-                          <Button size="xs" color="success" onClick={() => handleStatusChange(restaurant, 'published')}>
-                            Publish
-                          </Button>
-                        )}
-                        {canUpdateStatus && restaurant.status !== 'draft' && restaurant.status !== 'blocked' && (
-                          <Button size="xs" color="warning" onClick={() => handleStatusChange(restaurant, 'draft')}>
-                            Draft
-                          </Button>
-                        )}
+                        {canUpdateStatus &&
+                          restaurant.status !== 'published' && (
+                            <Button
+                              size="xs"
+                              color="success"
+                              onClick={() =>
+                                handleStatusChange(restaurant, 'published')
+                              }
+                            >
+                              Publish
+                            </Button>
+                          )}
+                        {canUpdateStatus &&
+                          restaurant.status !== 'draft' &&
+                          restaurant.status !== 'blocked' && (
+                            <Button
+                              size="xs"
+                              color="warning"
+                              onClick={() =>
+                                handleStatusChange(restaurant, 'draft')
+                              }
+                            >
+                              Draft
+                            </Button>
+                          )}
                         {canUpdateStatus && restaurant.status !== 'blocked' && (
-                          <Button size="xs" color="failure" onClick={() => handleStatusChange(restaurant, 'blocked')}>
+                          <Button
+                            size="xs"
+                            color="failure"
+                            onClick={() =>
+                              handleStatusChange(restaurant, 'blocked')
+                            }
+                          >
                             Block
                           </Button>
                         )}
-                        {canRestoreRestaurant && restaurant.status === 'blocked' && (
-                          <Button size="xs" color="light" onClick={() => handleRestoreRestaurant(restaurant)}>
-                            Restore
-                          </Button>
-                        )}
+                        {canRestoreRestaurant &&
+                          restaurant.status === 'blocked' && (
+                            <Button
+                              size="xs"
+                              color="light"
+                              onClick={() =>
+                                handleRestoreRestaurant(restaurant)
+                              }
+                            >
+                              Restore
+                            </Button>
+                          )}
                         {canDeleteRestaurant && (
                           <Button
                             color="failure"
                             size="xs"
-                            onClick={() => setPendingDeleteRestaurant(restaurant)}
+                            onClick={() =>
+                              setPendingDeleteRestaurant(restaurant)
+                            }
                           >
                             <HiOutlineTrash className="mr-1 h-4 w-4" />
                             Delete
@@ -794,12 +921,22 @@ export default function DashRestaurants() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-[#23411f]">{restaurant.name}</p>
+                    <p className="font-semibold text-[#23411f]">
+                      {restaurant.name}
+                    </p>
                     <p className="text-xs text-gray-500">
                       {formatAddress(restaurant.address) || 'No address'}
                     </p>
                   </div>
-                  <Badge color={restaurant.status === 'published' ? 'success' : restaurant.status === 'blocked' ? 'failure' : 'warning'}>
+                  <Badge
+                    color={
+                      restaurant.status === 'published'
+                        ? 'success'
+                        : restaurant.status === 'blocked'
+                          ? 'failure'
+                          : 'warning'
+                    }
+                  >
                     {restaurant.status}
                   </Badge>
                 </div>
@@ -824,7 +961,9 @@ export default function DashRestaurants() {
                 color="light"
                 size="xs"
                 disabled={page >= totalPages}
-                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                onClick={() =>
+                  setPage((current) => Math.min(totalPages, current + 1))
+                }
               >
                 Next
               </Button>
@@ -839,7 +978,9 @@ export default function DashRestaurants() {
         size="7xl"
       >
         <Modal.Header>
-          {modalMode === 'edit' ? 'Update restaurant workspace' : 'Create restaurant workspace'}
+          {modalMode === 'edit'
+            ? 'Update restaurant workspace'
+            : 'Create restaurant workspace'}
         </Modal.Header>
         <Modal.Body>
           <form className="space-y-6" onSubmit={handleCreateOrUpdateRestaurant}>
@@ -858,7 +999,10 @@ export default function DashRestaurants() {
                     id="restaurantName"
                     value={formData.name}
                     onChange={(event) =>
-                      setFormData((current) => ({ ...current, name: event.target.value }))
+                      setFormData((current) => ({
+                        ...current,
+                        name: event.target.value
+                      }))
                     }
                     required
                   />
@@ -869,7 +1013,10 @@ export default function DashRestaurants() {
                     id="restaurantTagline"
                     value={formData.tagline}
                     onChange={(event) =>
-                      setFormData((current) => ({ ...current, tagline: event.target.value }))
+                      setFormData((current) => ({
+                        ...current,
+                        tagline: event.target.value
+                      }))
                     }
                   />
                 </div>
@@ -894,7 +1041,10 @@ export default function DashRestaurants() {
                     type="email"
                     value={formData.email}
                     onChange={(event) =>
-                      setFormData((current) => ({ ...current, email: event.target.value }))
+                      setFormData((current) => ({
+                        ...current,
+                        email: event.target.value
+                      }))
                     }
                     required
                   />
@@ -905,7 +1055,10 @@ export default function DashRestaurants() {
                     id="restaurantWebsite"
                     value={formData.website}
                     onChange={(event) =>
-                      setFormData((current) => ({ ...current, website: event.target.value }))
+                      setFormData((current) => ({
+                        ...current,
+                        website: event.target.value
+                      }))
                     }
                   />
                 </div>
@@ -929,7 +1082,9 @@ export default function DashRestaurants() {
             <div className="grid gap-6 xl:grid-cols-[1fr,1fr]">
               <div className="space-y-4 rounded-[1.5rem] border border-[#e4ebce] bg-[#fbfcf7] p-4">
                 <div>
-                  <p className="text-sm font-semibold text-[#23411f]">Address intelligence</p>
+                  <p className="text-sm font-semibold text-[#23411f]">
+                    Address intelligence
+                  </p>
                   <p className="text-xs text-gray-500">
                     Search and hydrate the restaurant address using map lookup.
                   </p>
@@ -946,7 +1101,10 @@ export default function DashRestaurants() {
                     onChange={(event) =>
                       setFormData((current) => ({
                         ...current,
-                        address: { ...current.address, addressLine1: event.target.value }
+                        address: {
+                          ...current.address,
+                          addressLine1: event.target.value
+                        }
                       }))
                     }
                     required
@@ -957,7 +1115,10 @@ export default function DashRestaurants() {
                     onChange={(event) =>
                       setFormData((current) => ({
                         ...current,
-                        address: { ...current.address, addressLine2: event.target.value }
+                        address: {
+                          ...current.address,
+                          addressLine2: event.target.value
+                        }
                       }))
                     }
                   />
@@ -967,7 +1128,10 @@ export default function DashRestaurants() {
                     onChange={(event) =>
                       setFormData((current) => ({
                         ...current,
-                        address: { ...current.address, areaLocality: event.target.value }
+                        address: {
+                          ...current.address,
+                          areaLocality: event.target.value
+                        }
                       }))
                     }
                     required
@@ -978,7 +1142,10 @@ export default function DashRestaurants() {
                     onChange={(event) =>
                       setFormData((current) => ({
                         ...current,
-                        address: { ...current.address, city: event.target.value }
+                        address: {
+                          ...current.address,
+                          city: event.target.value
+                        }
                       }))
                     }
                     required
@@ -989,7 +1156,10 @@ export default function DashRestaurants() {
                     onChange={(event) =>
                       setFormData((current) => ({
                         ...current,
-                        address: { ...current.address, countyRegion: event.target.value }
+                        address: {
+                          ...current.address,
+                          countyRegion: event.target.value
+                        }
                       }))
                     }
                   />
@@ -999,7 +1169,10 @@ export default function DashRestaurants() {
                     onChange={(event) =>
                       setFormData((current) => ({
                         ...current,
-                        address: { ...current.address, postcode: event.target.value }
+                        address: {
+                          ...current.address,
+                          postcode: event.target.value
+                        }
                       }))
                     }
                     required
@@ -1009,9 +1182,12 @@ export default function DashRestaurants() {
 
               <div className="space-y-4 rounded-[1.5rem] border border-[#e4ebce] bg-[#fbfcf7] p-4">
                 <div>
-                  <p className="text-sm font-semibold text-[#23411f]">Compliance and ownership</p>
+                  <p className="text-sm font-semibold text-[#23411f]">
+                    Compliance and ownership
+                  </p>
                   <p className="text-xs text-gray-500">
-                    Link FSA data and, for super admin, choose the restaurant owner.
+                    Link FSA data and, for super admin, choose the restaurant
+                    owner.
                   </p>
                 </div>
 
@@ -1022,7 +1198,10 @@ export default function DashRestaurants() {
                     fetchAdmins={fetchAvailableAdmins}
                     onSelect={(admin) => {
                       setSelectedAdmin(admin);
-                      setFormData((current) => ({ ...current, adminId: admin._id }));
+                      setFormData((current) => ({
+                        ...current,
+                        adminId: admin._id
+                      }));
                     }}
                   />
                 )}
@@ -1048,20 +1227,26 @@ export default function DashRestaurants() {
                             {option.name}
                           </span>
                           <span className="text-xs text-gray-500">
-                            FHRS {option.rating} · {option.addressLabel || option.postcode || 'No postcode'}
+                            FHRS {option.rating} ·{' '}
+                            {option.addressLabel ||
+                              option.postcode ||
+                              'No postcode'}
                           </span>
                         </button>
                       ))}
                     {!fsaLoading && fsaOptions.length === 0 && (
                       <p className="text-sm text-gray-500">
-                        FSA suggestions will appear once the restaurant name and postcode are available.
+                        FSA suggestions will appear once the restaurant name and
+                        postcode are available.
                       </p>
                     )}
                   </div>
                 </div>
 
                 <div className="rounded-[1.25rem] border border-[#dce6c1] bg-white p-4">
-                  <p className="text-sm font-semibold text-[#23411f]">Preview</p>
+                  <p className="text-sm font-semibold text-[#23411f]">
+                    Preview
+                  </p>
                   <div className="mt-3 overflow-hidden rounded-[1.25rem] border border-[#eef2df]">
                     <div className="h-32 bg-[linear-gradient(135deg,#f6fbe9_0%,#fff1f1_100%)]">
                       {formData.imageLogo && (
@@ -1094,7 +1279,7 @@ export default function DashRestaurants() {
               </Button>
               <Button
                 type="submit"
-                className="bg-[#8fa31e] hover:bg-[#78871c]"
+                className="!bg-[#8fa31e] hover:!bg-[#78871c]"
                 isProcessing={submitting}
                 disabled={logoUploading}
               >
@@ -1120,7 +1305,8 @@ export default function DashRestaurants() {
           <Button
             color="failure"
             onClick={() =>
-              pendingDeleteRestaurant && handleDeleteRestaurant(pendingDeleteRestaurant)
+              pendingDeleteRestaurant &&
+              handleDeleteRestaurant(pendingDeleteRestaurant)
             }
           >
             Confirm delete
