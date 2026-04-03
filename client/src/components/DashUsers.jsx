@@ -4,7 +4,6 @@ import {
   Badge,
   Button,
   Card,
-  Checkbox,
   Label,
   Modal,
   Select,
@@ -28,6 +27,7 @@ import {
 } from '../constants/permissionTemplates';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
 import ImageFrameLoader from './ImageFrameLoader';
+import PasswordInput from './PasswordInput';
 
 const DEFAULT_PRIVILEGED_ROLE = 'admin';
 const USER_LIMIT = 10;
@@ -91,7 +91,7 @@ function UploadPreview({
           event.target.value = '';
         }}
       />
-      <div className="relative h-40 overflow-hidden rounded-[1.5rem] border border-[#dce6c1] bg-[#f7faef]">
+      <div className="relative aspect-square w-full max-w-[260px] overflow-hidden rounded-[1.5rem] border border-[#dce6c1] bg-[#f7faef]">
         {value ? (
           <img src={value} alt={title} className="h-full w-full object-cover" />
         ) : (
@@ -134,11 +134,7 @@ function PermissionEditor({ permissionState, onToggle, onReset, role }) {
             <p className="text-sm font-semibold text-[#23411f]">{group.title}</p>
             <div className="mt-3 space-y-3">
               {group.permissions.map((permission) => (
-                <label key={permission.key} className="flex items-start gap-3">
-                  <Checkbox
-                    checked={Boolean(permissionState[permission.key])}
-                    onChange={() => onToggle(permission.key)}
-                  />
+                <div key={permission.key} className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-medium text-slate-800">
                       {permission.label}
@@ -147,7 +143,12 @@ function PermissionEditor({ permissionState, onToggle, onReset, role }) {
                       {permission.description}
                     </p>
                   </div>
-                </label>
+                  <ToggleSwitch
+                    checked={Boolean(permissionState[permission.key])}
+                    label=""
+                    onChange={() => onToggle(permission.key)}
+                  />
+                </div>
               ))}
             </div>
           </div>
@@ -165,6 +166,8 @@ export default function DashUsers() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
   const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -180,6 +183,7 @@ export default function DashUsers() {
   const [imagePreviewUrl, setImagePreviewUrl] = useState('');
   const [imageUploading, setImageUploading] = useState(false);
   const [imageUploadProgress, setImageUploadProgress] = useState(0);
+  const [pendingDeleteUser, setPendingDeleteUser] = useState(null);
 
   const canCreatePrivilegedUser = hasPermission(
     currentUser,
@@ -214,9 +218,28 @@ export default function DashUsers() {
     return null;
   }, [canListAllUsers, canListStoreManagers, page, search]);
 
+  const filteredUsers = useMemo(() => {
+    return users.filter((user) => {
+      const roleMatch = roleFilter === 'all' ? true : user.role === roleFilter;
+      const statusMatch =
+        statusFilter === 'all'
+          ? true
+          : statusFilter === 'active'
+            ? user.isActive
+            : !user.isActive;
+      return roleMatch && statusMatch;
+    });
+  }, [roleFilter, statusFilter, users]);
+
   const visibleAdmins = users.filter((user) => user.role === 'admin').length;
   const visibleManagers = users.filter((user) => user.role === 'storeManager').length;
   const customAccessCount = users.filter((user) => Boolean(user.customPermissions)).length;
+  const roleCounts = {
+    all: users.length,
+    admin: visibleAdmins,
+    storeManager: visibleManagers,
+    inactive: users.filter((user) => !user.isActive).length
+  };
   const activeForm = canCreatePrivilegedUser ? superAdminForm : storeManagerForm;
 
   const fetchRestaurants = useCallback(async () => {
@@ -360,8 +383,8 @@ export default function DashUsers() {
           password: superAdminForm.password,
           role: superAdminForm.role,
           isActive: superAdminForm.isActive,
-          permissions: areEqual(templatePayload, customPayload) ? null : customPayload
-        };
+            permissions: areEqual(templatePayload, customPayload) ? {} : customPayload
+          };
 
         if (modalMode === 'create') {
           const result = await apiPost('/api/admin/users', payload);
@@ -380,7 +403,7 @@ export default function DashUsers() {
             role: superAdminForm.role,
             isActive: superAdminForm.isActive,
             profilePicture: superAdminForm.profilePicture || undefined,
-            permissions: areEqual(templatePayload, customPayload) ? null : customPayload
+            permissions: areEqual(templatePayload, customPayload) ? {} : customPayload
           });
           setSuccess('User updated successfully.');
         }
@@ -399,17 +422,28 @@ export default function DashUsers() {
   };
 
   const handleDeleteUser = async (user) => {
-    const confirmed = window.confirm(`Delete ${user.userName}?`);
-    if (!confirmed) return;
-
     try {
       setError(null);
       setSuccess(null);
       await apiDelete(`/api/users/${getUserId(user)}`);
       setSuccess('User deleted successfully.');
+      setPendingDeleteUser(null);
       await fetchUsers();
     } catch (deleteError) {
       setError(deleteError.message);
+    }
+  };
+
+  const roleBadgeClasses = (role) => {
+    switch (role) {
+      case 'superAdmin':
+        return 'bg-purple-100 text-purple-700';
+      case 'admin':
+        return 'bg-blue-100 !text-blue-700';
+      case 'storeManager':
+        return 'bg-yellow-700 text-white';
+      default:
+        return '!bg-slate-100 !text-slate-700';
     }
   };
 
@@ -531,6 +565,19 @@ export default function DashUsers() {
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
+              <Select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
+                <option value="all">All roles</option>
+                <option value="admin">Admins</option>
+                <option value="storeManager">Store managers</option>
+              </Select>
+              <Select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+              >
+                <option value="all">All statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </Select>
               {canListAllUsers && (
                 <TextInput
                   value={search}
@@ -543,7 +590,7 @@ export default function DashUsers() {
               )}
               {(canCreatePrivilegedUser || canCreateStoreManager) && (
                 <Button
-                  className="bg-[#8fa31e] hover:bg-[#78871c]"
+                  className="!bg-[#8fa31e] hover:!bg-[#78871c]"
                   onClick={openCreateModal}
                 >
                   <HiOutlinePlus className="mr-2 h-4 w-4" />
@@ -551,6 +598,40 @@ export default function DashUsers() {
                 </Button>
               )}
             </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+            <button
+              type="button"
+              onClick={() => setRoleFilter('all')}
+              className={`${roleFilter === 'all' ? 'text-[#23411f] font-semibold' : 'text-[#2563eb]'} `}
+            >
+              All ({roleCounts.all})
+            </button>
+            <span className="text-gray-300">|</span>
+            <button
+              type="button"
+              onClick={() => setRoleFilter('admin')}
+              className={`${roleFilter === 'admin' ? 'text-[#23411f] font-semibold' : 'text-[#2563eb]'} `}
+            >
+              Admin ({roleCounts.admin})
+            </button>
+            <span className="text-gray-300">|</span>
+            <button
+              type="button"
+              onClick={() => setRoleFilter('storeManager')}
+              className={`${roleFilter === 'storeManager' ? 'text-[#23411f] font-semibold' : 'text-[#2563eb]'} `}
+            >
+              Store Manager ({roleCounts.storeManager})
+            </button>
+            <span className="text-gray-300">|</span>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('inactive')}
+              className={`${statusFilter === 'inactive' ? 'text-[#23411f] font-semibold' : 'text-[#2563eb]'} `}
+            >
+              Inactive ({roleCounts.inactive})
+            </button>
           </div>
 
           {loading && (
@@ -571,7 +652,7 @@ export default function DashUsers() {
                 <Table.HeadCell>Actions</Table.HeadCell>
               </Table.Head>
               <Table.Body className="divide-y">
-                {users.map((user) => (
+                {filteredUsers.map((user) => (
                   <Table.Row key={getUserId(user)}>
                     <Table.Cell>
                       <div className="flex items-center gap-3">
@@ -587,7 +668,7 @@ export default function DashUsers() {
                       </div>
                     </Table.Cell>
                     <Table.Cell>
-                      <Badge color={user.role === 'admin' ? 'failure' : 'success'}>
+                      <Badge className={`border-0 ${roleBadgeClasses(user.role)}`}>
                         {user.role}
                       </Badge>
                     </Table.Cell>
@@ -635,7 +716,7 @@ export default function DashUsers() {
                           <Button
                             color="failure"
                             size="xs"
-                            onClick={() => handleDeleteUser(user)}
+                            onClick={() => setPendingDeleteUser(user)}
                           >
                             <HiOutlineTrash className="mr-1 h-4 w-4" />
                             Delete
@@ -650,7 +731,7 @@ export default function DashUsers() {
           </div>
 
           <div className="mt-5 space-y-3 md:hidden">
-            {users.map((user) => (
+            {filteredUsers.map((user) => (
               <div
                 key={getUserId(user)}
                 className="rounded-[1.5rem] border border-[#e6eccf] bg-[#fbfcf7] p-4"
@@ -664,7 +745,7 @@ export default function DashUsers() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-semibold text-[#23411f]">{user.userName}</p>
-                      <Badge color={user.role === 'admin' ? 'failure' : 'success'}>
+                      <Badge className={`border-0 ${roleBadgeClasses(user.role)}`}>
                         {user.role}
                       </Badge>
                     </div>
@@ -772,9 +853,8 @@ export default function DashUsers() {
                   <Label htmlFor="password">
                     {modalMode === 'edit' ? 'Password reset' : 'Temporary password'}
                   </Label>
-                  <TextInput
+                  <PasswordInput
                     id="password"
-                    type="password"
                     value={activeForm.password}
                     onChange={(event) =>
                       canCreatePrivilegedUser
@@ -909,6 +989,27 @@ export default function DashUsers() {
             Save assignment
           </Button>
           <Button color="gray" onClick={resetModalState}>
+            Cancel
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={Boolean(pendingDeleteUser)} onClose={() => setPendingDeleteUser(null)}>
+        <Modal.Header>Delete user</Modal.Header>
+        <Modal.Body>
+          <p className="text-sm text-gray-600">
+            Are you sure you want to delete `{pendingDeleteUser?.userName}`? Clicking
+            outside this modal will cancel the action.
+          </p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            color="failure"
+            onClick={() => pendingDeleteUser && handleDeleteUser(pendingDeleteUser)}
+          >
+            Confirm delete
+          </Button>
+          <Button color="gray" onClick={() => setPendingDeleteUser(null)}>
             Cancel
           </Button>
         </Modal.Footer>
