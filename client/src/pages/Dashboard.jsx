@@ -85,7 +85,7 @@ export default function Dashboard() {
                     className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition ${
                       activeTab?.id === item.id
                         ? 'bg-[#8fa31e] text-white shadow-md'
-                        : 'bg-[#f7faef] text-[#4f5f1d] hover:bg-[#eef5db]'
+                        : 'bg-[#f7faef] !text-[#4f5f1d] hover:!bg-[#eef5db]'
                     }`}
                   >
                     {item.label}

@@ -106,7 +106,7 @@ export default function DashMenu() {
       return;
     }
 
-    const data = await apiGet(`/api/menu/restaurant/${restaurantId}?page=1&limit=100`);
+    const data = await apiGet(`/api/menus/restaurant/${restaurantId}?page=1&limit=100`);
     setMenus(data.data || []);
   }, []);
 
@@ -186,7 +186,7 @@ export default function DashMenu() {
       setSubmitting(true);
       setError(null);
       setSuccess(null);
-      await apiPost('/api/menu', {
+      await apiPost('/api/menus', {
         restaurantId: menuForm.restaurantId,
         categoryId: menuForm.categoryId
       });
@@ -206,7 +206,7 @@ export default function DashMenu() {
       setSubmitting(true);
       setError(null);
       setSuccess(null);
-      await apiPost(`/api/menu/${activeMenu._id}/items`, {
+      await apiPost(`/api/menus/${activeMenu._id}/items`, {
         items: [
           {
             name: itemForm.name,
@@ -232,7 +232,7 @@ export default function DashMenu() {
     try {
       setError(null);
       setSuccess(null);
-      await apiPatch(`/api/menu/${menuId}/items/${itemId}/availability`, {
+      await apiPatch(`/api/menus/${menuId}/items/${itemId}/availability`, {
         isAvailable: !isAvailable
       });
       setSuccess('Menu item availability updated.');
@@ -249,7 +249,7 @@ export default function DashMenu() {
     try {
       setError(null);
       setSuccess(null);
-      await apiDelete(`/api/menu/${menuId}`);
+      await apiDelete(`/api/menus/${menuId}`);
       setSuccess('Menu deleted successfully.');
       await loadMenus(selectedRestaurantId);
     } catch (deleteError) {
@@ -340,7 +340,7 @@ export default function DashMenu() {
               </div>
               <Button
                 type="submit"
-                className="bg-[#8fa31e] hover:bg-[#78871c]"
+                className="!bg-[#8fa31e] hover:!bg-[#78871c]"
                 isProcessing={submitting}
                 disabled={!menuForm.restaurantId || !menuForm.categoryId}
               >
@@ -384,7 +384,7 @@ export default function DashMenu() {
                   {canAddItem && (
                     <Button
                       size="xs"
-                      className="bg-[#8fa31e] hover:bg-[#78871c]"
+                      className="!bg-[#8fa31e] hover:!bg-[#78871c]"
                       onClick={() => setActiveMenu(menu)}
                     >
                       <HiOutlinePlusCircle className="mr-1 h-4 w-4" />
@@ -534,7 +534,7 @@ export default function DashMenu() {
         </Modal.Body>
         <Modal.Footer>
           <Button
-            className="bg-[#8fa31e] hover:bg-[#78871c]"
+            className="!bg-[#8fa31e] hover:!bg-[#78871c]"
             onClick={handleAddMenuItem}
             isProcessing={submitting}
           >

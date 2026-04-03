@@ -104,7 +104,7 @@ export default function AddressAutocomplete({
               key={suggestion.placeId}
               type="button"
               onClick={() => handleSelect(suggestion)}
-              className="flex w-full flex-col border-b border-gray-100 px-3 py-2 text-left last:border-b-0 hover:bg-[#f6fdeb]"
+              className="flex w-full flex-col border-b border-gray-100 px-3 py-2 text-left last:border-b-0 hover:!bg-[#f6fdeb]"
             >
               <span className="text-sm font-semibold text-gray-800">
                 {suggestion.structuredFormat?.mainText || suggestion.description}

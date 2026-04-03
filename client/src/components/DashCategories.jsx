@@ -315,7 +315,7 @@ export default function DashCategories() {
 
               <Button
                 type="submit"
-                className="bg-[#8fa31e] hover:bg-[#78871c]"
+                className="!bg-[#8fa31e] hover:!bg-[#78871c]"
                 isProcessing={submitting}
               >
                 Create category
@@ -466,7 +466,7 @@ export default function DashCategories() {
         </Modal.Body>
         <Modal.Footer>
           <Button
-            className="bg-[#8fa31e] hover:bg-[#78871c]"
+            className="!bg-[#8fa31e] hover:!bg-[#78871c]"
             onClick={handleUpdateCategory}
             isProcessing={submitting}
           >

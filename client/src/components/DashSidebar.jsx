@@ -44,7 +44,7 @@ export default function DashSidebar({ onClose }) {
         </Link>
         <button
           onClick={onClose}
-          className="rounded-2xl border border-white/10 bg-white/10 p-2 text-2xl text-white hover:bg-white/15 lg:hidden"
+          className="rounded-2xl border border-white/10 bg-white/10 p-2 text-2xl text-white hover:!bg-white/15 lg:hidden"
         >
           <HiX />
         </button>

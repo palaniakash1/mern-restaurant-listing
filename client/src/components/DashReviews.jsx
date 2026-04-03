@@ -348,7 +348,7 @@ export default function DashReviews() {
               </div>
               <Button
                 type="submit"
-                className="bg-[#8fa31e] hover:bg-[#78871c]"
+                className="!bg-[#8fa31e] hover:!bg-[#78871c]"
                 isProcessing={submitting}
                 disabled={!reviewForm.restaurantId}
               >
@@ -527,7 +527,7 @@ export default function DashReviews() {
         </Modal.Body>
         <Modal.Footer>
           <Button
-            className="bg-[#8fa31e] hover:bg-[#78871c]"
+            className="!bg-[#8fa31e] hover:!bg-[#78871c]"
             onClick={handleSaveEdit}
             isProcessing={submitting}
           >

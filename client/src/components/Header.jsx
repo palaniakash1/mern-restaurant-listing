@@ -58,12 +58,12 @@ export default function Header() {
         </div>
         <ul className="flex gap-4 items-center">
           <Link to="/">
-            <li className="hidden sm:block text-zinc hover:text-green-600 active:text-green-500 cursor-pointer">
+            <li className="hidden sm:block !text-zinc hover:!text-green-600 active:text-green-500 cursor-pointer">
               Home
             </li>
           </Link>
           <Link to="/about">
-            <li className="hidden sm:block  text-zinc hover:text-green-600 active:text-green-500 cursor-pointer">
+            <li className="hidden sm:block  !text-zinc hover:!text-green-600 active:text-green-500 cursor-pointer">
               About
             </li>
           </Link>
@@ -99,7 +99,7 @@ export default function Header() {
                     to="/dashboard?tab=profile"
                     onClick={() => setOpenDropdown(false)}
                   >
-                    <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                    <div className="px-4 py-2 text-sm !text-gray-700 text-gray-200 hover:!bg-gray-100  cursor-pointer">
                       Profile
                     </div>
                   </Link>
@@ -110,7 +110,7 @@ export default function Header() {
                       setOpenDropdown(false);
                       handleSignOut();
                     }}
-                    className="px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                    className="px-4 py-2 text-sm text-red-600 hover:!bg-gray-100 dark:hover:!bg-gray-700 cursor-pointer"
                   >
                     Sign out
                   </div>
@@ -119,7 +119,7 @@ export default function Header() {
             </div>
           ) : (
             <Link to="/sign-in">
-              <button className="px-4 py-2 text-sm border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 transition">
+              <button className="px-4 py-2 text-sm border border-purple-600 text-purple-600 rounded-md hover:!bg-purple-50 transition">
                 Sign In
               </button>
             </Link>

@@ -68,7 +68,7 @@ export default function Dashboards() {
 
         if (user?.role === 'storeManager' && user.restaurantId) {
           const menus = await apiGet(
-            `/api/menu/restaurant/${user.restaurantId}?page=1&limit=50`
+            `/api/menus/restaurant/${user.restaurantId}?page=1&limit=50`
           );
           if (!ignore) {
             setSummary({

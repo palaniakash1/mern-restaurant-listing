@@ -184,7 +184,7 @@ function SearchableAdminPicker({
                     onSelect(admin);
                     setOpen(false);
                   }}
-                  className="flex w-full flex-col rounded-xl border border-transparent bg-[#fbfcf7] px-3 py-3 text-left hover:border-[#dce6c1] hover:bg-[#f6fbe9]"
+                  className="flex w-full flex-col rounded-xl border border-transparent bg-[#fbfcf7] px-3 py-3 text-left hover:!border-[#dce6c1] hover:!bg-[#f6fbe9]"
                 >
                   <span className="text-sm font-semibold text-[#23411f]">
                     {admin.userName}
@@ -699,7 +699,7 @@ export default function DashRestaurants() {
               </Select>
               {canCreateRestaurant && (
                 <Button
-                  className="!bg-[#8fa31e] hover:!bg-[#78871c]"
+                  className="!bg-[#8fa31e] hover:!!bg-[#78871c]"
                   onClick={openCreateModal}
                 >
                   <HiOutlinePlus className="mr-2 h-4 w-4" />
@@ -1221,7 +1221,7 @@ export default function DashRestaurants() {
                           key={option.fhrsId}
                           type="button"
                           onClick={() => applyFsaOption(option)}
-                          className="flex w-full flex-col rounded-xl border border-transparent bg-[#fbfcf7] px-3 py-3 text-left hover:border-[#dce6c1] hover:bg-[#f6fbe9]"
+                          className="flex w-full flex-col rounded-xl border border-transparent !bg-[#fbfcf7] px-3 py-3 text-left hover:!border-[#dce6c1] hover:!bg-[#f6fbe9]"
                         >
                           <span className="text-sm font-semibold text-[#23411f]">
                             {option.name}
@@ -1279,7 +1279,7 @@ export default function DashRestaurants() {
               </Button>
               <Button
                 type="submit"
-                className="!bg-[#8fa31e] hover:!bg-[#78871c]"
+                className="!bg-[#8fa31e] hover:!!bg-[#78871c]"
                 isProcessing={submitting}
                 disabled={logoUploading}
               >

@@ -262,7 +262,7 @@ export default function DashProfile() {
               <div className="mt-4 flex flex-col gap-4 border-t pt-6 lg:col-span-2 lg:flex-row lg:items-center lg:justify-between">
                 <Button
                   type="submit"
-                  className="w-full border-none !bg-[#8fa31e] text-white hover:!bg-[#7a8c1a] lg:w-[30%]"
+                  className="w-full border-none !bg-[#8fa31e] text-white hover:!!bg-[#7a8c1a] lg:w-[30%]"
                   disabled={loading || imageFileUploading}
                 >
                   {loading ? 'Loading...' : 'Update'}

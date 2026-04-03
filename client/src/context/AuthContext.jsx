@@ -185,7 +185,12 @@ export function AuthProvider({ children }) {
       path => window.location.pathname.startsWith(path)
     );
 
-    if (isAuthPage) {
+    const isLoggingOut = sessionStorage.getItem('isLoggingOut') === 'true';
+
+    if (isAuthPage || isLoggingOut) {
+      if (isLoggingOut) {
+        sessionStorage.removeItem('isLoggingOut');
+      }
       reduxDispatch(signOutSuccessRedux());
       reduxDispatch(clearReduxError());
       dispatch({ type: ACTIONS.INIT, payload: null });

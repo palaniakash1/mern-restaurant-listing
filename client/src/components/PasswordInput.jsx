@@ -67,7 +67,7 @@ export default function PasswordInput({
       <button
         type="button"
         aria-label={isVisible ? "Hide password" : "Show password"}
-        className={`absolute inset-y-0 right-0 z-10 flex items-center px-3 text-slate-400 transition hover:text-slate-600 ${rightIconClassName}`.trim()}
+        className={`absolute inset-y-0 right-0 z-10 flex items-center px-3 !text-slate-400 transition hover:!text-slate-600 ${rightIconClassName}`.trim()}
         onClick={() => setIsVisible((current) => !current)}
       >
         <EyeIcon open={isVisible} />
