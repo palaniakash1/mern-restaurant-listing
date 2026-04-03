@@ -142,6 +142,7 @@ export default function DashAuditLogs() {
   const { user } = useAuth();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [countLoading, setCountLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -149,6 +150,7 @@ export default function DashAuditLogs() {
   const [entityType, setEntityType] = useState('');
   const [action, setAction] = useState('');
   const [selectedLog, setSelectedLog] = useState(null);
+  const [entityCounts, setEntityCounts] = useState({ all: 0 });
 
   const canReadAuditLogs = hasPermission(user, 'audit', 'read');
 
@@ -181,28 +183,62 @@ export default function DashAuditLogs() {
     }
   }, [action, canReadAuditLogs, entityType, page]);
 
+  const loadEntityCounts = useCallback(async () => {
+    if (!canReadAuditLogs) {
+      setCountLoading(false);
+      return;
+    }
+
+    try {
+      setCountLoading(true);
+
+      const buildCountUrl = (nextEntityType) => {
+        const params = new URLSearchParams({
+          page: '1',
+          limit: '1'
+        });
+
+        if (action) params.set('action', action);
+        if (nextEntityType) params.set('entityType', nextEntityType);
+
+        return `/api/auditlogs?${params.toString()}`;
+      };
+
+      const responses = await Promise.all([
+        apiGet(buildCountUrl('')),
+        ...ENTITY_OPTIONS.filter((option) => option.value).map((option) =>
+          apiGet(buildCountUrl(option.value))
+        )
+      ]);
+
+      const [allResponse, ...entityResponses] = responses;
+      const nextCounts = { all: allResponse.total || 0 };
+
+      ENTITY_OPTIONS.filter((option) => option.value).forEach((option, index) => {
+        nextCounts[option.value] = entityResponses[index]?.total || 0;
+      });
+
+      setEntityCounts(nextCounts);
+    } catch {
+      setEntityCounts({ all: 0 });
+    } finally {
+      setCountLoading(false);
+    }
+  }, [action, canReadAuditLogs]);
+
   useEffect(() => {
     loadAuditLogs();
   }, [loadAuditLogs]);
+
+  useEffect(() => {
+    loadEntityCounts();
+  }, [loadEntityCounts]);
 
   useEffect(() => {
     setPage(1);
   }, [entityType, action]);
 
   const summary = useMemo(() => buildSummaryCards(logs), [logs]);
-
-  const entityCounts = useMemo(
-    () =>
-      logs.reduce(
-        (accumulator, log) => {
-          accumulator.all += 1;
-          accumulator[log.entityType] = (accumulator[log.entityType] || 0) + 1;
-          return accumulator;
-        },
-        { all: 0 }
-      ),
-    [logs]
-  );
 
   if (!canReadAuditLogs) {
     return (
@@ -330,20 +366,20 @@ export default function DashAuditLogs() {
             ))}
           </div>
 
-          {loading && (
+          {(loading || countLoading) && (
             <div className="mt-4 flex items-center gap-2 rounded-2xl bg-[#f7faef] px-4 py-3 text-sm text-[#4e5e20]">
               <Spinner size="sm" />
               Loading audit logs...
             </div>
           )}
 
-          {!loading && logs.length === 0 && (
+          {!loading && !countLoading && logs.length === 0 && (
             <div className="mt-4 rounded-[1.5rem] border border-dashed border-[#dce6c1] bg-[#fbfcf7] p-8 text-center text-sm text-gray-500">
               No audit entries matched the current filters.
             </div>
           )}
 
-          {!loading && logs.length > 0 && (
+          {!loading && !countLoading && logs.length > 0 && (
             <>
               <div className="mt-5 hidden overflow-x-auto md:block">
                 <Table hoverable>
@@ -395,8 +431,8 @@ export default function DashAuditLogs() {
                         </Table.Cell>
                         <Table.Cell>
                           <Button
-                            color="light"
                             size="xs"
+                            className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                             onClick={() => setSelectedLog(log)}
                           >
                             <HiOutlineEye className="mr-1 h-4 w-4" />
@@ -439,9 +475,8 @@ export default function DashAuditLogs() {
                       </span>
                     </div>
                     <Button
-                      color="light"
                       size="xs"
-                      className="mt-4"
+                      className="mt-4 !bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                       onClick={() => setSelectedLog(log)}
                     >
                       <HiOutlineEye className="mr-1 h-4 w-4" />
