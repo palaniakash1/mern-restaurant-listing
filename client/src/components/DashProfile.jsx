@@ -497,7 +497,7 @@ export default function DashProfile() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-[linear-gradient(135deg,#6b7d18_0%,#8fa31e_55%,#b62828_100%)] text-white shadow-lg shadow-[#8fa31e]/20 hover:opacity-95 lg:w-auto"
+                  className="w-full !bg-[#6b7d18] text-white shadow-lg shadow-[#8fa31e]/20 hover:opacity-95 lg:w-auto"
                   disabled={isLoading || imageFileUploading}
                 >
                   {isLoading || imageFileUploading ? 'Saving...' : 'Save Changes'}
