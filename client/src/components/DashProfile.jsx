@@ -67,7 +67,9 @@ function SummaryTile({ icon, title, value, tone = 'green' }) {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">
             {title}
           </p>
-          <p className="mt-1 truncate text-sm font-semibold text-[#23411f]">{value}</p>
+          <p className="mt-1 truncate text-sm font-semibold text-[#23411f]">
+            {value}
+          </p>
         </div>
       </div>
     </div>
@@ -75,13 +77,20 @@ function SummaryTile({ icon, title, value, tone = 'green' }) {
 }
 
 export default function DashProfile() {
-  const { user: currentUser, updateUser, logout, isLoading, error: authError } = useAuth();
+  const {
+    user: currentUser,
+    updateUser,
+    logout,
+    isLoading,
+    error: authError
+  } = useAuth();
   const filePickerRef = useRef(null);
   const userId = currentUser?._id || currentUser?.id;
 
   const [imageFile, setImageFile] = useState(null);
   const [imageFileUrl, setImageFileUrl] = useState(null);
-  const [imageFileUploadingProgress, setImageFileUploadingProgress] = useState(null);
+  const [imageFileUploadingProgress, setImageFileUploadingProgress] =
+    useState(null);
   const [imageFileUploadingError, setImageFileUploadingError] = useState(null);
   const [imageFileUploading, setImageFileUploading] = useState(false);
   const [updateUserSuccess, setUpdateUserSuccess] = useState(null);
@@ -127,7 +136,9 @@ export default function DashProfile() {
         setImageFileUrl(uploaded.url);
         setFormData((prev) => ({ ...prev, profilePicture: uploaded.url }));
       } catch (uploadError) {
-        setImageFileUploadingError(uploadError.message || "Couldn't upload image.");
+        setImageFileUploadingError(
+          uploadError.message || "Couldn't upload image."
+        );
       } finally {
         setImageFileUploading(false);
         setImageFile(null);
@@ -187,7 +198,10 @@ export default function DashProfile() {
     if (formData.password.trim()) {
       payload.password = formData.password.trim();
     }
-    if (formData.profilePicture && formData.profilePicture !== currentUser?.profilePicture) {
+    if (
+      formData.profilePicture &&
+      formData.profilePicture !== currentUser?.profilePicture
+    ) {
       payload.profilePicture = formData.profilePicture;
     }
 
@@ -256,15 +270,21 @@ export default function DashProfile() {
     <>
       <div className="space-y-5">
         {(authError || updateUserError || imageFileUploadingError) && (
-          <Alert color="failure">{authError || updateUserError || imageFileUploadingError}</Alert>
+          <Alert color="failure">
+            {authError || updateUserError || imageFileUploadingError}
+          </Alert>
         )}
-        {updateUserSuccess && <Alert color="success">{updateUserSuccess}</Alert>}
+        {updateUserSuccess && (
+          <Alert color="success">{updateUserSuccess}</Alert>
+        )}
 
         <Card className="overflow-hidden border !border-[#dce6c1] bg-white shadow-[0_25px_80px_rgba(60,79,25,0.08)]">
           <div className="rounded-[1.8rem] bg-[linear-gradient(135deg,#6b7d18_0%,#8fa31e_45%,#b62828_100%)] p-5 text-white sm:p-7">
             <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
               <div className="space-y-3">
-                <Badge className={`w-fit border ${roleStyle.badge}`}>{roleStyle.label}</Badge>
+                <Badge className={`w-fit border ${roleStyle.badge}`}>
+                  {roleStyle.label}
+                </Badge>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
                     Account profile
@@ -275,8 +295,8 @@ export default function DashProfile() {
                 </div>
                 <p className="max-w-2xl text-sm leading-7 text-white/90">
                   Manage your identity, contact details, password, and account
-                  presentation from one premium workspace designed to stay clear on
-                  mobile and desktop.
+                  presentation from one premium workspace designed to stay clear
+                  on mobile and desktop.
                 </p>
               </div>
 
@@ -285,7 +305,9 @@ export default function DashProfile() {
                   <p className="text-xs uppercase tracking-[0.2em] text-white/70">
                     Profile completion
                   </p>
-                  <p className="mt-2 text-3xl font-bold">{profileCompletion}%</p>
+                  <p className="mt-2 text-3xl font-bold">
+                    {profileCompletion}%
+                  </p>
                 </div>
                 <div className="rounded-[1.4rem] bg-white/12 p-4 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.2em] text-white/70">
@@ -325,17 +347,22 @@ export default function DashProfile() {
           </div>
         </Card>
 
-        <form onSubmit={handleSubmit} className="grid gap-5 xl:grid-cols-[0.8fr,1.2fr]">
+        <form
+          onSubmit={handleSubmit}
+          className="grid gap-5 xl:grid-cols-[0.8fr,1.2fr]"
+        >
           <Card className="border !border-[#dce6c1] bg-white shadow-sm">
             <div className="space-y-5">
               <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#b62828]">
                   Profile image
                 </p>
-                <h3 className="text-xl font-bold text-[#23411f]">Visual identity</h3>
+                <h3 className="text-xl font-bold text-[#23411f]">
+                  Visual identity
+                </h3>
                 <p className="text-sm leading-7 text-gray-600">
-                  Upload a polished square avatar to keep the control center feeling
-                  professional and consistent.
+                  Upload a polished square avatar to keep the control center
+                  feeling professional and consistent.
                 </p>
               </div>
 
@@ -384,8 +411,8 @@ export default function DashProfile() {
               </div>
 
               <div className="rounded-[1.35rem] border !border-[#ebf0d7] bg-[#fbfcf7] p-4 text-sm text-gray-600">
-                Square images work best. Large photos are compressed before upload to
-                keep updates quick on mobile connections.
+                Square images work best. Large photos are compressed before
+                upload to keep updates quick on mobile connections.
               </div>
             </div>
           </Card>
@@ -396,16 +423,21 @@ export default function DashProfile() {
                 <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#b62828]">
                   Personal information
                 </p>
-                <h3 className="text-xl font-bold text-[#23411f]">Account details</h3>
+                <h3 className="text-xl font-bold text-[#23411f]">
+                  Account details
+                </h3>
                 <p className="text-sm leading-7 text-gray-600">
-                  Update your core identity details while keeping role access and
-                  account controls visible at a glance.
+                  Update your core identity details while keeping role access
+                  and account controls visible at a glance.
                 </p>
               </div>
 
               <div className="grid gap-5 md:grid-cols-2">
                 <div className="space-y-2">
-                  <label htmlFor="userName" className="text-sm font-semibold text-gray-700">
+                  <label
+                    htmlFor="userName"
+                    className="text-sm font-semibold text-gray-700"
+                  >
                     Username
                   </label>
                   <input
@@ -419,7 +451,10 @@ export default function DashProfile() {
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-semibold text-gray-700">
+                  <label
+                    htmlFor="email"
+                    className="text-sm font-semibold text-gray-700"
+                  >
                     Email
                   </label>
                   <input
@@ -433,7 +468,10 @@ export default function DashProfile() {
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="password" className="text-sm font-semibold text-gray-700">
+                  <label
+                    htmlFor="password"
+                    className="text-sm font-semibold text-gray-700"
+                  >
                     Password
                   </label>
                   <PasswordInput
@@ -445,7 +483,9 @@ export default function DashProfile() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700">Role</label>
+                  <label className="text-sm font-semibold text-gray-700">
+                    Role
+                  </label>
                   <div
                     className={`rounded-[1rem] border px-4 py-3 text-sm font-semibold ${roleStyle.pill}`}
                   >
@@ -468,7 +508,8 @@ export default function DashProfile() {
                     Session note
                   </p>
                   <p className="mt-2 text-sm font-semibold text-[#23411f]">
-                    Sign out from here any time if you need to close the current session.
+                    Sign out from here any time if you need to close the current
+                    session.
                   </p>
                 </div>
               </div>
@@ -476,18 +517,16 @@ export default function DashProfile() {
               <div className="flex flex-col gap-3 border-t !border-[#ebf0d7] pt-5 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <Button
-                    color="failure"
                     type="button"
-                    className="w-full sm:w-auto"
+                    className="!bg-red-600 hover:!bg-red-700 w-full sm:w-auto"
                     onClick={() => setShowDeleteModal(true)}
                   >
                     <HiTrash className="mr-2 h-4 w-4" />
                     Delete Account
                   </Button>
                   <Button
-                    color="light"
                     type="button"
-                    className="w-full sm:w-auto"
+                    className="!bg-red-600 hover:!bg-red-700 w-full sm:w-auto"
                     onClick={handleSignOut}
                   >
                     <VscSignOut className="mr-2 h-4 w-4" />
@@ -497,10 +536,12 @@ export default function DashProfile() {
 
                 <Button
                   type="submit"
-                  className="w-full !bg-[#6b7d18] text-white shadow-lg shadow-[#8fa31e]/20 hover:opacity-95 lg:w-auto"
+                  className="w-full !bg-[#6b7d18] text-white shadow-lg !shadow-[#8fa31e]/20 hover:opacity-95 lg:w-auto"
                   disabled={isLoading || imageFileUploading}
                 >
-                  {isLoading || imageFileUploading ? 'Saving...' : 'Save Changes'}
+                  {isLoading || imageFileUploading
+                    ? 'Saving...'
+                    : 'Save Changes'}
                 </Button>
               </div>
             </div>
