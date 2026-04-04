@@ -3,18 +3,35 @@ import { verifyToken } from '../utils/verifyUser.js';
 import { can } from '../utils/policy.js';
 import { validate } from '../middlewares/validate.js';
 import { reviewValidators } from '../validators/index.js';
+import { logger } from '../utils/logger.js';
 import {
   createReview,
   deleteReview,
   getReviewById,
   getMyReviews,
   getRestaurantReviewSummary,
-  listRestaurantReviews,
+  listAllReviewsForModeration,
+  listAllReviewsForSuperAdmin,
   moderateReview,
-  updateReview
+  bulkModerateReviews
 } from '../controllers/review.controller.js';
+import { listRestaurantReviews } from '../controllers/review.controller.js';
 
 const router = express.Router();
+
+// SuperAdmin: Get all reviews across all restaurants (must be before /restaurant/:restaurantId)
+router.get(
+  '/all',
+  verifyToken,
+  (req, res, next) => {
+    logger.info('reviews.all.check', { role: req.user?.role });
+    if (req.user?.role !== 'superAdmin') {
+      return next({ status: 403, message: 'Permission denied' });
+    }
+    return next();
+  },
+  listAllReviewsForSuperAdmin
+);
 
 // Public endpoints with validation
 router.get(
@@ -29,11 +46,27 @@ router.get(
   getRestaurantReviewSummary
 );
 
+// Protected endpoints for moderation (admin/superAdmin for specific restaurant)
+router.get(
+  '/restaurant/:restaurantId/all',
+  verifyToken,
+  can('moderate', 'review'),
+  validate(reviewValidators.restaurantParam, 'params'),
+  validate(reviewValidators.listRestaurantQuery, 'query'),
+  listAllReviewsForModeration
+);
+
 // Protected endpoints
 router.get(
   '/my',
   verifyToken,
-  can('readMine', 'review'),
+  (req, res, next) => {
+    logger.info('reviews.my.check', { role: req.user?.role });
+    if (req.user?.role === 'superAdmin' || req.user?.role === 'user') {
+      return next();
+    }
+    return next({ status: 403, message: 'Permission denied' });
+  },
   validate(reviewValidators.myQuery, 'query'),
   getMyReviews
 );
@@ -56,12 +89,11 @@ router.post(
 );
 
 router.patch(
-  '/:id',
+  '/bulk-moderate',
   verifyToken,
-  can('update', 'review'),
-  validate(reviewValidators.idParam, 'params'),
-  validate(reviewValidators.updateBody),
-  updateReview
+  can('moderate', 'review'),
+  validate(reviewValidators.bulkModerateBody),
+  bulkModerateReviews
 );
 
 router.delete(
