@@ -6,9 +6,10 @@ import { errorHandler } from '../utils/error.js';
 import { paginate } from '../utils/paginate.js';
 import { withTransaction } from '../utils/withTransaction.js';
 import { logAudit } from '../utils/auditLogger.js';
+import { logger } from '../utils/logger.js';
 
 import { isValidObjectId, normalizeIp } from '../utils/controllerHelpers.js';
-import { getOrFetch } from '../utils/redisCache.js';
+import { getOrFetch, invalidatePattern } from '../utils/redisCache.js';
 
 const recomputeRestaurantRating = async (restaurantId, session = null) => {
   const stats = await Review.aggregate([
@@ -81,7 +82,15 @@ export const createReview = async (req, res, next) => {
   try {
     assertPublicUser(req);
     const { restaurantId } = req.params;
-    const { rating, comment = '' } = req.body;
+    const { rating, comment = '', images = [] } = req.body;
+
+    logger.info('createReview.debug', {
+      restaurantId,
+      userId: req.user.id,
+      rating,
+      comment,
+      images
+    });
 
     if (!isValidObjectId(restaurantId)) {
       throw errorHandler(400, 'Invalid restaurant ID format');
@@ -90,62 +99,87 @@ export const createReview = async (req, res, next) => {
       throw errorHandler(400, 'rating must be between 1 and 5');
     }
 
-    const result = await withTransaction(async (session) => {
-      const restaurant = await Restaurant.findById(restaurantId)
-        .session(session)
-        .lean();
+    if (images.length > 3) {
+      throw errorHandler(400, 'Maximum 3 images allowed');
+    }
 
-      if (
-        !restaurant ||
-        !restaurant.isActive ||
-        restaurant.status !== 'published'
-      ) {
-        throw errorHandler(404, 'Restaurant not available for reviews');
-      }
+    try {
+      const result = await withTransaction(async (session) => {
+        const restaurant = await Restaurant.findById(restaurantId)
+          .session(session)
+          .lean();
 
-      const existing = await Review.findOne({
-        restaurantId,
-        userId: req.user.id,
-        isActive: true
-      }).session(session);
+        if (
+          !restaurant ||
+          !restaurant.isActive ||
+          restaurant.status !== 'published'
+        ) {
+          throw errorHandler(404, 'Restaurant not available for reviews');
+        }
 
-      if (existing) {
-        throw errorHandler(409, 'You already reviewed this restaurant');
-      }
+        const [review] = await Review.create(
+          [
+            {
+              restaurantId,
+              userId: req.user.id,
+              rating,
+              comment: String(comment).trim(),
+              images,
+              isActive: false
+            }
+          ],
+          { session }
+        );
 
-      const [review] = await Review.create(
-        [
-          {
-            restaurantId,
-            userId: req.user.id,
-            rating,
-            comment: String(comment).trim()
-          }
-        ],
-        { session }
-      );
-      await recomputeRestaurantRating(restaurantId, session);
+        logger.info('createReview.created', { reviewId: review._id });
 
-      await logAudit({
-        actorId: req.user.id,
-        actorRole: req.user.role,
-        entityType: 'review',
-        entityId: review._id,
-        action: 'CREATE',
-        before: null,
-        after: { restaurantId, rating },
-        ipAddress: normalizeIp(req),
-        session
+        await recomputeRestaurantRating(restaurantId, session);
+
+        await logAudit({
+          actorId: req.user.id,
+          actorRole: req.user.role,
+          entityType: 'review',
+          entityId: review._id,
+          action: 'CREATE',
+          before: null,
+          after: { restaurantId, rating },
+          ipAddress: normalizeIp(req),
+          session
+        });
+
+        return review;
       });
 
-      return review;
-    });
+      await invalidatePattern(`reviews:restaurant:${restaurantId}*`);
+      await invalidatePattern(`reviews:summary:${restaurantId}`);
+      await invalidatePattern('reviews:all*');
 
-    res.status(201).json({ success: true, data: result });
-  } catch (error) {
-    if (error.code === 11000) {
-      return next(errorHandler(409, 'You already reviewed this restaurant'));
+      return res.status(201).json({ success: true, data: result });
+    } catch (createError) {
+      logger.error('createReview.error', { error: createError.message, code: createError.code });
+      if (createError.code === 11000) {
+        const existing = await Review.findOne({
+          restaurantId,
+          userId: req.user.id
+        });
+        if (existing) {
+          logger.info('createReview.duplicateFound', { existingReviewId: existing._id, isActive: existing.isActive });
+          if (existing.isActive) {
+            return res.status(200).json({ success: true, data: existing });
+          }
+          existing.isActive = true;
+          existing.comment = String(comment).trim();
+          existing.rating = rating;
+          await existing.save();
+          await invalidatePattern(`reviews:restaurant:${restaurantId}*`);
+          await invalidatePattern(`reviews:summary:${restaurantId}`);
+          await invalidatePattern('reviews:all*');
+          return res.status(200).json({ success: true, data: existing });
+        }
+      }
+      throw createError;
     }
+  } catch (error) {
     next(error);
   }
 };
@@ -154,6 +188,8 @@ export const listRestaurantReviews = async (req, res, next) => {
   try {
     const { restaurantId } = req.params;
     const { page = 1, limit = 10, sort = 'desc' } = req.query;
+
+    logger.info('listRestaurantReviews.debug', { restaurantId, page, limit, sort });
 
     if (!isValidObjectId(restaurantId)) {
       throw errorHandler(400, 'Invalid restaurant ID format');
@@ -173,12 +209,16 @@ export const listRestaurantReviews = async (req, res, next) => {
         const pagination = paginate({ page: pageNum, limit: limitNum, total });
         const direction = sort === 'asc' ? 1 : -1;
 
+        logger.info('listRestaurantReviews.query', { filter, total, skip: pagination.skip, limit: pagination.limit });
+
         const data = await Review.find(filter)
           .populate('userId', 'userName profilePicture')
           .sort({ createdAt: direction })
           .skip(pagination.skip)
           .limit(pagination.limit)
           .lean();
+
+        logger.info('listRestaurantReviews.found', { count: data.length });
 
         return { success: true, ...pagination, data };
       },
@@ -191,11 +231,92 @@ export const listRestaurantReviews = async (req, res, next) => {
   }
 };
 
+export const listAllReviewsForModeration = async (req, res, next) => {
+  try {
+    const { restaurantId } = req.params;
+    const { page = 1, limit = 10, sort = 'desc' } = req.query;
+
+    logger.info('listAllReviewsForModeration.debug', { restaurantId, page, limit, sort });
+
+    if (!isValidObjectId(restaurantId)) {
+      throw errorHandler(400, 'Invalid restaurant ID format');
+    }
+
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+
+    const filter = { restaurantId };
+    const total = await Review.countDocuments(filter);
+    const pagination = paginate({ page: pageNum, limit: limitNum, total });
+    const direction = sort === 'asc' ? 1 : -1;
+
+    logger.info('listAllReviewsForModeration.query', { filter, total, skip: pagination.skip, limit: pagination.limit });
+
+    const data = await Review.find(filter)
+      .populate('userId', 'userName profilePicture')
+      .sort({ createdAt: direction })
+      .skip(pagination.skip)
+      .limit(pagination.limit)
+      .lean();
+
+    logger.info('listAllReviewsForModeration.found', { count: data.length });
+
+    res.status(200).json({ success: true, ...pagination, data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const listAllReviewsForSuperAdmin = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 10, sort = 'desc', restaurantId } = req.query;
+
+    logger.info('listAllReviewsForSuperAdmin.debug', { page, limit, sort, restaurantId });
+
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+
+    const filter = {};
+    if (restaurantId) {
+      if (!isValidObjectId(restaurantId)) {
+        throw errorHandler(400, 'Invalid restaurant ID format');
+      }
+      filter.restaurantId = restaurantId;
+    }
+
+    const total = await Review.countDocuments(filter);
+    const pagination = paginate({ page: pageNum, limit: limitNum, total });
+    const direction = sort === 'asc' ? 1 : -1;
+
+    logger.info('listAllReviewsForSuperAdmin.query', { filter, total, skip: pagination.skip, limit: pagination.limit });
+
+    const data = await Review.find(filter)
+      .populate('userId', 'userName profilePicture')
+      .populate('restaurantId', 'name slug')
+      .sort({ createdAt: direction })
+      .skip(pagination.skip)
+      .limit(limitNum)
+      .lean();
+
+    logger.info('listAllReviewsForSuperAdmin.found', { count: data.length });
+
+    res.status(200).json({ success: true, ...pagination, data });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getMyReviews = async (req, res, next) => {
   try {
-    assertPublicUser(req);
     const { page = 1, limit = 10 } = req.query;
-    const filter = { userId: req.user.id, isActive: true };
+
+    const filter = { isActive: true };
+
+    if (req.user.role === 'user') {
+      filter.userId = req.user.id;
+    } else if (req.user.role !== 'superAdmin') {
+      throw errorHandler(403, 'Not allowed to view reviews');
+    }
 
     const total = await Review.countDocuments(filter);
     const pagination = paginate({ page, limit, total });
@@ -281,6 +402,10 @@ export const updateReview = async (req, res, next) => {
       return review;
     });
 
+    await invalidatePattern(`reviews:restaurant:${result.restaurantId}*`);
+    await invalidatePattern(`reviews:summary:${result.restaurantId}`);
+    await invalidatePattern('reviews:all*');
+
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);
@@ -294,6 +419,7 @@ export const deleteReview = async (req, res, next) => {
       throw errorHandler(400, 'Invalid review ID format');
     }
 
+    let deletedRestaurantId;
     await withTransaction(async (session) => {
       const review = await Review.findById(id).session(session);
       if (!review || !review.isActive) {
@@ -301,6 +427,8 @@ export const deleteReview = async (req, res, next) => {
       }
 
       assertReviewOwnershipOrSuperAdmin(req, review);
+
+      deletedRestaurantId = review.restaurantId;
 
       review.isActive = false;
       review.moderatedBy = req.user.id;
@@ -321,6 +449,10 @@ export const deleteReview = async (req, res, next) => {
         session
       });
     });
+
+    await invalidatePattern(`reviews:restaurant:${deletedRestaurantId}*`);
+    await invalidatePattern(`reviews:summary:${deletedRestaurantId}`);
+    await invalidatePattern('reviews:all*');
 
     res.status(200).json({ success: true, message: 'Review deleted' });
   } catch (error) {
@@ -381,7 +513,89 @@ export const moderateReview = async (req, res, next) => {
       return review;
     });
 
+    await invalidatePattern(`reviews:restaurant:${result.restaurantId}*`);
+    await invalidatePattern(`reviews:summary:${result.restaurantId}`);
+    await invalidatePattern('reviews:all*');
+
     res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const bulkModerateReviews = async (req, res, next) => {
+  try {
+    const { reviewIds, isActive } = req.body;
+
+    logger.info('bulkModerateReviews.debug', { reviewIds: reviewIds.length, isActive });
+
+    if (!Array.isArray(reviewIds) || reviewIds.length === 0) {
+      throw errorHandler(400, 'reviewIds must be a non-empty array');
+    }
+    if (typeof isActive !== 'boolean') {
+      throw errorHandler(400, 'isActive must be boolean');
+    }
+
+    const invalidIds = reviewIds.filter((id) => !isValidObjectId(id));
+    if (invalidIds.length > 0) {
+      throw errorHandler(400, `Invalid review IDs: ${invalidIds.join(', ')}`);
+    }
+
+    const reviews = await Review.find({ _id: { $in: reviewIds } });
+    if (reviews.length === 0) {
+      throw errorHandler(404, 'No reviews found');
+    }
+
+    if (req.user.role === 'admin') {
+      const admin = await User.findById(req.user.id).lean();
+      const unauthorizedReviews = reviews.filter(
+        (r) => r.restaurantId.toString() !== admin?.restaurantId?.toString()
+      );
+      if (unauthorizedReviews.length > 0) {
+        throw errorHandler(403, 'You can only moderate reviews for your assigned restaurant');
+      }
+    }
+
+    const restaurantIds = [...new Set(reviews.map((r) => r.restaurantId.toString()))];
+
+    const updatedReviews = await Review.updateMany(
+      { _id: { $in: reviewIds } },
+      {
+        $set: {
+          isActive,
+          moderatedAt: new Date(),
+          moderatedBy: req.user.id
+        }
+      }
+    ).lean();
+
+    for (const restaurantId of restaurantIds) {
+      await recomputeRestaurantRating(restaurantId);
+    }
+
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      entityType: 'review',
+      entityId: null,
+      action: 'BULK_STATUS_CHANGE',
+      before: null,
+      after: { reviewIds, isActive },
+      ipAddress: normalizeIp(req)
+    });
+
+    for (const restaurantId of restaurantIds) {
+      await invalidatePattern(`reviews:restaurant:${restaurantId}*`);
+      await invalidatePattern(`reviews:summary:${restaurantId}`);
+    }
+    await invalidatePattern('reviews:all*');
+
+    res.status(200).json({
+      success: true,
+      data: {
+        modifiedCount: updatedReviews.modifiedCount
+      }
+    });
   } catch (error) {
     next(error);
   }
@@ -390,6 +604,8 @@ export const moderateReview = async (req, res, next) => {
 export const getRestaurantReviewSummary = async (req, res, next) => {
   try {
     const { restaurantId } = req.params;
+    logger.info('getRestaurantReviewSummary.debug', { restaurantId });
+
     if (!isValidObjectId(restaurantId)) {
       throw errorHandler(400, 'Invalid restaurant ID format');
     }
