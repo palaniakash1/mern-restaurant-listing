@@ -25,6 +25,10 @@ const reviewSchema = new mongoose.Schema(
       trim: true,
       maxlength: 1000
     },
+    images: {
+      type: [String],
+      default: []
+    },
     isActive: {
       type: Boolean,
       default: true,
@@ -43,10 +47,6 @@ const reviewSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-reviewSchema.index(
-  { restaurantId: 1, userId: 1 },
-  { unique: true, partialFilterExpression: { isActive: true } }
-);
 reviewSchema.index({ restaurantId: 1, isActive: 1, createdAt: -1 });
 
 export default mongoose.model('Review', reviewSchema);
