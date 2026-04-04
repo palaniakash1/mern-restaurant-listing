@@ -119,7 +119,7 @@ export const PERMISSIONS = {
       'readById',
       'delete'
     ],
-    review: ['readById', 'moderate']
+    review: ['readById', 'create', 'update', 'delete', 'moderate']
   },
   storeManager: {
     auth: ['signout', 'session', 'changePassword'],
