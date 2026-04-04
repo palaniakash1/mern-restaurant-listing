@@ -469,13 +469,19 @@ export const reviewValidators = {
   }),
   createBody: Joi.object({
     rating: Joi.number().min(1).max(5).required(),
-    comment: Joi.string().allow('')
+    comment: Joi.string().allow(''),
+    images: Joi.array().items(Joi.string().uri()).max(3)
   }),
   updateBody: Joi.object({
     rating: Joi.number().min(1).max(5),
-    comment: Joi.string().allow('')
+    comment: Joi.string().allow(''),
+    images: Joi.array().items(Joi.string().uri()).max(3)
   }).min(1),
   moderateBody: Joi.object({
+    isActive: Joi.boolean().required()
+  }),
+  bulkModerateBody: Joi.object({
+    reviewIds: Joi.array().items(objectId).min(1).max(50).required(),
     isActive: Joi.boolean().required()
   })
 };
