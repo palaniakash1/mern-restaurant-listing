@@ -4,6 +4,7 @@ import { errorHandler } from '../utils/error.js';
 
 const allowedRestaurantFolderPrefix = config.cloudinary.uploadFolder;
 const allowedProfileFolderPrefix = 'users/profiles';
+const allowedReviewsFolderPrefix = 'reviews';
 
 const buildSignature = (paramsToSign) =>
   crypto
@@ -29,16 +30,18 @@ export const createUploadSignature = async (req, res, next) => {
 
     const isRestaurantFolder = folder.startsWith(allowedRestaurantFolderPrefix);
     const isProfileFolder = folder.startsWith(allowedProfileFolderPrefix);
+    const isReviewsFolder = folder.startsWith(allowedReviewsFolderPrefix);
 
-    if (!isRestaurantFolder && !isProfileFolder) {
+    if (!isRestaurantFolder && !isProfileFolder && !isReviewsFolder) {
       throw errorHandler(400, 'Invalid upload folder');
     }
 
-    if (
-      isRestaurantFolder &&
-      !['admin', 'superAdmin'].includes(req.user?.role)
-    ) {
+    if (isRestaurantFolder && !['admin', 'superAdmin'].includes(req.user?.role)) {
       throw errorHandler(403, 'You are not allowed to upload restaurant media');
+    }
+
+    if (isReviewsFolder && !['user', 'admin', 'superAdmin', 'storeManager'].includes(req.user?.role)) {
+      throw errorHandler(403, 'You are not allowed to upload review media');
     }
 
     const timestamp = Math.floor(Date.now() / 1000);
