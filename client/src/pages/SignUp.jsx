@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import wavepattern from "../assets/wavepattern.png";
 import OAuth from "../components/OAuth";
 import logo from "../assets/eatwisely.ico";
+import PasswordStrength from "../components/PasswordStrength";
 import { Alert } from "flowbite-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -49,10 +50,7 @@ export default function SignUp() {
   const { register, isLoading, error, clearError } = useAuth();
   const navigate = useNavigate();
 
-  // State to hold the password value
   const [password, setPassword] = useState("");
-
-  // State to toggle between 'password' and 'text' input types
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
@@ -78,18 +76,15 @@ export default function SignUp() {
     }
   };
 
-  // Toggles the showPassword state
   const togglePasswordVisibility = () => {
     setShowPassword((prev) => !prev);
   };
 
-  // Determine the input type dynamically
   const inputType = showPassword ? "text" : "password";
 
   return (
     <>
       <main className="min-h-screen flex">
-        {/* LEFT SIDE: BRANDING PANEL */}
         <div className="hidden lg:flex flex-col w-[45%] bg-[#8fa31e] relative overflow-hidden p-12 justify-center items-start">
           <img
             src={wavepattern}
@@ -101,7 +96,6 @@ export default function SignUp() {
             <h1 className="text-7xl font-black text-white leading-tight uppercase tracking-normal">
               Your Menu <br /> Made <br /> Smarter
             </h1>
-            {/* Decorative Smile Icon */}
             <div className="mt-8 w-full">
               <svg
                 viewBox="0 0 120 40"
@@ -132,10 +126,8 @@ export default function SignUp() {
           </div>
         </div>
 
-        {/* RIGHT SIDE: FORM PANEL */}
         <div className="flex-1 bg-[#f1f8eb] flex flex-col items-center justify-center p-6">
           <div className="w-full max-w-md bg-white rounded-[2rem] shadow-xl overflow-hidden border border-gray-100">
-            {/* Header Area */}
             <div className="py-8 text-center pb-0">
               <div className="flex items-center justify-center gap-1 mb-6">
                 <Link to="/">
@@ -148,7 +140,6 @@ export default function SignUp() {
             </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
-              {/* UserName Input */}
               <div className="space-y-1 mt-4">
                 <label className="text-md font-normal text-gray-500 mt-10">
                   Enter UserName
@@ -162,7 +153,6 @@ export default function SignUp() {
                 />
               </div>
 
-              {/* Email Input */}
               <div className="space-y-1 ">
                 <label className="text-md font-normal text-gray-500 mt-10">
                   Enter Email
@@ -176,37 +166,35 @@ export default function SignUp() {
                 />
               </div>
 
-              {/* Password Input Container */}
-              <div className="space-y-1 relative ">
+              <div className="space-y-1 relative">
                 <label className="text-md font-normal text-gray-500 mt-10">
                   Enter Password
                 </label>
                 <div className="relative">
                   <input
-                    type={inputType} // Dynamically set type
+                    type={inputType}
                     placeholder=""
                     id="password"
                     className="w-full border-gray-200 p-3 !rounded-[5px] bg-white pr-12 focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                     onChange={handleChange}
                     value={password}
                   />
+                  <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center top-6 !text-[#8fa31e] "
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <EyeOffIcon className="h-5 w-5" />
+                    ) : (
+                      <EyeIcon className="h-5 w-5" />
+                    )}
+                  </button>
                 </div>
-
-                {/* Password Toggle Button */}
-                <button
-                  type="button"
-                  onClick={togglePasswordVisibility}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center top-6 !text-[#8fa31e] "
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? (
-                    <EyeOffIcon className="h-5 w-5" />
-                  ) : (
-                    <EyeIcon className="h-5 w-5" />
-                  )}
-                </button>
+                <PasswordStrength password={password} />
               </div>
-              {/* Combined Error Alert */}
+
               {error && (
                 <Alert color="failure" onDismiss={clearError}>
                   {error}
@@ -222,7 +210,6 @@ export default function SignUp() {
               <OAuth />
             </form>
 
-            {/* Bottom Link */}
             <div className="text-center pt-4">
               <p className="text-gray-600 text-sm">
                 Already having a account?{" "}
@@ -235,7 +222,6 @@ export default function SignUp() {
               </p>
             </div>
 
-            {/* Copyright */}
             <div className="pb-6 mt-10 text-center">
               <p className="text-[10px] text-gray-400">© 2025 EatWisely</p>
             </div>
