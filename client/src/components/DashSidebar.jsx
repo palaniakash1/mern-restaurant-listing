@@ -21,8 +21,8 @@ export default function DashSidebar({ onClose }) {
   const handleSignOut = async () => {
     try {
       await logout();
-    } catch (error) {
-      console.log(error);
+    } catch {
+      // Silent logout handling
     }
   };
 

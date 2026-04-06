@@ -36,7 +36,7 @@ export default function OAuth() {
       }
     } catch (error) {
       if (error.code !== 'auth/popup-closed-by-user') {
-        console.log(error);
+        // Silently handle other errors
       }
     }
   };
