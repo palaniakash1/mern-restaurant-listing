@@ -4,6 +4,8 @@ import Home from "./pages/Home";
 import About from "./pages/About";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
 import Header from "./components/Header";
@@ -17,7 +19,9 @@ function AppContent() {
   const location = useLocation();
 
   const isDashboardPage = location.pathname.startsWith("/dashboard");
-  const authentication = location.pathname.startsWith("/sign");
+  const authentication = location.pathname.startsWith("/sign") || 
+                        location.pathname === "/forgot-password" || 
+                        location.pathname === "/reset-password";
 
   return (
     <>
@@ -27,6 +31,8 @@ function AppContent() {
         <Route path="/" element={<Home />} />
         <Route path="/sign-in" element={<SignIn />} />
         <Route path="/sign-up" element={<SignUp />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/about" element={<About />} />
 
         <Route element={<PrivateRoute />}>

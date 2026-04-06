@@ -44,6 +44,9 @@ import {
   revokeAllSessionsForUser,
   revokeSessionForUser
 } from '../services/authOperations.service.js';
+import { sendPasswordResetEmail } from '../services/email.service.js';
+import { logger } from '../utils/logger.js';
+import crypto from 'crypto';
 
 export const signup = async (req, res, next) => {
   try {
@@ -714,6 +717,119 @@ export const changePassword = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: 'Password updated successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    if (!email || email.trim() === '') {
+      return next(errorHandler(400, 'Please enter an email'));
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return next(errorHandler(400, 'Please enter a valid email address'));
+    }
+
+    const normalizedEmail = email.toLowerCase();
+    const user = await findUserByEmail(normalizedEmail);
+
+    if (user) {
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const hashedToken = crypto
+        .createHash('sha256')
+        .update(resetToken)
+        .digest('hex');
+
+      user.security.passwordResetToken = hashedToken;
+      user.security.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000);
+      await saveUser(user);
+
+      try {
+        await sendPasswordResetEmail({
+          to: user.email,
+          resetToken,
+          userId: user._id.toString()
+        });
+      } catch (emailError) {
+        logger.error('email.send_failed', { error: emailError.message });
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message:
+        'If an account exists with this email, a password reset link has been sent'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetPassword = async (req, res, next) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token) {
+      return next(errorHandler(400, 'Reset token is required'));
+    }
+
+    if (!password) {
+      return next(errorHandler(400, 'New password is required'));
+    }
+
+    if (!PASSWORD_REGEX.test(password)) {
+      return next(
+        errorHandler(
+          400,
+          'Minimum 8 characters total. Must contain at least 1 capital letter (A-Z). Must contain at least 1 number (0-9).'
+        )
+      );
+    }
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await findUserById(
+      req.params.userId,
+      '+security.passwordResetToken +security.passwordResetExpires'
+    );
+
+    if (!user) {
+      return next(errorHandler(400, 'Invalid reset token'));
+    }
+
+    if (!user.security?.passwordResetToken || user.security?.passwordResetToken !== hashedToken) {
+      return next(errorHandler(400, 'Invalid reset token'));
+    }
+
+    if (user.security.passwordResetExpires < new Date()) {
+      return next(errorHandler(400, 'Reset token has expired'));
+    }
+
+    user.password = hashPassword(password);
+    user.security.passwordResetToken = null;
+    user.security.passwordResetExpires = null;
+    await saveUser(user);
+
+    await logAudit({
+      actorId: user._id,
+      actorRole: user.role,
+      entityType: 'user',
+      entityId: user._id,
+      action: 'PASSWORD_RESET',
+      before: null,
+      after: { passwordChanged: true },
+      ipAddress: getClientIp(req)
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Password has been reset successfully'
     });
   } catch (error) {
     next(error);

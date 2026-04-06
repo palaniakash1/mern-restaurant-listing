@@ -4,10 +4,12 @@ import {
   adminRevokeAllUserSessions,
   adminRevokeUserSession,
   changePassword,
+  forgotPassword,
   getSession,
   google,
   listSessions,
   refreshSession,
+  resetPassword,
   revokeSessionById,
   signin,
   signoutAllSessions,
@@ -40,6 +42,11 @@ const refreshLimiter = createRateLimit({
   windowMs: 15 * 60 * 1000,
   max: 60,
   keyPrefix: 'auth_refresh'
+});
+const forgotPasswordLimiter = createRateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  keyPrefix: 'auth_forgot_password'
 });
 
 // ===============================================================================
@@ -141,5 +148,20 @@ router.post(
   validate(authValidators.changePassword),
   changePassword
 );
+
+// ===============================================================================
+// 🔷 POST /api/auth/forgot-password
+// ===============================================================================
+router.post(
+  '/forgot-password',
+  forgotPasswordLimiter,
+  validate(authValidators.forgotPassword),
+  forgotPassword
+);
+
+// ===============================================================================
+// 🔷 POST /api/auth/reset-password/:userId
+// ===============================================================================
+router.post('/reset-password/:userId', resetPassword);
 
 export default router;

@@ -116,3 +116,31 @@ export const signout = async () => {
   }
   return data;
 };
+
+export const forgotPassword = async (email) => {
+  const res = await fetch('/api/auth/forgot-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ email })
+  });
+  const data = await parseJsonSafely(res);
+  if (!res.ok) {
+    throw new Error(data.message || 'Failed to send reset email');
+  }
+  return data;
+};
+
+export const resetPassword = async (userId, token, newPassword) => {
+  const res = await fetch(`/api/auth/reset-password/${userId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ token, password: newPassword })
+  });
+  const data = await parseJsonSafely(res);
+  if (!res.ok) {
+    throw new Error(data.message || 'Failed to reset password');
+  }
+  return data;
+};

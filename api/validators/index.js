@@ -150,6 +150,12 @@ export const authValidators = {
     currentPassword: Joi.string().required(),
     newPassword: Joi.string().pattern(PASSWORD_REGEX).required()
   }),
+  forgotPassword: Joi.object({
+    email: Joi.string().trim().email().required()
+  }),
+  resetPassword: Joi.object({
+    password: Joi.string().pattern(PASSWORD_REGEX).required()
+  }),
   userIdParam: Joi.object({
     userId: objectId.required()
   }),
