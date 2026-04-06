@@ -56,6 +56,10 @@ const config = {
   metricsToken: toOptionalString(process.env.METRICS_TOKEN),
   googleMapsApiKey: toOptionalString(process.env.GOOGLE_MAPS_API_KEY),
   emailServiceUrl: toOptionalString(process.env.EMAIL_SERVICE_URL),
+  emailProvider: toOptionalString(process.env.EMAIL_PROVIDER),
+  resendApiKey: toOptionalString(process.env.RESEND_API_KEY),
+  emailFrom: toOptionalString(process.env.EMAIL_FROM),
+  clientUrl: toOptionalString(process.env.CLIENT_URL),
   refreshTokenTtlDays: toPositiveInt(process.env.REFRESH_TOKEN_TTL_DAYS, 14),
   csrf: {
     ttlMs: toPositiveInt(process.env.CSRF_TOKEN_TTL_MS, 24 * 60 * 60 * 1000)
