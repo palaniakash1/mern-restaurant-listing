@@ -3,8 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import OAuth from "../components/OAuth";
 import wavepattern from "../assets/wavepattern.png";
 import logo from "../assets/eatwisely.ico";
-import { Alert } from "flowbite-react";
+import { Alert, Modal } from "flowbite-react";
 import { useAuth } from "../context/AuthContext";
+import { forgotPassword } from "../services/authService";
 
 const EyeIcon = (props) => (
   <svg
@@ -44,6 +45,60 @@ const EyeOffIcon = (props) => (
   </svg>
 );
 
+const MailIcon = (props) => (
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect width="20" height="16" x="2" y="4" rx="2" />
+    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+  </svg>
+);
+
+const LockIcon = (props) => (
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
+
+const CloseIcon = (props) => (
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
+  </svg>
+);
+
 export default function SignIn() {
   const [formData, setFormData] = useState({});
   const { login, isLoading, error: authError, clearError } = useAuth();
@@ -52,10 +107,14 @@ export default function SignIn() {
 
   const error = authError;
 
-  // State to hold the password value
   const [password, setPassword] = useState("");
-  // State to toggle between 'password' and 'text' input types
   const [showPassword, setShowPassword] = useState(false);
+
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const [resetError, setResetError] = useState(null);
 
   const handleChange = (e) => {
     if (error) {
@@ -91,18 +150,56 @@ export default function SignIn() {
     setLocalError(result.error);
   };
 
-  // Toggles the showPassword state
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+
+    if (!resetEmail) {
+      setResetError("Please enter your email address");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(resetEmail)) {
+      setResetError("Please enter a valid email address");
+      return;
+    }
+
+    setResetLoading(true);
+    setResetError(null);
+
+    try {
+      await forgotPassword(resetEmail);
+      setResetSuccess(true);
+    } catch (err) {
+      setResetError(err.message || "Failed to send reset email. Please try again.");
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const togglePasswordVisibility = () => {
     setShowPassword((prev) => !prev);
   };
 
-  // Determine the input type dynamically
   const inputType = showPassword ? "text" : "password";
+
+  const openForgotModal = () => {
+    setResetEmail(formData.email || "");
+    setResetSuccess(false);
+    setResetError(null);
+    setShowForgotModal(true);
+  };
+
+  const closeForgotModal = () => {
+    setShowForgotModal(false);
+    setResetEmail("");
+    setResetSuccess(false);
+    setResetError(null);
+  };
 
   return (
     <>
       <main className="min-h-screen flex">
-        {/* LEFT SIDE: BRANDING PANEL */}
         <div className="hidden lg:flex flex-col w-[45%] bg-[#8fa31e] relative overflow-hidden p-12 justify-center items-start">
           <img
             src={wavepattern}
@@ -114,7 +211,6 @@ export default function SignIn() {
             <h1 className="text-7xl font-black text-white leading-tight uppercase tracking-normal">
               CLARITY IN <br /> EVERY <br /> INGREDIENT
             </h1>
-            {/* Decorative Smile Icon */}
             <div className="mt-8 w-full">
               <svg
                 viewBox="0 0 120 40"
@@ -145,10 +241,8 @@ export default function SignIn() {
           </div>
         </div>
 
-        {/* RIGHT SIDE: FORM PANEL */}
         <div className="flex-1 bg-[#f1f8eb] flex flex-col items-center justify-center p-6">
           <div className="w-full max-w-md bg-white rounded-[2rem] shadow-xl overflow-hidden border border-gray-100">
-            {/* Header Area */}
             <div className="py-8 text-center pb-0">
               <div className="flex items-center justify-center gap-1 mb-6">
                 <Link to="/">
@@ -161,7 +255,6 @@ export default function SignIn() {
             </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
-              {/* Email Input */}
               <div className="space-y-1 mt-4">
                 <label className="text-md font-normal text-gray-500 mt-10">
                   Enter Email
@@ -175,14 +268,13 @@ export default function SignIn() {
                 />
               </div>
 
-              {/* Password Input Container */}
               <div className="space-y-1 relative ">
                 <label className="text-md font-normal text-gray-500 mt-10">
                   Enter Password
                 </label>
                 <div className="relative">
                   <input
-                    type={inputType} // Dynamically set type
+                    type={inputType}
                     placeholder=""
                     id="password"
                     className=" w-full border-gray-200 p-3 !rounded-[5px] bg-white pr-12 focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
@@ -190,7 +282,6 @@ export default function SignIn() {
                     value={password}
                   />
 
-                  {/* Password Toggle Button */}
                   <button
                     type="button"
                     onClick={togglePasswordVisibility}
@@ -206,8 +297,17 @@ export default function SignIn() {
                     )}
                   </button>
                 </div>
+                <div className="text-right mt-1">
+                  <button
+                    type="button"
+                    onClick={openForgotModal}
+                    className="text-xs text-[#8fa31e] hover:underline bg-transparent border-none cursor-pointer"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
               </div>
-              {/* Combined Error Alert */}
+
               {(localError || error) && (
                 <Alert
                   color="failure"
@@ -230,7 +330,6 @@ export default function SignIn() {
               <OAuth />
             </form>
 
-            {/* Bottom Link */}
             <div className="text-center pt-4">
               <p className="text-gray-600 text-sm">
                 Create new account?{" "}
@@ -242,13 +341,106 @@ export default function SignIn() {
                 </Link>
               </p>
             </div>
-            {/* Copyright */}
+
             <div className="pb-6 mt-10 text-center">
               <p className="text-[10px] text-gray-400">© 2025 EatWisely</p>
             </div>
           </div>
         </div>
       </main>
+
+      <Modal
+        show={showForgotModal}
+        onClose={closeForgotModal}
+        size="md"
+        popup
+        className="forgot-password-modal"
+      >
+        <Modal.Header className="border-b-0 pb-0" />
+        <Modal.Body className="pt-0">
+          <div className="text-center mb-6">
+            <div className="mx-auto w-16 h-16 bg-[#8fa31e]/10 rounded-full flex items-center justify-center mb-4">
+              <LockIcon className="h-8 w-8 text-[#8fa31e]" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              Forgot Password?
+            </h3>
+            <p className="text-gray-500 text-sm">
+              No worries, we'll send you reset instructions.
+            </p>
+          </div>
+
+          {resetSuccess ? (
+            <div className="text-center py-4">
+              <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <MailIcon className="h-8 w-8 text-green-600" />
+              </div>
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                Check Your Email
+              </h4>
+              <p className="text-gray-500 text-sm mb-4">
+                If an account exists for <span className="font-medium text-gray-700">{resetEmail}</span>, 
+                we have sent password reset instructions.
+              </p>
+              <p className="text-xs text-gray-400 mb-4">
+                Please check your spam folder if you don't see the email.
+              </p>
+              <button
+                onClick={closeForgotModal}
+                className="w-full p-3 rounded-[5px] !bg-[#8fa31e] hover:!bg-[#7a8c1a] text-white border-none cursor-pointer font-medium"
+              >
+                Got it, close
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Enter your email
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <MailIcon className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="email"
+                    value={resetEmail}
+                    onChange={(e) => {
+                      setResetEmail(e.target.value);
+                      if (resetError) setResetError(null);
+                    }}
+                    placeholder="name@example.com"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-[5px] focus:ring-2 focus:ring-[#8fa31e] focus:border-[#8fa31e]"
+                  />
+                </div>
+              </div>
+
+              {resetError && (
+                <Alert color="failure" className="mt-2">
+                  {resetError}
+                </Alert>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={closeForgotModal}
+                  className="flex-1 p-3 rounded-[5px] bg-gray-100 hover:bg-gray-200 text-gray-700 border-none cursor-pointer font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={resetLoading}
+                  className="flex-1 p-3 rounded-[5px] !bg-[#8fa31e] hover:!bg-[#7a8c1a] text-white border-none cursor-pointer font-medium disabled:opacity-50"
+                >
+                  {resetLoading ? "Sending..." : "Send Instructions"}
+                </button>
+              </div>
+            </form>
+          )}
+        </Modal.Body>
+      </Modal>
     </>
   );
 }
