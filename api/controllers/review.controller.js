@@ -84,14 +84,6 @@ export const createReview = async (req, res, next) => {
     const { restaurantId } = req.params;
     const { rating, comment = '', images = [] } = req.body;
 
-    logger.info('createReview.debug', {
-      restaurantId,
-      userId: req.user.id,
-      rating,
-      comment,
-      images
-    });
-
     if (!isValidObjectId(restaurantId)) {
       throw errorHandler(400, 'Invalid restaurant ID format');
     }
@@ -189,8 +181,6 @@ export const listRestaurantReviews = async (req, res, next) => {
     const { restaurantId } = req.params;
     const { page = 1, limit = 10, sort = 'desc' } = req.query;
 
-    logger.info('listRestaurantReviews.debug', { restaurantId, page, limit, sort });
-
     if (!isValidObjectId(restaurantId)) {
       throw errorHandler(400, 'Invalid restaurant ID format');
     }
@@ -198,7 +188,6 @@ export const listRestaurantReviews = async (req, res, next) => {
     const pageNum = Number(page);
     const limitNum = Number(limit);
 
-    // Cache key based on request params
     const cacheKey = `reviews:restaurant:${restaurantId}:${pageNum}:${limitNum}:${sort}`;
 
     const cachedData = await getOrFetch(
@@ -209,8 +198,6 @@ export const listRestaurantReviews = async (req, res, next) => {
         const pagination = paginate({ page: pageNum, limit: limitNum, total });
         const direction = sort === 'asc' ? 1 : -1;
 
-        logger.info('listRestaurantReviews.query', { filter, total, skip: pagination.skip, limit: pagination.limit });
-
         const data = await Review.find(filter)
           .populate('userId', 'userName profilePicture')
           .sort({ createdAt: direction })
@@ -218,11 +205,9 @@ export const listRestaurantReviews = async (req, res, next) => {
           .limit(pagination.limit)
           .lean();
 
-        logger.info('listRestaurantReviews.found', { count: data.length });
-
         return { success: true, ...pagination, data };
       },
-      300 // Cache for 5 minutes
+      300
     );
 
     res.status(200).json(cachedData);
@@ -236,8 +221,6 @@ export const listAllReviewsForModeration = async (req, res, next) => {
     const { restaurantId } = req.params;
     const { page = 1, limit = 10, sort = 'desc' } = req.query;
 
-    logger.info('listAllReviewsForModeration.debug', { restaurantId, page, limit, sort });
-
     if (!isValidObjectId(restaurantId)) {
       throw errorHandler(400, 'Invalid restaurant ID format');
     }
@@ -250,16 +233,12 @@ export const listAllReviewsForModeration = async (req, res, next) => {
     const pagination = paginate({ page: pageNum, limit: limitNum, total });
     const direction = sort === 'asc' ? 1 : -1;
 
-    logger.info('listAllReviewsForModeration.query', { filter, total, skip: pagination.skip, limit: pagination.limit });
-
     const data = await Review.find(filter)
       .populate('userId', 'userName profilePicture')
       .sort({ createdAt: direction })
       .skip(pagination.skip)
       .limit(pagination.limit)
       .lean();
-
-    logger.info('listAllReviewsForModeration.found', { count: data.length });
 
     res.status(200).json({ success: true, ...pagination, data });
   } catch (error) {
@@ -270,8 +249,6 @@ export const listAllReviewsForModeration = async (req, res, next) => {
 export const listAllReviewsForSuperAdmin = async (req, res, next) => {
   try {
     const { page = 1, limit = 10, sort = 'desc', restaurantId } = req.query;
-
-    logger.info('listAllReviewsForSuperAdmin.debug', { page, limit, sort, restaurantId });
 
     const pageNum = Number(page);
     const limitNum = Number(limit);
@@ -288,8 +265,6 @@ export const listAllReviewsForSuperAdmin = async (req, res, next) => {
     const pagination = paginate({ page: pageNum, limit: limitNum, total });
     const direction = sort === 'asc' ? 1 : -1;
 
-    logger.info('listAllReviewsForSuperAdmin.query', { filter, total, skip: pagination.skip, limit: pagination.limit });
-
     const data = await Review.find(filter)
       .populate('userId', 'userName profilePicture')
       .populate('restaurantId', 'name slug')
@@ -297,8 +272,6 @@ export const listAllReviewsForSuperAdmin = async (req, res, next) => {
       .skip(pagination.skip)
       .limit(limitNum)
       .lean();
-
-    logger.info('listAllReviewsForSuperAdmin.found', { count: data.length });
 
     res.status(200).json({ success: true, ...pagination, data });
   } catch (error) {
@@ -310,7 +283,7 @@ export const getMyReviews = async (req, res, next) => {
   try {
     const { page = 1, limit = 10 } = req.query;
 
-    const filter = { isActive: true };
+    const filter = {};
 
     if (req.user.role === 'user') {
       filter.userId = req.user.id;
@@ -527,8 +500,6 @@ export const bulkModerateReviews = async (req, res, next) => {
   try {
     const { reviewIds, isActive } = req.body;
 
-    logger.info('bulkModerateReviews.debug', { reviewIds: reviewIds.length, isActive });
-
     if (!Array.isArray(reviewIds) || reviewIds.length === 0) {
       throw errorHandler(400, 'reviewIds must be a non-empty array');
     }
@@ -604,13 +575,11 @@ export const bulkModerateReviews = async (req, res, next) => {
 export const getRestaurantReviewSummary = async (req, res, next) => {
   try {
     const { restaurantId } = req.params;
-    logger.info('getRestaurantReviewSummary.debug', { restaurantId });
 
     if (!isValidObjectId(restaurantId)) {
       throw errorHandler(400, 'Invalid restaurant ID format');
     }
 
-    // Cache key based on restaurantId
     const cacheKey = `reviews:summary:${restaurantId}`;
 
     const cachedData = await getOrFetch(
