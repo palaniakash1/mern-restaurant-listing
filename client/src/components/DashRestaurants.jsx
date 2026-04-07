@@ -21,6 +21,7 @@ import {
 } from 'react-icons/hi2';
 import AddressAutocomplete from './AddressAutocomplete';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../utils/api';
+import DeleteConfirmModal from './DeleteConfirmModal';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '../utils/permissions';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
@@ -1303,32 +1304,14 @@ export default function DashRestaurants() {
         </Modal.Body>
       </Modal>
 
-      <Modal
+      <DeleteConfirmModal
         show={Boolean(pendingDeleteRestaurant)}
         onClose={() => setPendingDeleteRestaurant(null)}
-      >
-        <Modal.Header>Delete restaurant</Modal.Header>
-        <Modal.Body>
-          <p className="text-sm text-gray-600">
-            Are you sure you want to delete `{pendingDeleteRestaurant?.name}`?
-            Clicking outside this modal will cancel the action.
-          </p>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button
-            color="failure"
-            onClick={() =>
-              pendingDeleteRestaurant &&
-              handleDeleteRestaurant(pendingDeleteRestaurant)
-            }
-          >
-            Confirm delete
-          </Button>
-          <Button color="gray" onClick={() => setPendingDeleteRestaurant(null)}>
-            Cancel
-          </Button>
-        </Modal.Footer>
-      </Modal>
+        onConfirm={() => handleDeleteRestaurant(pendingDeleteRestaurant)}
+        title="Delete Restaurant"
+        message={`Are you sure you want to delete "${pendingDeleteRestaurant?.name}"? This action cannot be undone.`}
+        confirmText="Yes, Delete Restaurant"
+      />
     </>
   );
 }

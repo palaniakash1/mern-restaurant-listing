@@ -16,6 +16,7 @@ import { HiOutlinePlusCircle, HiOutlineTrash } from 'react-icons/hi2';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '../utils/permissions';
+import DeleteConfirmModal from './DeleteConfirmModal';
 
 const emptyMenuForm = {
   restaurantId: '',
@@ -43,6 +44,8 @@ export default function DashMenu() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [menuToDelete, setMenuToDelete] = useState(null);
 
   const canCreateMenu = hasPermission(user, 'menu', 'create');
   const canAddItem = hasPermission(user, 'menu', 'addItem');
@@ -242,18 +245,25 @@ export default function DashMenu() {
     }
   };
 
-  const handleDeleteMenu = async (menuId) => {
-    const confirmed = window.confirm('Delete this menu?');
-    if (!confirmed) return;
+  const handleDeleteMenu = (menuId) => {
+    setMenuToDelete(menuId);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteMenu = async () => {
+    if (!menuToDelete) return;
 
     try {
       setError(null);
       setSuccess(null);
-      await apiDelete(`/api/menus/${menuId}`);
+      await apiDelete(`/api/menus/${menuToDelete}`);
       setSuccess('Menu deleted successfully.');
       await loadMenus(selectedRestaurantId);
     } catch (deleteError) {
       setError(deleteError.message);
+    } finally {
+      setShowDeleteModal(false);
+      setMenuToDelete(null);
     }
   };
 
@@ -552,6 +562,18 @@ export default function DashMenu() {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      <DeleteConfirmModal
+        show={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setMenuToDelete(null);
+        }}
+        onConfirm={confirmDeleteMenu}
+        title="Delete Menu"
+        message="Are you sure you want to delete this menu? This action cannot be undone."
+        confirmText="Yes, Delete Menu"
+      />
     </div>
   );
 }

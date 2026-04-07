@@ -15,6 +15,7 @@ import { HiOutlinePencilSquare, HiOutlineTrash } from 'react-icons/hi2';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '../utils/permissions';
+import DeleteConfirmModal from './DeleteConfirmModal';
 
 const emptyForm = {
   name: '',
@@ -33,6 +34,8 @@ export default function DashCategories() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
 
   const canReadAllCategories = hasPermission(user, 'category', 'readAll');
   const canReadOwnCategories = hasPermission(user, 'category', 'readMine');
@@ -144,18 +147,25 @@ export default function DashCategories() {
     }
   };
 
-  const handleDeleteCategory = async (categoryId) => {
-    const confirmed = window.confirm('Delete this category?');
-    if (!confirmed) return;
+  const handleDeleteCategory = (categoryId) => {
+    setCategoryToDelete(categoryId);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteCategory = async () => {
+    if (!categoryToDelete) return;
 
     try {
       setError(null);
       setSuccess(null);
-      await apiDelete(`/api/categories/${categoryId}`);
+      await apiDelete(`/api/categories/${categoryToDelete}`);
       setSuccess('Category deleted successfully.');
       await loadCategories();
     } catch (deleteError) {
       setError(deleteError.message);
+    } finally {
+      setShowDeleteModal(false);
+      setCategoryToDelete(null);
     }
   };
 
@@ -483,6 +493,18 @@ export default function DashCategories() {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      <DeleteConfirmModal
+        show={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setCategoryToDelete(null);
+        }}
+        onConfirm={confirmDeleteCategory}
+        title="Delete Category"
+        message="Are you sure you want to delete this category? This action cannot be undone."
+        confirmText="Yes, Delete Category"
+      />
     </div>
   );
 }

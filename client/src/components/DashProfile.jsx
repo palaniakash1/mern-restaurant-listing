@@ -4,7 +4,6 @@ import { Alert, Badge, Button, Card, Modal, Spinner } from 'flowbite-react';
 import {
   HiOutlineEnvelope,
   HiOutlineCamera,
-  HiOutlineExclamationCircle,
   HiOutlineShieldCheck,
   HiOutlineSparkles,
   HiOutlineUser,
@@ -13,6 +12,7 @@ import {
 import { VscSignOut } from 'react-icons/vsc';
 import ImageFrameLoader from './ImageFrameLoader';
 import PasswordInput from './PasswordInput';
+import DeleteConfirmModal from './DeleteConfirmModal';
 import { useAuth } from '../context/AuthContext';
 import { apiDelete, apiPatch } from '../utils/api';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
@@ -549,25 +549,15 @@ export default function DashProfile() {
         </form>
       </div>
 
-      <Modal show={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
-        <Modal.Header>Delete Account</Modal.Header>
-        <Modal.Body>
-          <div className="flex flex-col items-center gap-4 text-center">
-            <HiOutlineExclamationCircle className="h-16 w-16 text-red-500" />
-            <p className="text-sm text-gray-600">
-              This action permanently removes your account and cannot be undone.
-            </p>
-          </div>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button color="failure" onClick={handleDeleteUser}>
-            Yes, delete account
-          </Button>
-          <Button color="gray" onClick={() => setShowDeleteModal(false)}>
-            Cancel
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      <DeleteConfirmModal
+        show={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteUser}
+        title="Delete Account"
+        message="This action permanently removes your account and cannot be undone."
+        warning="This will delete your profile, settings, and all associated data."
+        confirmText="Yes, Delete Account"
+      />
     </>
   );
 }
