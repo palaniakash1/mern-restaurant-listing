@@ -1,11 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { Card, Badge } from 'flowbite-react';
 import { HiChevronDown, HiChevronUp } from 'react-icons/hi';
 
 export default function RestaurantMenu({ menu }) {
   const [expandedCategories, setExpandedCategories] = useState([0]);
   const [activeCategory, setActiveCategory] = useState(null);
-  const menuContainerRef = useRef(null);
 
   const scrollToCategory = (categoryName) => {
     setActiveCategory(categoryName);
