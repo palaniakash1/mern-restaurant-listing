@@ -647,3 +647,36 @@ export const getRestaurantReviewSummary = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getReviewCountsForAdmin = async (req, res, next) => {
+  try {
+    const { role, restaurantId } = req.user;
+
+    if (role !== 'admin' && role !== 'superAdmin') {
+      throw errorHandler(403, 'Access denied');
+    }
+
+    const filter = { isDeleted: { $ne: true } };
+
+    if (role === 'admin' && restaurantId) {
+      filter.restaurantId = restaurantId;
+    }
+
+    const [total, activeTotal, hiddenTotal] = await Promise.all([
+      Review.countDocuments(filter),
+      Review.countDocuments({ ...filter, isActive: true }),
+      Review.countDocuments({ ...filter, isActive: false })
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        total,
+        active: activeTotal,
+        hidden: hiddenTotal
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};

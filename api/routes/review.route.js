@@ -13,7 +13,8 @@ import {
   listAllReviewsForModeration,
   listAllReviewsForSuperAdmin,
   moderateReview,
-  bulkModerateReviews
+  bulkModerateReviews,
+  getReviewCountsForAdmin
 } from '../controllers/review.controller.js';
 import { listRestaurantReviews } from '../controllers/review.controller.js';
 
@@ -54,6 +55,13 @@ router.get(
   validate(reviewValidators.restaurantParam, 'params'),
   validate(reviewValidators.listRestaurantQuery, 'query'),
   listAllReviewsForModeration
+);
+
+// Get review counts for admin overview
+router.get(
+  '/admin/counts',
+  verifyToken,
+  getReviewCountsForAdmin
 );
 
 // Protected endpoints

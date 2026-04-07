@@ -223,6 +223,7 @@ export default function DashReviews() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [overviewCounts, setOverviewCounts] = useState({ total: 0, active: 0, hidden: 0 });
   const [imageUploading, setImageUploading] = useState(false);
   const [lightboxImages, setLightboxImages] = useState(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -270,6 +271,19 @@ export default function DashReviews() {
 
     return [];
   }, [isCustomer, user?.restaurantId, user?.role, isSuperAdmin, isAdmin]);
+
+  const loadOverviewCounts = useCallback(async () => {
+    if (!isModerator) return;
+    
+    try {
+      const countsData = await apiGet('/api/reviews/admin/counts');
+      if (countsData.success) {
+        setOverviewCounts(countsData.data);
+      }
+    } catch (countError) {
+      console.error('Failed to load overview counts:', countError);
+    }
+  }, [isModerator]);
 
   const loadReviewData = useCallback(async () => {
     try {
@@ -324,13 +338,15 @@ export default function DashReviews() {
             setSelectedRestaurantId(restaurantList[0]._id);
           }
         }
+
+        await loadOverviewCounts();
       }
     } catch (loadError) {
       setError(loadError.message);
     } finally {
       setLoading(false);
     }
-  }, [isCustomer, isSuperAdmin, isModerator, loadRestaurants, selectedRestaurantId, user?.restaurantId, canReadOwnReviews, page]);
+  }, [isCustomer, isSuperAdmin, isModerator, loadRestaurants, loadOverviewCounts, selectedRestaurantId, user?.restaurantId, canReadOwnReviews, page, sortOrder]);
 
   useEffect(() => {
     loadReviewData();
@@ -536,20 +552,20 @@ export default function DashReviews() {
                       Total
                     </p>
                     <p className="mt-2 text-3xl font-bold">
-                      {allReviews.length}
+                      {overviewCounts.total}
                     </p>
                   </div>
                   <div className="rounded-2xl bg-white/12 p-4">
                     <p className="text-xs uppercase tracking-[0.2em] text-white/70">
                       Visible
                     </p>
-                    <p className="mt-2 text-3xl font-bold">{activeCount}</p>
+                    <p className="mt-2 text-3xl font-bold">{overviewCounts.active}</p>
                   </div>
                   <div className="rounded-2xl bg-white/12 p-4">
                     <p className="text-xs uppercase tracking-[0.2em] text-white/70">
                       Hidden
                     </p>
-                    <p className="mt-2 text-3xl font-bold">{hiddenCount}</p>
+                    <p className="mt-2 text-3xl font-bold">{overviewCounts.hidden}</p>
                   </div>
                 </div>
               </div>
