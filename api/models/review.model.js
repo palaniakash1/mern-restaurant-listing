@@ -42,11 +42,26 @@ const reviewSchema = new mongoose.Schema(
     moderatedAt: {
       type: Date,
       default: null
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
+    },
+    deletedAt: {
+      type: Date,
+      default: null
     }
   },
   { timestamps: true }
 );
 
 reviewSchema.index({ restaurantId: 1, isActive: 1, createdAt: -1 });
+reviewSchema.index({ deletedAt: 1 });
 
 export default mongoose.model('Review', reviewSchema);

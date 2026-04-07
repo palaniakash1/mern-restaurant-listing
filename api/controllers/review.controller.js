@@ -193,7 +193,7 @@ export const listRestaurantReviews = async (req, res, next) => {
     const cachedData = await getOrFetch(
       cacheKey,
       async () => {
-        const filter = { restaurantId, isActive: true };
+        const filter = { restaurantId, isActive: true, isDeleted: { $ne: true } };
         const total = await Review.countDocuments(filter);
         const pagination = paginate({ page: pageNum, limit: limitNum, total });
         const direction = sort === 'asc' ? 1 : -1;
@@ -228,7 +228,7 @@ export const listAllReviewsForModeration = async (req, res, next) => {
     const pageNum = Number(page);
     const limitNum = Number(limit);
 
-    const filter = { restaurantId };
+    const filter = { restaurantId, isDeleted: { $ne: true } };
     const total = await Review.countDocuments(filter);
     const pagination = paginate({ page: pageNum, limit: limitNum, total });
     const direction = sort === 'asc' ? 1 : -1;
@@ -253,7 +253,7 @@ export const listAllReviewsForSuperAdmin = async (req, res, next) => {
     const pageNum = Number(page);
     const limitNum = Number(limit);
 
-    const filter = {};
+    const filter = { isDeleted: { $ne: true } };
     if (restaurantId) {
       if (!isValidObjectId(restaurantId)) {
         throw errorHandler(400, 'Invalid restaurant ID format');
@@ -283,7 +283,7 @@ export const getMyReviews = async (req, res, next) => {
   try {
     const { page = 1, limit = 10 } = req.query;
 
-    const filter = {};
+    const filter = { isDeleted: { $ne: true } };
 
     if (req.user.role === 'user') {
       filter.userId = req.user.id;
@@ -318,7 +318,7 @@ export const getReviewById = async (req, res, next) => {
       .populate('restaurantId', 'name slug')
       .lean();
 
-    if (!review || !review.isActive) {
+    if (!review || !review.isActive || review.isDeleted === true) {
       throw errorHandler(404, 'Review not found');
     }
 
@@ -395,7 +395,7 @@ export const deleteReview = async (req, res, next) => {
     let deletedRestaurantId;
     await withTransaction(async (session) => {
       const review = await Review.findById(id).session(session);
-      if (!review || !review.isActive) {
+      if (!review || review.isDeleted) {
         throw errorHandler(404, 'Review not found');
       }
 
@@ -403,9 +403,10 @@ export const deleteReview = async (req, res, next) => {
 
       deletedRestaurantId = review.restaurantId;
 
+      review.isDeleted = true;
       review.isActive = false;
-      review.moderatedBy = req.user.id;
-      review.moderatedAt = new Date();
+      review.deletedBy = req.user.id;
+      review.deletedAt = new Date();
       await review.save({ session });
 
       await recomputeRestaurantRating(review.restaurantId, session);
@@ -416,8 +417,8 @@ export const deleteReview = async (req, res, next) => {
         entityType: 'review',
         entityId: review._id,
         action: 'DELETE',
-        before: { isActive: true },
-        after: { isActive: false },
+        before: { isDeleted: false, isActive: true },
+        after: { isDeleted: true, isActive: false },
         ipAddress: normalizeIp(req),
         session
       });
@@ -459,7 +460,7 @@ export const moderateReview = async (req, res, next) => {
 
     const result = await withTransaction(async (session) => {
       const review = await Review.findById(id).session(session);
-      if (!review) throw errorHandler(404, 'Review not found');
+      if (!review || review.isDeleted === true) throw errorHandler(404, 'Review not found');
 
       await assertCanModerate(req, review, session);
 
@@ -589,7 +590,8 @@ export const getRestaurantReviewSummary = async (req, res, next) => {
           {
             $match: {
               restaurantId: new mongoose.Types.ObjectId(restaurantId),
-              isActive: true
+              isActive: true,
+              isDeleted: { $ne: true }
             }
           },
           {

@@ -26,6 +26,7 @@ import { apiDelete, apiGet, apiPatch, apiPost } from '../utils/api';
 import { hasPermission } from '../utils/permissions';
 import { useAuth } from '../context/AuthContext';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
+import DeleteConfirmModal from './DeleteConfirmModal';
 
 const REVIEW_FILTER_LIMIT = 50;
 
@@ -218,6 +219,7 @@ export default function DashReviews() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [sortOrder, setSortOrder] = useState('desc');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -227,6 +229,8 @@ export default function DashReviews() {
   const [myReviewSearch, setMyReviewSearch] = useState('');
   const [myReviewFilter, setMyReviewFilter] = useState('');
   const [selectedReviews, setSelectedReviews] = useState([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [reviewToDelete, setReviewToDelete] = useState(null);
 
   const canCreateReview = hasPermission(user, 'review', 'create');
   const canDeleteReview = hasPermission(user, 'review', 'delete');
@@ -241,7 +245,7 @@ export default function DashReviews() {
     if (isModerator) {
       setPage(1);
     }
-  }, [selectedRestaurantId, isModerator]);
+  }, [selectedRestaurantId, isModerator, sortOrder]);
 
   const loadRestaurants = useCallback(async () => {
     if (isCustomer) {
@@ -292,27 +296,27 @@ export default function DashReviews() {
         setRestaurants(restaurantList);
 
         if (isSuperAdmin) {
-          const reviewEndpoint = `/api/reviews/all?page=${page}&limit=10${selectedRestaurantId ? `&restaurantId=${selectedRestaurantId}` : ''}`;
+          const reviewEndpoint = `/api/reviews/all?page=${page}&limit=10&sort=${sortOrder}${selectedRestaurantId ? `&restaurantId=${selectedRestaurantId}` : ''}`;
           const data = await apiGet(reviewEndpoint);
           setAllReviews(data.data || []);
           setTotalPages(Math.max(1, data.totalPages || 1));
           setTotalItems(data.total || 0);
         } else {
           if (selectedRestaurantId) {
-            const reviewEndpoint = `/api/reviews/restaurant/${selectedRestaurantId}/all?page=${page}&limit=10`;
+            const reviewEndpoint = `/api/reviews/restaurant/${selectedRestaurantId}/all?page=${page}&limit=10&sort=${sortOrder}`;
             const data = await apiGet(reviewEndpoint);
             setAllReviews(data.data || []);
             setTotalPages(Math.max(1, data.totalPages || 1));
             setTotalItems(data.total || 0);
           } else if (user?.restaurantId) {
-            const reviewEndpoint = `/api/reviews/restaurant/${user.restaurantId}/all?page=${page}&limit=10`;
+            const reviewEndpoint = `/api/reviews/restaurant/${user.restaurantId}/all?page=${page}&limit=10&sort=${sortOrder}`;
             const data = await apiGet(reviewEndpoint);
             setAllReviews(data.data || []);
             setTotalPages(Math.max(1, data.totalPages || 1));
             setTotalItems(data.total || 0);
             setSelectedRestaurantId(user.restaurantId);
           } else if (restaurantList.length > 0) {
-            const reviewEndpoint = `/api/reviews/restaurant/${restaurantList[0]._id}/all?page=${page}&limit=10`;
+            const reviewEndpoint = `/api/reviews/restaurant/${restaurantList[0]._id}/all?page=${page}&limit=10&sort=${sortOrder}`;
             const data = await apiGet(reviewEndpoint);
             setAllReviews(data.data || []);
             setTotalPages(Math.max(1, data.totalPages || 1));
@@ -433,18 +437,25 @@ export default function DashReviews() {
     }
   };
 
-  const handleDeleteReview = async (reviewId) => {
-    const confirmed = window.confirm('Delete this review? This action cannot be undone.');
-    if (!confirmed) return;
+  const handleDeleteReview = (reviewId) => {
+    setReviewToDelete(reviewId);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteReview = async () => {
+    if (!reviewToDelete) return;
 
     try {
       setError(null);
       setSuccess(null);
-      await apiDelete(`/api/reviews/${reviewId}`);
+      await apiDelete(`/api/reviews/${reviewToDelete}`);
       setSuccess('Review deleted successfully.');
       await loadReviewData();
     } catch (deleteError) {
       setError(deleteError.message);
+    } finally {
+      setShowDeleteModal(false);
+      setReviewToDelete(null);
     }
   };
 
@@ -568,6 +579,14 @@ export default function DashReviews() {
                       {restaurant.name}
                     </option>
                   ))}
+                </Select>
+                <Select
+                  value={sortOrder}
+                  onChange={(event) => setSortOrder(event.target.value)}
+                  className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e] min-w-[150px]"
+                >
+                  <option value="desc">Newest First</option>
+                  <option value="asc">Oldest First</option>
                 </Select>
               </div>
             </div>
@@ -954,6 +973,17 @@ export default function DashReviews() {
             </div>
           </div>
         )}
+        <DeleteConfirmModal
+          show={showDeleteModal}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setReviewToDelete(null);
+          }}
+          onConfirm={confirmDeleteReview}
+          title="Delete Review"
+          message="Are you sure you want to delete this review? This action cannot be undone."
+          confirmText="Yes, Delete Review"
+        />
       </>
     );
   }
@@ -1277,6 +1307,18 @@ export default function DashReviews() {
           </div>
         </div>
       )}
+
+      <DeleteConfirmModal
+        show={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setReviewToDelete(null);
+        }}
+        onConfirm={confirmDeleteReview}
+        title="Delete Review"
+        message="Are you sure you want to delete this review? This action cannot be undone."
+        confirmText="Yes, Delete Review"
+      />
     </div>
   );
 }
