@@ -279,41 +279,60 @@ export default function DashProfile() {
         )}
 
         <Card className="overflow-hidden border !border-[#dce6c1] bg-white shadow-[0_25px_80px_rgba(60,79,25,0.08)]">
-          <div className="rounded-[1.8rem] bg-[linear-gradient(135deg,#6b7d18_0%,#8fa31e_45%,#b62828_100%)] p-5 text-white sm:p-7">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-              <div className="space-y-3">
-                <Badge className={`w-fit border ${roleStyle.badge}`}>
-                  {roleStyle.label}
-                </Badge>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
-                    Account profile
-                  </p>
-                  <h2 className="mt-2 text-2xl font-bold sm:text-3xl">
-                    Personal settings with enterprise clarity
-                  </h2>
+          <div className="rounded-[1.8rem] bg-[linear-gradient(135deg,#576500_0%,#8fa31e_50%,#b62828_100%)] p-6 text-white sm:p-8">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex-1">
+                <div className="mb-4 flex items-center gap-3">
+                  <Badge className={`w-fit border ${roleStyle.badge}`}>
+                    {roleStyle.label}
+                  </Badge>
                 </div>
-                <p className="max-w-2xl text-sm leading-7 text-white/90">
-                  Manage your identity, contact details, password, and account
-                  presentation from one premium workspace designed to stay clear
-                  on mobile and desktop.
+                <p className="mb-2 text-xs font-bold uppercase tracking-[0.3em] text-white/60">
+                  Account profile
+                </p>
+                <h2 className="mb-3 font-['Manrope'] text-3xl font-extrabold tracking-tight sm:text-4xl">
+                  Personal Settings
+                </h2>
+                <p className="max-w-xl text-sm leading-6 text-white/80">
+                  Manage your identity, contact details, password, and account 
+                  presentation from one central workspace.
                 </p>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 xl:min-w-[420px]">
-                <div className="rounded-[1.4rem] bg-white/12 p-4 backdrop-blur">
-                  <p className="text-xs uppercase tracking-[0.2em] text-white/70">
-                    Profile completion
-                  </p>
-                  <p className="mt-2 text-3xl font-bold">
-                    {profileCompletion}%
-                  </p>
+              <div className="flex flex-col gap-4 sm:flex-row lg:flex-col">
+                <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
+                      <HiOutlineSparkles className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.15em] text-white/60">
+                        Profile completion
+                      </p>
+                      <p className="font-['Manrope'] text-2xl font-bold">
+                        {profileCompletion}%
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/20">
+                    <div 
+                      className="h-full rounded-full bg-[#d7ee64]" 
+                      style={{ width: `${profileCompletion}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="rounded-[1.4rem] bg-white/12 p-4 backdrop-blur">
-                  <p className="text-xs uppercase tracking-[0.2em] text-white/70">
-                    Account status
-                  </p>
-                  <p className="mt-2 text-3xl font-bold">{accountStatus}</p>
+                <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
+                      <HiOutlineShieldCheck className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.15em] text-white/60">
+                        Account status
+                      </p>
+                      <p className="font-['Manrope'] text-lg font-bold">{accountStatus}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
