@@ -26,6 +26,7 @@ import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '../utils/permissions';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
 import ImageFrameLoader from './ImageFrameLoader';
+import ImageUploadCropper from './ImageUploadCropper';
 
 const buildRestaurantForm = () => ({
   name: '',
@@ -35,9 +36,7 @@ const buildRestaurantForm = () => ({
   email: '',
   website: '',
   imageLogo: '',
-  thumbnailImage: '',
   bannerImage: '',
-  featuredImage: '',
   adminId: '',
   address: {
     addressLine1: '',
@@ -63,6 +62,42 @@ const formatAddress = (address = {}) =>
     .filter(Boolean)
     .join(', ');
 
+const normalizeWebsiteUrl = (value = '') => {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+};
+
+const limitTaglineWords = (value = '', maxWords = 7) =>
+  value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, maxWords)
+    .join(' ');
+
+const getTaglineWordCount = (value = '') =>
+  value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+
+const getPreviewHero = (formData) =>
+  formData.bannerImage || formData.imageLogo || '';
+
+const getBadgeUrl = (rating) =>
+  rating && rating !== 'Exempt'
+    ? `https://ratings.food.gov.uk/images/badges/fhrs/3/fhrs-badge-${rating}.svg`
+    : null;
+
+const PAGE_SIZE = 10;
+
+const getAdminId = (admin) => {
+  if (!admin) return '';
+  return typeof admin === 'object' ? admin._id || '' : admin;
+};
+
 function LogoUpload({ value, progress, uploading, onSelect }) {
   return (
     <div className="space-y-3">
@@ -73,43 +108,55 @@ function LogoUpload({ value, progress, uploading, onSelect }) {
             Upload a polished restaurant logo with preview.
           </p>
         </div>
-        <label className="cursor-pointer">
-          <input
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) onSelect(file);
-              event.target.value = '';
-            }}
-          />
-          <span className="inline-flex rounded-xl border border-[#d8dfc0] bg-white px-3 py-2 text-sm font-semibold text-[#23411f] shadow-sm">
-            Choose logo
-          </span>
-        </label>
+        <ImageUploadCropper
+          aspectRatio={1}
+          modalTitle="Crop restaurant logo"
+          onCropComplete={onSelect}
+          onError={() => {}}
+          trigger={({ open }) => (
+            <button
+              type="button"
+              onClick={open}
+              className="inline-flex rounded-xl border border-[#d8dfc0] bg-white px-3 py-2 text-sm font-semibold text-[#23411f] shadow-sm"
+            >
+              Choose logo
+            </button>
+          )}
+        />
       </div>
 
-      <div className="relative h-44 overflow-hidden rounded-[1.5rem] border !border-[#dce6c1] bg-[#f7faef]">
-        {value ? (
-          <img
-            src={value}
-            alt="Restaurant logo"
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-sm text-gray-400">
-            Logo preview will appear here
-          </div>
+      <ImageUploadCropper
+        aspectRatio={1}
+        modalTitle="Crop restaurant logo preview"
+        onCropComplete={onSelect}
+        onError={() => {}}
+        trigger={({ open }) => (
+          <button
+            type="button"
+            onClick={open}
+            className="relative block aspect-square w-full max-w-[260px] overflow-hidden rounded-[1.5rem] border !border-[#dce6c1] bg-[#f7faef] text-left"
+          >
+            {value ? (
+              <img
+                src={value}
+                alt="Restaurant logo"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-gray-400">
+                Logo preview will appear here
+              </div>
+            )}
+            {uploading && (
+              <ImageFrameLoader
+                progress={progress}
+                label="Uploading logo"
+                className="rounded-[1.5rem]"
+              />
+            )}
+          </button>
         )}
-        {uploading && (
-          <ImageFrameLoader
-            progress={progress}
-            label="Uploading logo"
-            className="rounded-[1.5rem]"
-          />
-        )}
-      </div>
+      />
     </div>
   );
 }
@@ -160,7 +207,7 @@ function SearchableAdminPicker({
         className="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 text-left text-sm shadow-sm"
       >
         <span className={selectedAdminId ? 'text-[#23411f]' : 'text-gray-400'}>
-          {selectedAdmin?.userName || 'Select available admin'}
+          {selectedAdmin?.userName || 'Choose / assign admin'}
         </span>
         <HiOutlineArrowPath className={`h-4 w-4 ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -198,12 +245,264 @@ function SearchableAdminPicker({
               ))}
             {!loading && admins.length === 0 && (
               <p className="px-2 py-3 text-sm text-gray-500">
-                No available admins match this search.
+                No admins match this search.
               </p>
             )}
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function BannerUpload({ value, progress, uploading, onCropComplete, onError }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-[#23411f]">Banner image</p>
+          <p className="text-xs text-gray-500">
+            Upload an exotic dish or signature highlight in a 16:9 frame.
+          </p>
+        </div>
+        <ImageUploadCropper
+          aspectRatio={16 / 9}
+          modalTitle="Crop restaurant banner"
+          onCropComplete={onCropComplete}
+          onError={onError}
+          trigger={({ open }) => (
+            <button
+              type="button"
+              onClick={open}
+              className="inline-flex rounded-xl border border-[#d8dfc0] bg-white px-3 py-2 text-sm font-semibold text-[#23411f] shadow-sm"
+            >
+              Upload banner
+            </button>
+          )}
+        />
+      </div>
+      <ImageUploadCropper
+        aspectRatio={16 / 9}
+        modalTitle="Crop restaurant banner preview"
+        onCropComplete={onCropComplete}
+        onError={onError}
+        trigger={({ open }) => (
+          <button
+            type="button"
+            onClick={open}
+            className="relative block w-full overflow-hidden rounded-[1.5rem] border border-[#dce6c1] bg-[#f7faef] text-left"
+          >
+            <div className="relative aspect-[16/9] w-full">
+              {value ? (
+                <img
+                  src={value}
+                  alt="Restaurant banner"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-gray-400">
+                  Banner preview will appear here
+                </div>
+              )}
+              {uploading && (
+                <ImageFrameLoader
+                  progress={progress}
+                  label="Uploading banner"
+                  className="rounded-[1.5rem]"
+                />
+              )}
+            </div>
+          </button>
+        )}
+      />
+    </div>
+  );
+}
+
+function RestaurantPagePreview({ formData, selectedAdmin }) {
+  const heroImage = getPreviewHero(formData);
+  const website = normalizeWebsiteUrl(formData.website);
+  const fallbackLocation =
+    formData.address?.city || formData.address?.areaLocality || 'UK';
+  const fullAddress = formatAddress(formData.address);
+  const fsaBadge = getBadgeUrl(
+    formData.fsaSelection?.rating || formData.fsaSelection?.value
+  );
+
+  return (
+    <div className="overflow-hidden rounded-[1.8rem] border border-[#e9dfd0] bg-[#f5f1e8] shadow-[0_18px_45px_rgba(64,48,20,0.06)]">
+      <div className="relative h-[24rem] overflow-hidden">
+        {heroImage ? (
+          <img
+            src={heroImage}
+            alt={formData.name || 'Restaurant'}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="h-full w-full bg-[linear-gradient(135deg,#e8decf_0%,#f5f1e8_100%)]" />
+        )}
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.18)_0%,rgba(0,0,0,0.78)_100%)]" />
+        <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-white [text-shadow:0_10px_35px_rgba(0,0,0,0.9)]">
+          <div className="max-w-3xl">
+            <p className="text-5xl font-extrabold tracking-tight sm:text-7xl">
+              {formData.name || 'Restaurant name'}
+            </p>
+            <p className="mt-3 text-sm uppercase tracking-[0.32em] text-white/80 sm:text-lg">
+              {formData.tagline || 'Signature dining experience'}
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] font-bold uppercase tracking-[0.22em] text-white/90 sm:text-xs">
+              <span>New Rating</span>
+              <span className="opacity-40">|</span>
+              <span>$$</span>
+              <span className="opacity-40">|</span>
+              <span>{fallbackLocation}</span>
+            </div>
+            {fsaBadge ? (
+              <div className="mt-5 flex justify-center">
+                <img
+                  src={fsaBadge}
+                  alt={`FSA Rating ${formData.fsaSelection?.rating || formData.fsaSelection?.value}`}
+                  className="h-12 w-auto drop-shadow-[0_10px_25px_rgba(0,0,0,0.55)]"
+                />
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-6 p-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="overflow-hidden rounded-[2.2rem] border border-[#e9dfd0] bg-white shadow-[0_22px_70px_rgba(65,48,24,0.08)]">
+          <div className="border-b border-[#f0e8db] bg-[linear-gradient(135deg,#fbf8f2_0%,#f8f4ec_100%)] p-6 sm:p-8">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+              <div className="max-w-2xl">
+                <p className="!text-[8px] font-semibold uppercase tracking-[0.32em] text-[#8e5c2d]">
+                  Curated Menu
+                </p>
+                <h3 className="mt-3 !text-[20px] sm:text-4xl font-black tracking-tight text-[#1c1917] leading-snug max-w-xl">
+                  Designed to feel like a destination, not a list
+                </h3>
+                <p className="mt-4 text-base leading-8 text-[#6d6358]">
+                  {formData.description ||
+                    `Browse the standout dishes, signature sections, and high-intent menu story of ${
+                      formData.name || 'this restaurant'
+                    }.`}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                {['Chef selection', 'Signature plates', 'Drinks'].map(
+                  (label) => (
+                    <span
+                      key={label}
+                      className="rounded-full bg-[#f1eadd] px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#675d52]"
+                    >
+                      {label}
+                    </span>
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 sm:p-8">
+            <div className="rounded-[1.9rem] border border-dashed border-[#dfd3c1] bg-[#faf6ef] px-6 py-14 text-center">
+              <p className="text-sm uppercase tracking-[0.32em] text-[#8e5c2d]">
+                Menu
+              </p>
+              <h4 className="mt-3 text-2xl font-bold text-[#1c1917]">
+                Coming Soon
+              </h4>
+              <p className="mt-3 text-sm leading-7 text-[#6d6358]">
+                This restaurant has not published its dishes yet.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6 lg:pt-8">
+          <div className="overflow-hidden rounded-[2rem] border border-[#e9dfd0] bg-white shadow-[0_18px_50px_rgba(64,48,20,0.06)]">
+            <div className="h-44 overflow-hidden bg-[#f4ede2]">
+              {heroImage ? (
+                <img
+                  src={heroImage}
+                  alt={formData.name || 'Restaurant'}
+                  className="h-full w-full object-cover"
+                />
+              ) : null}
+            </div>
+            <div className="p-6">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
+                Location
+              </p>
+              <h4 className="mt-5 text-2xl font-black text-[#1c1917]">
+                {formData.address?.addressLine1 ||
+                  formData.address?.areaLocality ||
+                  formData.address?.city ||
+                  'Visit us'}
+              </h4>
+              <p className="mt-3 text-sm leading-7 text-[#6d6358]">
+                {fullAddress || 'Address preview'}
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-[2rem] border border-[#e9dfd0] bg-white p-6 shadow-[0_18px_50px_rgba(64,48,20,0.06)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
+              Quick facts
+            </p>
+            <div className="mt-5 grid gap-4">
+              <div className="rounded-[1.5rem] bg-[#faf6ef] px-4 py-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#9d9284]">
+                  Website
+                </p>
+                <p className="mt-2 text-sm font-semibold text-[#1c1917]">
+                  {website || 'Add restaurant website'}
+                </p>
+              </div>
+              <div className="rounded-[1.5rem] bg-[#faf6ef] px-4 py-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#9d9284]">
+                  Owner
+                </p>
+                <p className="mt-2 text-sm font-semibold text-[#1c1917]">
+                  {selectedAdmin?.userName || 'Choose admin'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-[2rem] border border-[#e9dfd0] bg-white p-6 shadow-[0_18px_50px_rgba(64,48,20,0.06)]">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#faf6ef] text-[#8e5c2d]">
+                {formData.imageLogo ? (
+                  <img
+                    src={formData.imageLogo}
+                    alt={formData.name || 'Logo'}
+                    className="h-full w-full rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="text-sm font-bold">
+                    {formData.name?.charAt(0)?.toUpperCase() || 'R'}
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
+                Inquiries
+              </p>
+            </div>
+            <div className="mt-5 space-y-5 text-sm">
+              <div className="rounded-[1.35rem] bg-[#faf6ef] px-4 py-4 text-[#5f5549]">
+                {formData.contactNumber || 'Contact number'}
+              </div>
+              <div className="rounded-[1.35rem] bg-[#faf6ef] px-4 py-4 text-[#5f5549]">
+                {formData.email || 'restaurant@email.com'}
+              </div>
+              <div className="rounded-[1.35rem] bg-[#faf6ef] px-4 py-4 text-[#5f5549]">
+                {website || 'Website link'}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -216,7 +515,6 @@ export default function DashRestaurants() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [statusFilter, setStatusFilter] = useState('all');
   const [modalMode, setModalMode] = useState(null);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
@@ -224,6 +522,8 @@ export default function DashRestaurants() {
   const [addressSearch, setAddressSearch] = useState('');
   const [logoProgress, setLogoProgress] = useState(0);
   const [logoUploading, setLogoUploading] = useState(false);
+  const [bannerProgress, setBannerProgress] = useState(0);
+  const [bannerUploading, setBannerUploading] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [fsaOptions, setFsaOptions] = useState([]);
   const [fsaLoading, setFsaLoading] = useState(false);
@@ -260,15 +560,15 @@ export default function DashRestaurants() {
     'reassignAdmin'
   );
 
-  const listEndpoint = useMemo(() => {
+  const listBaseEndpoint = useMemo(() => {
     if (currentUser?.role === 'superAdmin') {
-      return `/api/restaurants/all?page=${page}&limit=10`;
+      return '/api/restaurants/all';
     }
     if (currentUser?.role === 'admin') {
-      return `/api/restaurants/me/all?page=${page}&limit=10`;
+      return '/api/restaurants/me/all';
     }
     return null;
-  }, [currentUser?.role, page]);
+  }, [currentUser?.role]);
 
   const publishedCount = restaurants.filter(
     (item) => item.status === 'published'
@@ -279,13 +579,35 @@ export default function DashRestaurants() {
   const blockedCount = restaurants.filter(
     (item) => item.status === 'blocked'
   ).length;
-  const filteredRestaurants = useMemo(() => {
+  const scopedRestaurants = useMemo(() => {
     if (statusFilter === 'all') return restaurants;
     return restaurants.filter((item) => item.status === statusFilter);
   }, [restaurants, statusFilter]);
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(scopedRestaurants.length / PAGE_SIZE)),
+    [scopedRestaurants.length]
+  );
+  const filteredRestaurants = useMemo(() => {
+    const startIndex = (page - 1) * PAGE_SIZE;
+    return scopedRestaurants.slice(startIndex, startIndex + PAGE_SIZE);
+  }, [page, scopedRestaurants]);
+  const syncRestaurantRecord = useCallback((nextRestaurant) => {
+    setRestaurants((current) => {
+      const nextId = String(nextRestaurant?._id || '');
+      const remaining = current.filter(
+        (restaurant) => String(restaurant._id) !== nextId
+      );
+      return [nextRestaurant, ...remaining];
+    });
+  }, []);
+  const removeRestaurantRecord = useCallback((restaurantId) => {
+    setRestaurants((current) =>
+      current.filter((restaurant) => String(restaurant._id) !== String(restaurantId))
+    );
+  }, []);
 
   const fetchRestaurants = useCallback(async () => {
-    if (!listEndpoint) {
+    if (!listBaseEndpoint) {
       setLoading(false);
       return;
     }
@@ -293,15 +615,30 @@ export default function DashRestaurants() {
     try {
       setLoading(true);
       setError(null);
-      const data = await apiGet(listEndpoint);
-      setRestaurants(data.data || []);
-      setTotalPages(Math.max(1, data.totalPages || 1));
+      const firstPage = await apiGet(
+        `${listBaseEndpoint}?page=1&limit=100`
+      );
+      const pages = Math.max(1, firstPage.totalPages || 1);
+      let dataset = firstPage.data || [];
+
+      if (pages > 1) {
+        const remainingPages = await Promise.all(
+          Array.from({ length: pages - 1 }, (_, index) =>
+            apiGet(`${listBaseEndpoint}?page=${index + 2}&limit=100`)
+          )
+        );
+        dataset = dataset.concat(
+          remainingPages.flatMap((response) => response.data || [])
+        );
+      }
+
+      setRestaurants(dataset);
     } catch (fetchError) {
       setError(fetchError.message);
     } finally {
       setLoading(false);
     }
-  }, [listEndpoint]);
+  }, [listBaseEndpoint]);
 
   useEffect(() => {
     fetchRestaurants();
@@ -354,9 +691,9 @@ export default function DashRestaurants() {
         return [];
       }
       const data = await apiGet(
-        `/api/users/admins?page=1&limit=50&q=${encodeURIComponent(query)}`
+        `/api/users?page=1&limit=100&q=${encodeURIComponent(query)}`
       );
-      return data.data || [];
+      return (data.data || []).filter((user) => user.role === 'admin');
     },
     [canReassignAdmin, currentUser?.role]
   );
@@ -368,6 +705,8 @@ export default function DashRestaurants() {
     setAddressSearch('');
     setLogoProgress(0);
     setLogoUploading(false);
+    setBannerProgress(0);
+    setBannerUploading(false);
     setSelectedAdmin(null);
     setFsaOptions([]);
   };
@@ -405,12 +744,46 @@ export default function DashRestaurants() {
     }
   };
 
+  const handleBannerUpload = async (file) => {
+    setBannerUploading(true);
+    setBannerProgress(10);
+
+    try {
+      const uploaded = await uploadToCloudinary({
+        file,
+        folder: 'restaurants/banners',
+        resourceType: 'image',
+        publicIdPrefix: 'restaurant-banner',
+        onProgress: (progress) => setBannerProgress(progress)
+      });
+      setBannerProgress(100);
+      setFormData((current) => ({
+        ...current,
+        bannerImage: uploaded.url
+      }));
+    } catch (uploadError) {
+      setError(uploadError.message);
+    } finally {
+      setBannerUploading(false);
+    }
+  };
+
   const openCreateModal = () => {
     resetModalState();
     setModalMode('create');
   };
 
-  const openEditModal = (restaurant) => {
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter]);
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
+
+  const openEditModal = async (restaurant) => {
     resetModalState();
     setSelectedRestaurant(restaurant);
     setModalMode('edit');
@@ -422,9 +795,7 @@ export default function DashRestaurants() {
       email: restaurant.email || '',
       website: restaurant.website || '',
       imageLogo: restaurant.imageLogo || '',
-      thumbnailImage: restaurant.thumbnailImage || '',
       bannerImage: restaurant.bannerImage || '',
-      featuredImage: restaurant.featuredImage || '',
       adminId: restaurant.adminId || '',
       address: {
         addressLine1: restaurant.address?.addressLine1 || '',
@@ -446,6 +817,21 @@ export default function DashRestaurants() {
         : null
     });
     setAddressSearch(formatAddress(restaurant.address));
+    if (restaurant.adminId && typeof restaurant.adminId === 'object') {
+      setSelectedAdmin(restaurant.adminId);
+      return;
+    }
+    const adminId = getAdminId(restaurant.adminId);
+    if (!adminId) return;
+    try {
+      const admins = await fetchAvailableAdmins('');
+      const adminMatch = admins.find((admin) => admin._id === adminId);
+      if (adminMatch) {
+        setSelectedAdmin(adminMatch);
+      }
+    } catch {
+      setSelectedAdmin(null);
+    }
   };
 
   const applyAddressDetails = (placeDetails) => {
@@ -467,21 +853,23 @@ export default function DashRestaurants() {
 
   const applyFsaOption = (option) => {
     const fsaAddress = option.restaurantAddress || {};
+    const nextAddress = {
+      ...formData.address,
+      addressLine1: fsaAddress.addressLine1 || formData.address.addressLine1,
+      addressLine2: fsaAddress.addressLine2 || formData.address.addressLine2,
+      areaLocality: fsaAddress.areaLocality || formData.address.areaLocality,
+      city: fsaAddress.city || formData.address.city,
+      countyRegion: fsaAddress.countyRegion || formData.address.countyRegion,
+      postcode: fsaAddress.postcode || formData.address.postcode,
+      country: fsaAddress.country || formData.address.country
+    };
     setFormData((current) => ({
       ...current,
       name: option.name || current.name,
-      address: {
-        ...current.address,
-        addressLine1: fsaAddress.addressLine1 || current.address.addressLine1,
-        addressLine2: fsaAddress.addressLine2 || current.address.addressLine2,
-        areaLocality: fsaAddress.areaLocality || current.address.areaLocality,
-        city: fsaAddress.city || current.address.city,
-        countyRegion: fsaAddress.countyRegion || current.address.countyRegion,
-        postcode: fsaAddress.postcode || current.address.postcode,
-        country: fsaAddress.country || current.address.country
-      },
+      address: nextAddress,
       fsaSelection: option
     }));
+    setAddressSearch(formatAddress(nextAddress));
   };
 
   const buildRestaurantPayload = () => {
@@ -491,11 +879,9 @@ export default function DashRestaurants() {
       description: formData.description,
       contactNumber: formData.contactNumber,
       email: formData.email,
-      website: formData.website,
+      website: normalizeWebsiteUrl(formData.website),
       imageLogo: formData.imageLogo,
-      thumbnailImage: formData.thumbnailImage,
       bannerImage: formData.bannerImage,
-      featuredImage: formData.featuredImage,
       address: formData.address
     };
 
@@ -506,7 +892,11 @@ export default function DashRestaurants() {
       payload.location = formData.location;
     }
 
-    if (currentUser?.role === 'superAdmin' && selectedAdmin?._id) {
+    if (
+      modalMode === 'create' &&
+      currentUser?.role === 'superAdmin' &&
+      selectedAdmin?._id
+    ) {
       payload.adminId = selectedAdmin._id;
     }
 
@@ -528,6 +918,14 @@ export default function DashRestaurants() {
       setError(null);
       setSuccess(null);
 
+      if (
+        modalMode === 'create' &&
+        currentUser?.role === 'superAdmin' &&
+        !selectedAdmin?._id
+      ) {
+        throw new Error('Please choose an admin for this restaurant.');
+      }
+
       if (modalMode === 'create') {
         await apiPost('/api/restaurants', buildRestaurantPayload());
         setSuccess('Restaurant created successfully.');
@@ -541,7 +939,7 @@ export default function DashRestaurants() {
         if (
           canReassignAdmin &&
           selectedAdmin?._id &&
-          selectedAdmin._id !== selectedRestaurant.adminId
+          selectedAdmin._id !== getAdminId(selectedRestaurant.adminId)
         ) {
           await apiPatch(
             `/api/restaurants/id/${selectedRestaurant._id}/admin`,
@@ -567,9 +965,9 @@ export default function DashRestaurants() {
       setError(null);
       setSuccess(null);
       await apiDelete(`/api/restaurants/id/${restaurant._id}`);
+      removeRestaurantRecord(restaurant._id);
       setSuccess('Restaurant deleted successfully.');
       setPendingDeleteRestaurant(null);
-      await fetchRestaurants();
     } catch (deleteError) {
       setError(deleteError.message);
     }
@@ -579,11 +977,13 @@ export default function DashRestaurants() {
     try {
       setError(null);
       setSuccess(null);
-      await apiPatch(`/api/restaurants/id/${restaurant._id}/status`, {
+      const response = await apiPatch(`/api/restaurants/id/${restaurant._id}/status`, {
         status
       });
+      if (response?.data) {
+        syncRestaurantRecord(response.data);
+      }
       setSuccess(`Restaurant moved to ${status}.`);
-      await fetchRestaurants();
     } catch (statusError) {
       setError(statusError.message);
     }
@@ -593,15 +993,17 @@ export default function DashRestaurants() {
     try {
       setError(null);
       setSuccess(null);
-      await apiPatch(`/api/restaurants/id/${restaurant._id}/restore`, {});
+      const response = await apiPatch(`/api/restaurants/id/${restaurant._id}/restore`, {});
+      if (response?.data) {
+        syncRestaurantRecord(response.data);
+      }
       setSuccess('Restaurant restored successfully.');
-      await fetchRestaurants();
     } catch (restoreError) {
       setError(restoreError.message);
     }
   };
 
-  if (!listEndpoint) {
+  if (!listBaseEndpoint) {
     return (
       <Card className="border !border-[#dce6c1] bg-white shadow-sm">
         <p className="text-sm text-gray-600">
@@ -869,8 +1271,7 @@ export default function DashRestaurants() {
                             </Button>
                           )}
                         {canUpdateStatus &&
-                          restaurant.status !== 'draft' &&
-                          restaurant.status !== 'blocked' && (
+                          restaurant.status !== 'draft' && (
                             <Button
                               size="xs"
                               color="warning"
@@ -920,6 +1321,13 @@ export default function DashRestaurants() {
                     </Table.Cell>
                   </Table.Row>
                 ))}
+                {filteredRestaurants.length === 0 && (
+                  <Table.Row>
+                    <Table.Cell colSpan={5} className="py-10 text-center text-sm text-gray-500">
+                      No restaurants found for the `{statusFilter}` filter.
+                    </Table.Cell>
+                  </Table.Row>
+                )}
               </Table.Body>
             </Table>
           </div>
@@ -951,8 +1359,62 @@ export default function DashRestaurants() {
                     {restaurant.status}
                   </Badge>
                 </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {canUpdateRestaurant && (
+                    <Button
+                      size="xs"
+                      className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f]"
+                      onClick={() => openEditModal(restaurant)}
+                    >
+                      Edit
+                    </Button>
+                  )}
+                  {canUpdateStatus && restaurant.status !== 'published' && (
+                    <Button
+                      size="xs"
+                      color="success"
+                      onClick={() =>
+                        handleStatusChange(restaurant, 'published')
+                      }
+                    >
+                      Publish
+                    </Button>
+                  )}
+                  {canUpdateStatus && restaurant.status !== 'draft' && (
+                    <Button
+                      size="xs"
+                      color="warning"
+                      onClick={() => handleStatusChange(restaurant, 'draft')}
+                    >
+                      Draft
+                    </Button>
+                  )}
+                  {canUpdateStatus && restaurant.status !== 'blocked' && (
+                    <Button
+                      size="xs"
+                      color="failure"
+                      onClick={() => handleStatusChange(restaurant, 'blocked')}
+                    >
+                      Block
+                    </Button>
+                  )}
+                  {canRestoreRestaurant && restaurant.status === 'blocked' && (
+                    <Button
+                      size="xs"
+                      color="light"
+                      onClick={() => handleRestoreRestaurant(restaurant)}
+                    >
+                      Restore
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
+            {filteredRestaurants.length === 0 && (
+              <div className="rounded-[1.5rem] border border-dashed border-[#dce6c1] bg-[#fbfcf7] p-5 text-sm text-gray-500">
+                No restaurants found for the `{statusFilter}` filter.
+              </div>
+            )}
           </div>
 
           <div className="mt-5 flex items-center justify-between gap-3 text-sm">
@@ -995,16 +1457,25 @@ export default function DashRestaurants() {
         </Modal.Header>
         <Modal.Body>
           <form className="space-y-6" onSubmit={handleCreateOrUpdateRestaurant}>
-            <div className="grid gap-6 xl:grid-cols-[0.88fr,1.12fr]">
-              <LogoUpload
-                value={formData.imageLogo}
-                progress={logoProgress}
-                uploading={logoUploading}
-                onSelect={handleLogoUpload}
-              />
+            <div className="grid gap-6 xl:grid-cols-[0.92fr,1.08fr]">
+              <div className="space-y-6">
+                <LogoUpload
+                  value={formData.imageLogo}
+                  progress={logoProgress}
+                  uploading={logoUploading}
+                  onSelect={handleLogoUpload}
+                />
+                <BannerUpload
+                  value={formData.bannerImage}
+                  progress={bannerProgress}
+                  uploading={bannerUploading}
+                  onCropComplete={handleBannerUpload}
+                  onError={setError}
+                />
+              </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
+                <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="restaurantName">Restaurant name</Label>
                   <TextInput
                     id="restaurantName"
@@ -1018,66 +1489,56 @@ export default function DashRestaurants() {
                     required
                     className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                   />
+                  <div className="rounded-[1.25rem] border !border-[#dce6c1] bg-white p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <Label className="!mb-0">FSA suggestions</Label>
+                      {fsaLoading && (
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <Spinner size="sm" />
+                          Checking matches...
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-3 max-h-56 space-y-2 overflow-y-auto">
+                      {!fsaLoading &&
+                        fsaOptions.map((option) => (
+                          <button
+                            key={option.fhrsId}
+                            type="button"
+                            onClick={() => applyFsaOption(option)}
+                            className="flex w-full flex-col rounded-xl border border-transparent bg-[#fbfcf7] px-3 py-3 text-left hover:!border-[#dce6c1] hover:!bg-[#f6fbe9]"
+                          >
+                            <span className="text-sm font-semibold text-[#23411f]">
+                              {option.name}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              FHRS {option.rating} · {option.addressLabel || option.postcode || 'No postcode'}
+                            </span>
+                          </button>
+                        ))}
+                      {!fsaLoading && fsaOptions.length === 0 && (
+                        <p className="text-sm text-gray-500">
+                          FSA suggestions will appear here once the restaurant name and postcode are available.
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="restaurantTagline">Tagline</Label>
+                <div className="space-y-2 sm:col-span-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <Label htmlFor="restaurantTagline">Tagline</Label>
+                    <span className="text-xs text-gray-500">{getTaglineWordCount(formData.tagline)}/7 words</span>
+                  </div>
                   <TextInput
                     id="restaurantTagline"
                     value={formData.tagline}
                     onChange={(event) =>
                       setFormData((current) => ({
                         ...current,
-                        tagline: event.target.value
+                        tagline: limitTaglineWords(event.target.value, 7)
                       }))
                     }
-                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="restaurantThumbnail">Thumbnail image URL</Label>
-                  <TextInput
-                    id="restaurantThumbnail"
-                    type="url"
-                    value={formData.thumbnailImage}
-                    onChange={(event) =>
-                      setFormData((current) => ({
-                        ...current,
-                        thumbnailImage: event.target.value
-                      }))
-                    }
-                    placeholder="https://example.com/thumbnail.jpg"
-                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="restaurantBanner">Banner image URL</Label>
-                  <TextInput
-                    id="restaurantBanner"
-                    type="url"
-                    value={formData.bannerImage}
-                    onChange={(event) =>
-                      setFormData((current) => ({
-                        ...current,
-                        bannerImage: event.target.value
-                      }))
-                    }
-                    placeholder="https://example.com/banner.jpg"
-                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
-                  />
-                </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="restaurantFeatured">Featured image URL</Label>
-                  <TextInput
-                    id="restaurantFeatured"
-                    type="url"
-                    value={formData.featuredImage}
-                    onChange={(event) =>
-                      setFormData((current) => ({
-                        ...current,
-                        featuredImage: event.target.value
-                      }))
-                    }
-                    placeholder="https://example.com/featured.jpg"
+                    placeholder="Short, premium, memorable"
                     className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                   />
                 </div>
@@ -1123,6 +1584,13 @@ export default function DashRestaurants() {
                         website: event.target.value
                       }))
                     }
+                    onBlur={() =>
+                      setFormData((current) => ({
+                        ...current,
+                        website: normalizeWebsiteUrl(current.website)
+                      }))
+                    }
+                    placeholder="google.com or https://www.google.com"
                     className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                   />
                 </div>
@@ -1257,8 +1725,7 @@ export default function DashRestaurants() {
                     Compliance and ownership
                   </p>
                   <p className="text-xs text-gray-500">
-                    Link FSA data and, for super admin, choose the restaurant
-                    owner.
+                    Choose the restaurant owner and preview the live experience.
                   </p>
                 </div>
 
@@ -1277,84 +1744,15 @@ export default function DashRestaurants() {
                   />
                 )}
 
-                <div className="space-y-2">
-                  <Label>FSA suggestions</Label>
-                  <div className="max-h-56 space-y-2 overflow-y-auto rounded-[1.25rem] border !border-[#dce6c1] bg-white p-3">
-                    {fsaLoading && (
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <Spinner size="sm" />
-                        Checking FSA matches...
-                      </div>
-                    )}
-                    {!fsaLoading &&
-                      fsaOptions.map((option) => (
-                        <button
-                          key={option.fhrsId}
-                          type="button"
-                          onClick={() => applyFsaOption(option)}
-                          className="flex w-full flex-col rounded-xl border border-transparent !bg-[#fbfcf7] px-3 py-3 text-left hover:!!border-[#dce6c1] hover:!bg-[#f6fbe9]"
-                        >
-                          <span className="text-sm font-semibold text-[#23411f]">
-                            {option.name}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            FHRS {option.rating} ·{' '}
-                            {option.addressLabel ||
-                              option.postcode ||
-                              'No postcode'}
-                          </span>
-                        </button>
-                      ))}
-                    {!fsaLoading && fsaOptions.length === 0 && (
-                      <p className="text-sm text-gray-500">
-                        FSA suggestions will appear once the restaurant name and
-                        postcode are available.
-                      </p>
-                    )}
-                  </div>
-                </div>
-
                 <div className="rounded-[1.25rem] border !border-[#dce6c1] bg-white p-4">
                   <p className="text-sm font-semibold text-[#23411f]">
                     Preview
                   </p>
-                  <div className="mt-3 overflow-hidden rounded-[1.25rem] border border-[#eef2df]">
-                    <div className="h-32 bg-[linear-gradient(135deg,#f6fbe9_0%,#fff1f1_100%)]">
-                      {(formData.bannerImage || formData.featuredImage || formData.thumbnailImage || formData.imageLogo) && (
-                        <img
-                          src={
-                            formData.bannerImage ||
-                            formData.featuredImage ||
-                            formData.thumbnailImage ||
-                            formData.imageLogo
-                          }
-                          alt={formData.name || 'Restaurant'}
-                          className="h-full w-full object-cover"
-                        />
-                      )}
-                    </div>
-                    <div className="space-y-2 p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 overflow-hidden rounded-full border border-[#dce6c1] bg-[#f5faeb]">
-                          {formData.imageLogo ? (
-                            <img
-                              src={formData.imageLogo}
-                              alt={formData.name || 'Restaurant logo'}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : null}
-                        </div>
-                        <p className="text-lg font-semibold text-[#23411f]">
-                          {formData.name || 'Restaurant name'}
-                        </p>
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        {formData.tagline || 'Tagline will appear here'}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {formatAddress(formData.address) || 'Address preview'}
-                      </p>
-                    </div>
+                  <div className="mt-3">
+                    <RestaurantPagePreview
+                      formData={formData}
+                      selectedAdmin={selectedAdmin}
+                    />
                   </div>
                 </div>
               </div>
@@ -1368,7 +1766,7 @@ export default function DashRestaurants() {
                 type="submit"
                 className="!bg-[#8fa31e] hover:!!bg-[#78871c]"
                 isProcessing={submitting}
-                disabled={logoUploading}
+                disabled={logoUploading || bannerUploading}
               >
                 {modalMode === 'edit' ? 'Save restaurant' : 'Create restaurant'}
               </Button>

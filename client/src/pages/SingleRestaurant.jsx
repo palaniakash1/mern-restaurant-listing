@@ -155,6 +155,9 @@ const getFeaturedDishImage = (restaurant, menus) => {
   return pickImage(restaurant, 'hero');
 };
 
+const getItemImage = (item, restaurant) =>
+  item?.image || item?.thumbnailImage || item?.featuredImage || pickImage(restaurant, 'thumb');
+
 const Skeleton = () => (
   <div className="min-h-screen bg-[#f5f1e8]">
     <div className="h-[75vh] animate-pulse bg-[#d8ccb8]" />

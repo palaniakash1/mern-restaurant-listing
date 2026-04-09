@@ -268,7 +268,9 @@ export const getAllRestaurants = async (req, res, next) => {
       sort = { score: { $meta: 'textScore' } };
     }
 
-    const total = await Restaurant.countDocuments(filter);
+    const total = await Restaurant.countDocuments(filter).setOptions({
+      includeInactive: true
+    });
 
     const pageNum = Number(page);
     const limitNum = Number(limit);
@@ -284,6 +286,7 @@ export const getAllRestaurants = async (req, res, next) => {
     });
 
     const restaurants = await Restaurant.find(filter, projection)
+      .setOptions({ includeInactive: true })
       .select('-__v')
       .skip(pagination.skip)
       .limit(pagination.limit)
@@ -306,7 +309,9 @@ export const getAllRestaurants = async (req, res, next) => {
 
 export const getRestaurantById = async (req, res, next) => {
   try {
-    const restaurant = await Restaurant.findById(req.params.id).select('-__v');
+    const restaurant = await Restaurant.findById(req.params.id)
+      .setOptions({ includeInactive: true })
+      .select('-__v');
 
     if (!restaurant) {
       return next(errorHandler(404, 'Restaurant not found'));
@@ -360,6 +365,7 @@ export const updateRestaurantStatus = async (req, res, next) => {
 
     const result = await withTransaction(async (session) => {
       const restaurant = await Restaurant.findById(req.params.id)
+        .setOptions({ includeInactive: true })
         .session(session)
         .lean();
 
@@ -414,6 +420,7 @@ export const updateRestaurant = async (req, res, next) => {
   try {
     const result = await withTransaction(async (session) => {
       const oldRestaurant = await Restaurant.findById(req.params.id)
+        .setOptions({ includeInactive: true })
         .session(session)
         .lean();
 
@@ -546,6 +553,7 @@ export const deleteRestaurant = async (req, res, next) => {
     let softDeleted;
     await withTransaction(async (session) => {
       const restaurant = await Restaurant.findById(req.params.id)
+        .setOptions({ includeInactive: true })
         .session(session)
         .lean();
 
@@ -761,7 +769,9 @@ export const getMyRestaurant = async (req, res, next) => {
 
     const restaurantId = req.user.restaurantId || req.user.restaurantIds[0];
 
-    const restaurant = await Restaurant.findById(restaurantId).select('-__v');
+    const restaurant = await Restaurant.findById(restaurantId)
+      .setOptions({ includeInactive: true })
+      .select('-__v');
 
     if (!restaurant) {
       return next(errorHandler(404, 'Restaurant not found'));
@@ -816,7 +826,9 @@ export const getMyRestaurants = async (req, res, next) => {
     }
 
     const filter = { _id: { $in: restaurantIds }, adminId: req.user.id };
-    const total = await Restaurant.countDocuments(filter);
+    const total = await Restaurant.countDocuments(filter).setOptions({
+      includeInactive: true
+    });
 
     const pagination = paginate({
       page: pageNum,
@@ -825,6 +837,7 @@ export const getMyRestaurants = async (req, res, next) => {
     });
 
     const restaurants = await Restaurant.find(filter)
+      .setOptions({ includeInactive: true })
       .select('-__v')
       .skip(pagination.skip)
       .limit(pagination.limit)
@@ -1216,7 +1229,9 @@ export const getMyRestaurantById = async (req, res, next) => {
   try {
     const { restaurantId } = req.params;
 
-    const restaurant = await Restaurant.findById(restaurantId).select('-__v');
+    const restaurant = await Restaurant.findById(restaurantId)
+      .setOptions({ includeInactive: true })
+      .select('-__v');
 
     if (!restaurant) {
       return next(errorHandler(404, 'Restaurant not found'));

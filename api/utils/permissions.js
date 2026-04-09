@@ -1,13 +1,9 @@
 export const PERMISSIONS = {
   superAdmin: {
-    auth: [
-      'signout',
-      'session',
-      'changePassword',
-      'manageUserSessions'
-    ],
+    auth: ['signout', 'session', 'changePassword', 'manageUserSessions'],
     admin: ['createPrivilegedUser'],
     audit: ['read'],
+    dashboard: ['read'],
     user: [
       'test',
       'listAll',
@@ -74,6 +70,7 @@ export const PERMISSIONS = {
   admin: {
     auth: ['signout', 'session', 'changePassword'],
     audit: ['read'],
+    dashboard: ['read'],
     user: [
       'listStoreManagers',
       'createStoreManager',
@@ -151,14 +148,20 @@ const isPermissionTree = (value) =>
 export const clonePermissionsForRole = (role) => {
   const defaults = PERMISSIONS[role] || {};
   return Object.fromEntries(
-    Object.entries(defaults).map(([resource, actions]) => [resource, [...actions]])
+    Object.entries(defaults).map(([resource, actions]) => [
+      resource,
+      [...actions]
+    ])
   );
 };
 
 export const hasCustomPermissionOverrides = (permissions) =>
   isPermissionTree(permissions) && Object.keys(permissions).length > 0;
 
-export const normalizePermissionOverrides = (role, requestedPermissions = {}) => {
+export const normalizePermissionOverrides = (
+  role,
+  requestedPermissions = {}
+) => {
   const defaults = PERMISSIONS[role] || {};
 
   if (!hasCustomPermissionOverrides(requestedPermissions)) {
@@ -191,7 +194,9 @@ export const resolvePermissionsForUser = (user = {}) => {
   }
 
   if (hasCustomPermissionOverrides(user.customPermissions)) {
-    return normalizePermissionOverrides(user.role, user.customPermissions) || {};
+    return (
+      normalizePermissionOverrides(user.role, user.customPermissions) || {}
+    );
   }
 
   return clonePermissionsForRole(user.role);

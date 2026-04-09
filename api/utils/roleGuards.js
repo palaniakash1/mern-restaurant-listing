@@ -14,7 +14,9 @@ export const verifyRestaurantOwner = async (req, res, next) => {
     }
 
     // Fetch restaurant and check ownership
-    const restaurant = await Restaurant.findById(id).select('adminId');
+    const restaurant = await Restaurant.findById(id)
+      .setOptions({ includeInactive: true })
+      .select('adminId');
     if (!restaurant) return next(errorHandler(404, 'Restaurant Not Found'));
 
     if (
