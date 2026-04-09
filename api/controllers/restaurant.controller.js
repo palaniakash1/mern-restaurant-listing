@@ -41,6 +41,9 @@ export const create = async (req, res, next) => {
       email,
       website,
       imageLogo,
+      thumbnailImage,
+      bannerImage,
+      featuredImage,
       gallery,
       videoUrl,
       isFeatured,
@@ -181,6 +184,9 @@ export const create = async (req, res, next) => {
         email,
         website,
         imageLogo,
+        thumbnailImage,
+        bannerImage,
+        featuredImage,
         gallery,
         videoUrl,
         adminId: assignedAdminId,
@@ -452,6 +458,9 @@ export const updateRestaurant = async (req, res, next) => {
         'email',
         'website',
         'imageLogo',
+        'thumbnailImage',
+        'bannerImage',
+        'featuredImage',
         'gallery',
         'videoUrl'
       ];
@@ -917,6 +926,10 @@ export const listRestaurants = async (req, res, next) => {
     } else {
       if (sortBy === 'rating') sort = { rating: -1 };
       if (sortBy === 'name') sort = { name: 1 };
+      if (sortBy === 'newest') sort = { createdAt: -1 };
+      if (sortBy === 'oldest') sort = { createdAt: 1 };
+      if (sortBy === 'price_asc') sort = { priceRange: 1 };
+      if (sortBy === 'price_desc') sort = { priceRange: -1 };
     }
 
     const pageNum = Number(page);
