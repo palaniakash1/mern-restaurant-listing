@@ -8,7 +8,10 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
+import Restaurants from "./pages/Restaurants";
+import SingleRestaurant from "./pages/SingleRestaurant";
 import Header from "./components/Header";
+import ScrollToTop from "./components/ScrollToTop";
 import PrivateRoute from "./components/PrivateRoute";
 import "flowbite/dist/flowbite.css";
 import { LoadScript } from "@react-google-maps/api";
@@ -25,10 +28,13 @@ function AppContent() {
 
   return (
     <>
+      <ScrollToTop />
       {!authentication && !isDashboardPage && <Header />}
 
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/restaurants" element={<Restaurants />} />
+        <Route path="/restaurants/:slug" element={<SingleRestaurant />} />
         <Route path="/sign-in" element={<SignIn />} />
         <Route path="/sign-up" element={<SignUp />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
