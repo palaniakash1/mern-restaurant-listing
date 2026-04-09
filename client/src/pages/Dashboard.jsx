@@ -7,9 +7,9 @@ import DashUsers from '../components/DashUsers';
 import DashRestaurants from '../components/DashRestaurants';
 import DashCategories from '../components/DashCategories';
 import DashMenu from '../components/DashMenu';
-import Dashboards from '../components/Dashboards';
 import DashReviews from '../components/DashReviews';
 import DashAuditLogs from '../components/DashAuditLogs';
+import DashboardOverview from '../components/dashboard/DashboardOverview';
 import { useAuth } from '../context/AuthContext';
 import { getVisibleDashboardTabs } from '../constants/dashboardTabs';
 
@@ -103,8 +103,8 @@ export default function Dashboard() {
             {tab === 'menu' && <DashMenu />}
             {tab === 'reviews' && <DashReviews />}
             {tab === 'audit' && <DashAuditLogs />}
-            {tab === 'dashboard' && <Dashboards />}
-            {!activeTab && <Dashboards />}
+            {tab === 'dashboard' && <DashboardOverview role={user?.role} />}
+            {!activeTab && <DashboardOverview role={user?.role} />}
           </div>
         </div>
       </div>
