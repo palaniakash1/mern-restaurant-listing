@@ -1,0 +1,76 @@
+import { apiGet } from '../utils/api';
+
+export const getRestaurantBySlug = async (slug) => {
+  const response = await apiGet(`/api/restaurants/slug/${slug}`);
+  return response.data;
+};
+
+export const getRestaurantMenus = async (restaurantId, options = {}) => {
+  const { page = 1, limit = 10, search = '', sort = 'desc' } = options;
+  const params = new URLSearchParams({
+    page,
+    limit,
+    search,
+    sort
+  }).toString();
+  const response = await apiGet(`/api/menus/restaurant/${restaurantId}?${params}`);
+  return response;
+};
+
+export const getRestaurantDetails = async (slug) => {
+  const response = await apiGet(`/api/restaurants/slug/${slug}/details`);
+  return response.data;
+};
+
+export const getFeaturedRestaurants = async (options = {}) => {
+  const { page = 1, limit = 10 } = options;
+  const params = new URLSearchParams({ page, limit }).toString();
+  const response = await apiGet(`/api/restaurants/featured?${params}`);
+  return response;
+};
+
+export const getTrendingRestaurants = async (options = {}) => {
+  const { page = 1, limit = 10 } = options;
+  const params = new URLSearchParams({ page, limit }).toString();
+  const response = await apiGet(`/api/restaurants/trending?${params}`);
+  return response;
+};
+
+export const getNearbyRestaurants = async (options = {}) => {
+  const { longitude, latitude, radius = 5000, limit = 20 } = options;
+  const params = new URLSearchParams({
+    longitude,
+    latitude,
+    radius,
+    limit
+  }).toString();
+  const response = await apiGet(`/api/restaurants/nearby?${params}`);
+  return response;
+};
+
+export const listRestaurants = async (options = {}) => {
+  const {
+    page = 1,
+    limit = 12,
+    q = '',
+    city = '',
+    categories = '',
+    isFeatured = false,
+    isTrending = false,
+    sortBy = 'newest'
+  } = options;
+
+  const params = new URLSearchParams({
+    page,
+    limit,
+    sortBy,
+    ...(q && { q }),
+    ...(city && { city }),
+    ...(categories && { categories }),
+    ...(isFeatured && { isFeatured: 'true' }),
+    ...(isTrending && { isTrending: 'true' })
+  }).toString();
+
+  const response = await apiGet(`/api/restaurants?${params}`);
+  return response;
+};
