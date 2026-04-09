@@ -12,13 +12,19 @@ import {
   Tooltip
 } from 'recharts';
 import {
+  HiArrowLeftOnRectangle,
   HiArrowPath,
+  HiArrowRightOnRectangle,
   HiChartBar,
   HiMagnifyingGlass,
   HiMiniUsers,
+  HiOutlineArrowsRightLeft,
   HiOutlineBuildingStorefront,
   HiOutlineClipboardDocumentList,
-  HiOutlineSquares2X2
+  HiOutlinePencil,
+  HiOutlinePlus,
+  HiOutlineSquares2X2,
+  HiOutlineTrash
 } from 'react-icons/hi2';
 import { FaUtensils } from 'react-icons/fa';
 import dashboardApi from '../../services/dashboardApi';
@@ -31,6 +37,16 @@ const ACTION_COLORS = {
   UPDATE: '#476640',
   DELETE: '#b62828',
   STATUS_CHANGE: '#c58b2b'
+};
+
+const ACTION_ICONS = {
+  LOGIN: HiArrowRightOnRectangle,
+  LOGOUT: HiArrowLeftOnRectangle,
+  CREATE: HiOutlinePlus,
+  UPDATE: HiOutlinePencil,
+  DELETE: HiOutlineTrash,
+  REFRESH: HiArrowPath,
+  STATUS_CHANGE: HiOutlineArrowsRightLeft
 };
 
 const numberFormat = new Intl.NumberFormat('en-GB');
@@ -615,7 +631,10 @@ export default function DashboardOverview({ role = 'superAdmin' }) {
                           ACTION_COLORS[activity.action] || '#576500'
                       }}
                     >
-                      <HiChartBar className="h-5 w-5" />
+                      {(() => {
+                        const Icon = ACTION_ICONS[activity.action] || HiChartBar;
+                        return <Icon className="h-5 w-5" />;
+                      })()}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-[#171d13]">
