@@ -28,7 +28,8 @@ The guidance below is derived from the dashboard implementation in:
 
 ## Typography
 
-- Primary font: `Inter, sans-serif`
+- Body/UI font: `Inter, sans-serif`
+- Heading font: `Manrope, sans-serif`
 - Global source: `client/src/index.css`
 - Heading style:
   - Main page titles: `text-2xl sm:text-3xl font-bold`
