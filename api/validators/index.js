@@ -82,6 +82,9 @@ const restaurantCreateBody = Joi.object({
   email: Joi.string().email().allow(''),
   website: Joi.string().uri().allow(''),
   imageLogo: Joi.string().uri().allow(''),
+  thumbnailImage: Joi.string().uri().allow(''),
+  bannerImage: Joi.string().uri().allow(''),
+  featuredImage: Joi.string().uri().allow(''),
   gallery: Joi.array().items(Joi.string().uri()).max(10),
   videoUrl: Joi.string().uri().allow(''),
   categories: Joi.array().items(objectId).max(50),
@@ -115,6 +118,9 @@ const restaurantUpdateBody = Joi.object({
   email: Joi.string().email().allow(''),
   website: Joi.string().uri().allow(''),
   imageLogo: Joi.string().uri().allow(''),
+  thumbnailImage: Joi.string().uri().allow(''),
+  bannerImage: Joi.string().uri().allow(''),
+  featuredImage: Joi.string().uri().allow(''),
   gallery: Joi.array().items(Joi.string().uri()).max(10),
   videoUrl: Joi.string().uri().allow(''),
   categories: Joi.array().items(objectId).max(50),
@@ -261,7 +267,7 @@ export const restaurantValidators = {
     isTrending: Joi.boolean(),
     isOpenNow: Joi.boolean(),
     q: Joi.string().allow(''),
-    sortBy: Joi.string().valid('rating', 'name'),
+    sortBy: Joi.string().valid('rating', 'name', 'newest', 'oldest', 'price_asc', 'price_desc'),
     ...pagination
   }),
   allQuery: Joi.object({

@@ -7,6 +7,7 @@ import { menuValidators } from '../validators/index.js';
 import {
   createMenu,
   addMenuItems,
+  getMenusByRestaurant,
   getMenuByRestaurant,
   updateMenuItem,
   deleteMenuItem,
@@ -37,6 +38,15 @@ router.post(
 // =================================
 // GET endpoints
 // =================================
+// protected - get all menus including draft (for admin/dashboard)
+router.get(
+  '/restaurant/:restaurantId/all',
+  verifyToken,
+  can('readById', 'menu'),
+  validate(menuValidators.restaurantParam, 'params'),
+  getMenusByRestaurant
+);
+
 // public
 router.get(
   '/restaurant/:restaurantId',

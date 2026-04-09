@@ -62,6 +62,16 @@ export default function Header() {
               Home
             </li>
           </Link>
+          <Link to="/restaurants">
+            <li className="hidden sm:block !text-zinc hover:!text-green-600 active:text-green-500 cursor-pointer">
+              Restaurants
+            </li>
+          </Link>
+          <Link to="/about">
+            <li className="hidden sm:block  !text-zinc hover:!text-green-600 active:text-green-500 cursor-pointer">
+              About
+            </li>
+          </Link>
           <Link to="/about">
             <li className="hidden sm:block  !text-zinc hover:!text-green-600 active:text-green-500 cursor-pointer">
               About

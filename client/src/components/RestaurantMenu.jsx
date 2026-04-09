@@ -1,41 +1,39 @@
 import { useState } from 'react';
-import { Card, Badge } from 'flowbite-react';
+import { Badge } from 'flowbite-react';
 import { HiChevronDown, HiChevronUp } from 'react-icons/hi';
 
-export default function RestaurantMenu({ menu }) {
-  const [expandedCategories, setExpandedCategories] = useState([0]);
-  const [activeCategory, setActiveCategory] = useState(null);
+const ALLERGY_LABELS = {
+  gluten: 'Gluten',
+  egg: 'Egg',
+  fish: 'Fish',
+  crustaceans: 'Crustaceans',
+  molluscs: 'Molluscs',
+  milk: 'Milk',
+  peanut: 'Peanut',
+  tree_nuts: 'Tree Nuts',
+  sesame: 'Sesame',
+  soya: 'Soya',
+  celery: 'Celery',
+  mustard: 'Mustard',
+  sulphites: 'Sulphites',
+  lupin: 'Lupin'
+};
 
-  const scrollToCategory = (categoryName) => {
-    setActiveCategory(categoryName);
-    const element = document.getElementById(`category-${categoryName}`);
-    if (element) {
-      const headerOffset = 100;
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition =
-        elementPosition + window.pageYOffset - headerOffset;
-      window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
-    }
-  };
-
-  const getUniqueCategories = () => {
-    if (!menu || menu.length === 0) return [];
-    return menu
-      .map((cat) => cat.category || cat.name || 'Unknown')
-      .filter(Boolean);
-  };
-
-  const categories = getUniqueCategories();
-
-  if (!menu || menu.length === 0) {
-    return (
-      <Card className="mt-6">
-        <div className="text-center py-8 text-gray-500">
-          <p>No menu available for this restaurant.</p>
-        </div>
-      </Card>
-    );
+const getNutritionClass = (level) => {
+  switch (level) {
+    case 'green':
+      return 'bg-green-100 text-green-800';
+    case 'amber':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'red':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
   }
+};
+
+export default function RestaurantMenu({ menus = [] }) {
+  const [expandedCategories, setExpandedCategories] = useState([0]);
 
   const toggleCategory = (index) => {
     if (expandedCategories.includes(index)) {
@@ -45,189 +43,160 @@ export default function RestaurantMenu({ menu }) {
     }
   };
 
-  const getCategoryName = (category) => {
-    return category.category || category.name || 'Unknown';
-  };
+  if (!menus || menus.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <p>No menu items available.</p>
+      </div>
+    );
+  }
 
   return (
-    <Card className="mt-6">
-      <h2 className="text-2xl font-bold mb-4">Full Menu</h2>
+    <div className="space-y-4">
+      {menus.map((menu, index) => {
+        const categoryName = menu.category || 'Menu';
+        const categoryId = `menu-category-${(menu.categorySlug || categoryName).replace(/\s+/g, '-')}`;
 
-      {categories.length > 0 && (
-        <div className="sticky top-0 bg-white z-10 py-3 -mx-4 px-4 -mt-4 mb-4 border-b">
-          <div className="flex flex-wrap gap-2">
-            {menu.map((cat, idx) => {
-              const categoryName = getCategoryName(cat);
-              const itemCount = cat.items?.length || 0;
-              return (
-                <button
-                  key={idx}
-                  onClick={() => scrollToCategory(categoryName)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 
-                    ${
-                      activeCategory === categoryName
-                        ? 'bg-[#8fa31e] text-white shadow-md'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                >
-                  {categoryName} ({itemCount})
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      <div className="space-y-6">
-        {menu.map((category, index) => {
-          const categoryName = getCategoryName(category);
-          return (
-            <div
-              key={index}
-              id={`category-${categoryName}`}
-              className="border rounded-lg overflow-hidden"
+        return (
+          <div
+            key={index}
+            id={categoryId}
+            className="border border-gray-100 rounded-xl overflow-hidden bg-white"
+          >
+            <button
+              className="w-full flex items-center justify-between p-4 bg-[#faf9f6] hover:bg-[#f5faeb] transition-colors"
+              onClick={() => toggleCategory(index)}
             >
-              <button
-                className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
-                onClick={() => toggleCategory(index)}
-              >
-                <span className="font-semibold text-lg">{categoryName}</span>
-                <span className="text-gray-500 text-sm">
-                  {category.items?.length || 0} items
-                </span>
-                {expandedCategories.includes(index) ? (
-                  <HiChevronUp className="w-5 h-5" />
-                ) : (
-                  <HiChevronDown className="w-5 h-5" />
-                )}
-              </button>
+              <div className="flex items-center gap-3">
+                <span className="font-semibold text-lg text-[#23411f]">{categoryName}</span>
+                <Badge className="!bg-[#e7f0d3] !text-[#23411f]">
+                  {menu.items?.length || 0} items
+                </Badge>
+              </div>
+              {expandedCategories.includes(index) ? (
+                <HiChevronUp className="w-5 h-5 text-[#8fa31e]" />
+              ) : (
+                <HiChevronDown className="w-5 h-5 text-gray-400" />
+              )}
+            </button>
 
-              {expandedCategories.includes(index) && (
-                <div className="divide-y">
-                  {(category.items || []).map((item, itemIndex) => (
-                    <div key={itemIndex} className="p-4 hover:bg-gray-50">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-medium text-gray-900">
-                              {item.name}
-                            </h4>
-                            {item.isMeal && (
-                              <Badge color="info" size="xs">
-                                Meal
-                              </Badge>
-                            )}
-                            {item.dietary?.vegetarian && (
-                              <Badge color="success" size="xs">
-                                V
-                              </Badge>
-                            )}
-                            {item.dietary?.vegan && (
-                              <Badge color="success" size="xs">
-                                VG
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-600 mt-1">
+            {expandedCategories.includes(index) && (
+              <div className="divide-y divide-gray-50">
+                {(menu.items || []).map((item, itemIndex) => (
+                  <div key={itemIndex} className="p-4 hover:bg-[#faf9f6] transition-colors">
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <h4 className="font-medium text-[#23411f]">{item.name}</h4>
+                          {item.isMeal && (
+                            <Badge color="info" size="xs" className="!bg-blue-100 !text-blue-800">
+                              Meal
+                            </Badge>
+                          )}
+                          {item.dietary?.vegan && (
+                            <Badge color="success" size="xs" className="!bg-green-100 !text-green-800">
+                              VG
+                            </Badge>
+                          )}
+                          {item.dietary?.vegetarian && !item.dietary?.vegan && (
+                            <Badge color="success" size="xs" className="!bg-green-100 !text-green-800">
+                              V
+                            </Badge>
+                          )}
+                        </div>
+
+                        {item.description && (
+                          <p className="text-sm text-gray-500 mb-2 line-clamp-2">
                             {item.description}
                           </p>
-                          {item.image && (
-                            <img
-                              src={item.image}
-                              alt={item.name}
-                              className="w-20 h-20 object-cover rounded mt-2"
-                            />
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 ml-4">
-                          <span className="font-semibold text-[#8fa31e]">
-                            £
-                            {typeof item.price === 'number'
-                              ? item.price.toFixed(2)
-                              : item.price}
-                          </span>
-                        </div>
+                        )}
+
+                        {item.ingredients && item.ingredients.length > 0 && (
+                          <div className="mt-2">
+                            {item.ingredients.some((i) => i.allergens?.length > 0) && (
+                              <div className="flex flex-wrap gap-1 mb-2">
+                                {item.ingredients.flatMap((ing, ingIdx) =>
+                                  (ing.allergens || []).map((allergen, aIdx) => (
+                                    <span
+                                      key={`${ingIdx}-${aIdx}`}
+                                      className="text-xs px-2 py-0.5 bg-red-50 text-red-600 rounded border border-red-100"
+                                      title={ALLERGY_LABELS[allergen] || allergen}
+                                    >
+                                      {ALLERGY_LABELS[allergen]?.slice(0, 3) || allergen.slice(0, 3)}
+                                    </span>
+                                  ))
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {item.nutrition && (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {item.nutrition.calories && (
+                              <span
+                                className={`text-xs px-2 py-1 rounded-md ${getNutritionClass(item.nutrition.calories.level)}`}
+                              >
+                                {item.nutrition.calories.value} cal
+                              </span>
+                            )}
+                            {item.nutrition.fat && (
+                              <span
+                                className={`text-xs px-2 py-1 rounded-md ${getNutritionClass(item.nutrition.fat.level)}`}
+                              >
+                                {item.nutrition.fat.value}g fat
+                              </span>
+                            )}
+                            {item.nutrition.sugar && (
+                              <span
+                                className={`text-xs px-2 py-1 rounded-md ${getNutritionClass(item.nutrition.sugar.level)}`}
+                              >
+                                {item.nutrition.sugar.value}g sugar
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {item.upsells && item.upsells.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {item.upsells.map((upsell, uIdx) => (
+                              <span
+                                key={uIdx}
+                                className="text-xs px-3 py-1.5 bg-[#f5faeb] text-[#23411f] rounded-full border border-[#dce6c1]"
+                              >
+                                + {upsell.label} (£{Number(upsell.price || 0).toFixed(2)})
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
-                      {item.ingredients && item.ingredients.length > 0 && (
-                        <div className="mt-2">
-                          <p className="text-xs text-gray-500 mb-1">
-                            <span className="font-medium">Ingredients:</span>{' '}
-                            {item.ingredients
-                              .map((i) => i.name || i)
-                              .join(', ')}
-                          </p>
-                          {item.ingredients.some(
-                            (i) => i.allergens?.length > 0
-                          ) && (
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {item.ingredients.flatMap((i, idx) =>
-                                (i.allergens || []).map((allergen, aIdx) => (
-                                  <Badge
-                                    key={`${idx}-${aIdx}`}
-                                    color="warning"
-                                    size="xs"
-                                  >
-                                    {allergen}
-                                  </Badge>
-                                ))
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {item.nutrition && (
-                        <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                          {item.nutrition.calories && (
-                            <span
-                              className={`px-2 py-1 rounded ${
-                                item.nutrition.calories.level === 'green'
-                                  ? 'bg-green-100 text-green-800'
-                                  : item.nutrition.calories.level === 'amber'
-                                    ? 'bg-yellow-100 text-yellow-800'
-                                    : 'bg-red-100 text-red-800'
-                              }`}
-                            >
-                              Cal: {item.nutrition.calories.value}
-                            </span>
-                          )}
-                          {item.nutrition.fat && (
-                            <span
-                              className={`px-2 py-1 rounded ${
-                                item.nutrition.fat.level === 'green'
-                                  ? 'bg-green-100 text-green-800'
-                                  : item.nutrition.fat.level === 'amber'
-                                    ? 'bg-yellow-100 text-yellow-800'
-                                    : 'bg-red-100 text-red-800'
-                              }`}
-                            >
-                              Fat: {item.nutrition.fat.value}g
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {item.upsells && item.upsells.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {item.upsells.map((upsell, uIdx) => (
-                            <span
-                              key={uIdx}
-                              className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded"
-                            >
-                              + {upsell.label} (£{upsell.price?.toFixed(2)})
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                      <div className="flex flex-col items-end gap-2 min-w-[80px]">
+                        {item.image && (
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-20 h-20 object-cover rounded-lg shadow-sm"
+                          />
+                        )}
+                        <span className="font-bold text-[#8fa31e] text-lg">
+                          £{Number(item.price || 0).toFixed(2)}
+                        </span>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </Card>
+
+                    {!item.isAvailable && (
+                      <div className="mt-2">
+                        <Badge color="failure" size="sm">Currently Unavailable</Badge>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 }

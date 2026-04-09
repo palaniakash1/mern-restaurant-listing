@@ -109,7 +109,7 @@ export default function DashMenu() {
       return;
     }
 
-    const data = await apiGet(`/api/menus/restaurant/${restaurantId}?page=1&limit=100`);
+    const data = await apiGet(`/api/menus/restaurant/${restaurantId}/all?page=1&limit=100`);
     setMenus(data.data || []);
   }, []);
 
