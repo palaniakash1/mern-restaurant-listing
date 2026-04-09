@@ -109,14 +109,55 @@ export const createMenu = async (req, res, next) => {
         }
       }
 
-      const exists = await Menu.findOne({ restaurantId, categoryId })
+      // Check for existing active menu
+      const activeMenu = await Menu.findOne({
+        restaurantId,
+        categoryId,
+        isActive: true
+      })
         .session(session)
         .select('-__v');
-      if (exists) {
+      if (activeMenu) {
         throw errorHandler(409, 'Menu already exists for this category');
       }
 
-      const menu = new Menu({ restaurantId, categoryId, items: [] });
+      // Check for soft-deleted menu - restore it instead of creating new
+      const deletedMenu = await Menu.findOne({
+        restaurantId,
+        categoryId,
+        isActive: false
+      })
+        .session(session)
+        .select('-__v')
+        .setOptions({ includeInactive: true });
+
+      if (deletedMenu) {
+        deletedMenu.isActive = true;
+        deletedMenu.deletedAt = null;
+        deletedMenu.deletedBy = null;
+        deletedMenu.status = 'draft';
+        await deletedMenu.save({ session });
+
+        await logAudit({
+          actorId: req.user.id,
+          actorRole: req.user.role,
+          entityType: 'menu',
+          entityId: deletedMenu._id,
+          action: 'RESTORE',
+          before: { isActive: false },
+          after: { isActive: true },
+          ipAddress: getClientIp(req)
+        });
+
+        return deletedMenu;
+      }
+
+      const menu = new Menu({
+        restaurantId,
+        categoryId,
+        items: [],
+        status: 'draft'
+      });
       await menu.save({ session });
 
       await logAudit({
@@ -258,7 +299,19 @@ export const updateMenuItem = async (req, res, next) => {
         throw errorHandler(400, 'Item is deleted');
       }
 
-      const allowed = ['name', 'description', 'price', 'image'];
+      const allowed = [
+        'name',
+        'description',
+        'price',
+        'image',
+        'dietary',
+        'ingredients',
+        'nutrition',
+        'upsells',
+        'isMeal',
+        'isAvailable',
+        'order'
+      ];
 
       const before = { ...item.toObject() };
       const safeUpdates = Object.fromEntries(
@@ -906,6 +959,52 @@ export const hardDeleteMenu = async (req, res, next) => {
 };
 
 // ==============================================
+// GET ALL MENUS FOR RESTAURANT (including draft) - protected
+// ==============================================
+
+export const getMenusByRestaurant = async (req, res, next) => {
+  try {
+    const { restaurantId } = req.params;
+    const { page = 1, limit = 20 } = req.query;
+
+    if (!isValidObjectId(restaurantId)) {
+      throw errorHandler(400, 'Invalid restaurantId format');
+    }
+
+    if (!canManageMenu(req.user, restaurantId)) {
+      throw errorHandler(403, 'Not allowed');
+    }
+
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+
+    const filter = {
+      restaurantId,
+      isActive: true
+    };
+
+    const total = await Menu.countDocuments(filter);
+    const pagination = paginate({ page: pageNum, limit: limitNum, total });
+
+    const menus = await Menu.find(filter)
+      .populate('categoryId', 'name slug status isActive')
+      .select('-__v')
+      .skip(pagination.skip)
+      .limit(limitNum)
+      .sort({ updatedAt: -1 })
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      ...pagination,
+      data: menus
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ==============================================
 // PUBLIC MENU (published + active only) - with caching
 // ==============================================
 
@@ -949,22 +1048,38 @@ export const getMenuByRestaurant = async (req, res, next) => {
           .populate('categoryId', 'name slug item')
           .select('-__v')
           .skip(pagination.skip)
-          .limit(pagination.limit)
+          .limit(limitNum)
           .sort({ updatedAt: sortDirection })
           .lean();
 
-        menus.forEach((menu) => {
-          menu.items = menu.items
+        const formattedMenus = menus.map((menu) => ({
+          category: menu.categoryId?.name || 'Menu',
+          categorySlug: menu.categoryId?.slug,
+          items: menu.items
             .filter((i) => i.isActive && i.isAvailable)
-            .sort((a, b) => a.order - b.order);
-        });
+            .sort((a, b) => a.order - b.order)
+            .map((item) => ({
+              _id: item._id,
+              name: item.name,
+              description: item.description,
+              image: item.image,
+              price: item.price,
+              dietary: item.dietary,
+              ingredients: item.ingredients,
+              nutrition: item.nutrition,
+              upsells: item.upsells,
+              isMeal: item.isMeal,
+              isAvailable: item.isAvailable,
+              order: item.order
+            }))
+        }));
 
         return {
           success: true,
           message: 'viewing menu',
           ...pagination,
           total,
-          data: menus
+          data: formattedMenus
         };
       },
       300 // Cache for 5 minutes
