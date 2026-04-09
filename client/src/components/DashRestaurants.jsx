@@ -35,6 +35,9 @@ const buildRestaurantForm = () => ({
   email: '',
   website: '',
   imageLogo: '',
+  thumbnailImage: '',
+  bannerImage: '',
+  featuredImage: '',
   adminId: '',
   address: {
     addressLine1: '',
@@ -419,6 +422,9 @@ export default function DashRestaurants() {
       email: restaurant.email || '',
       website: restaurant.website || '',
       imageLogo: restaurant.imageLogo || '',
+      thumbnailImage: restaurant.thumbnailImage || '',
+      bannerImage: restaurant.bannerImage || '',
+      featuredImage: restaurant.featuredImage || '',
       adminId: restaurant.adminId || '',
       address: {
         addressLine1: restaurant.address?.addressLine1 || '',
@@ -487,6 +493,9 @@ export default function DashRestaurants() {
       email: formData.email,
       website: formData.website,
       imageLogo: formData.imageLogo,
+      thumbnailImage: formData.thumbnailImage,
+      bannerImage: formData.bannerImage,
+      featuredImage: formData.featuredImage,
       address: formData.address
     };
 
@@ -1025,6 +1034,54 @@ export default function DashRestaurants() {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="restaurantThumbnail">Thumbnail image URL</Label>
+                  <TextInput
+                    id="restaurantThumbnail"
+                    type="url"
+                    value={formData.thumbnailImage}
+                    onChange={(event) =>
+                      setFormData((current) => ({
+                        ...current,
+                        thumbnailImage: event.target.value
+                      }))
+                    }
+                    placeholder="https://example.com/thumbnail.jpg"
+                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="restaurantBanner">Banner image URL</Label>
+                  <TextInput
+                    id="restaurantBanner"
+                    type="url"
+                    value={formData.bannerImage}
+                    onChange={(event) =>
+                      setFormData((current) => ({
+                        ...current,
+                        bannerImage: event.target.value
+                      }))
+                    }
+                    placeholder="https://example.com/banner.jpg"
+                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
+                  />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="restaurantFeatured">Featured image URL</Label>
+                  <TextInput
+                    id="restaurantFeatured"
+                    type="url"
+                    value={formData.featuredImage}
+                    onChange={(event) =>
+                      setFormData((current) => ({
+                        ...current,
+                        featuredImage: event.target.value
+                      }))
+                    }
+                    placeholder="https://example.com/featured.jpg"
+                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="restaurantContact">Contact number</Label>
                   <TextInput
                     id="restaurantContact"
@@ -1263,18 +1320,34 @@ export default function DashRestaurants() {
                   </p>
                   <div className="mt-3 overflow-hidden rounded-[1.25rem] border border-[#eef2df]">
                     <div className="h-32 bg-[linear-gradient(135deg,#f6fbe9_0%,#fff1f1_100%)]">
-                      {formData.imageLogo && (
+                      {(formData.bannerImage || formData.featuredImage || formData.thumbnailImage || formData.imageLogo) && (
                         <img
-                          src={formData.imageLogo}
+                          src={
+                            formData.bannerImage ||
+                            formData.featuredImage ||
+                            formData.thumbnailImage ||
+                            formData.imageLogo
+                          }
                           alt={formData.name || 'Restaurant'}
                           className="h-full w-full object-cover"
                         />
                       )}
                     </div>
                     <div className="space-y-2 p-4">
-                      <p className="text-lg font-semibold text-[#23411f]">
-                        {formData.name || 'Restaurant name'}
-                      </p>
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 overflow-hidden rounded-full border border-[#dce6c1] bg-[#f5faeb]">
+                          {formData.imageLogo ? (
+                            <img
+                              src={formData.imageLogo}
+                              alt={formData.name || 'Restaurant logo'}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : null}
+                        </div>
+                        <p className="text-lg font-semibold text-[#23411f]">
+                          {formData.name || 'Restaurant name'}
+                        </p>
+                      </div>
                       <p className="text-sm text-gray-600">
                         {formData.tagline || 'Tagline will appear here'}
                       </p>
