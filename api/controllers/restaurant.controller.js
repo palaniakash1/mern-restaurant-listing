@@ -860,11 +860,22 @@ export const getMyRestaurants = async (req, res, next) => {
 
 export const getNearByRestaurants = async (req, res, next) => {
   try {
-    const { lat, lng, radius = 5000 } = req.query;
+    const { lat, lng, radius = 5000, limit = 20, sortBy, categories, isOpenNow } = req.query;
 
     if (lat === undefined || lng === undefined) {
       return next(errorHandler(400, 'lat and lng are required'));
     }
+
+    const matchStage = { ...publicRestaurantFilter };
+
+    if (categories) {
+      const categoryList = categories.split(',');
+      matchStage.categories = { $in: categoryList };
+    }
+
+    let sortStage = { $sort: { distance: 1 } };
+    if (sortBy === 'rating') sortStage = { $sort: { rating: -1 } };
+    if (sortBy === 'name') sortStage = { $sort: { name: 1 } };
 
     const restaurants = await Restaurant.aggregate([
       {
@@ -876,17 +887,21 @@ export const getNearByRestaurants = async (req, res, next) => {
           distanceField: 'distance',
           maxDistance: parseInt(radius),
           spherical: true,
-          query: publicRestaurantFilter
+          query: matchStage
         }
       },
-      { $sort: { distance: 1 } },
-      { $limit: 20 }
+      sortStage,
+      { $limit: Number(limit) }
     ]);
 
-    const enriched = restaurants.map((r) => ({
+    let enriched = restaurants.map((r) => ({
       ...r,
       isOpenNow: isRestaurantOpen(r.openingHours)
     }));
+
+    if (isOpenNow === 'true') {
+      enriched = enriched.filter((r) => r.isOpenNow);
+    }
 
     res.json({
       success: true,
@@ -917,7 +932,7 @@ export const listRestaurants = async (req, res, next) => {
     } = req.query;
 
     const filter = { ...publicRestaurantFilter };
-    let projection = {};
+    const projection = {};
     let sort = { createdAt: -1 };
 
     if (city) filter['address.city'] = city;
@@ -933,9 +948,14 @@ export const listRestaurants = async (req, res, next) => {
     }
 
     if (q) {
-      filter.$text = { $search: q };
-      projection = { score: { $meta: 'textScore' } };
-      sort = { score: { $meta: 'textScore' } };
+      const escapedQ = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(escapedQ, 'i');
+      filter.$or = [
+        { name: regex },
+        { 'address.city': regex },
+        { 'address.areaLocality': regex },
+        { tagline: regex }
+      ];
     } else {
       if (sortBy === 'rating') sort = { rating: -1 };
       if (sortBy === 'name') sort = { name: 1 };
