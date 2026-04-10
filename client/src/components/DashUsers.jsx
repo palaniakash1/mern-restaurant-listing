@@ -78,7 +78,7 @@ function UploadPreview({ value, progress, uploading, onSelect }) {
           </p>
         </div>
         <Button
-          className="!bg-[#23411f] hover:!bg-[#23410f]"
+          className="!bg-[#8fa31e] hover:!bg-[#78871c] !text-white"
           size="xs"
           onClick={() => inputRef.current?.click()}
         >
@@ -98,15 +98,28 @@ function UploadPreview({ value, progress, uploading, onSelect }) {
       />
       <div className="relative aspect-square w-full max-w-[260px] overflow-hidden rounded-[1.5rem] border !border-[#dce6c1] bg-[#f7faef]">
         {value ? (
-          <img
-            src={value}
-            alt="Preview"
-            className="h-full w-full object-cover"
-          />
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="relative h-full w-full cursor-pointer group"
+          >
+            <img
+              src={value}
+              alt="Preview"
+              className="h-full w-full object-cover transition group-hover:opacity-90"
+            />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition">
+              <span className="text-sm font-medium text-white">Change Image</span>
+            </div>
+          </button>
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-gray-400">
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="flex h-full w-full items-center justify-center text-sm text-gray-400 hover:text-gray-500"
+          >
             Image preview will appear here
-          </div>
+          </button>
         )}
         {uploading && (
           <ImageFrameLoader
@@ -951,6 +964,7 @@ export default function DashUsers() {
       <Modal
         show={modalMode === 'create' || modalMode === 'edit'}
         onClose={resetModalState}
+        dismissible={true}
         size="7xl"
       >
         <Modal.Header>
@@ -1123,12 +1137,15 @@ export default function DashUsers() {
             )}
 
             <div className="flex justify-end gap-3">
-              <Button color="gray" onClick={resetModalState}>
+              <Button
+                className="!bg-[#B42627] hover:!bg-[#910712]"
+                onClick={resetModalState}
+              >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                className="bg-[#8fa31e] hover:bg-[#78871c]"
+                className="!bg-[#8fa31e] hover:!bg-[#78871c]"
                 isProcessing={submitting}
                 disabled={imageUploading}
               >
