@@ -1,5 +1,12 @@
 import { apiGet } from '../utils/api';
 
+export const listCategories = async (options = {}) => {
+  const { page = 1, limit = 50 } = options;
+  const params = new URLSearchParams({ page, limit }).toString();
+  const response = await apiGet(`/api/categories?${params}`);
+  return response;
+};
+
 export const getRestaurantBySlug = async (slug) => {
   const response = await apiGet(`/api/restaurants/slug/${slug}`);
   return response.data;
@@ -37,13 +44,17 @@ export const getTrendingRestaurants = async (options = {}) => {
 };
 
 export const getNearbyRestaurants = async (options = {}) => {
-  const { longitude, latitude, radius = 5000, limit = 20 } = options;
+  const { lng, lat, radius = 5000, limit = 20, sortBy, categories, isOpenNow, exclude } = options;
   const params = new URLSearchParams({
-    longitude,
-    latitude,
+    lng,
+    lat,
     radius,
     limit
-  }).toString();
+  });
+  if (sortBy) params.set('sortBy', sortBy);
+  if (categories) params.set('categories', categories);
+  if (isOpenNow) params.set('isOpenNow', 'true');
+  if (exclude) params.set('exclude', exclude);
   const response = await apiGet(`/api/restaurants/nearby?${params}`);
   return response;
 };
