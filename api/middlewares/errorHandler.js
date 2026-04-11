@@ -171,14 +171,21 @@ export const createErrorHandler = (options = {}) => {
     const statusCode = err.statusCode || 500;
     const message = sanitizeErrorMessage(err);
 
-    res.status(statusCode).json({
+    const response = {
       success: false,
       requestId,
       statusCode,
       error: errorType,
       message,
       ...(!isProduction && { stack: err.stack })
-    });
+    };
+
+    // Include extra data if present (e.g., linked menus)
+    if (err.extra) {
+      Object.assign(response, err.extra);
+    }
+
+    res.status(statusCode).json(response);
   };
 };
 
