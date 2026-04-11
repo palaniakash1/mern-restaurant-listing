@@ -5,6 +5,8 @@ import { errorHandler } from '../utils/error.js';
 const allowedRestaurantFolderPrefix = config.cloudinary.uploadFolder;
 const allowedProfileFolderPrefix = 'users/profiles';
 const allowedReviewsFolderPrefix = 'reviews';
+const allowedCategoryFolderPrefix = 'categories';
+const allowedMenuItemFolderPrefix = 'menus/items';
 
 const buildSignature = (paramsToSign) =>
   crypto
@@ -31,8 +33,10 @@ export const createUploadSignature = async (req, res, next) => {
     const isRestaurantFolder = folder.startsWith(allowedRestaurantFolderPrefix);
     const isProfileFolder = folder.startsWith(allowedProfileFolderPrefix);
     const isReviewsFolder = folder.startsWith(allowedReviewsFolderPrefix);
+    const isCategoryFolder = folder.startsWith(allowedCategoryFolderPrefix);
+    const isMenuItemFolder = folder.startsWith(allowedMenuItemFolderPrefix);
 
-    if (!isRestaurantFolder && !isProfileFolder && !isReviewsFolder) {
+    if (!isRestaurantFolder && !isProfileFolder && !isReviewsFolder && !isCategoryFolder && !isMenuItemFolder) {
       throw errorHandler(400, 'Invalid upload folder');
     }
 
@@ -42,6 +46,18 @@ export const createUploadSignature = async (req, res, next) => {
 
     if (isReviewsFolder && !['user', 'admin', 'superAdmin', 'storeManager'].includes(req.user?.role)) {
       throw errorHandler(403, 'You are not allowed to upload review media');
+    }
+
+    if (isCategoryFolder && !['admin', 'superAdmin', 'storeManager'].includes(req.user?.role)) {
+      throw errorHandler(403, 'You are not allowed to upload category media');
+    }
+
+    if (isMenuItemFolder && !['admin', 'superAdmin', 'storeManager'].includes(req.user?.role)) {
+      throw errorHandler(403, 'You are not allowed to upload menu item media');
+    }
+
+    if (isProfileFolder && !['user', 'admin', 'superAdmin', 'storeManager'].includes(req.user?.role)) {
+      throw errorHandler(403, 'You are not allowed to upload profile media');
     }
 
     const timestamp = Math.floor(Date.now() / 1000);
