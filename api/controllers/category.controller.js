@@ -131,7 +131,7 @@ export const createCategory = async (req, res, next) => {
       return next(errorHandler(401, 'Unauthorized'));
     }
 
-    const { name, isGeneric, restaurantId, order = 0 } = req.body;
+    const { name, isGeneric, restaurantId, order = 0, image } = req.body;
     const normalizedName = String(name || '').trim();
 
     if (!normalizedName) {
@@ -185,6 +185,7 @@ export const createCategory = async (req, res, next) => {
             name: normalizedName,
             slug,
             isGeneric,
+            image,
             restaurantId: isGeneric ? null : restaurantId,
             order
           }
@@ -252,7 +253,7 @@ export const createCategory = async (req, res, next) => {
 export const updateCategory = async (req, res, next) => {
   try {
     const result = await withTransaction(async (session) => {
-      const { name, order, isActive } = req.body;
+      const { name, order, isActive, image } = req.body;
       const normalizedName =
         name === undefined ? undefined : String(name).trim();
 
@@ -311,6 +312,7 @@ export const updateCategory = async (req, res, next) => {
 
       if (order !== undefined) category.order = order;
       if (isActive !== undefined) category.isActive = isActive;
+      if (image !== undefined) category.image = image;
 
       await category.save({ session });
 
@@ -1582,14 +1584,25 @@ export const hardDeleteCategory = async (req, res, next) => {
       const category = await Category.findById(req.params.id).session(session);
       if (!category) throw errorHandler(404, 'category not found');
 
-      //Integrity check
-      const activeMenu = await Menu.findOne({
+      // Get menus linked to this category that have items
+      const linkedMenus = await Menu.find({
         categoryId: category._id,
-        isActive: true
-      }).session(session);
+        items: { $exists: true, $ne: [] }
+      })
+        .populate('categoryId', 'name')
+        .select('status isActive')
+        .session(session);
 
-      if (activeMenu) {
-        throw errorHandler(400, 'Cannot delete category linked to active menu');
+      if (linkedMenus && linkedMenus.length > 0) {
+        // Return the linked menus so frontend can show them
+        throw errorHandler(400, 'Cannot delete category with linked menus', {
+          linkedMenus: linkedMenus.map(m => ({
+            id: m._id,
+            name: m.categoryId?.name || 'Menu',
+            status: m.status,
+            isActive: m.isActive
+          }))
+        });
       }
 
       if (req.user.role !== 'superAdmin') {
