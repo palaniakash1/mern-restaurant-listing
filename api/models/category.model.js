@@ -54,6 +54,10 @@ const categorySchema = new mongoose.Schema(
       type: Boolean,
       default: true,
       index: true
+    },
+
+    image: {
+      type: String
     }
   },
   { timestamps: true }
