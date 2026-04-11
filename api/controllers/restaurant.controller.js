@@ -860,7 +860,7 @@ export const getMyRestaurants = async (req, res, next) => {
 
 export const getNearByRestaurants = async (req, res, next) => {
   try {
-    const { lat, lng, radius = 5000, limit = 20, sortBy, categories, isOpenNow } = req.query;
+    const { lat, lng, radius = 5000, limit = 20, sortBy, categories, isOpenNow, exclude } = req.query;
 
     if (lat === undefined || lng === undefined) {
       return next(errorHandler(400, 'lat and lng are required'));
@@ -871,6 +871,10 @@ export const getNearByRestaurants = async (req, res, next) => {
     if (categories) {
       const categoryList = categories.split(',');
       matchStage.categories = { $in: categoryList };
+    }
+
+    if (exclude) {
+      matchStage._id = { $ne: exclude };
     }
 
     let sortStage = { $sort: { distance: 1 } };
