@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import OAuth from "../components/OAuth";
-import wavepattern from "../assets/wavepattern.png";
-import logo from "../assets/eatwisely.ico";
-import { Alert, Modal } from "flowbite-react";
-import { useAuth } from "../context/AuthContext";
-import { forgotPassword } from "../services/authService";
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import OAuth from '../components/OAuth';
+import wavepattern from '../assets/wavepattern.png';
+import logo from '../assets/eatwisely.ico';
+import { Alert, Modal } from 'flowbite-react';
+import { useAuth } from '../context/AuthContext';
+import { forgotPassword } from '../services/authService';
 
 const EyeIcon = (props) => (
   <svg
@@ -107,11 +107,11 @@ export default function SignIn() {
 
   const error = authError;
 
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   const [showForgotModal, setShowForgotModal] = useState(false);
-  const [resetEmail, setResetEmail] = useState("");
+  const [resetEmail, setResetEmail] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
   const [resetError, setResetError] = useState(null);
@@ -125,9 +125,9 @@ export default function SignIn() {
     }
     setFormData({
       ...formData,
-      [e.target.id]: e.target.value,
+      [e.target.id]: e.target.value
     });
-    if (e.target.id === "password") {
+    if (e.target.id === 'password') {
       setPassword(e.target.value);
     }
   };
@@ -136,14 +136,14 @@ export default function SignIn() {
     e.preventDefault();
 
     if (!formData.email || !formData.password) {
-      setLocalError("Please fill in all fields");
+      setLocalError('Please fill in all fields');
       return;
     }
 
     const result = await login(formData.email, formData.password);
 
     if (result.success) {
-      navigate("/");
+      navigate('/');
       return;
     }
 
@@ -154,13 +154,13 @@ export default function SignIn() {
     e.preventDefault();
 
     if (!resetEmail) {
-      setResetError("Please enter your email address");
+      setResetError('Please enter your email address');
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(resetEmail)) {
-      setResetError("Please enter a valid email address");
+      setResetError('Please enter a valid email address');
       return;
     }
 
@@ -171,7 +171,9 @@ export default function SignIn() {
       await forgotPassword(resetEmail);
       setResetSuccess(true);
     } catch (err) {
-      setResetError(err.message || "Failed to send reset email. Please try again.");
+      setResetError(
+        err.message || 'Failed to send reset email. Please try again.'
+      );
     } finally {
       setResetLoading(false);
     }
@@ -181,10 +183,10 @@ export default function SignIn() {
     setShowPassword((prev) => !prev);
   };
 
-  const inputType = showPassword ? "text" : "password";
+  const inputType = showPassword ? 'text' : 'password';
 
   const openForgotModal = () => {
-    setResetEmail(formData.email || "");
+    setResetEmail(formData.email || '');
     setResetSuccess(false);
     setResetError(null);
     setShowForgotModal(true);
@@ -192,7 +194,7 @@ export default function SignIn() {
 
   const closeForgotModal = () => {
     setShowForgotModal(false);
-    setResetEmail("");
+    setResetEmail('');
     setResetSuccess(false);
     setResetError(null);
   };
@@ -287,7 +289,7 @@ export default function SignIn() {
                     onClick={togglePasswordVisibility}
                     className="absolute inset-y-0 right-0 pr-4 flex items-center  !text-[#8fa31e]"
                     aria-label={
-                      showPassword ? "Hide password" : "Show password"
+                      showPassword ? 'Hide password' : 'Show password'
                     }
                   >
                     {showPassword ? (
@@ -317,7 +319,7 @@ export default function SignIn() {
                   }}
                   className="m-4"
                 >
-                  <span className="font-medium">Oops!</span>{" "}
+                  <span className="font-medium">Oops!</span>{' '}
                   {localError || error}
                 </Alert>
               )}
@@ -325,14 +327,14 @@ export default function SignIn() {
                 disabled={isLoading}
                 className=" p-2 rounded-[5px] !bg-[#8fa31e] hover:!bg-[#7a8c1a] text-white !rounded-[4px] border-none"
               >
-                {isLoading ? "Logging in..." : "Login"}
+                {isLoading ? 'Logging in...' : 'Login'}
               </button>
               <OAuth />
             </form>
 
             <div className="text-center pt-4">
               <p className="text-gray-600 text-sm">
-                Create new account?{" "}
+                Create new account?{' '}
                 <Link
                   to="/sign-up"
                   className="text-red-600 font-bold hover:underline"
@@ -355,6 +357,7 @@ export default function SignIn() {
         size="md"
         popup
         className="forgot-password-modal"
+        dismissible={true}
       >
         <Modal.Header className="border-b-0 pb-0" />
         <Modal.Body className="pt-0">
@@ -379,7 +382,8 @@ export default function SignIn() {
                 Check Your Email
               </h4>
               <p className="text-gray-500 text-sm mb-4">
-                If an account exists for <span className="font-medium text-gray-700">{resetEmail}</span>, 
+                If an account exists for{' '}
+                <span className="font-medium text-gray-700">{resetEmail}</span>,
                 we have sent password reset instructions.
               </p>
               <p className="text-xs text-gray-400 mb-4">
@@ -434,7 +438,7 @@ export default function SignIn() {
                   disabled={resetLoading}
                   className="flex-1 p-3 rounded-[5px] !bg-[#8fa31e] hover:!bg-[#7a8c1a] text-white border-none cursor-pointer font-medium disabled:opacity-50"
                 >
-                  {resetLoading ? "Sending..." : "Send Instructions"}
+                  {resetLoading ? 'Sending...' : 'Send Instructions'}
                 </button>
               </div>
             </form>
