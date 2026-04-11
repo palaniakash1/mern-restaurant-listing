@@ -266,7 +266,7 @@ export const restaurantValidators = {
     isFeatured: Joi.boolean(),
     isTrending: Joi.boolean(),
     isOpenNow: Joi.boolean(),
-    q: Joi.string().allow(''),
+    q: Joi.string().allow('').min(1),
     sortBy: Joi.string().valid('rating', 'name', 'newest', 'oldest', 'price_asc', 'price_desc'),
     ...pagination
   }),
@@ -278,7 +278,12 @@ export const restaurantValidators = {
   nearbyQuery: Joi.object({
     lat: Joi.number().required(),
     lng: Joi.number().required(),
-    radius: Joi.number().positive()
+    radius: Joi.number().positive().max(50000),
+    limit: Joi.number().integer().min(1).max(50),
+    sortBy: Joi.string().valid('distance', 'rating', 'name'),
+    categories: Joi.string(),
+    isOpenNow: Joi.boolean(),
+    exclude: Joi.string()
   }),
   featuredTrendingQuery: Joi.object({
     ...pagination
