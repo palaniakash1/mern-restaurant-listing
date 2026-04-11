@@ -51,7 +51,9 @@ const runRequest = async (url, options = {}) => {
   const payload = await parseJsonSafely(response);
 
   if (!response.ok) {
-    throw createHttpError(payload?.message || 'Request failed', response.status);
+    const error = createHttpError(payload?.message || 'Request failed', response.status);
+    error.data = payload; // Include full response for extra data like linkedMenus
+    throw error;
   }
 
   return payload;
