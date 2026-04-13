@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Button, Card, Spinner } from 'flowbite-react';
+import { Alert, Button, Card } from 'flowbite-react';
 import {
   Area,
   AreaChart,
@@ -28,6 +28,7 @@ import {
 } from 'react-icons/hi2';
 import { FaUtensils } from 'react-icons/fa';
 import dashboardApi from '../../services/dashboardApi';
+import { SkeletonCard } from '../SkeletonCard';
 
 const ROLE_COLORS = ['#576500', '#8fa31e', '#476640', '#b62828', '#c7c8b1'];
 const ACTION_COLORS = {
@@ -325,11 +326,34 @@ export default function DashboardOverview({ role = 'superAdmin' }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-[28rem] flex-col items-center justify-center gap-4 rounded-[2rem] border border-[#dce6c1] bg-white shadow-sm">
-        <Spinner size="xl" color="success" />
-        <p className="text-sm font-medium text-[#6d7564]">
-          Loading dashboard overview...
-        </p>
+      <div className="space-y-5">
+        <Card className="border !border-[#dce6c1] bg-white shadow-sm">
+          <div className="grid gap-5 xl:grid-cols-[1.05fr,0.95fr]">
+            <div className="space-y-3">
+              <div className="h-3 w-24 rounded bg-[#edf4dc] animate-pulse" />
+              <div className="h-8 w-3/4 rounded bg-[#edf4dc] animate-pulse" />
+              <div className="space-y-2">
+                <div className="h-4 w-full rounded bg-[#edf4dc] animate-pulse" />
+                <div className="h-4 w-5/6 rounded bg-[#edf4dc] animate-pulse" />
+              </div>
+            </div>
+            <div className="rounded-[1.75rem] bg-[linear-gradient(135deg,#b62828_0%,#8fa31e_100%)] p-5 text-white shadow-inner">
+              <div className="h-3 w-24 rounded bg-white/20 animate-pulse" />
+              <div className="mt-3 h-8 w-40 rounded bg-white/20 animate-pulse" />
+            </div>
+          </div>
+        </Card>
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <SkeletonCard variant="metric" />
+          <SkeletonCard variant="metric" />
+          <SkeletonCard variant="metric" />
+          <SkeletonCard variant="metric" />
+        </div>
+
+        <Card className="border !border-[#dce6c1] bg-white shadow-sm">
+          <div className="h-64 rounded-xl bg-[#edf4dc] animate-pulse" />
+        </Card>
       </div>
     );
   }
@@ -453,16 +477,16 @@ export default function DashboardOverview({ role = 'superAdmin' }) {
                 Audit Log Activity
               </h3>
             </div>
-            <div className="inline-flex rounded-full bg-[#eff6e4] p-1">
+            <div className="inline-flex rounded-full bg-[#eff6e4] !p-1">
               {['weekly', 'monthly'].map((value) => (
                 <button
                   key={value}
                   type="button"
                   onClick={() => setTimeframe(value)}
-                  className={`rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] transition ${
+                  className={`rounded-full !px-4 !py-1.5 text-xs font-semibold uppercase tracking-[0.18em] transition ${
                     timeframe === value
-                      ? 'bg-[#576500] text-white'
-                      : 'text-[#6d7564]'
+                      ? '!bg-[#23411f] !text-white shadow-md'
+                      : '!text-[#6d7564] hover:!text-[#23411f]'
                   }`}
                 >
                   {value}
