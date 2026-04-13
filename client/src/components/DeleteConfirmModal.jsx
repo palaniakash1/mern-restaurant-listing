@@ -13,7 +13,7 @@ export default function DeleteConfirmModal({
   isLoading = false
 }) {
   return (
-    <Modal show={show} onClose={onClose}>
+    <Modal show={show} onClose={onClose} dismissible={true}>
       <Modal.Header>{title}</Modal.Header>
       <Modal.Body>
         <div className="flex flex-col items-center gap-4 text-center">

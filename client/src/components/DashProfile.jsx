@@ -294,7 +294,7 @@ export default function DashProfile() {
                   Personal Settings
                 </h2>
                 <p className="max-w-xl text-sm leading-6 text-white/80">
-                  Manage your identity, contact details, password, and account 
+                  Manage your identity, contact details, password, and account
                   presentation from one central workspace.
                 </p>
               </div>
@@ -315,8 +315,8 @@ export default function DashProfile() {
                     </div>
                   </div>
                   <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/20">
-                    <div 
-                      className="h-full rounded-full bg-[#d7ee64]" 
+                    <div
+                      className="h-full rounded-full bg-[#d7ee64]"
                       style={{ width: `${profileCompletion}%` }}
                     />
                   </div>
@@ -330,7 +330,9 @@ export default function DashProfile() {
                       <p className="text-xs uppercase tracking-[0.15em] text-white/60">
                         Account status
                       </p>
-                      <p className="font-['Manrope'] text-lg font-bold">{accountStatus}</p>
+                      <p className="font-['Manrope'] text-lg font-bold">
+                        {accountStatus}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -570,6 +572,7 @@ export default function DashProfile() {
 
       <DeleteConfirmModal
         show={showDeleteModal}
+        dismissible={true}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={handleDeleteUser}
         title="Delete Account"

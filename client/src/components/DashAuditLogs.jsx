@@ -346,25 +346,35 @@ export default function DashAuditLogs() {
             </div>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
-            <button
-              type="button"
-              onClick={() => setEntityType('')}
-              className={`${entityType === '' ? 'font-semibold text-[#23411f]' : 'text-[#2563eb]'}`}
-            >
-              All ({entityCounts.all || 0})
-            </button>
-            {ENTITY_OPTIONS.filter((option) => option.value).map((option) => (
-              <div key={option.value} className="flex items-center gap-3">
-                <span className="text-gray-300">|</span>
-                <button
-                  type="button"
-                  onClick={() => setEntityType(option.value)}
-                  className={`${entityType === option.value ? 'font-semibold text-[#23411f]' : 'text-[#2563eb]'}`}
-                >
-                  {option.label} ({entityCounts[option.value] || 0})
-                </button>
-              </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {[
+              {
+                key: 'all',
+                label: `All (${entityCounts.all || 0})`,
+                onClick: () => setEntityType(''),
+                active: entityType === ''
+              },
+              ...ENTITY_OPTIONS.filter((option) => option.value).map(
+                (option) => ({
+                  key: option.value,
+                  label: `${option.label} (${entityCounts[option.value] || 0})`,
+                  onClick: () => setEntityType(option.value),
+                  active: entityType === option.value
+                })
+              )
+            ].map((filter) => (
+              <Button
+                key={filter.key}
+                size="xs"
+                className={
+                  filter.active
+                    ? '!bg-[#23411f] !text-white'
+                    : '!bg-[#f5faeb] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white'
+                }
+                onClick={filter.onClick}
+              >
+                {filter.label}
+              </Button>
             ))}
           </div>
 
@@ -525,6 +535,7 @@ export default function DashAuditLogs() {
         show={Boolean(selectedLog)}
         onClose={() => setSelectedLog(null)}
         size="5xl"
+        dismissible={true}
       >
         <Modal.Header>Audit log detail</Modal.Header>
         <Modal.Body>
