@@ -1,10 +1,10 @@
-import { useState } from 'react'
-import { Modal, Carousel } from 'flowbite-react'
-import { HiPhotograph } from 'react-icons/hi'
+import { useState } from 'react';
+import { Modal, Carousel } from 'flowbite-react';
+import { HiPhotograph } from 'react-icons/hi';
 
 export default function RestaurantGallery({ images, restaurantName }) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [selectedIndex, setSelectedIndex] = useState(0)
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   if (!images || images.length === 0) {
     return (
@@ -14,7 +14,7 @@ export default function RestaurantGallery({ images, restaurantName }) {
           <p>No images available</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
