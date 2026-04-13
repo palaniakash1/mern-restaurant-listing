@@ -185,6 +185,7 @@ export const adminValidators = {
     email: Joi.string().trim().email().required(),
     password: Joi.string().pattern(PASSWORD_REGEX).required(),
     role: Joi.string().valid('admin', 'storeManager').required(),
+    phoneNumber: Joi.string().trim().allow(''),
     permissions: Joi.object()
       .pattern(Joi.string(), Joi.array().items(Joi.string()).unique())
       .default(null),
@@ -195,6 +196,7 @@ export const adminValidators = {
     email: Joi.string().trim().email(),
     password: Joi.string().pattern(PASSWORD_REGEX),
     role: Joi.string().valid('admin', 'storeManager'),
+    phoneNumber: Joi.string().trim().allow(''),
     permissions: Joi.object()
       .pattern(Joi.string(), Joi.array().items(Joi.string()).unique())
       .allow(null),
@@ -223,6 +225,7 @@ export const userValidators = {
     userName: Joi.string().trim().min(3).max(30).lowercase(),
     email: Joi.string().trim().email(),
     password: Joi.string().pattern(PASSWORD_REGEX),
+    phoneNumber: Joi.string().trim().allow(''),
     profilePicture: Joi.string().uri().allow('')
   }).min(1),
   assignStoreManager: Joi.object({

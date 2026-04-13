@@ -43,6 +43,7 @@ const buildPrivilegedForm = () => ({
   userName: '',
   email: '',
   password: '',
+  phoneNumber: '',
   role: DEFAULT_ROLE,
   isActive: true,
   profilePicture: ''
@@ -392,6 +393,7 @@ export default function DashUsers() {
       userName: user.userName || '',
       email: user.email || '',
       password: '',
+      phoneNumber: user.phoneNumber || '',
       role: user.role || DEFAULT_ROLE,
       isActive: user.isActive !== false,
       profilePicture: user.profilePicture || ''
@@ -431,6 +433,7 @@ export default function DashUsers() {
             userName: privilegedForm.userName,
             email: privilegedForm.email,
             password: privilegedForm.password,
+            phoneNumber: privilegedForm.phoneNumber,
             role: privilegedForm.role,
             isActive: privilegedForm.isActive,
             permissions
@@ -446,6 +449,7 @@ export default function DashUsers() {
           const payload = {
             userName: privilegedForm.userName,
             email: privilegedForm.email,
+            phoneNumber: privilegedForm.phoneNumber,
             role: privilegedForm.role,
             isActive: privilegedForm.isActive,
             permissions
@@ -1039,6 +1043,23 @@ export default function DashUsers() {
                     required
                   />
                 </div>
+                {canCreatePrivilegedUser && (
+                  <div className="space-y-2">
+                    <Label htmlFor="phoneNumber">Phone Number</Label>
+                    <TextInput
+                      id="phoneNumber"
+                      type="tel"
+                      value={privilegedForm.phoneNumber}
+                      onChange={(event) =>
+                        setPrivilegedForm((current) => ({
+                          ...current,
+                          phoneNumber: event.target.value
+                        }))
+                      }
+                      placeholder="+44 123 456 7890"
+                    />
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="password">
                     {modalMode === 'edit'

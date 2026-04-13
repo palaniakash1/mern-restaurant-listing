@@ -100,6 +100,7 @@ export default function DashProfile() {
     userName: '',
     email: '',
     password: '',
+    phoneNumber: '',
     profilePicture: ''
   });
 
@@ -110,6 +111,7 @@ export default function DashProfile() {
       userName: currentUser.userName || '',
       email: currentUser.email || '',
       password: '',
+      phoneNumber: currentUser.phoneNumber || '',
       profilePicture: currentUser.profilePicture || ''
     });
     setImageFileUrl(currentUser.profilePicture || '');
@@ -198,6 +200,9 @@ export default function DashProfile() {
     if (formData.password.trim()) {
       payload.password = formData.password.trim();
     }
+    if (formData.phoneNumber !== (currentUser?.phoneNumber || '')) {
+      payload.phoneNumber = formData.phoneNumber;
+    }
     if (
       formData.profilePicture &&
       formData.profilePicture !== currentUser?.profilePicture
@@ -251,9 +256,10 @@ export default function DashProfile() {
     let completed = 0;
     if (currentUser?.userName) completed += 1;
     if (currentUser?.email) completed += 1;
+    if (currentUser?.phoneNumber) completed += 1;
     if (currentUser?.profilePicture) completed += 1;
-    return Math.round((completed / 3) * 100);
-  }, [currentUser?.email, currentUser?.profilePicture, currentUser?.userName]);
+    return Math.round((completed / 4) * 100);
+  }, [currentUser?.email, currentUser?.profilePicture, currentUser?.userName, currentUser?.phoneNumber]);
 
   if (!userId) {
     return (
@@ -485,6 +491,23 @@ export default function DashProfile() {
                     onChange={handleChange}
                     className="w-full rounded-[1rem] border !border-[#d9e2bc] bg-[#f8fbf1] px-4 py-3 text-sm text-[#23411f] outline-none transition focus:!border-[#8fa31e] focus:bg-white focus:ring-4 focus:ring-[#dbe9ab]/50"
                     placeholder="name@example.com"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    htmlFor="phoneNumber"
+                    className="text-sm font-semibold text-gray-700"
+                  >
+                    Phone Number
+                  </label>
+                  <input
+                    id="phoneNumber"
+                    type="tel"
+                    value={formData.phoneNumber}
+                    onChange={handleChange}
+                    className="w-full rounded-[1rem] border !border-[#d9e2bc] bg-[#f8fbf1] px-4 py-3 text-sm text-[#23411f] outline-none transition focus:!border-[#8fa31e] focus:bg-white focus:ring-4 focus:ring-[#dbe9ab]/50"
+                    placeholder="+44 123 456 7890"
                   />
                 </div>
 

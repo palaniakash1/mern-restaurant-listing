@@ -171,6 +171,9 @@ export const updatePrivilegedUser = async ({
       if (body.profilePicture !== undefined) {
         updates.profilePicture = body.profilePicture || existingUser.profilePicture;
       }
+      if (body.phoneNumber !== undefined) {
+        updates.phoneNumber = body.phoneNumber || null;
+      }
 
       if (updates.userName) {
         const duplicateUserName = await adminRepository.findUsersCount({

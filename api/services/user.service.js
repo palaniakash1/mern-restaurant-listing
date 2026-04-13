@@ -47,7 +47,8 @@ export const updateUserProfile = async ({ actor, targetUserId, body, req }) =>
           'userName',
           'password',
           'profilePicture',
-          'email'
+          'email',
+          'phoneNumber'
         ];
         const updates = {};
 
