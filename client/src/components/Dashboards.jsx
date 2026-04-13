@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Badge, Card, Spinner } from 'flowbite-react';
+import { Badge, Card } from 'flowbite-react';
 import {
   HiOutlineBuildingStorefront,
   HiOutlineClipboardDocumentList,
@@ -9,6 +9,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { apiGet } from '../utils/api';
 import { getRoleLabel, hasPermission } from '../utils/permissions';
+import { SkeletonCard } from './SkeletonCard';
 
 const pluralize = (value, label) =>
   `${value} ${label}${value === 1 ? '' : 's'}`;
@@ -204,20 +205,14 @@ export default function Dashboards() {
       </Card>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {loading &&
-          Array.from({ length: 4 }).map((_, index) => (
-            <Card
-              key={index}
-              className="border !border-[#dce6c1] bg-white shadow-sm"
-            >
-              <div className="flex items-center gap-3 text-[#4d6518]">
-                <Spinner size="sm" />
-                Loading metrics...
-              </div>
-            </Card>
-          ))}
-
-        {!loading &&
+        {loading ? (
+          <>
+            <SkeletonCard variant="metric" />
+            <SkeletonCard variant="metric" />
+            <SkeletonCard variant="metric" />
+            <SkeletonCard variant="metric" />
+          </>
+        ) : (
           cards.map((card) => {
             const Icon = card.icon;
             return (
@@ -238,7 +233,8 @@ export default function Dashboards() {
                 </div>
               </Card>
             );
-          })}
+          })
+        )}
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.15fr,0.85fr]">
