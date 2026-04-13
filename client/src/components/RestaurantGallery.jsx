@@ -25,8 +25,8 @@ export default function RestaurantGallery({ images, restaurantName }) {
             key={index}
             className={`relative ${index === 0 ? 'col-span-2 row-span-2' : ''} cursor-pointer`}
             onClick={() => {
-              setSelectedIndex(index)
-              setIsOpen(true)
+              setSelectedIndex(index);
+              setIsOpen(true);
             }}
           >
             <img
@@ -38,14 +38,21 @@ export default function RestaurantGallery({ images, restaurantName }) {
             />
             {index === 3 && images.length > 4 && (
               <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center">
-                <span className="text-white font-semibold text-lg">+{images.length - 4} more</span>
+                <span className="text-white font-semibold text-lg">
+                  +{images.length - 4} more
+                </span>
               </div>
             )}
           </div>
         ))}
       </div>
 
-      <Modal show={isOpen} onClose={() => setIsOpen(false)} size="4xl">
+      <Modal
+        show={isOpen}
+        onClose={() => setIsOpen(false)}
+        size="4xl"
+        dismissible={true}
+      >
         <Modal.Header>{restaurantName} - Gallery</Modal.Header>
         <Modal.Body>
           <div className="h-96">
@@ -63,5 +70,5 @@ export default function RestaurantGallery({ images, restaurantName }) {
         </Modal.Body>
       </Modal>
     </div>
-  )
+  );
 }
