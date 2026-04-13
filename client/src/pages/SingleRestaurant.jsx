@@ -56,9 +56,6 @@ const priceFormatter = new Intl.NumberFormat('en-GB', {
 const pickImage = (restaurant, type = 'hero') => {
   const common = [
     restaurant?.bannerImage,
-    restaurant?.featuredImage,
-    restaurant?.thumbnailImage,
-    restaurant?.coverImage,
     restaurant?.gallery?.[0],
     restaurant?.imageLogo,
     FALLBACK_IMAGE
@@ -66,8 +63,6 @@ const pickImage = (restaurant, type = 'hero') => {
 
   if (type === 'thumb') {
     return (
-      restaurant?.thumbnailImage ||
-      restaurant?.featuredImage ||
       restaurant?.bannerImage ||
       restaurant?.gallery?.[0] ||
       restaurant?.imageLogo ||
@@ -174,8 +169,6 @@ const buildMapsUrl = (restaurant, address) => {
 };
 
 const getFeaturedDishImage = (restaurant, menus) => {
-  if (restaurant?.featuredImage) return restaurant.featuredImage;
-
   for (const menu of menus || []) {
     for (const item of menu.items || []) {
       if (item?.image) return item.image;
@@ -187,8 +180,6 @@ const getFeaturedDishImage = (restaurant, menus) => {
 
 const getItemImage = (item, restaurant) =>
   item?.image ||
-  item?.thumbnailImage ||
-  item?.featuredImage ||
   pickImage(restaurant, 'thumb');
 
 const Skeleton = () => (
@@ -632,7 +623,6 @@ export default function SingleRestaurant() {
                 <img
                   src={
                     restaurant.bannerImage ||
-                    restaurant.featuredImage ||
                     pickImage(restaurant, 'thumb')
                   }
                   alt={restaurant.name}

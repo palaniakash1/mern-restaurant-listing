@@ -236,7 +236,7 @@ export default function Restaurants() {
                         <img
                           alt={restaurant.name}
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                          src={restaurant.bannerImage || restaurant.featuredImage || restaurant.imageLogo}
+                          src={restaurant.bannerImage || restaurant.imageLogo}
                         />
                         {/* Gradient Overlay */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />

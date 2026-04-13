@@ -63,9 +63,6 @@ export const getRestaurantLocationLabel = (restaurant) =>
 export const pickRestaurantImage = (restaurant, fallbackIndex = 0) => {
   const image = [
     restaurant?.bannerImage,
-    restaurant?.featuredImage,
-    restaurant?.thumbnailImage,
-    restaurant?.coverImage,
     restaurant?.gallery?.[fallbackIndex],
     restaurant?.gallery?.[0],
     restaurant?.imageLogo

@@ -271,7 +271,7 @@ export default function Header() {
                             className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition hover:bg-[#f5faeb]"
                           >
                             <img
-                              src={restaurant.thumbnailImage || restaurant.coverImage || restaurant.bannerImage || restaurant.featuredImage || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=100&q=80'}
+                              src={restaurant.bannerImage || restaurant.gallery?.[0] || restaurant.imageLogo || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=100&q=80'}
                               alt={restaurant.name}
                               className="h-10 w-10 shrink-0 rounded-lg object-cover"
                             />
