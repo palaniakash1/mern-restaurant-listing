@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { listRestaurants } from '../services/restaurantService';
+import { SkeletonCard } from '../components/SkeletonCard';
 
 export default function Restaurants() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -61,10 +62,43 @@ export default function Restaurants() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top,#fdf0f0_0%,#f6fbe9_35%,#edf4dc_100%)] flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-[#8fa31e] border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-[#4d6518] font-semibold">Loading restaurants...</p>
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,#fdf0f0_0%,#f6fbe9_35%,#edf4dc_100%)]">
+        <header className="relative h-[50vh] min-h-[400px] flex items-center justify-center overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#23411f] via-[#3d5c33] to-[#8fa31e]"></div>
+          <div className="absolute inset-0 opacity-10">
+            <div
+              className="w-full h-full"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+              }}
+            ></div>
+          </div>
+          <div className="relative z-10 text-center px-6">
+            <div className="h-16 w-96 mx-auto rounded-xl bg-white/20 animate-pulse mb-4"></div>
+            <div className="h-6 w-80 mx-auto rounded-xl bg-white/20 animate-pulse"></div>
+          </div>
+        </header>
+
+        <div className="max-w-screen-2xl mx-auto px-6 lg:px-12 -mt-12 relative z-20">
+          <div className="bg-white/80 backdrop-blur rounded-[2rem] shadow-[0_18px_60px_rgba(77,103,22,0.12)] border border-white/50 p-6 md:p-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="md:col-span-2">
+                <div className="h-14 bg-[#edf4dc] rounded-[1rem] animate-pulse"></div>
+              </div>
+              <div>
+                <div className="h-14 bg-[#edf4dc] rounded-[1rem] animate-pulse"></div>
+              </div>
+              <div>
+                <div className="h-14 bg-[#edf4dc] rounded-[1rem] animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <SkeletonCard key={i} variant="restaurant" />
+            ))}
+          </div>
         </div>
       </div>
     );
