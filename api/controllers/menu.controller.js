@@ -38,8 +38,8 @@ const canManageMenu = (user, menuRestaurantId) => {
 // ======================================
 const MENU_STATE_MACHINE = Object.freeze({
   draft: ['published', 'blocked'],
-  published: ['blocked'],
-  blocked: []
+  published: ['draft', 'blocked'],
+  blocked: ['draft']
 });
 
 // ======================================
@@ -611,19 +611,19 @@ export const updateMenuStatus = async (req, res, next) => {
           .select('-__v');
 
         if (!restaurant || restaurant.status !== 'published') {
-          throw errorHandler(400, 'Restaurant not published');
+          throw errorHandler(400, 'Restaurant must be published first');
         }
 
         if (!category || category.status !== 'published') {
-          throw errorHandler(400, 'Category not published');
+          throw errorHandler(400, 'Category must be published first');
         }
 
         const activeItems = menu.items.filter(
-          (i) => i.isActive && i.isAvailable
+          (i) => i.isActive !== false && i.isAvailable
         );
 
         if (activeItems.length === 0) {
-          throw errorHandler(400, 'Menu must have active items');
+          throw errorHandler(400, 'Menu must have at least one active item');
         }
       }
 
