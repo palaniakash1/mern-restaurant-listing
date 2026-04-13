@@ -1,7 +1,7 @@
 import React from "react";
 import { Routes, useLocation, Route } from "react-router-dom";
 import Home from "./pages/Home";
-import About from "./pages/About";
+import AboutPage from "./pages/AboutPage";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -9,8 +9,19 @@ import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
 import Restaurants from "./pages/Restaurants";
+import NearMe from "./pages/NearMe";
 import SingleRestaurant from "./pages/SingleRestaurant";
+import SearchResults from "./pages/SearchResults";
+import MenuPage from "./pages/MenuPage";
+import ContactPage from "./pages/ContactPage";
+import GalleryPage from "./pages/GalleryPage";
+import ReviewsPage from "./pages/ReviewsPage";
+import FavoritesPage from "./pages/FavoritesPage";
+import FaqPage from "./pages/FaqPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import TermsOfServicePage from "./pages/TermsOfServicePage";
 import Header from "./components/Header";
+import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import PrivateRoute from "./components/PrivateRoute";
 import "flowbite/dist/flowbite.css";
@@ -34,12 +45,22 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/restaurants" element={<Restaurants />} />
+        <Route path="/near-me" element={<NearMe />} />
         <Route path="/restaurants/:slug" element={<SingleRestaurant />} />
+        <Route path="/search" element={<SearchResults />} />
+        <Route path="/menu" element={<MenuPage />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/gallery" element={<GalleryPage />} />
+        <Route path="/reviews" element={<ReviewsPage />} />
+        <Route path="/favorites" element={<FavoritesPage />} />
+        <Route path="/faq" element={<FaqPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<TermsOfServicePage />} />
         <Route path="/sign-in" element={<SignIn />} />
         <Route path="/sign-up" element={<SignUp />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/about" element={<About />} />
 
         <Route element={<PrivateRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
@@ -47,6 +68,8 @@ function AppContent() {
 
         <Route path="/profile" element={<Profile />} />
       </Routes>
+
+      {!authentication && !isDashboardPage && <Footer />}
     </>
   );
 }
