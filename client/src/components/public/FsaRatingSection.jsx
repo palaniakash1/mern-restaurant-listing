@@ -27,20 +27,6 @@ export function FsaRatingSection() {
     fetchFsaFive();
   }, []);
 
-  if (loading) {
-    return (
-      <section className={sectionWrapClass}>
-        <div className="py-12 text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-[#dce6c1] border-t-[#8fa31e]" />
-        </div>
-      </section>
-    );
-  }
-
-  if (error || restaurants.length === 0) {
-    return null;
-  }
-
   return (
     <section className={sectionWrapClass}>
       <div className="mb-8 flex items-end justify-between gap-4">
@@ -59,20 +45,32 @@ export function FsaRatingSection() {
         </Link>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {restaurants.slice(0, 4).map((restaurant) => (
-          <RestaurantSpotlightCard
-            key={restaurant._id || restaurant.id}
-            restaurant={restaurant}
-            badge={
-              <span className="inline-flex items-center gap-1">
-                <HiShieldCheck className="h-3 w-3" />
-                FSA 5-Star
-              </span>
-            }
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="rounded-[1.5rem] border border-[#e6eccf] bg-white p-4 shadow-sm">
+              <div className="aspect-[4/3] rounded-xl bg-[#edf4dc] animate-pulse" />
+              <div className="mt-4 h-4 w-3/4 rounded bg-[#edf4dc] animate-pulse" />
+              <div className="mt-2 h-3 w-1/2 rounded bg-[#edf4dc] animate-pulse" />
+            </div>
+          ))}
+        </div>
+      ) : error || restaurants.length === 0 ? null : (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {restaurants.slice(0, 4).map((restaurant) => (
+            <RestaurantSpotlightCard
+              key={restaurant._id || restaurant.id}
+              restaurant={restaurant}
+              badge={
+                <span className="inline-flex items-center gap-1">
+                  <HiShieldCheck className="h-3 w-3" />
+                  FSA 5-Star
+                </span>
+              }
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
