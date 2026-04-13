@@ -7,11 +7,11 @@ import {
   Label,
   Modal,
   Select,
-  Spinner,
   TextInput,
   Textarea
 } from 'flowbite-react';
 import {
+  HiOutlineArrowPath,
   HiOutlineCheck,
   HiOutlineChevronLeft,
   HiOutlineChevronRight,
@@ -26,6 +26,7 @@ import { apiDelete, apiGet, apiPatch, apiPost } from '../utils/api';
 import { hasPermission } from '../utils/permissions';
 import { useAuth } from '../context/AuthContext';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
+import { InlineLoader } from './PageLoader';
 import DeleteConfirmModal from './DeleteConfirmModal';
 
 const REVIEW_FILTER_LIMIT = 50;
@@ -130,7 +131,7 @@ const ImageUploader = ({ images, onChange, maxImages = 3, uploading, onUpload })
             ? 'Uploading...'
             : `Add photos (${images.length}/${maxImages})`}
         </p>
-        {uploading && <Spinner size="sm" className="mt-2" />}
+        {uploading && <InlineLoader size="sm" />}
       </div>
 
       {previews.length > 0 && (
@@ -229,6 +230,7 @@ export default function DashReviews() {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [myReviewSearch, setMyReviewSearch] = useState('');
   const [myReviewFilter, setMyReviewFilter] = useState('');
+  const [search, setSearch] = useState('');
   const [selectedReviews, setSelectedReviews] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [reviewToDelete, setReviewToDelete] = useState(null);
@@ -367,11 +369,21 @@ export default function DashReviews() {
   );
 
   const filteredReviews = useMemo(() => {
-    if (statusFilter === 'all') return allReviews;
-    return allReviews.filter(review => 
-      statusFilter === 'active' ? review.isActive : !review.isActive
-    );
-  }, [allReviews, statusFilter]);
+    const q = search.trim().toLowerCase();
+    return allReviews.filter((review) => {
+      const searchMatch = q
+        ? [
+            review.restaurantId?.name,
+            review.comment
+          ]
+            .filter(Boolean)
+            .some((v) => v.toLowerCase().includes(q))
+        : true;
+      const statusMatch = statusFilter === 'all' || 
+        (statusFilter === 'active' ? review.isActive : !review.isActive);
+      return searchMatch && statusMatch;
+    });
+  }, [allReviews, search, statusFilter]);
 
   const activeCount = allReviews.filter(r => r.isActive).length;
   const hiddenCount = allReviews.filter(r => !r.isActive).length;
@@ -534,7 +546,9 @@ export default function DashReviews() {
                   Review governance
                 </p>
                 <h2 className="text-2xl font-bold text-[#23411f] sm:text-3xl">
-                  {isSuperAdmin ? 'Enterprise review moderation' : 'Restaurant review moderation'}
+                  {isSuperAdmin
+                    ? 'Enterprise review moderation'
+                    : 'Restaurant review moderation'}
                 </h2>
                 <p className="max-w-2xl text-sm leading-7 text-gray-600">
                   {isSuperAdmin
@@ -559,13 +573,17 @@ export default function DashReviews() {
                     <p className="text-xs uppercase tracking-[0.2em] text-white/70">
                       Visible
                     </p>
-                    <p className="mt-2 text-3xl font-bold">{overviewCounts.active}</p>
+                    <p className="mt-2 text-3xl font-bold">
+                      {overviewCounts.active}
+                    </p>
                   </div>
                   <div className="rounded-2xl bg-white/12 p-4">
                     <p className="text-xs uppercase tracking-[0.2em] text-white/70">
                       Hidden
                     </p>
-                    <p className="mt-2 text-3xl font-bold">{overviewCounts.hidden}</p>
+                    <p className="mt-2 text-3xl font-bold">
+                      {overviewCounts.hidden}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -585,7 +603,9 @@ export default function DashReviews() {
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Select
                   value={selectedRestaurantId}
-                  onChange={(event) => setSelectedRestaurantId(event.target.value)}
+                  onChange={(event) =>
+                    setSelectedRestaurantId(event.target.value)
+                  }
                   disabled={restaurants.length === 0}
                   className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e] min-w-[200px]"
                 >
@@ -607,49 +627,81 @@ export default function DashReviews() {
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
-              <button
-                type="button"
-                onClick={() => setStatusFilter('all')}
-                className={
-                  statusFilter === 'all'
-                    ? 'font-semibold text-[#23411f]'
-                    : 'text-[#2563eb]'
+            <div className="mt-4 flex flex-wrap gap-2">
+              {[
+                {
+                  key: 'all',
+                  label: `All (${allReviews.length})`,
+                  onClick: () => setStatusFilter('all'),
+                  active: statusFilter === 'all'
+                },
+                {
+                  key: 'active',
+                  label: `Visible (${activeCount})`,
+                  onClick: () => setStatusFilter('active'),
+                  active: statusFilter === 'active'
+                },
+                {
+                  key: 'hidden',
+                  label: `Hidden (${hiddenCount})`,
+                  onClick: () => setStatusFilter('hidden'),
+                  active: statusFilter === 'hidden'
                 }
+              ].map((filter) => (
+                <Button
+                  key={filter.key}
+                  size="xs"
+                  className={
+                    filter.active
+                      ? '!bg-[#23411f] !text-white'
+                      : '!bg-[#f5faeb] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white'
+                  }
+                  onClick={filter.onClick}
+                >
+                  {filter.label}
+                </Button>
+              ))}
+            </div>
+
+            <div className="mt-4 grid gap-3 xl:grid-cols-[1.1fr,1fr,1fr,1fr,auto]">
+              <TextInput
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search by restaurant or comment"
+              />
+              <Select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
               >
-                All ({allReviews.length})
-              </button>
-              <span className="text-gray-300">|</span>
-              <button
-                type="button"
-                onClick={() => setStatusFilter('active')}
-                className={
-                  statusFilter === 'active'
-                    ? 'font-semibold text-[#23411f]'
-                    : 'text-[#2563eb]'
-                }
+                <option value="all">All statuses</option>
+                <option value="active">Visible</option>
+                <option value="hidden">Hidden</option>
+              </Select>
+              <Select
+                value={sortOrder}
+                onChange={(event) => setSortOrder(event.target.value)}
               >
-                Visible ({activeCount})
-              </button>
-              <span className="text-gray-300">|</span>
-              <button
-                type="button"
-                onClick={() => setStatusFilter('hidden')}
-                className={
-                  statusFilter === 'hidden'
-                    ? 'font-semibold text-[#23411f]'
-                    : 'text-[#2563eb]'
-                }
+                <option value="desc">Newest First</option>
+                <option value="asc">Oldest First</option>
+              </Select>
+              <div></div>
+              <Button
+                color="light"
+                className="w-full xl:w-auto"
+                onClick={() => {
+                  setSearch('');
+                  setStatusFilter('all');
+                  setSortOrder('desc');
+                  setPage(1);
+                }}
               >
-                Hidden ({hiddenCount})
-              </button>
+                <HiOutlineArrowPath className="mr-2 h-4 w-4" />
+                Reset
+              </Button>
             </div>
 
             {loading && (
-              <div className="mt-4 flex items-center gap-2 rounded-2xl bg-[#f7faef] px-4 py-3 text-sm text-[#4e5e20]">
-                <Spinner size="sm" />
-                Loading reviews...
-              </div>
+              <InlineLoader message="Loading reviews..." />
             )}
 
             {!loading && filteredReviews.length === 0 && (
@@ -665,11 +717,15 @@ export default function DashReviews() {
                   <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-600">
                     <input
                       type="checkbox"
-                      checked={selectedReviews.length === filteredReviews.length && filteredReviews.length > 0}
+                      checked={
+                        selectedReviews.length === filteredReviews.length &&
+                        filteredReviews.length > 0
+                      }
                       onChange={toggleSelectAll}
                       className="h-4 w-4 rounded border-gray-300 text-[#8fa31e] focus:ring-[#8fa31e]"
                     />
-                    Select all ({selectedReviews.length}/{filteredReviews.length})
+                    Select all ({selectedReviews.length}/
+                    {filteredReviews.length})
                   </label>
 
                   {selectedReviews.length > 0 && (
@@ -713,95 +769,103 @@ export default function DashReviews() {
                         />
                       </div>
                       <div className="flex items-start justify-between gap-3 pt-2">
-                      <div className="flex items-center gap-3">
-                        {review.userId?.profilePicture ? (
-                          <img
-                            src={review.userId.profilePicture}
-                            alt=""
-                            className="h-10 w-10 flex-shrink-0 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#f7faef] text-[#7e9128] font-semibold">
-                            {(review.userId?.userName || 'G')[0].toUpperCase()}
-                          </div>
-                        )}
-                        <div>
-                          <p className="font-semibold text-[#23411f]">
-                            {review.userId?.userName || 'Guest User'}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {review.restaurantId?.name || 'Restaurant'}
-                          </p>
-                        </div>
-                      </div>
-                      <Badge color={review.isActive ? 'success' : 'failure'}>
-                        {review.isActive ? 'Visible' : 'Hidden'}
-                      </Badge>
-                    </div>
-
-                    <div className="mt-3 flex items-center gap-2">
-                      <StarRating rating={review.rating} showValue={true} />
-                      <span className="text-xs text-gray-400">
-                        {formatDate(review.createdAt)}
-                      </span>
-                    </div>
-
-                    <p className="mt-3 text-sm text-gray-600 line-clamp-3">
-                      {review.comment || 'No comment'}
-                    </p>
-
-                    {review.images && review.images.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {review.images.map((img, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => { setLightboxImages(review.images); setLightboxIndex(0); }}
-                            className="relative overflow-hidden rounded-lg"
-                          >
+                        <div className="flex items-center gap-3">
+                          {review.userId?.profilePicture ? (
                             <img
-                              src={img}
+                              src={review.userId.profilePicture}
                               alt=""
-                              className="h-16 w-16 object-cover transition-transform hover:scale-110"
+                              className="h-10 w-10 flex-shrink-0 rounded-full object-cover"
                             />
-                          </button>
-                        ))}
+                          ) : (
+                            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#f7faef] text-[#7e9128] font-semibold">
+                              {(review.userId?.userName ||
+                                'G')[0].toUpperCase()}
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-semibold text-[#23411f]">
+                              {review.userId?.userName || 'Guest User'}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {review.restaurantId?.name || 'Restaurant'}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge color={review.isActive ? 'success' : 'failure'}>
+                          {review.isActive ? 'Visible' : 'Hidden'}
+                        </Badge>
                       </div>
-                    )}
 
-                    <div className="mt-4 flex flex-wrap gap-2 border-t border-[#e6eccf] pt-3">
-                      {review.isActive ? (
-                        <Button
-                          size="xs"
-                          className="!bg-red-600 hover:!bg-red-700 text-white border-none"
-                          onClick={() => handleModerateReview(review._id, false)}
-                        >
-                          <HiOutlineEyeSlash className="mr-1 h-3 w-3" />
-                          Hide
-                        </Button>
-                      ) : (
-                        <Button
-                          size="xs"
-                          className="!bg-green-600 hover:!bg-green-700 text-white border-none"
-                          onClick={() => handleModerateReview(review._id, true)}
-                        >
-                          <HiOutlineCheck className="mr-1 h-3 w-3" />
-                          Approve
-                        </Button>
+                      <div className="mt-3 flex items-center gap-2">
+                        <StarRating rating={review.rating} showValue={true} />
+                        <span className="text-xs text-gray-400">
+                          {formatDate(review.createdAt)}
+                        </span>
+                      </div>
+
+                      <p className="mt-3 text-sm text-gray-600 line-clamp-3">
+                        {review.comment || 'No comment'}
+                      </p>
+
+                      {review.images && review.images.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {review.images.map((img, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => {
+                                setLightboxImages(review.images);
+                                setLightboxIndex(0);
+                              }}
+                              className="relative overflow-hidden rounded-lg"
+                            >
+                              <img
+                                src={img}
+                                alt=""
+                                className="h-16 w-16 object-cover transition-transform hover:scale-110"
+                              />
+                            </button>
+                          ))}
+                        </div>
                       )}
-                      {canDeleteReview && (
-                        <Button
-                          size="xs"
-                          color="failure"
-                          onClick={() => handleDeleteReview(review._id)}
-                        >
-                          <HiOutlineTrash className="mr-1 h-3 w-3" />
-                          Delete
-                        </Button>
-                      )}
+
+                      <div className="mt-4 flex flex-wrap gap-2 border-t border-[#e6eccf] pt-3">
+                        {review.isActive ? (
+                          <Button
+                            size="xs"
+                            className="!bg-red-600 hover:!bg-red-700 text-white border-none"
+                            onClick={() =>
+                              handleModerateReview(review._id, false)
+                            }
+                          >
+                            <HiOutlineEyeSlash className="mr-1 h-3 w-3" />
+                            Hide
+                          </Button>
+                        ) : (
+                          <Button
+                            size="xs"
+                            className="!bg-green-600 hover:!bg-green-700 text-white border-none"
+                            onClick={() =>
+                              handleModerateReview(review._id, true)
+                            }
+                          >
+                            <HiOutlineCheck className="mr-1 h-3 w-3" />
+                            Approve
+                          </Button>
+                        )}
+                        {canDeleteReview && (
+                          <Button
+                            size="xs"
+                            color="failure"
+                            onClick={() => handleDeleteReview(review._id)}
+                          >
+                            <HiOutlineTrash className="mr-1 h-3 w-3" />
+                            Delete
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
                 </div>
               </>
             )}
@@ -849,7 +913,8 @@ export default function DashReviews() {
 
             <div className="mt-5 flex items-center justify-between gap-3 text-sm">
               <span className="text-gray-500">
-                Page {page} of {Math.max(1, totalPages)} • {totalItems} {totalItems === 1 ? 'item' : 'items'}
+                Page {page} of {Math.max(1, totalPages)} • {totalItems}{' '}
+                {totalItems === 1 ? 'item' : 'items'}
               </span>
               <div className="flex gap-2">
                 <Button
@@ -864,7 +929,9 @@ export default function DashReviews() {
                   color="light"
                   size="xs"
                   disabled={page >= totalPages}
-                  onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                  onClick={() =>
+                    setPage((current) => Math.min(totalPages, current + 1))
+                  }
                 >
                   Next
                 </Button>
@@ -873,7 +940,11 @@ export default function DashReviews() {
           </Card>
         </div>
 
-        <Modal show={Boolean(editingReview)} onClose={() => setEditingReview(null)}>
+        <Modal
+          show={Boolean(editingReview)}
+          dismissible={true}
+          onClose={() => setEditingReview(null)}
+        >
           <Modal.Header>Edit review</Modal.Header>
           <Modal.Body>
             <div className="space-y-4">
@@ -881,7 +952,9 @@ export default function DashReviews() {
                 <Label>Rating</Label>
                 <StarRatingInput
                   value={editingReview?.rating || '5'}
-                  onChange={(val) => setEditingReview((current) => ({ ...current, rating: val }))}
+                  onChange={(val) =>
+                    setEditingReview((current) => ({ ...current, rating: val }))
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -916,11 +989,11 @@ export default function DashReviews() {
         </Modal>
 
         {lightboxImages && lightboxImages.length > 0 && (
-          <div 
+          <div
             className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/95 backdrop-blur-sm"
             onClick={() => setLightboxImages(null)}
           >
-            <div 
+            <div
               className="relative w-full max-w-5xl mx-4"
               onClick={(e) => e.stopPropagation()}
             >
@@ -938,17 +1011,27 @@ export default function DashReviews() {
                     alt=""
                     className="w-full h-full object-contain"
                   />
-                  
+
                   {lightboxImages.length > 1 && (
                     <>
                       <button
-                        onClick={(e) => { e.stopPropagation(); setLightboxIndex((i) => (i === 0 ? lightboxImages.length - 1 : i - 1)); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLightboxIndex((i) =>
+                            i === 0 ? lightboxImages.length - 1 : i - 1
+                          );
+                        }}
                         className="absolute left-4 top-1/2 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-lg text-[#23411f] hover:bg-[#8fa31e] hover:text-white transition-all"
                       >
                         <HiOutlineChevronLeft className="h-6 w-6" />
                       </button>
                       <button
-                        onClick={(e) => { e.stopPropagation(); setLightboxIndex((i) => (i === lightboxImages.length - 1 ? 0 : i + 1)); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLightboxIndex((i) =>
+                            i === lightboxImages.length - 1 ? 0 : i + 1
+                          );
+                        }}
                         className="absolute right-4 top-1/2 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-lg text-[#23411f] hover:bg-[#8fa31e] hover:text-white transition-all"
                       >
                         <HiOutlineChevronRight className="h-6 w-6" />
@@ -962,10 +1045,13 @@ export default function DashReviews() {
                     {lightboxImages.map((img, idx) => (
                       <button
                         key={idx}
-                        onClick={(e) => { e.stopPropagation(); setLightboxIndex(idx); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLightboxIndex(idx);
+                        }}
                         className={`relative overflow-hidden rounded-lg transition-all ${
-                          idx === lightboxIndex 
-                            ? 'ring-2 ring-[#8fa31e] ring-offset-2' 
+                          idx === lightboxIndex
+                            ? 'ring-2 ring-[#8fa31e] ring-offset-2'
                             : 'opacity-60 hover:opacity-100'
                         }`}
                       >
@@ -983,7 +1069,9 @@ export default function DashReviews() {
                   <span className="text-sm text-[#23411f] font-medium">
                     {lightboxIndex + 1} of {lightboxImages.length}
                   </span>
-                  <span className="text-xs text-gray-500">Click outside to close</span>
+                  <span className="text-xs text-gray-500">
+                    Click outside to close
+                  </span>
                 </div>
               </div>
             </div>
@@ -1013,7 +1101,9 @@ export default function DashReviews() {
         {canCreateReview && (
           <Card className="border !border-[#dce6c1] bg-white shadow-sm xl:col-span-2">
             <div className="space-y-1">
-              <h3 className="text-lg font-semibold text-[#23411f]">Post a review</h3>
+              <h3 className="text-lg font-semibold text-[#23411f]">
+                Post a review
+              </h3>
               <p className="text-sm text-gray-500">
                 Share your dining experience with other users.
               </p>
@@ -1045,7 +1135,9 @@ export default function DashReviews() {
                 <Label>Rating</Label>
                 <StarRatingInput
                   value={reviewForm.rating}
-                  onChange={(val) => setReviewForm((current) => ({ ...current, rating: val }))}
+                  onChange={(val) =>
+                    setReviewForm((current) => ({ ...current, rating: val }))
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -1101,12 +1193,16 @@ export default function DashReviews() {
         <Card className="border !border-[#dce6c1] bg-white shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-[#23411f]">Your reviews</h3>
+              <h3 className="text-lg font-semibold text-[#23411f]">
+                Your reviews
+              </h3>
               <p className="text-sm text-gray-500">
                 Manage feedback you have posted.
               </p>
             </div>
-            {myReviews.length > 0 && <Badge color="failure">{myReviews.length}</Badge>}
+            {myReviews.length > 0 && (
+              <Badge color="failure">{myReviews.length}</Badge>
+            )}
           </div>
 
           <div className="mt-4 flex flex-col gap-3 sm:flex-row">
@@ -1131,26 +1227,33 @@ export default function DashReviews() {
                 }, [])
                 .slice(0, 5)
                 .map((name) => (
-                  <option key={name} value={name}>{name}</option>
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
                 ))}
             </Select>
           </div>
 
           {loading ? (
-            <div className="flex items-center gap-3 rounded-2xl bg-[#f7fbef] p-4 text-sm text-[#4e5e20]">
-              <Spinner size="sm" />
-              Loading...
-            </div>
+            <InlineLoader message="Loading your reviews..." />
           ) : myReviews.length === 0 ? (
-            <p className="py-4 text-sm text-gray-500">You haven't posted any reviews yet.</p>
+            <p className="py-4 text-sm text-gray-500">
+              You haven't posted any reviews yet.
+            </p>
           ) : (
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               {myReviews
                 .filter((r) => {
-                  const matchesSearch = !myReviewSearch || 
-                    r.restaurantId?.name?.toLowerCase().includes(myReviewSearch.toLowerCase()) ||
-                    r.comment?.toLowerCase().includes(myReviewSearch.toLowerCase());
-                  const matchesFilter = !myReviewFilter || r.restaurantId?.name === myReviewFilter;
+                  const matchesSearch =
+                    !myReviewSearch ||
+                    r.restaurantId?.name
+                      ?.toLowerCase()
+                      .includes(myReviewSearch.toLowerCase()) ||
+                    r.comment
+                      ?.toLowerCase()
+                      .includes(myReviewSearch.toLowerCase());
+                  const matchesFilter =
+                    !myReviewFilter || r.restaurantId?.name === myReviewFilter;
                   return matchesSearch && matchesFilter;
                 })
                 .map((review) => (
@@ -1163,20 +1266,27 @@ export default function DashReviews() {
                         <p className="font-semibold text-[#23411f]">
                           {review.restaurantId?.name || 'Restaurant'}
                         </p>
-                        <p className="text-xs text-gray-500">{formatDate(review.createdAt)}</p>
+                        <p className="text-xs text-gray-500">
+                          {formatDate(review.createdAt)}
+                        </p>
                       </div>
                       <div className="flex items-center gap-2">
                         <StarRating rating={review.rating} showValue={true} />
                       </div>
                     </div>
-                    <p className="mt-2 text-sm text-gray-600">{review.comment || 'No comment'}</p>
+                    <p className="mt-2 text-sm text-gray-600">
+                      {review.comment || 'No comment'}
+                    </p>
                     {review.images && review.images.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1">
                         {review.images.slice(0, 3).map((img, idx) => (
                           <button
                             key={idx}
                             type="button"
-                            onClick={() => { setLightboxImages(review.images); setLightboxIndex(0); }}
+                            onClick={() => {
+                              setLightboxImages(review.images);
+                              setLightboxIndex(0);
+                            }}
                             className="focus:outline-none"
                           >
                             <img
@@ -1207,7 +1317,11 @@ export default function DashReviews() {
         </Card>
       )}
 
-      <Modal show={Boolean(editingReview)} onClose={() => setEditingReview(null)}>
+      <Modal
+        show={Boolean(editingReview)}
+        onClose={() => setEditingReview(null)}
+        dismissible={true}
+      >
         <Modal.Header>Edit review</Modal.Header>
         <Modal.Body>
           <div className="space-y-4">
@@ -1215,7 +1329,9 @@ export default function DashReviews() {
               <Label>Rating</Label>
               <StarRatingInput
                 value={editingReview?.rating || '5'}
-                onChange={(val) => setEditingReview((current) => ({ ...current, rating: val }))}
+                onChange={(val) =>
+                  setEditingReview((current) => ({ ...current, rating: val }))
+                }
               />
             </div>
             <div className="space-y-2">
@@ -1250,11 +1366,11 @@ export default function DashReviews() {
       </Modal>
 
       {lightboxImages && lightboxImages.length > 0 && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/95 backdrop-blur-sm"
           onClick={() => setLightboxImages(null)}
         >
-          <div 
+          <div
             className="relative w-full max-w-5xl mx-4"
             onClick={(e) => e.stopPropagation()}
           >
@@ -1272,17 +1388,27 @@ export default function DashReviews() {
                   alt=""
                   className="w-full h-full object-contain"
                 />
-                
+
                 {lightboxImages.length > 1 && (
                   <>
                     <button
-                      onClick={(e) => { e.stopPropagation(); setLightboxIndex((i) => (i === 0 ? lightboxImages.length - 1 : i - 1)); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLightboxIndex((i) =>
+                          i === 0 ? lightboxImages.length - 1 : i - 1
+                        );
+                      }}
                       className="absolute left-4 top-1/2 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-lg text-[#23411f] hover:bg-[#8fa31e] hover:text-white transition-all"
                     >
                       <HiOutlineChevronLeft className="h-6 w-6" />
                     </button>
                     <button
-                      onClick={(e) => { e.stopPropagation(); setLightboxIndex((i) => (i === lightboxImages.length - 1 ? 0 : i + 1)); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLightboxIndex((i) =>
+                          i === lightboxImages.length - 1 ? 0 : i + 1
+                        );
+                      }}
                       className="absolute right-4 top-1/2 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-lg text-[#23411f] hover:bg-[#8fa31e] hover:text-white transition-all"
                     >
                       <HiOutlineChevronRight className="h-6 w-6" />
@@ -1296,10 +1422,13 @@ export default function DashReviews() {
                   {lightboxImages.map((img, idx) => (
                     <button
                       key={idx}
-                      onClick={(e) => { e.stopPropagation(); setLightboxIndex(idx); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLightboxIndex(idx);
+                      }}
                       className={`relative overflow-hidden rounded-lg transition-all ${
-                        idx === lightboxIndex 
-                          ? 'ring-2 ring-[#8fa31e] ring-offset-2' 
+                        idx === lightboxIndex
+                          ? 'ring-2 ring-[#8fa31e] ring-offset-2'
                           : 'opacity-60 hover:opacity-100'
                       }`}
                     >
@@ -1317,7 +1446,9 @@ export default function DashReviews() {
                 <span className="text-sm text-[#23411f] font-medium">
                   {lightboxIndex + 1} of {lightboxImages.length}
                 </span>
-                <span className="text-xs text-gray-500">Click outside to close</span>
+                <span className="text-xs text-gray-500">
+                  Click outside to close
+                </span>
               </div>
             </div>
           </div>
@@ -1326,6 +1457,7 @@ export default function DashReviews() {
 
       <DeleteConfirmModal
         show={showDeleteModal}
+        dismissible={true}
         onClose={() => {
           setShowDeleteModal(false);
           setReviewToDelete(null);
