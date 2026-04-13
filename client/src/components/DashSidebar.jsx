@@ -117,7 +117,7 @@ export default function DashSidebar({ onClose }) {
           <div className="border-t border-white/10 pt-3">
             <Sidebar.Item
               icon={() => <HiArrowLeftOnRectangle className="text-xl" />}
-              className="group w-full rounded-[1.1rem] border border-transparent !bg-transparent !text-white/90 hover:!bg-[#b62828] hover:!text-white"
+              className="group w-full cursor-pointer rounded-[1.1rem] border border-transparent !bg-transparent !text-white/90 hover:!bg-[#b62828] hover:!text-white"
               onClick={handleSignOut}
             >
               Sign out
