@@ -57,3 +57,59 @@ body {
 .hero-gradient {
   background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.7));
 }
+
+/* ToggleSwitch Theme Override */
+[data-testid="flowbite-toggleswitch-toggle"] {
+  background-color: #d9e2bc !important;
+  border-color: #d9e2bc !important;
+  border-radius: 9999px !important;
+  width: 2.75rem !important;
+  height: 1.5rem !important;
+}
+
+[data-testid="flowbite-toggleswitch-toggle"].bg-cyan-700 {
+  background-color: #8fa31e !important;
+  border-color: #8fa31e !important;
+}
+
+[data-testid="flowbite-toggleswitch-toggle"]::after {
+  background-color: white !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2) !important;
+  border-radius: 9999px !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  top: 2px !important;
+  left: 2px !important;
+}
+
+[data-testid="flowbite-toggleswitch-toggle"]:focus,
+[data-testid="flowbite-toggleswitch-toggle"]:focus-visible {
+  box-shadow: 0 0 0 4px rgba(143, 163, 30, 0.25) !important;
+}
+
+[data-testid="flowbite-toggleswitch-toggle"].group-focus\:ring-4 {
+  --tw-ring-color: rgba(143, 163, 30, 0.25) !important;
+}
+
+/* Remove cyan focus ring */
+[data-testid="flowbite-toggleswitch-toggle"].group-focus\:ring-cyan-500\/25 {
+  --tw-ring-color: rgba(143, 163, 30, 0.25) !important;
+}
+
+/* Hover state */
+[data-testid="flowbite-toggleswitch-toggle"]:hover {
+  background-color: #d0dbb2 !important;
+}
+
+/* Override cyan focus ring for all buttons */
+button:focus,
+button:focus-visible,
+button.focus-visible {
+  --tw-ring-color: rgba(143, 163, 30, 0.25) !important;
+}
+
+.focus\:ring-cyan-300:focus,
+.focus\:ring-cyan-500\/25:focus,
+button.focus\:ring-cyan-300 {
+  --tw-ring-color: rgba(143, 163, 30, 0.25) !important;
+}
