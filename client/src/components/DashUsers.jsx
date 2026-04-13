@@ -109,7 +109,9 @@ function UploadPreview({ value, progress, uploading, onSelect }) {
               className="h-full w-full object-cover transition group-hover:opacity-90"
             />
             <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition">
-              <span className="text-sm font-medium text-white">Change Image</span>
+              <span className="text-sm font-medium text-white">
+                Change Image
+              </span>
             </div>
           </button>
         ) : (
@@ -599,54 +601,46 @@ export default function DashUsers() {
             )}
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
-            <button
-              type="button"
-              onClick={() => setRoleFilter('all')}
-              className={
-                roleFilter === 'all'
-                  ? 'font-semibold text-[#23411f]'
-                  : 'text-[#2563eb]'
+          <div className="mt-4 flex flex-wrap gap-2">
+            {[
+              {
+                key: 'all',
+                label: `All (${counts.all})`,
+                onClick: () => setRoleFilter('all'),
+                active: roleFilter === 'all'
+              },
+              {
+                key: 'admin',
+                label: `Admin (${counts.admin})`,
+                onClick: () => setRoleFilter('admin'),
+                active: roleFilter === 'admin'
+              },
+              {
+                key: 'storeManager',
+                label: `Store Manager (${counts.storeManager})`,
+                onClick: () => setRoleFilter('storeManager'),
+                active: roleFilter === 'storeManager'
+              },
+              {
+                key: 'inactive',
+                label: `Inactive (${counts.inactive})`,
+                onClick: () => setStatusFilter('inactive'),
+                active: statusFilter === 'inactive'
               }
-            >
-              All ({counts.all})
-            </button>
-            <span className="text-gray-300">|</span>
-            <button
-              type="button"
-              onClick={() => setRoleFilter('admin')}
-              className={
-                roleFilter === 'admin'
-                  ? 'font-semibold text-[#23411f]'
-                  : 'text-[#2563eb]'
-              }
-            >
-              Admin ({counts.admin})
-            </button>
-            <span className="text-gray-300">|</span>
-            <button
-              type="button"
-              onClick={() => setRoleFilter('storeManager')}
-              className={
-                roleFilter === 'storeManager'
-                  ? 'font-semibold text-[#23411f]'
-                  : 'text-[#2563eb]'
-              }
-            >
-              Store Manager ({counts.storeManager})
-            </button>
-            <span className="text-gray-300">|</span>
-            <button
-              type="button"
-              onClick={() => setStatusFilter('inactive')}
-              className={
-                statusFilter === 'inactive'
-                  ? 'font-semibold text-[#23411f]'
-                  : 'text-[#2563eb]'
-              }
-            >
-              Inactive ({counts.inactive})
-            </button>
+            ].map((filter) => (
+              <Button
+                key={filter.key}
+                size="xs"
+                className={
+                  filter.active
+                    ? '!bg-[#23411f] !text-white'
+                    : '!bg-[#f5faeb] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white'
+                }
+                onClick={filter.onClick}
+              >
+                {filter.label}
+              </Button>
+            ))}
           </div>
 
           <div className="mt-4 grid gap-3 xl:grid-cols-[1.1fr,1fr,1fr,1fr,auto]">
@@ -1156,7 +1150,11 @@ export default function DashUsers() {
         </Modal.Body>
       </Modal>
 
-      <Modal show={modalMode === 'assign'} onClose={resetModalState}>
+      <Modal
+        show={modalMode === 'assign'}
+        onClose={resetModalState}
+        dismissible={true}
+      >
         <Modal.Header>Assign restaurant</Modal.Header>
         <Modal.Body>
           <div className="space-y-4">
@@ -1205,6 +1203,7 @@ export default function DashUsers() {
       <Modal
         show={Boolean(pendingDeleteUser)}
         onClose={() => setPendingDeleteUser(null)}
+        dismissible={true}
       >
         <Modal.Header>Delete user</Modal.Header>
         <Modal.Body>
@@ -1228,6 +1227,7 @@ export default function DashUsers() {
 
       <Modal
         show={Boolean(pendingUnassignUser)}
+        dismissible={true}
         onClose={() => setPendingUnassignUser(null)}
       >
         <Modal.Header>Unassign store manager</Modal.Header>
