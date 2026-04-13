@@ -12,6 +12,9 @@ import mongoose from 'mongoose';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,7 +26,7 @@ const MIGRATION_COLLECTION = '_migrations';
 const command = process.argv[2] || 'status';
 
 async function main() {
-  const mongoUri = process.env.DATABASE_URL || 'mongodb://localhost:27017/restaurant';
+  const mongoUri = process.env.DATABASE_URL || process.env.MONGO || 'mongodb://localhost:27017/restaurant';
 
   console.log(`Connecting to ${mongoUri}...`);
   await mongoose.connect(mongoUri);
@@ -73,7 +76,8 @@ async function runMigrations(db) {
 
   for (const file of pending) {
     console.log(`Running: ${file}`);
-    const mod = await import(path.join(MIGRATIONS_DIR, file));
+    const filePath = 'file:///' + path.join(MIGRATIONS_DIR, file).replace(/\\/g, '/');
+    const mod = await import(filePath);
 
     if (mod.up) {
       await mod.up(db);
@@ -101,7 +105,8 @@ async function rollbackMigration(db) {
 
   console.log(`Rolling back: ${last.name}`);
 
-  const mod = await import(path.join(MIGRATIONS_DIR, last.name + '.js'));
+  const filePath = 'file:///' + path.join(MIGRATIONS_DIR, last.name + '.js').replace(/\\/g, '/');
+  const mod = await import(filePath);
 
   if (mod.down) {
     await mod.down(db);
@@ -126,7 +131,8 @@ async function runSeeds(db) {
 
   for (const file of files) {
     console.log(`Running: ${file}`);
-    const mod = await import(path.join(SEEDS_DIR, file));
+    const filePath = 'file:///' + path.join(SEEDS_DIR, file).replace(/\\/g, '/');
+    const mod = await import(filePath);
 
     if (mod.run) {
       await mod.run(db);
