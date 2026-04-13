@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Alert,
   Badge,
@@ -10,11 +11,13 @@ import {
   Spinner,
   Table,
   TextInput,
-  Textarea
+  Textarea,
+  ToggleSwitch
 } from 'flowbite-react';
 import {
   HiOutlineArrowPath,
   HiOutlineBuildingStorefront,
+  HiOutlineEye,
   HiOutlinePencilSquare,
   HiOutlinePlus,
   HiOutlineTrash
@@ -38,6 +41,17 @@ const buildRestaurantForm = () => ({
   imageLogo: '',
   bannerImage: '',
   adminId: '',
+  openingHours: {
+    monday: { open: '09:00', close: '17:00', isClosed: false },
+    tuesday: { open: '09:00', close: '17:00', isClosed: false },
+    wednesday: { open: '09:00', close: '17:00', isClosed: false },
+    thursday: { open: '09:00', close: '17:00', isClosed: false },
+    friday: { open: '09:00', close: '17:00', isClosed: false },
+    saturday: { open: '09:00', close: '17:00', isClosed: false },
+    sunday: { open: '09:00', close: '17:00', isClosed: false }
+  },
+  isFeatured: false,
+  isTrending: false,
   address: {
     addressLine1: '',
     addressLine2: '',
@@ -261,7 +275,7 @@ function BannerUpload({ value, progress, uploading, onCropComplete, onError }) {
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-[#23411f]">Banner image</p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500 pb-3">
             Upload an exotic dish or signature highlight in a 16:9 frame.
           </p>
         </div>
@@ -319,202 +333,340 @@ function BannerUpload({ value, progress, uploading, onCropComplete, onError }) {
   );
 }
 
-function RestaurantPagePreview({ formData, selectedAdmin }) {
+function RestaurantPageContent({ formData, website, address, fsaBadge, fallbackLocation, todayHours, openingHours, heroImage }) {
+  return (
+    <div className="min-h-screen bg-[#f6fdeb] text-[#23411f]">
+      <header className="relative h-[50vh] min-h-[300px] flex items-center justify-center overflow-hidden">
+        {heroImage ? (
+          <img
+            alt={formData.name || 'Restaurant'}
+            className="absolute inset-0 w-full h-full object-cover"
+            src={heroImage}
+          />
+        ) : (
+          <div className="absolute inset-0 bg-[linear-gradient(135deg,#edf4dc_0%,#f5faeb_100%)]" />
+        )}
+        <div className="absolute inset-0 hero-gradient"></div>
+        <div className="relative z-10 text-center px-6">
+          <h1 className="text-white !text-4xl md:!text-6xl font-extrabold tracking-tighter mb-2">
+            {formData.name || 'Restaurant name'}
+          </h1>
+          <p className="text-white/80 text-lg md:text-xl tracking-[0.3em] uppercase mb-6">
+            {formData.tagline || 'Signature dining experience'}
+          </p>
+          <div className="flex items-center justify-center flex-wrap gap-x-6 gap-y-2 text-white font-bold text-sm tracking-widest uppercase">
+            <span className="flex items-center gap-1">
+              <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+              New Rating
+            </span>
+            <span className="opacity-40">|</span>
+            <span>{formData.priceRange || '$$'}</span>
+            <span className="opacity-40">|</span>
+            <span>{fallbackLocation}</span>
+          </div>
+          {fsaBadge ? (
+            <div className="mt-4 flex justify-center">
+              <img
+                src={fsaBadge}
+                alt={`FSA Rating ${formData.fsaSelection?.rating || formData.fsaSelection?.value}`}
+                className="h-12 w-auto"
+              />
+            </div>
+          ) : null}
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.7fr)_360px]">
+          <div>
+            <section className="overflow-hidden rounded-[2rem] border border-[#dce6c1] bg-white shadow-[0_22px_70px_rgba(65,48,24,0.08)]">
+              <div className="border-b border-[#ebf0d7] bg-[linear-gradient(135deg,#fbfcf7_0%,#f5faeb_100%)] p-6 sm:p-8">
+                <div className="space-y-6">
+                  <div className="max-w-2xl">
+                    <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[#8e5c2d]">
+                      Curated Menu
+                    </p>
+                    <h2 className="mt-3 text-3xl font-black tracking-tight text-[#23411f]">
+                      Designed to feel like a destination, not a list
+                    </h2>
+                    <p className="mt-4 text-base leading-7 text-[#6d6358]">
+                      Browse the standout dishes, signature sections, and high-intent menu story of{' '}
+                      {formData.name || 'this restaurant'}.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3">
+                    {['Chef selection', 'Signature plates', 'Drinks'].map((label) => (
+                      <span
+                        key={label}
+                        className="rounded-full bg-[#f1eadd] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-[#675d52]"
+                      >
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 sm:p-8">
+                <div className="rounded-[1.5rem] border border-dashed border-[#dce6c1] bg-[#faf6ef] px-6 py-10 text-center">
+                  <p className="text-sm uppercase tracking-[0.32em] text-[#8e5c2d]">Menu</p>
+                  <h3 className="mt-3 text-2xl font-bold text-[#23411f]">Coming Soon</h3>
+                  <p className="mt-3 text-sm leading-7 text-[#6d6358]">
+                    This restaurant has not published its dishes yet.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <section className="mt-8 grid gap-6 md:grid-cols-3">
+              <div className="rounded-[1.5rem] border border-[#dce6c1] bg-[#1f2e17] p-5 text-white shadow-[0_18px_50px_rgba(31,46,23,0.18)]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-white/60">
+                  Culinary identity
+                </p>
+                <p className="mt-4 text-lg font-black leading-tight">
+                  Premium presentation that gives the restaurant real brand presence.
+                </p>
+              </div>
+
+              <div className="rounded-[1.5rem] border border-[#dce6c1] bg-white p-5 shadow-[0_18px_45px_rgba(64,48,20,0.06)]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
+                  Atmosphere
+                </p>
+                <p className="mt-4 text-sm leading-6 text-[#6d6358]">
+                  Hero banner, logo treatment, and layered content blocks work together to make the page feel intentional.
+                </p>
+              </div>
+
+              <div className="rounded-[1.5rem] border border-[#dce6c1] bg-[linear-gradient(135deg,#fff7ea_0%,#fffdf8_100%)] p-5 shadow-[0_18px_45px_rgba(64,48,20,0.06)]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
+                  Brand clarity
+                </p>
+                <p className="mt-4 text-sm leading-6 text-[#6d6358]">
+                  Structured information and softer premium surfaces make the restaurant easier to trust.
+                </p>
+              </div>
+            </section>
+
+            <section className="mt-12">
+              <div className="mb-8">
+                <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[#8e5c2d]">
+                  Guest Impressions
+                </p>
+                <h2 className="mt-3 text-3xl font-black tracking-tight text-[#23411f]">
+                  The Guest Journal
+                </h2>
+                <p className="mt-3 text-base text-[#6d6358]">
+                  Reviews displayed like editorial testimonials rather than generic cards.
+                </p>
+              </div>
+
+              <div className="rounded-[1.5rem] border border-dashed border-[#dce6c1] bg-white px-6 py-10 text-center text-[#6d6358] shadow-[0_18px_45px_rgba(64,48,20,0.04)]">
+                Reviews will appear here once guests start sharing their experience.
+              </div>
+            </section>
+          </div>
+
+          <aside className="space-y-5 lg:pt-6">
+            <div className="overflow-hidden rounded-[1.5rem] border border-[#dce6c1] bg-white shadow-[0_18px_50px_rgba(64,48,20,0.06)]">
+              <div className="h-40 overflow-hidden bg-[#edf4dc]">
+                {heroImage ? (
+                  <img
+                    src={heroImage}
+                    alt={formData.name || 'Restaurant'}
+                    className="h-full w-full object-cover"
+                  />
+                ) : null}
+              </div>
+              <div className="p-5">
+                <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Location
+                </p>
+                <h3 className="mt-4 text-xl font-black text-[#23411f]">
+                  {formData.address?.areaLocality || formData.address?.city || 'Visit us'}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-[#6d6358]">{address || 'Address preview'}</p>
+              </div>
+            </div>
+
+            <div className="rounded-[1.5rem] border border-[#dce6c1] bg-white p-5 shadow-[0_18px_50px_rgba(64,48,20,0.06)]">
+              <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Quick facts
+              </p>
+              <div className="mt-4 grid gap-3">
+                <div className="rounded-[1rem] bg-[#faf6ef] px-4 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#9d9284]">
+                    Price range
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-[#23411f]">
+                    {formData.priceRange || 'Available on request'}
+                  </p>
+                </div>
+                <div className="rounded-[1rem] bg-[#faf6ef] px-4 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#9d9284]">
+                    Cuisine
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-[#23411f]">
+                    {formData.cuisineType || 'Signature specials'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[1.5rem] border border-[#dce6c1] bg-white p-5 shadow-[0_18px_50px_rgba(64,48,20,0.06)]">
+              <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Opening Hours
+              </p>
+              {todayHours ? (
+                <div className="mt-4 rounded-[1rem] bg-[#1f2e17] px-4 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/65">
+                    {todayHours.status}
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-white">{todayHours.hours}</p>
+                </div>
+              ) : null}
+              <div className="mt-4 space-y-3 text-sm">
+                {openingHours.map(({ day, short, label, isClosed }) => (
+                  <div key={day} className="flex items-center justify-between gap-3">
+                    <span className="uppercase tracking-[0.18em] text-[#9d9284]">{short}</span>
+                    <span className={isClosed ? 'text-[#b62828]' : 'font-medium text-[#23411f]'}>
+                      {label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[1.5rem] border border-[#dce6c1] bg-white p-5 shadow-[0_18px_50px_rgba(64,48,20,0.06)]">
+              <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+                Inquiries
+              </p>
+              <div className="mt-4 space-y-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#faf6ef] text-[#8e5c2d]">
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                  </span>
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9d9284]">Reservations</p>
+                    <p className="mt-1 text-sm font-medium text-[#23411f]">
+                      {formData.contactNumber || 'Contact number'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#faf6ef] text-[#8e5c2d]">
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </span>
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9d9284]">Email</p>
+                    <p className="mt-1 text-sm font-medium text-[#23411f] break-all">
+                      {formData.email || 'restaurant@email.com'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#faf6ef] text-[#8e5c2d]">
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                    </svg>
+                  </span>
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9d9284]">Website</p>
+                    <p className="mt-1 text-sm font-medium text-[#23411f]">
+                      {website || 'Visit restaurant website'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function RestaurantPagePreview({ formData }) {
   const heroImage = getPreviewHero(formData);
   const website = normalizeWebsiteUrl(formData.website);
-  const fallbackLocation =
-    formData.address?.city || formData.address?.areaLocality || 'UK';
-  const fullAddress = formatAddress(formData.address);
+  const address = formatAddress(formData.address);
   const fsaBadge = getBadgeUrl(
     formData.fsaSelection?.rating || formData.fsaSelection?.value
   );
+  const fallbackLocation =
+    formData.address?.city || formData.address?.areaLocality || 'UK';
+
+  const getTodayHours = () => {
+    if (!formData.openingHours) return null;
+    const day = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][
+      new Date().getDay()
+    ];
+    const value = formData.openingHours[day];
+    if (!value || value.isClosed) return { status: 'Closed Today', hours: 'Closed' };
+    return { status: 'Open Today', hours: `${value.open} - ${value.close}` };
+  };
+
+  const formatHours = () => {
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    return days.map((day) => {
+      const value = formData.openingHours?.[day];
+      return !value || value.isClosed
+        ? { day, short: day.slice(0, 3), label: 'Closed', isClosed: true }
+        : {
+            day,
+            short: day.slice(0, 3),
+            label: `${value.open} - ${value.close}`,
+            isClosed: false
+          };
+    });
+  };
+
+  const todayHours = getTodayHours();
+  const openingHours = formatHours();
 
   return (
-    <div className="overflow-hidden rounded-[1.8rem] border border-[#e9dfd0] bg-[#f5f1e8] shadow-[0_18px_45px_rgba(64,48,20,0.06)]">
-      <div className="relative h-[24rem] overflow-hidden">
-        {heroImage ? (
-          <img
-            src={heroImage}
-            alt={formData.name || 'Restaurant'}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="h-full w-full bg-[linear-gradient(135deg,#e8decf_0%,#f5f1e8_100%)]" />
-        )}
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.18)_0%,rgba(0,0,0,0.78)_100%)]" />
-        <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-white [text-shadow:0_10px_35px_rgba(0,0,0,0.9)]">
-          <div className="max-w-3xl">
-            <p className="text-5xl font-extrabold tracking-tight sm:text-7xl">
-              {formData.name || 'Restaurant name'}
-            </p>
-            <p className="mt-3 text-sm uppercase tracking-[0.32em] text-white/80 sm:text-lg">
-              {formData.tagline || 'Signature dining experience'}
-            </p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] font-bold uppercase tracking-[0.22em] text-white/90 sm:text-xs">
-              <span>New Rating</span>
-              <span className="opacity-40">|</span>
-              <span>$$</span>
-              <span className="opacity-40">|</span>
-              <span>{fallbackLocation}</span>
-            </div>
-            {fsaBadge ? (
-              <div className="mt-5 flex justify-center">
-                <img
-                  src={fsaBadge}
-                  alt={`FSA Rating ${formData.fsaSelection?.rating || formData.fsaSelection?.value}`}
-                  className="h-12 w-auto drop-shadow-[0_10px_25px_rgba(0,0,0,0.55)]"
-                />
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </div>
-
-      <div className="grid gap-6 p-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="overflow-hidden rounded-[2.2rem] border border-[#e9dfd0] bg-white shadow-[0_22px_70px_rgba(65,48,24,0.08)]">
-          <div className="border-b border-[#f0e8db] bg-[linear-gradient(135deg,#fbf8f2_0%,#f8f4ec_100%)] p-6 sm:p-8">
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-              <div className="max-w-2xl">
-                <p className="!text-[8px] font-semibold uppercase tracking-[0.32em] text-[#8e5c2d]">
-                  Curated Menu
-                </p>
-                <h3 className="mt-3 !text-[20px] sm:text-4xl font-black tracking-tight text-[#1c1917] leading-snug max-w-xl">
-                  Designed to feel like a destination, not a list
-                </h3>
-                <p className="mt-4 text-base leading-8 text-[#6d6358]">
-                  {formData.description ||
-                    `Browse the standout dishes, signature sections, and high-intent menu story of ${
-                      formData.name || 'this restaurant'
-                    }.`}
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                {['Chef selection', 'Signature plates', 'Drinks'].map(
-                  (label) => (
-                    <span
-                      key={label}
-                      className="rounded-full bg-[#f1eadd] px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#675d52]"
-                    >
-                      {label}
-                    </span>
-                  )
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6 sm:p-8">
-            <div className="rounded-[1.9rem] border border-dashed border-[#dfd3c1] bg-[#faf6ef] px-6 py-14 text-center">
-              <p className="text-sm uppercase tracking-[0.32em] text-[#8e5c2d]">
-                Menu
-              </p>
-              <h4 className="mt-3 text-2xl font-bold text-[#1c1917]">
-                Coming Soon
-              </h4>
-              <p className="mt-3 text-sm leading-7 text-[#6d6358]">
-                This restaurant has not published its dishes yet.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-6 lg:pt-8">
-          <div className="overflow-hidden rounded-[2rem] border border-[#e9dfd0] bg-white shadow-[0_18px_50px_rgba(64,48,20,0.06)]">
-            <div className="h-44 overflow-hidden bg-[#f4ede2]">
-              {heroImage ? (
-                <img
-                  src={heroImage}
-                  alt={formData.name || 'Restaurant'}
-                  className="h-full w-full object-cover"
-                />
-              ) : null}
-            </div>
-            <div className="p-6">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
-                Location
-              </p>
-              <h4 className="mt-5 text-2xl font-black text-[#1c1917]">
-                {formData.address?.addressLine1 ||
-                  formData.address?.areaLocality ||
-                  formData.address?.city ||
-                  'Visit us'}
-              </h4>
-              <p className="mt-3 text-sm leading-7 text-[#6d6358]">
-                {fullAddress || 'Address preview'}
-              </p>
-            </div>
-          </div>
-
-          <div className="rounded-[2rem] border border-[#e9dfd0] bg-white p-6 shadow-[0_18px_50px_rgba(64,48,20,0.06)]">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
-              Quick facts
-            </p>
-            <div className="mt-5 grid gap-4">
-              <div className="rounded-[1.5rem] bg-[#faf6ef] px-4 py-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#9d9284]">
-                  Website
-                </p>
-                <p className="mt-2 text-sm font-semibold text-[#1c1917]">
-                  {website || 'Add restaurant website'}
-                </p>
-              </div>
-              <div className="rounded-[1.5rem] bg-[#faf6ef] px-4 py-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#9d9284]">
-                  Owner
-                </p>
-                <p className="mt-2 text-sm font-semibold text-[#1c1917]">
-                  {selectedAdmin?.userName || 'Choose admin'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-[2rem] border border-[#e9dfd0] bg-white p-6 shadow-[0_18px_50px_rgba(64,48,20,0.06)]">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#faf6ef] text-[#8e5c2d]">
-                {formData.imageLogo ? (
-                  <img
-                    src={formData.imageLogo}
-                    alt={formData.name || 'Logo'}
-                    className="h-full w-full rounded-full object-cover"
-                  />
-                ) : (
-                  <span className="text-sm font-bold">
-                    {formData.name?.charAt(0)?.toUpperCase() || 'R'}
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
-                Inquiries
-              </p>
-            </div>
-            <div className="mt-5 space-y-5 text-sm">
-              <div className="rounded-[1.35rem] bg-[#faf6ef] px-4 py-4 text-[#5f5549]">
-                {formData.contactNumber || 'Contact number'}
-              </div>
-              <div className="rounded-[1.35rem] bg-[#faf6ef] px-4 py-4 text-[#5f5549]">
-                {formData.email || 'restaurant@email.com'}
-              </div>
-              <div className="rounded-[1.35rem] bg-[#faf6ef] px-4 py-4 text-[#5f5549]">
-                {website || 'Website link'}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <RestaurantPageContent
+      formData={formData}
+      website={website}
+      address={address}
+      fsaBadge={fsaBadge}
+      fallbackLocation={fallbackLocation}
+      todayHours={todayHours}
+      openingHours={openingHours}
+      heroImage={heroImage}
+    />
   );
 }
 
 export default function DashRestaurants() {
   const { user: currentUser } = useAuth();
+  const navigate = useNavigate();
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [modalMode, setModalMode] = useState(null);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
@@ -580,9 +732,24 @@ export default function DashRestaurants() {
     (item) => item.status === 'blocked'
   ).length;
   const scopedRestaurants = useMemo(() => {
-    if (statusFilter === 'all') return restaurants;
-    return restaurants.filter((item) => item.status === statusFilter);
-  }, [restaurants, statusFilter]);
+    const q = search.trim().toLowerCase();
+    const filtered = restaurants.filter((item) => {
+      const searchMatch = q
+        ? [
+            item.name,
+            item.email,
+            item.address?.city,
+            item.address?.areaLocality,
+            item.address?.postcode
+          ]
+            .filter(Boolean)
+            .some((v) => v.toLowerCase().includes(q))
+        : true;
+      const statusMatch = statusFilter === 'all' || item.status === statusFilter;
+      return searchMatch && statusMatch;
+    });
+    return filtered;
+  }, [restaurants, search, statusFilter]);
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(scopedRestaurants.length / PAGE_SIZE)),
     [scopedRestaurants.length]
@@ -797,6 +964,9 @@ export default function DashRestaurants() {
       imageLogo: restaurant.imageLogo || '',
       bannerImage: restaurant.bannerImage || '',
       adminId: restaurant.adminId || '',
+      openingHours: restaurant.openingHours || formData.openingHours,
+      isFeatured: restaurant.isFeatured || false,
+      isTrending: restaurant.isTrending || false,
       address: {
         addressLine1: restaurant.address?.addressLine1 || '',
         addressLine2: restaurant.address?.addressLine2 || '',
@@ -882,8 +1052,14 @@ export default function DashRestaurants() {
       website: normalizeWebsiteUrl(formData.website),
       imageLogo: formData.imageLogo,
       bannerImage: formData.bannerImage,
+      openingHours: formData.openingHours,
       address: formData.address
     };
+
+    if (currentUser?.role === 'superAdmin') {
+      payload.isFeatured = formData.isFeatured;
+      payload.isTrending = formData.isTrending;
+    }
 
     if (
       formData.location?.lat !== undefined &&
@@ -1122,54 +1298,77 @@ export default function DashRestaurants() {
             </div>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
-            <button
-              type="button"
-              onClick={() => setStatusFilter('all')}
-              className={
-                statusFilter === 'all'
-                  ? 'font-semibold text-[#23411f]'
-                  : 'text-[#2563eb]'
+          <div className="mt-4 flex flex-wrap gap-2">
+            {[
+              {
+                key: 'all',
+                label: `All (${restaurants.length})`,
+                onClick: () => setStatusFilter('all'),
+                active: statusFilter === 'all'
+              },
+              {
+                key: 'published',
+                label: `Published (${publishedCount})`,
+                onClick: () => setStatusFilter('published'),
+                active: statusFilter === 'published'
+              },
+              {
+                key: 'draft',
+                label: `Draft (${draftCount})`,
+                onClick: () => setStatusFilter('draft'),
+                active: statusFilter === 'draft'
+              },
+              {
+                key: 'blocked',
+                label: `Blocked (${blockedCount})`,
+                onClick: () => setStatusFilter('blocked'),
+                active: statusFilter === 'blocked'
               }
+            ].map((filter) => (
+              <Button
+                key={filter.key}
+                size="xs"
+                className={
+                  filter.active
+                    ? '!bg-[#23411f] !text-white'
+                    : '!bg-[#f5faeb] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white'
+                }
+                onClick={filter.onClick}
+              >
+                {filter.label}
+              </Button>
+            ))}
+          </div>
+
+          <div className="mt-4 grid gap-3 xl:grid-cols-[1.1fr,1fr,1fr,1fr,auto]">
+            <TextInput
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search by name, email, or location"
+            />
+            <Select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
             >
-              All ({restaurants.length})
-            </button>
-            <span className="text-gray-300">|</span>
-            <button
-              type="button"
-              onClick={() => setStatusFilter('published')}
-              className={
-                statusFilter === 'published'
-                  ? 'font-semibold text-[#23411f]'
-                  : 'text-[#2563eb]'
-              }
+              <option value="all">All statuses</option>
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
+              <option value="blocked">Blocked</option>
+            </Select>
+            <div></div>
+            <div></div>
+            <Button
+              color="light"
+              className="w-full xl:w-auto"
+              onClick={() => {
+                setSearch('');
+                setStatusFilter('all');
+                setPage(1);
+              }}
             >
-              Published ({publishedCount})
-            </button>
-            <span className="text-gray-300">|</span>
-            <button
-              type="button"
-              onClick={() => setStatusFilter('draft')}
-              className={
-                statusFilter === 'draft'
-                  ? 'font-semibold text-[#23411f]'
-                  : 'text-[#2563eb]'
-              }
-            >
-              Draft ({draftCount})
-            </button>
-            <span className="text-gray-300">|</span>
-            <button
-              type="button"
-              onClick={() => setStatusFilter('blocked')}
-              className={
-                statusFilter === 'blocked'
-                  ? 'font-semibold text-[#23411f]'
-                  : 'text-[#2563eb]'
-              }
-            >
-              Blocked ({blockedCount})
-            </button>
+              <HiOutlineArrowPath className="mr-2 h-4 w-4" />
+              Reset
+            </Button>
           </div>
 
           {loading && (
@@ -1248,6 +1447,14 @@ export default function DashRestaurants() {
                     </Table.Cell>
                     <Table.Cell>
                       <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="xs"
+                          className="!bg-[#8fa31e] !text-white hover:!bg-[#78871c]"
+                          onClick={() => navigate(`/restaurants/${restaurant.slug}`)}
+                        >
+                          <HiOutlineEye className="mr-1 h-4 w-4" />
+                          View
+                        </Button>
                         {canUpdateRestaurant && (
                           <Button
                             size="xs"
@@ -1270,18 +1477,17 @@ export default function DashRestaurants() {
                               Publish
                             </Button>
                           )}
-                        {canUpdateStatus &&
-                          restaurant.status !== 'draft' && (
-                            <Button
-                              size="xs"
-                              color="warning"
-                              onClick={() =>
-                                handleStatusChange(restaurant, 'draft')
-                              }
-                            >
-                              Draft
-                            </Button>
-                          )}
+                        {canUpdateStatus && restaurant.status !== 'draft' && (
+                          <Button
+                            size="xs"
+                            color="warning"
+                            onClick={() =>
+                              handleStatusChange(restaurant, 'draft')
+                            }
+                          >
+                            Draft
+                          </Button>
+                        )}
                         {canUpdateStatus && restaurant.status !== 'blocked' && (
                           <Button
                             size="xs"
@@ -1323,7 +1529,10 @@ export default function DashRestaurants() {
                 ))}
                 {filteredRestaurants.length === 0 && (
                   <Table.Row>
-                    <Table.Cell colSpan={5} className="py-10 text-center text-sm text-gray-500">
+                    <Table.Cell
+                      colSpan={5}
+                      className="py-10 text-center text-sm text-gray-500"
+                    >
                       No restaurants found for the `{statusFilter}` filter.
                     </Table.Cell>
                   </Table.Row>
@@ -1448,6 +1657,7 @@ export default function DashRestaurants() {
       <Modal
         show={modalMode === 'create' || modalMode === 'edit'}
         onClose={resetModalState}
+        dismissible={true}
         size="7xl"
       >
         <Modal.Header>
@@ -1501,9 +1711,9 @@ export default function DashRestaurants() {
                     </div>
                     <div className="mt-3 max-h-56 space-y-2 overflow-y-auto">
                       {!fsaLoading &&
-                        fsaOptions.map((option) => (
+                        fsaOptions.map((option, index) => (
                           <button
-                            key={option.fhrsId}
+                            key={`${option.fhrsId}-${index}`}
                             type="button"
                             onClick={() => applyFsaOption(option)}
                             className="flex w-full flex-col rounded-xl border border-transparent bg-[#fbfcf7] px-3 py-3 text-left hover:!border-[#dce6c1] hover:!bg-[#f6fbe9]"
@@ -1512,13 +1722,17 @@ export default function DashRestaurants() {
                               {option.name}
                             </span>
                             <span className="text-xs text-gray-500">
-                              FHRS {option.rating} · {option.addressLabel || option.postcode || 'No postcode'}
+                              FHRS {option.rating} ·{' '}
+                              {option.addressLabel ||
+                                option.postcode ||
+                                'No postcode'}
                             </span>
                           </button>
                         ))}
                       {!fsaLoading && fsaOptions.length === 0 && (
                         <p className="text-sm text-gray-500">
-                          FSA suggestions will appear here once the restaurant name and postcode are available.
+                          FSA suggestions will appear here once the restaurant
+                          name and postcode are available.
                         </p>
                       )}
                     </div>
@@ -1527,7 +1741,9 @@ export default function DashRestaurants() {
                 <div className="space-y-2 sm:col-span-2">
                   <div className="flex items-center justify-between gap-3">
                     <Label htmlFor="restaurantTagline">Tagline</Label>
-                    <span className="text-xs text-gray-500">{getTaglineWordCount(formData.tagline)}/7 words</span>
+                    <span className="text-xs text-gray-500">
+                      {getTaglineWordCount(formData.tagline)}/7 words
+                    </span>
                   </div>
                   <TextInput
                     id="restaurantTagline"
@@ -1609,10 +1825,140 @@ export default function DashRestaurants() {
                     className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
                   />
                 </div>
+
+                <div className="space-y-4 rounded-[1.5rem] border border-[#e4ebce] bg-[#fbfcf7] p-4 sm:col-span-2">
+                  <div>
+                    <p className="text-sm font-semibold text-[#23411f]">
+                      Compliance and ownership
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Choose the restaurant owner.
+                    </p>
+                  </div>
+
+                  {currentUser?.role === 'superAdmin' && (
+                    <SearchableAdminPicker
+                      selectedAdmin={selectedAdmin}
+                      selectedAdminId={selectedAdmin?._id}
+                      fetchAdmins={fetchAvailableAdmins}
+                      onSelect={(admin) => {
+                        setSelectedAdmin(admin);
+                        setFormData((current) => ({
+                          ...current,
+                          adminId: admin._id
+                        }));
+                      }}
+                    />
+                  )}
+                </div>
+
+                {currentUser?.role === 'superAdmin' && (
+                  <div className="flex gap-4 sm:col-span-2">
+                    <div className="flex items-center gap-2 rounded-[1rem] border !border-[#e4ebce] bg-[#fbfcf7] px-4 py-3">
+                      <ToggleSwitch
+                        checked={formData.isFeatured}
+                        label="Featured"
+                        onChange={(checked) =>
+                          setFormData((current) => ({
+                            ...current,
+                            isFeatured: checked
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 rounded-[1rem] border !border-[#e4ebce] bg-[#fbfcf7] px-4 py-3">
+                      <ToggleSwitch
+                        checked={formData.isTrending}
+                        label="Trending"
+                        onChange={(checked) =>
+                          setFormData((current) => ({
+                            ...current,
+                            isTrending: checked
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="grid gap-6 xl:grid-cols-[1fr,1fr]">
+              <div className="space-y-4 rounded-[1.5rem] border border-[#e4ebce] bg-[#fbfcf7] p-4">
+                <div>
+                  <p className="text-sm font-semibold text-[#23411f]">
+                    Opening Hours
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Set opening times for each day
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => (
+                    <div key={day} className="flex items-center gap-2">
+                      <span className="w-20 text-sm capitalize text-gray-600">
+                        {day}
+                      </span>
+                      <TextInput
+                        type="time"
+                        value={formData.openingHours?.[day]?.open || '09:00'}
+                        onChange={(event) =>
+                          setFormData((current) => ({
+                            ...current,
+                            openingHours: {
+                              ...current.openingHours,
+                              [day]: {
+                                ...current.openingHours?.[day],
+                                open: event.target.value
+                              }
+                            }
+                          }))
+                        }
+                        className="w-32 focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
+                      />
+                      <span className="text-gray-400">to</span>
+                      <TextInput
+                        type="time"
+                        value={formData.openingHours?.[day]?.close || '17:00'}
+                        onChange={(event) =>
+                          setFormData((current) => ({
+                            ...current,
+                            openingHours: {
+                              ...current.openingHours,
+                              [day]: {
+                                ...current.openingHours?.[day],
+                                close: event.target.value
+                              }
+                            }
+                          }))
+                        }
+                        className="w-32 focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
+                      />
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!formData.openingHours?.[day]?.isClosed}
+                          onChange={(event) =>
+                            setFormData((current) => ({
+                              ...current,
+                              openingHours: {
+                                ...current.openingHours,
+                                [day]: {
+                                  ...current.openingHours?.[day],
+                                  isClosed: !event.target.checked
+                                }
+                              }
+                            }))
+                          }
+                          className="rounded border-gray-300 text-[#8fa31e] focus:ring-[#8fa31e]"
+                        />
+                        <span className="text-xs text-gray-500">Open</span>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="space-y-4 rounded-[1.5rem] border border-[#e4ebce] bg-[#fbfcf7] p-4">
                 <div>
                   <p className="text-sm font-semibold text-[#23411f]">
@@ -1718,45 +2064,18 @@ export default function DashRestaurants() {
                   />
                 </div>
               </div>
+            </div>
 
-              <div className="space-y-4 rounded-[1.5rem] border border-[#e4ebce] bg-[#fbfcf7] p-4">
-                <div>
-                  <p className="text-sm font-semibold text-[#23411f]">
-                    Compliance and ownership
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Choose the restaurant owner and preview the live experience.
-                  </p>
-                </div>
-
-                {currentUser?.role === 'superAdmin' && (
-                  <SearchableAdminPicker
-                    selectedAdmin={selectedAdmin}
-                    selectedAdminId={selectedAdmin?._id}
-                    fetchAdmins={fetchAvailableAdmins}
-                    onSelect={(admin) => {
-                      setSelectedAdmin(admin);
-                      setFormData((current) => ({
-                        ...current,
-                        adminId: admin._id
-                      }));
-                    }}
+              <div className="rounded-[1.25rem] border !border-[#dce6c1] bg-white p-4">
+                <p className="text-sm font-semibold text-[#23411f]">
+                  Preview
+                </p>
+                <div className="mt-3 h-[60vh] overflow-y-auto rounded-lg bg-[#f6fdeb]">
+                  <RestaurantPagePreview
+                    formData={formData}
                   />
-                )}
-
-                <div className="rounded-[1.25rem] border !border-[#dce6c1] bg-white p-4">
-                  <p className="text-sm font-semibold text-[#23411f]">
-                    Preview
-                  </p>
-                  <div className="mt-3">
-                    <RestaurantPagePreview
-                      formData={formData}
-                      selectedAdmin={selectedAdmin}
-                    />
-                  </div>
                 </div>
               </div>
-            </div>
 
             <div className="flex justify-end gap-3">
               <Button color="gray" onClick={resetModalState}>
@@ -1777,6 +2096,7 @@ export default function DashRestaurants() {
 
       <DeleteConfirmModal
         show={Boolean(pendingDeleteRestaurant)}
+        dismissible={true}
         onClose={() => setPendingDeleteRestaurant(null)}
         onConfirm={() => handleDeleteRestaurant(pendingDeleteRestaurant)}
         title="Delete Restaurant"
