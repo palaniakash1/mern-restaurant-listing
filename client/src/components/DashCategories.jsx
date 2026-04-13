@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Alert,
   Badge,
@@ -11,31 +12,110 @@ import {
   Table,
   TextInput
 } from 'flowbite-react';
-import { HiOutlinePencilSquare, HiOutlineTrash } from 'react-icons/hi2';
+import {
+  HiOutlineArrowPath,
+  HiOutlinePencilSquare,
+  HiOutlinePlus,
+  HiOutlineTrash
+} from 'react-icons/hi2';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '../utils/permissions';
 import DeleteConfirmModal from './DeleteConfirmModal';
+import ImageUploadCropper from './ImageUploadCropper';
+import ImageFrameLoader from './ImageFrameLoader';
+import { uploadToCloudinary } from '../utils/cloudinaryUpload';
 
-const emptyForm = {
+const buildCategoryForm = () => ({
   name: '',
   restaurantId: '',
   isGeneric: false,
-  order: 0
+  order: 0,
+  image: ''
+});
+
+const CategoryImageUpload = ({ value, progress, uploading, onSelect }) => {
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="text-sm font-semibold text-[#23411f]">Category image</p>
+        <p className="text-xs text-gray-500">
+          Upload a category icon with preview.
+        </p>
+      </div>
+
+      <ImageUploadCropper
+        aspectRatio={1}
+        modalTitle="Crop category image"
+        onCropComplete={onSelect}
+        onError={() => {}}
+        trigger={({ open }) => (
+          <button
+            type="button"
+            onClick={open}
+            className="relative block aspect-square w-full max-w-[260px] overflow-hidden rounded-[1.5rem] border !border-[#dce6c1] bg-[#f7faef] text-left"
+          >
+            {value ? (
+              <img
+                src={value}
+                alt="Category image"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-gray-400">
+                Image preview will appear here
+              </div>
+            )}
+            {uploading && (
+              <ImageFrameLoader
+                progress={progress}
+                label="Uploading image"
+                className="rounded-[1.5rem]"
+              />
+            )}
+          </button>
+        )}
+      />
+
+      <ImageUploadCropper
+        aspectRatio={1}
+        modalTitle="Crop category image"
+        onCropComplete={onSelect}
+        onError={() => {}}
+        trigger={({ open }) => (
+          <button
+            type="button"
+            onClick={open}
+            className="inline-flex w-full max-w-[260px] justify-center rounded-xl border border-[#d8dfc0] bg-white px-3 py-2 text-sm font-semibold text-[#23411f] shadow-sm hover:bg-[#f7faef]"
+          >
+            Choose image
+          </button>
+        )}
+      />
+    </div>
+  );
 };
 
 export default function DashCategories() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [categories, setCategories] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
-  const [formData, setFormData] = useState(emptyForm);
+  const [formData, setFormData] = useState(buildCategoryForm());
   const [editingCategory, setEditingCategory] = useState(null);
+  const [editImageProgress, setEditImageProgress] = useState(0);
+  const [editImageUploading, setEditImageUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [linkedMenus, setLinkedMenus] = useState([]);
+  const [showUnassignModal, setShowUnassignModal] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [imageProgress, setImageProgress] = useState(0);
+  const [imageUploading, setImageUploading] = useState(false);
 
   const canReadAllCategories = hasPermission(user, 'category', 'readAll');
   const canReadOwnCategories = hasPermission(user, 'category', 'readMine');
@@ -111,18 +191,44 @@ export default function DashCategories() {
         name: formData.name,
         order: Number(formData.order) || 0,
         isGeneric: Boolean(formData.isGeneric),
-        restaurantId: formData.isGeneric ? undefined : formData.restaurantId
+        restaurantId: formData.isGeneric ? undefined : formData.restaurantId,
+        image: formData.image || undefined
       });
       setSuccess('Category created successfully.');
-      setFormData((current) => ({
-        ...emptyForm,
-        restaurantId: current.restaurantId
-      }));
+      setFormData(buildCategoryForm());
+      setShowCreateModal(false);
       await loadCategories();
     } catch (createError) {
       setError(createError.message);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleEditImageSelect = async (file) => {
+    if (!file.type.startsWith('image/')) {
+      setError('Please choose a valid image file.');
+      return;
+    }
+    setEditImageUploading(true);
+    setEditImageProgress(8);
+    try {
+      const uploaded = await uploadToCloudinary({
+        file,
+        folder: 'categories',
+        resourceType: 'image',
+        publicIdPrefix: 'category',
+        onProgress: (progress) => setEditImageProgress(progress)
+      });
+      setEditImageProgress(100);
+      setEditingCategory((current) => ({
+        ...current,
+        image: uploaded.url
+      }));
+    } catch (uploadError) {
+      setError(uploadError.message);
+    } finally {
+      setEditImageUploading(false);
     }
   };
 
@@ -135,7 +241,8 @@ export default function DashCategories() {
       setSuccess(null);
       await apiPatch(`/api/categories/${editingCategory._id}`, {
         name: editingCategory.name,
-        order: Number(editingCategory.order) || 0
+        order: Number(editingCategory.order) || 0,
+        image: editingCategory.image || undefined
       });
       setSuccess('Category updated successfully.');
       setEditingCategory(null);
@@ -158,28 +265,192 @@ export default function DashCategories() {
     try {
       setError(null);
       setSuccess(null);
-      await apiDelete(`/api/categories/${categoryToDelete}`);
+      await apiDelete(`/api/categories/${categoryToDelete}/hard`);
       setSuccess('Category deleted successfully.');
       await loadCategories();
-    } catch (deleteError) {
-      setError(deleteError.message);
-    } finally {
       setShowDeleteModal(false);
       setCategoryToDelete(null);
+      setLinkedMenus([]);
+    } catch (deleteError) {
+      // Check if error contains linked menus
+      const errorData = deleteError.data;
+      console.log('Delete error:', deleteError);
+      console.log('Error data:', errorData);
+
+      if (errorData?.linkedMenus && errorData.linkedMenus.length > 0) {
+        setLinkedMenus(errorData.linkedMenus);
+        setShowDeleteModal(false);
+        setShowUnassignModal(true);
+      } else {
+        setError(deleteError.message);
+      }
     }
   };
 
-  const handleStatusChange = async (categoryId, status) => {
+  const handleUnassignMenus = async () => {
     try {
       setError(null);
       setSuccess(null);
-      await apiPatch(`/api/categories/${categoryId}/status`, { status });
-      setSuccess(`Category marked as ${status}.`);
+      // Unassign category from all linked menus by setting categoryId to null
+      const promises = linkedMenus.map((menu) =>
+        apiPatch(`/api/menus/${menu.id}`, { categoryId: null })
+      );
+      await Promise.all(promises);
+      setSuccess(
+        'Category unassigned from all menus. You can now delete the category.'
+      );
+      setShowUnassignModal(false);
+      setLinkedMenus([]);
+      await loadCategories();
+    } catch (unassignError) {
+      setError(unassignError.message);
+    }
+  };
+
+  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [search, setSearch] = useState('');
+
+  const categoryIdFromUrl = searchParams.get('categoryId');
+
+  useEffect(() => {
+    if (categoryIdFromUrl) {
+      const category = categories.find((c) => c._id === categoryIdFromUrl);
+      if (category) {
+        if (category.status === 'draft') {
+          setSelectedFilter('inactive');
+        } else if (category.isGeneric) {
+          setSelectedFilter('generic');
+        } else {
+          setSelectedFilter('restaurant');
+        }
+      }
+    }
+  }, [categoryIdFromUrl, categories]);
+
+  const getRestaurantName = useCallback(
+    (restaurantId) => {
+      if (!restaurantId) return '-';
+      const restaurant = restaurants.find((r) => r._id === restaurantId);
+      return restaurant?.name || restaurantId;
+    },
+    [restaurants]
+  );
+
+  const handleImageSelect = async (file) => {
+    setFormData((current) => ({
+      ...current,
+      image: URL.createObjectURL(file)
+    }));
+    setImageUploading(true);
+    setImageProgress(10);
+
+    try {
+      const uploaded = await uploadToCloudinary({
+        file,
+        folder: 'categories',
+        resourceType: 'image',
+        publicIdPrefix: 'category-image',
+        onProgress: (progress) => setImageProgress(progress)
+      });
+      setImageProgress(100);
+      setFormData((current) => ({
+        ...current,
+        image: uploaded.url
+      }));
+    } catch (uploadError) {
+      setError(uploadError.message || 'Failed to upload image');
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  const handleStatusChange = async (categoryId, currentStatus) => {
+    const newStatus = currentStatus === 'published' ? 'draft' : 'published';
+    try {
+      setError(null);
+      setSuccess(null);
+      await apiPatch(`/api/categories/${categoryId}/status`, {
+        status: newStatus
+      });
+      setSuccess(`Category marked as ${newStatus}.`);
       await loadCategories();
     } catch (statusError) {
       setError(statusError.message);
     }
   };
+
+  const handleImageUpdate = async (categoryId, file) => {
+    try {
+      setError(null);
+      setSuccess(null);
+      const uploaded = await uploadToCloudinary({
+        file,
+        folder: 'categories',
+        resourceType: 'image',
+        publicIdPrefix: 'category-image'
+      });
+      await apiPatch(`/api/categories/${categoryId}`, { image: uploaded.url });
+      setSuccess('Category image updated.');
+      await loadCategories();
+    } catch (uploadError) {
+      setError(uploadError.message || 'Failed to update image');
+    }
+  };
+
+  const filteredCategories = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    switch (selectedFilter) {
+      case 'generic':
+        return categories.filter((c) => {
+          const searchMatch = q
+            ? [c.name, getRestaurantName(c.restaurantId)]
+                .filter(Boolean)
+                .some((v) => v.toLowerCase().includes(q))
+            : true;
+          return c.isGeneric && c.status === 'published' && searchMatch;
+        });
+      case 'restaurant':
+        return categories.filter((c) => {
+          const searchMatch = q
+            ? [c.name, getRestaurantName(c.restaurantId)]
+                .filter(Boolean)
+                .some((v) => v.toLowerCase().includes(q))
+            : true;
+          return !c.isGeneric && c.status === 'published' && searchMatch;
+        });
+      case 'inactive':
+        return categories.filter((c) => {
+          const searchMatch = q
+            ? [c.name, getRestaurantName(c.restaurantId)]
+                .filter(Boolean)
+                .some((v) => v.toLowerCase().includes(q))
+            : true;
+          return c.status !== 'published' && searchMatch;
+        });
+      default:
+        return categories.filter((c) => {
+          const searchMatch = q
+            ? [c.name, getRestaurantName(c.restaurantId)]
+                .filter(Boolean)
+                .some((v) => v.toLowerCase().includes(q))
+            : true;
+          return searchMatch;
+        });
+    }
+  }, [categories, getRestaurantName, search, selectedFilter]);
+
+  const filterCounts = useMemo(
+    () => ({
+      all: categories.length,
+      generic: categories.filter((c) => c.isGeneric && c.status === 'published')
+        .length,
+      restaurant: categories.filter(
+        (c) => !c.isGeneric && c.status === 'published'
+      ).length,
+      inactive: categories.filter((c) => c.status !== 'published').length
+    }),
+    [categories]
+  );
 
   if (!listEndpoint) {
     return (
@@ -196,153 +467,87 @@ export default function DashCategories() {
       {error && <Alert color="failure">{error}</Alert>}
       {success && <Alert color="success">{success}</Alert>}
 
-      <div className="grid gap-4 xl:grid-cols-[1.15fr,0.85fr]">
-        <Card className="border !border-[#dce6c1] bg-white shadow-sm">
-          <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#b62828]">
-              Category management
+      <Card className="border !border-[#dce6c1] bg-white shadow-sm">
+        <div className="grid gap-5 xl:grid-cols-[1.1fr,0.9fr]">
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[#b62828]">
+              Category command center
             </p>
-            <h2 className="text-2xl font-bold text-[#23411f]">
+            <h2 className="text-2xl font-bold text-[#23411f] sm:text-3xl">
               Generic and restaurant categories
             </h2>
-            <p className="text-sm text-gray-500">
+            <p className="max-w-2xl text-sm leading-7 text-gray-600">
               Use the live backend category endpoints for platform-wide generic
               categories or restaurant-specific category trees.
             </p>
           </div>
-
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl bg-[#f5faeb] p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-[#7e9128]">
-                Total categories
-              </p>
-              <p className="mt-2 text-3xl font-bold text-[#23411f]">
-                {categories.length}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-[#fff4f4] p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-[#b62828]">
-                Generic
-              </p>
-              <p className="mt-2 text-3xl font-bold text-[#5c1111]">
-                {categories.filter((category) => category.isGeneric).length}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-[#f8f7f1] p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-[#7a7a6b]">
-                Restaurant scoped
-              </p>
-              <p className="mt-2 text-3xl font-bold text-[#23411f]">
-                {categories.filter((category) => !category.isGeneric).length}
-              </p>
+          <div className="rounded-[1.75rem] bg-[linear-gradient(135deg,#b62828_0%,#8fa31e_100%)] p-5 text-white shadow-inner">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/75">
+              Operational view
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl bg-white/12 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-white/70">
+                  Total
+                </p>
+                <p className="mt-2 text-3xl font-bold">{categories.length}</p>
+              </div>
+              <div className="rounded-2xl bg-white/12 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-white/70">
+                  Published
+                </p>
+                <p className="mt-2 text-3xl font-bold">
+                  {filterCounts.generic + filterCounts.restaurant}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white/12 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-white/70">
+                  Inactive
+                </p>
+                <p className="mt-2 text-3xl font-bold">
+                  {filterCounts.inactive}
+                </p>
+              </div>
             </div>
           </div>
+        </div>
+      </Card>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Card className="border !border-[#dce6c1] bg-white shadow-sm">
+          <p className="text-sm text-gray-500">Generic categories</p>
+          <p className="mt-2 text-3xl font-bold text-[#23411f]">
+            {filterCounts.generic}
+          </p>
         </Card>
-
-        {canCreateCategory && (
-          <Card className="border !border-[#dce6c1] bg-white shadow-sm">
-            <div className="space-y-1">
-              <h3 className="text-lg font-semibold text-[#23411f]">Create category</h3>
-              <p className="text-sm text-gray-500">
-                Add new categories using the backend contract.
-              </p>
-            </div>
-            <form className="space-y-4" onSubmit={handleCreateCategory}>
-              <div className="space-y-2">
-                <Label htmlFor="categoryName">Name</Label>
-                <TextInput
-                  id="categoryName"
-                  value={formData.name}
-                  onChange={(event) =>
-                    setFormData((current) => ({
-                      ...current,
-                      name: event.target.value
-                    }))
-                  }
-                  required
-                  className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
-                />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="categoryOrder">Order</Label>
-                  <TextInput
-                    id="categoryOrder"
-                    type="number"
-                    min={0}
-                    value={formData.order}
-                    onChange={(event) =>
-                      setFormData((current) => ({
-                        ...current,
-                        order: event.target.value
-                      }))
-                    }
-                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
-                  />
-                </div>
-                {user?.role === 'superAdmin' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="categoryScope">Scope</Label>
-                    <Select
-                      id="categoryScope"
-                      value={formData.isGeneric ? 'generic' : 'restaurant'}
-                      onChange={(event) =>
-                        setFormData((current) => ({
-                          ...current,
-                          isGeneric: event.target.value === 'generic'
-                        }))
-                      }
-                      className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
-                    >
-                      <option value="restaurant">Restaurant specific</option>
-                      <option value="generic">Generic platform category</option>
-                    </Select>
-                  </div>
-                )}
-              </div>
-
-              {!formData.isGeneric && restaurants.length > 0 && (
-                <div className="space-y-2">
-                  <Label htmlFor="categoryRestaurant">Restaurant</Label>
-                  <Select
-                    id="categoryRestaurant"
-                    value={formData.restaurantId}
-                    onChange={(event) =>
-                      setFormData((current) => ({
-                        ...current,
-                        restaurantId: event.target.value
-                      }))
-                    }
-                    required
-                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
-                  >
-                    <option value="">Select restaurant</option>
-                    {restaurants.map((restaurant) => (
-                      <option key={restaurant._id} value={restaurant._id}>
-                        {restaurant.name}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-              )}
-
+        <Card className="border !border-[#dce6c1] bg-white shadow-sm">
+          <p className="text-sm text-gray-500">Restaurant scoped</p>
+          <p className="mt-2 text-3xl font-bold text-[#23411f]">
+            {filterCounts.restaurant}
+          </p>
+        </Card>
+        <Card className="border !border-[#dce6c1] bg-white shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-gray-500">Quick actions</p>
+            {canCreateCategory && (
               <Button
-                type="submit"
                 className="!bg-[#8fa31e] hover:!bg-[#78871c]"
-                isProcessing={submitting}
+                onClick={() => setShowCreateModal(true)}
               >
-                Create category
+                <HiOutlinePlus className="mr-2 h-4 w-4" />
+                Add category
               </Button>
-            </form>
-          </Card>
-        )}
+            )}
+          </div>
+        </Card>
       </div>
 
       <Card className="border !border-[#dce6c1] bg-white shadow-sm">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h3 className="text-lg font-semibold text-[#23411f]">Category inventory</h3>
+            <h3 className="text-lg font-semibold text-[#23411f]">
+              Category inventory
+            </h3>
             <p className="text-sm text-gray-500">
               Active categories available in your permission scope.
             </p>
@@ -350,9 +555,65 @@ export default function DashCategories() {
           {loading && <Spinner size="sm" />}
         </div>
 
+        <div className="mb-4 flex flex-wrap gap-2">
+          {[
+            { key: 'all', label: `All (${filterCounts.all})` },
+            { key: 'generic', label: `Generic (${filterCounts.generic})` },
+            {
+              key: 'restaurant',
+              label: `Restaurant (${filterCounts.restaurant})`
+            },
+            { key: 'inactive', label: `Inactive (${filterCounts.inactive})` }
+          ].map((filter) => (
+            <Button
+              key={filter.key}
+              size="xs"
+              className={
+                selectedFilter === filter.key
+                  ? '!bg-[#23411f] !text-white'
+                  : '!bg-[#f5faeb] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white'
+              }
+              onClick={() => setSelectedFilter(filter.key)}
+            >
+              {filter.label}
+            </Button>
+          ))}
+        </div>
+
+        <div className="mt-4 grid gap-3 xl:grid-cols-[1.1fr,1fr,1fr,1fr,auto]">
+          <TextInput
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search by name or restaurant"
+          />
+          <Select
+            value={selectedFilter}
+            onChange={(event) => setSelectedFilter(event.target.value)}
+          >
+            <option value="all">All filters</option>
+            <option value="generic">Generic</option>
+            <option value="restaurant">Restaurant</option>
+            <option value="inactive">Inactive</option>
+          </Select>
+          <div></div>
+          <div></div>
+          <Button
+            color="light"
+            className="w-full xl:w-auto"
+            onClick={() => {
+              setSearch('');
+              setSelectedFilter('all');
+            }}
+          >
+            <HiOutlineArrowPath className="mr-2 h-4 w-4" />
+            Reset
+          </Button>
+        </div>
+
         <div className="hidden overflow-x-auto md:block">
           <Table hoverable>
             <Table.Head>
+              <Table.HeadCell>Image</Table.HeadCell>
               <Table.HeadCell>Name</Table.HeadCell>
               <Table.HeadCell>Scope</Table.HeadCell>
               <Table.HeadCell>Restaurant</Table.HeadCell>
@@ -361,8 +622,51 @@ export default function DashCategories() {
               <Table.HeadCell>Actions</Table.HeadCell>
             </Table.Head>
             <Table.Body className="divide-y">
-              {categories.map((category) => (
+              {filteredCategories.map((category) => (
                 <Table.Row key={category._id}>
+                  <Table.Cell>
+                    {category.image ? (
+                      <ImageUploadCropper
+                        aspectRatio={1}
+                        modalTitle="Crop category image"
+                        onCropComplete={(file) =>
+                          handleImageUpdate(category._id, file)
+                        }
+                        onError={() => {}}
+                        trigger={({ open }) => (
+                          <button
+                            type="button"
+                            onClick={open}
+                            className="block aspect-square w-12 overflow-hidden rounded-lg border border-[#d8dfc0] bg-[#f7faef]"
+                          >
+                            <img
+                              src={category.image}
+                              alt={category.name}
+                              className="h-full w-full object-cover"
+                            />
+                          </button>
+                        )}
+                      />
+                    ) : (
+                      <ImageUploadCropper
+                        aspectRatio={1}
+                        modalTitle="Crop category image"
+                        onCropComplete={(file) =>
+                          handleImageUpdate(category._id, file)
+                        }
+                        onError={() => {}}
+                        trigger={({ open }) => (
+                          <button
+                            type="button"
+                            onClick={open}
+                            className="flex aspect-square w-12 items-center justify-center rounded-lg border border-dashed border-[#d8dfc0] bg-[#f7faef] text-xs text-gray-400 hover:border-[#8fa31e] hover:text-[#23411f]"
+                          >
+                            +
+                          </button>
+                        )}
+                      />
+                    )}
+                  </Table.Cell>
                   <Table.Cell className="font-medium text-[#23411f]">
                     {category.name}
                   </Table.Cell>
@@ -372,10 +676,16 @@ export default function DashCategories() {
                     </Badge>
                   </Table.Cell>
                   <Table.Cell>
-                    {category.restaurantId?.name || category.restaurantId || '-'}
+                    {category.isGeneric
+                      ? 'Platform'
+                      : getRestaurantName(category.restaurantId)}
                   </Table.Cell>
                   <Table.Cell>
-                    <Badge color={category.status === 'published' ? 'success' : 'warning'}>
+                    <Badge
+                      color={
+                        category.status === 'published' ? 'success' : 'warning'
+                      }
+                    >
                       {category.status || 'draft'}
                     </Badge>
                   </Table.Cell>
@@ -401,10 +711,18 @@ export default function DashCategories() {
                       {canUpdateStatus && (
                         <Button
                           size="xs"
-                          color="success"
-                          onClick={() => handleStatusChange(category._id, 'published')}
+                          className={
+                            category.status === 'published'
+                              ? '!bg-[#f59e0b] hover:!bg-[#d97706] !text-white'
+                              : '!bg-[#22c55e] hover:!bg-[#16a34a] !text-white'
+                          }
+                          onClick={() =>
+                            handleStatusChange(category._id, category.status)
+                          }
                         >
-                          Publish
+                          {category.status === 'published'
+                            ? 'Draft'
+                            : 'Publish'}
                         </Button>
                       )}
                       {canDeleteCategory && (
@@ -426,13 +744,20 @@ export default function DashCategories() {
         </div>
 
         <div className="space-y-3 md:hidden">
-          {categories.map((category) => (
-            <div key={category._id} className="rounded-2xl border border-[#ebf0d7] p-4">
+          {filteredCategories.map((category) => (
+            <div
+              key={category._id}
+              className="rounded-2xl border border-[#ebf0d7] p-4"
+            >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="font-semibold text-[#23411f]">{category.name}</p>
+                  <p className="font-semibold text-[#23411f]">
+                    {category.name}
+                  </p>
                   <p className="text-xs text-gray-500">
-                    {category.restaurantId?.name || category.restaurantId || 'Platform'}
+                    {category.isGeneric
+                      ? 'Platform'
+                      : getRestaurantName(category.restaurantId)}
                   </p>
                 </div>
                 <Badge color={category.isGeneric ? 'failure' : 'success'}>
@@ -444,49 +769,131 @@ export default function DashCategories() {
         </div>
       </Card>
 
-      <Modal show={Boolean(editingCategory)} onClose={() => setEditingCategory(null)}>
-        <Modal.Header>Edit category</Modal.Header>
+      <Modal
+        show={Boolean(editingCategory)}
+        onClose={() => setEditingCategory(null)}
+        dismissible={true}
+        size="3xl"
+      >
+        <Modal.Header>Update category workspace</Modal.Header>
         <Modal.Body>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="editCategoryName">Name</Label>
-              <TextInput
-                id="editCategoryName"
-                value={editingCategory?.name || ''}
-                onChange={(event) =>
-                  setEditingCategory((current) => ({
-                    ...current,
-                    name: event.target.value
-                  }))
-                }
-                className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
-              />
+          <form
+            id="editCategoryForm"
+            className="space-y-6"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleUpdateCategory();
+            }}
+          >
+            <div className="grid gap-6 xl:grid-cols-[0.92fr,1.08fr]">
+              <div className="space-y-6">
+                <CategoryImageUpload
+                  value={editingCategory?.image || ''}
+                  progress={editImageProgress}
+                  uploading={editImageUploading}
+                  onSelect={handleEditImageSelect}
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="editCategoryName">Name</Label>
+                  <TextInput
+                    id="editCategoryName"
+                    value={editingCategory?.name || ''}
+                    onChange={(event) =>
+                      setEditingCategory((current) => ({
+                        ...current,
+                        name: event.target.value
+                      }))
+                    }
+                    required
+                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
+                  />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="editCategoryOrder">Order</Label>
+                    <TextInput
+                      id="editCategoryOrder"
+                      type="number"
+                      min={0}
+                      value={editingCategory?.order ?? 0}
+                      onChange={(event) =>
+                        setEditingCategory((current) => ({
+                          ...current,
+                          order: event.target.value
+                        }))
+                      }
+                      className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
+                    />
+                  </div>
+                  {user?.role === 'superAdmin' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="editCategoryScope">Scope</Label>
+                      <Select
+                        id="editCategoryScope"
+                        value={
+                          editingCategory?.isGeneric ? 'generic' : 'restaurant'
+                        }
+                        onChange={(event) =>
+                          setEditingCategory((current) => ({
+                            ...current,
+                            isGeneric: event.target.value === 'generic'
+                          }))
+                        }
+                        className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
+                      >
+                        <option value="restaurant">Restaurant specific</option>
+                        <option value="generic">
+                          Generic platform category
+                        </option>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+
+                {!editingCategory?.isGeneric && restaurants.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="editCategoryRestaurant">Restaurant</Label>
+                    <Select
+                      id="editCategoryRestaurant"
+                      value={
+                        editingCategory?.restaurantId?._id ||
+                        editingCategory?.restaurantId ||
+                        ''
+                      }
+                      onChange={(event) =>
+                        setEditingCategory((current) => ({
+                          ...current,
+                          restaurantId: event.target.value
+                        }))
+                      }
+                      className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
+                    >
+                      <option value="">Select restaurant</option>
+                      {restaurants.map((restaurant) => (
+                        <option key={restaurant._id} value={restaurant._id}>
+                          {restaurant.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="editCategoryOrder">Order</Label>
-              <TextInput
-                id="editCategoryOrder"
-                type="number"
-                min={0}
-                value={editingCategory?.order ?? 0}
-                onChange={(event) =>
-                  setEditingCategory((current) => ({
-                    ...current,
-                    order: event.target.value
-                  }))
-                }
-                className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
-              />
-            </div>
-          </div>
+          </form>
         </Modal.Body>
         <Modal.Footer>
           <Button
+            form="editCategoryForm"
+            type="submit"
             className="!bg-[#8fa31e] hover:!bg-[#78871c]"
             onClick={handleUpdateCategory}
             isProcessing={submitting}
           >
-            Save
+            Save Changes
           </Button>
           <Button color="gray" onClick={() => setEditingCategory(null)}>
             Cancel
@@ -504,7 +911,179 @@ export default function DashCategories() {
         title="Delete Category"
         message="Are you sure you want to delete this category? This action cannot be undone."
         confirmText="Yes, Delete Category"
+        dismissible={true}
       />
+
+      <Modal
+        show={showUnassignModal}
+        onClose={() => setShowUnassignModal(false)}
+        dismissible={true}
+      >
+        <Modal.Header>Linked Menus Found</Modal.Header>
+        <Modal.Body>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              This category is linked to the following menus. You must unassign
+              the category from these menus before deleting.
+            </p>
+            <div className="space-y-2">
+              {linkedMenus.map((menu) => (
+                <div
+                  key={menu.id}
+                  className="flex items-center justify-between rounded-lg border border-[#e6eccf] bg-[#fbfcf7] p-3"
+                >
+                  <div>
+                    <p className="font-medium text-[#23411f]">
+                      {menu.name || 'Unnamed Menu'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Status: {menu.status || 'draft'} •{' '}
+                      {menu.isActive ? 'Active' : 'Inactive'}
+                    </p>
+                  </div>
+                  <Badge color={menu.isActive ? 'success' : 'failure'}>
+                    {menu.isActive ? 'Active' : 'Inactive'}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            className="!bg-[#B42627] hover:!bg-[#910712]"
+            onClick={handleUnassignMenus}
+          >
+            Unassign from All Menus
+          </Button>
+          <Button color="gray" onClick={() => setShowUnassignModal(false)}>
+            Cancel
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal
+        show={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        dismissible={true}
+        size="3xl"
+      >
+        <Modal.Header>Create category workspace</Modal.Header>
+        <Modal.Body>
+          <form
+            id="createCategoryForm"
+            className="space-y-6"
+            onSubmit={handleCreateCategory}
+          >
+            <div className="grid gap-6 xl:grid-cols-[0.92fr,1.08fr]">
+              <div className="space-y-6">
+                <CategoryImageUpload
+                  value={formData.image}
+                  progress={imageProgress}
+                  uploading={imageUploading}
+                  onSelect={handleImageSelect}
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="categoryName">Name</Label>
+                  <TextInput
+                    id="categoryName"
+                    value={formData.name}
+                    onChange={(event) =>
+                      setFormData((current) => ({
+                        ...current,
+                        name: event.target.value
+                      }))
+                    }
+                    required
+                    className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
+                  />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="categoryOrder">Order</Label>
+                    <TextInput
+                      id="categoryOrder"
+                      type="number"
+                      min={0}
+                      value={formData.order}
+                      onChange={(event) =>
+                        setFormData((current) => ({
+                          ...current,
+                          order: event.target.value
+                        }))
+                      }
+                      className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
+                    />
+                  </div>
+                  {user?.role === 'superAdmin' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="categoryScope">Scope</Label>
+                      <Select
+                        id="categoryScope"
+                        value={formData.isGeneric ? 'generic' : 'restaurant'}
+                        onChange={(event) =>
+                          setFormData((current) => ({
+                            ...current,
+                            isGeneric: event.target.value === 'generic'
+                          }))
+                        }
+                        className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
+                      >
+                        <option value="restaurant">Restaurant specific</option>
+                        <option value="generic">
+                          Generic platform category
+                        </option>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+
+                {!formData.isGeneric && restaurants.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="categoryRestaurant">Restaurant</Label>
+                    <Select
+                      id="categoryRestaurant"
+                      value={formData.restaurantId}
+                      onChange={(event) =>
+                        setFormData((current) => ({
+                          ...current,
+                          restaurantId: event.target.value
+                        }))
+                      }
+                      required
+                      className="focus:!border-[#8fa31e] focus:!ring-[#8fa31e]"
+                    >
+                      <option value="">Select restaurant</option>
+                      {restaurants.map((restaurant) => (
+                        <option key={restaurant._id} value={restaurant._id}>
+                          {restaurant.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                )}
+              </div>
+            </div>
+          </form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            form="createCategoryForm"
+            type="submit"
+            className="!bg-[#8fa31e] hover:!bg-[#78871c]"
+            isProcessing={submitting}
+          >
+            Create Category
+          </Button>
+          <Button color="gray" onClick={() => setShowCreateModal(false)}>
+            Cancel
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }
