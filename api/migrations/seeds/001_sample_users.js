@@ -22,7 +22,13 @@ export const run = async (db) => {
     }
   ];
 
-  await db.collection('users').insertMany(users);
+  for (const user of users) {
+    await db.collection('users').updateOne(
+      { userName: user.userName },
+      { $setOnInsert: user },
+      { upsert: true }
+    );
+  }
 
-  console.log(`✅ Created ${users.length} test users`);
+  console.log(`✅ Processed ${users.length} test users`);
 };
