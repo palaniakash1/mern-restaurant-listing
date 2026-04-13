@@ -203,12 +203,9 @@ export default function Restaurants() {
           </div>
         </div>
 
-        {/* Featured Restaurant */}
-        {restaurants.length > 0 && (() => {
-          const featured = restaurants[0];
-          const fhrsBadgeUrl = featured.fsaRating?.value && featured.fsaRating.value !== 'Exempt'
-            ? `https://ratings.food.gov.uk/images/badges/fhrs/3/fhrs-badge-${featured.fsaRating.value}.svg`
-            : null;
+        {/* Featured Restaurants */}
+        {restaurants.length >= 2 && (() => {
+          const featured = restaurants.slice(0, 2);
 
           return (
             <div className="mb-16">
@@ -222,82 +219,106 @@ export default function Restaurants() {
                   Featured Selection
                 </span>
               </div>
-              <Link
-                to={`/restaurants/${featured.slug}`}
-                className="group block bg-white rounded-[1.5rem] border border-[#dce6c1] shadow-sm hover:shadow-[0_25px_80px_rgba(60,79,25,0.08)] transition-all duration-300"
-              >
-                <div className="grid grid-cols-1 lg:grid-cols-2">
-                  {/* Left Side - Image */}
-                  <div className="h-80 lg:h-[420px] overflow-hidden relative rounded-t-[1.5rem] lg:rounded-l-[1.5rem] lg:rounded-tr-none">
-                    <img
-                      alt={featured.name}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      src={featured.bannerImage || featured.featuredImage || featured.imageLogo}
-                    />
-                    <div className="absolute top-4 left-4 bg-[#23411f] text-white px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest">
-                      Editor's Pick
-                    </div>
-                    {fhrsBadgeUrl && (
-                      <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-full p-1 shadow-md">
-                        <img src={fhrsBadgeUrl} alt={`FSA Rating ${featured.fsaRating.value}`} className="h-10 w-auto" />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {featured.map((restaurant, idx) => {
+                  const fhrsBadgeUrl = restaurant.fsaRating?.value && restaurant.fsaRating.value !== 'Exempt'
+                    ? `https://ratings.food.gov.uk/images/badges/fhrs/3/fhrs-badge-${restaurant.fsaRating.value}.svg`
+                    : null;
+
+                  return (
+                    <Link
+                      key={restaurant._id}
+                      to={`/restaurants/${restaurant.slug}`}
+                      className="group relative block bg-white rounded-[1.5rem] border border-[#dce6c1] shadow-sm hover:shadow-[0_25px_80px_rgba(60,79,25,0.12)] transition-all duration-500 overflow-hidden"
+                    >
+                      {/* Image Section */}
+                      <div className="relative h-64 lg:h-72 overflow-hidden">
+                        <img
+                          alt={restaurant.name}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          src={restaurant.bannerImage || restaurant.featuredImage || restaurant.imageLogo}
+                        />
+                        {/* Gradient Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                        {/* Editor's Pick Badge */}
+                        <div className="absolute top-4 left-4 bg-[#23411f] text-white px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                          {idx === 0 ? "Editor's Pick" : 'Top Rated'}
+                        </div>
+                        {/* FSA Rating Badge */}
+                        {fhrsBadgeUrl && (
+                          <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-full p-1.5 shadow-lg">
+                            <img src={fhrsBadgeUrl} alt={`FSA Rating ${restaurant.fsaRating.value}`} className="h-10 w-auto" />
+                          </div>
+                        )}
+                        {/* Logo Badge */}
+                        <div className="absolute bottom-4 right-4 bg-white rounded-xl p-1.5 shadow-xl border-2 border-white">
+                          <img src={restaurant.imageLogo} alt={`${restaurant.name} logo`} className="w-14 h-14 rounded-lg object-cover" />
+                        </div>
                       </div>
-                    )}
-                    <div className="absolute bottom-4 right-4 bg-white rounded-lg p-1 shadow-lg border-2 border-white">
-                      <img src={featured.imageLogo} alt={`${featured.name} logo`} className="w-16 h-16 rounded-lg object-cover" />
-                    </div>
-                  </div>
-                  {/* Right Side - Details */}
-                  <div className="p-8 lg:p-12 flex flex-col justify-center">
-                    <div className="flex items-center gap-3 mb-4">
-                      <span className="px-3 py-1 rounded-full bg-[#f7faef] text-[#23411f] text-[10px] font-bold uppercase tracking-wider">
-                        {featured.categories?.[0] || 'Fine Dining'}
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                        </svg>
-                        <span className="font-bold text-[#23411f]">
-                          {featured.rating || 'New'}
-                        </span>
-                        <span className="text-[#4f5f1d] text-sm">
-                          ({featured.reviewCount || 0} reviews)
-                        </span>
+
+                      {/* Content Section */}
+                      <div className="p-6 lg:p-7">
+                        {/* Tags Row */}
+                        <div className="flex items-center gap-3 mb-3">
+                          <span className="px-3 py-1 rounded-full bg-[#f7faef] text-[#23411f] text-[10px] font-bold uppercase tracking-wider">
+                            {restaurant.categories?.[0] || 'Restaurant'}
+                          </span>
+                          {restaurant.isTrending && (
+                            <span className="px-2 py-0.5 rounded-full bg-[#8fa31e]/10 text-[#8fa31e] text-[9px] font-bold uppercase tracking-wider">
+                              Trending
+                            </span>
+                          )}
+                          <div className="flex items-center gap-1 ml-auto">
+                            <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                            </svg>
+                            <span className="font-bold text-[#23411f] text-sm">
+                              {restaurant.rating || 'New'}
+                            </span>
+                            <span className="text-[#4f5f1d]/70 text-xs">
+                              ({restaurant.reviewCount || 0})
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Restaurant Name */}
+                        <h3 className="text-xl lg:text-2xl font-bold text-[#23411f] mb-2 group-hover:text-[#8fa31e] transition-colors duration-300">
+                          {restaurant.name}
+                        </h3>
+
+                        {/* Tagline */}
+                        <p className="text-[#4f5f1d] text-sm mb-4 line-clamp-2 leading-relaxed">
+                          {restaurant.tagline}
+                        </p>
+
+                        {/* Location & CTA */}
+                        <div className="flex items-center justify-between pt-3 border-t border-[#dce6c1]/50">
+                          <div className="flex items-center gap-2 text-[#4f5f1d]/80 text-xs">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span>{restaurant.address?.city}, {restaurant.address?.country}</span>
+                          </div>
+                          <span className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#8fa31e] hover:bg-[#78871c] text-white rounded-[1rem] text-xs font-semibold transition-colors duration-300">
+                            View
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    <h3 className="text-3xl lg:text-4xl font-bold text-[#23411f] mb-4 group-hover:text-[#8fa31e] transition-colors">
-                      {featured.name}
-                    </h3>
-                    <p className="text-[#4f5f1d] text-lg mb-6 leading-relaxed">
-                      {featured.tagline}
-                    </p>
-                    <div className="flex items-center gap-6 text-[#4f5f1d] text-sm mb-6">
-                      <span className="flex items-center gap-2">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        {featured.address?.city}, {featured.address?.country}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <span className="inline-flex items-center gap-2 px-6 py-3 bg-[#8fa31e] hover:bg-[#78871c] text-white rounded-[1rem] text-sm font-semibold transition-colors">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        View Details
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </Link>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
           );
         })()}
 
         {/* Restaurant Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {restaurants.slice(1).map((restaurant) => (
+          {restaurants.slice(2).map((restaurant) => (
             <Link
               key={restaurant._id}
               to={`/restaurants/${restaurant.slug}`}
