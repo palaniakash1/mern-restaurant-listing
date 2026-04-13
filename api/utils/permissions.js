@@ -52,6 +52,7 @@ export const PERMISSIONS = {
     ],
     menu: [
       'create',
+      'readAll',
       'readDeleted',
       'addItem',
       'updateItem',

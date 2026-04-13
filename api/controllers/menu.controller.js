@@ -282,8 +282,8 @@ export const updateMenuItem = async (req, res, next) => {
       const { menuId, itemId } = req.params;
       const updates = req.body;
 
-      if (!isValidObjectId(menuId) || !isValidObjectId(itemId)) {
-        throw errorHandler(400, 'Invalid ID format');
+      if (!isValidObjectId(menuId)) {
+        throw errorHandler(400, 'Invalid menu ID format');
       }
 
       const menu = await Menu.findById(menuId).session(session).select('-__v');
@@ -292,11 +292,27 @@ export const updateMenuItem = async (req, res, next) => {
         throw errorHandler(403, 'Not allowed');
       }
 
-      const item = menu.items.id(itemId);
-      if (!item) throw errorHandler(404, 'Item not found');
+      let item;
+      let itemIndex;
 
-      if (!item.isActive) {
-        throw errorHandler(400, 'Item is deleted');
+      if (itemId.startsWith('index:')) {
+        itemIndex = parseInt(itemId.replace('index:', ''), 10);
+        const activeItems = menu.items.filter(i => i.isActive);
+        if (isNaN(itemIndex) || itemIndex < 0 || itemIndex >= activeItems.length) {
+          throw errorHandler(404, 'Item not found at index');
+        }
+        item = activeItems[itemIndex];
+        itemIndex = menu.items.findIndex(i => i._id.toString() === item._id.toString());
+      } else {
+        if (!isValidObjectId(itemId)) {
+          throw errorHandler(400, 'Invalid item ID format');
+        }
+        item = menu.items.id(itemId);
+        if (!item) throw errorHandler(404, 'Item not found');
+        if (!item.isActive) {
+          throw errorHandler(400, 'Item is deleted');
+        }
+        itemIndex = menu.items.findIndex(i => i._id.toString() === itemId);
       }
 
       const allowed = [
@@ -306,6 +322,7 @@ export const updateMenuItem = async (req, res, next) => {
         'image',
         'dietary',
         'ingredients',
+        'allergens',
         'nutrition',
         'upsells',
         'isMeal',
@@ -326,6 +343,15 @@ export const updateMenuItem = async (req, res, next) => {
         (typeof safeUpdates.price !== 'number' || safeUpdates.price < 0)
       ) {
         throw errorHandler(400, 'price must be a non-negative number');
+      }
+
+      if (safeUpdates.name && safeUpdates.name !== item.name) {
+        const duplicate = menu.items.some(
+          (i, idx) => i.isActive && idx !== itemIndex && i.name.toLowerCase() === safeUpdates.name.toLowerCase()
+        );
+        if (duplicate) {
+          throw errorHandler(409, `Item name "${safeUpdates.name}" already exists`);
+        }
       }
 
       Object.assign(item, safeUpdates);
@@ -961,6 +987,48 @@ export const hardDeleteMenu = async (req, res, next) => {
 // ==============================================
 // GET ALL MENUS FOR RESTAURANT (including draft) - protected
 // ==============================================
+
+// ==============================================
+// GET ALL MENUS (for superAdmin dashboard)
+// ==============================================
+
+export const getAllMenus = async (req, res, next) => {
+  try {
+    if (req.user.role !== 'superAdmin') {
+      throw errorHandler(403, 'Only superAdmin can access all menus');
+    }
+
+    const { page = 1, limit = 12 } = req.query;
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+
+    if (pageNum < 1 || limitNum < 1) {
+      throw errorHandler(400, 'Invalid pagination values');
+    }
+
+    const filter = { isActive: true };
+
+    const total = await Menu.countDocuments(filter);
+    const pagination = paginate({ page: pageNum, limit: limitNum, total });
+
+    const menus = await Menu.find(filter)
+      .populate('categoryId', 'name slug status isActive')
+      .populate('restaurantId', 'name slug')
+      .select('-__v')
+      .skip(pagination.skip)
+      .limit(limitNum)
+      .sort({ updatedAt: -1 })
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      ...pagination,
+      data: menus
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 export const getMenusByRestaurant = async (req, res, next) => {
   try {

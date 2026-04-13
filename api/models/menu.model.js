@@ -105,6 +105,11 @@ const menuItemSchema = new mongoose.Schema(
       vegan: { type: Boolean, default: false }
     },
 
+    allergens: [{
+      type: String,
+      enum: ['gluten', 'egg', 'fish', 'crustaceans', 'molluscs', 'milk', 'peanut', 'tree_nuts', 'sesame', 'soya', 'celery', 'mustard', 'sulphites', 'lupin']
+    }],
+
     ingredients: [ingredientSchema],
 
     nutrition: nutritionSchema,

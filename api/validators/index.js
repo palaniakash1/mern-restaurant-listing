@@ -133,6 +133,14 @@ const itemParam = Joi.object({
   menuId: objectId.required(),
   itemId: objectId.required()
 });
+
+const itemParamOrIndex = Joi.object({
+  menuId: objectId.required(),
+  itemId: Joi.alternatives().try(
+    objectId.required(),
+    Joi.string().pattern(/^index:\d+$/).required()
+  ).required()
+});
 const restaurantIdParam = Joi.object({ restaurantId: objectId.required() });
 const reviewIdParam = Joi.object({ id: objectId.required() });
 const userIdParam = Joi.object({ id: objectId.required() });
@@ -371,6 +379,7 @@ export const categoryValidators = {
 export const menuValidators = {
   menuParam,
   itemParam,
+  itemParamOrIndex,
   restaurantParam: restaurantIdParam,
   createMenuBody: Joi.object({
     restaurantId: objectId.required(),

@@ -7,6 +7,7 @@ import { menuValidators } from '../validators/index.js';
 import {
   createMenu,
   addMenuItems,
+  getAllMenus,
   getMenusByRestaurant,
   getMenuByRestaurant,
   updateMenuItem,
@@ -38,6 +39,14 @@ router.post(
 // =================================
 // GET endpoints
 // =================================
+// protected - get all menus for superAdmin dashboard
+router.get(
+  '/all',
+  verifyToken,
+  can('readAll', 'menu'),
+  getAllMenus
+);
+
 // protected - get all menus including draft (for admin/dashboard)
 router.get(
   '/restaurant/:restaurantId/all',
@@ -77,7 +86,7 @@ router.put(
   '/:menuId/items/:itemId',
   verifyToken,
   can('updateItem', 'menu'),
-  validate(menuValidators.itemParam, 'params'),
+  validate(menuValidators.itemParamOrIndex, 'params'),
   validate(menuValidators.updateItemBody),
   updateMenuItem
 ); // udpate menu item
