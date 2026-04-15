@@ -24,6 +24,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import PrivateRoute from "./components/PrivateRoute";
+import { ToastProvider } from "./context/ToastContext";
 import "flowbite/dist/flowbite.css";
 import { LoadScript } from "@react-google-maps/api";
 
@@ -81,7 +82,9 @@ export default function App() {
         googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
         libraries={libraries}
       >
-        <AppContent />
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
       </LoadScript>
     </>
   );
