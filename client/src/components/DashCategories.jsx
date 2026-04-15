@@ -287,7 +287,10 @@ export default function DashCategories() {
         apiPatch(`/api/menus/${menu.id}`, { categoryId: null })
       );
       await Promise.all(promises);
-      showToast('Category unassigned from all menus. You can now delete the category.', 'success');
+      showToast(
+        'Category unassigned from all menus. You can now delete the category.',
+        'success'
+      );
       setShowUnassignModal(false);
       setLinkedMenus([]);
       await loadCategories();
@@ -580,8 +583,7 @@ export default function DashCategories() {
           <div></div>
           <div></div>
           <Button
-            color="light"
-            className="w-full xl:w-auto"
+            className="w-full xl:w-auto !bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
             onClick={() => {
               setSearch('');
               setSelectedFilter('all');

@@ -214,9 +214,11 @@ export default function DashAuditLogs() {
       const [allResponse, ...entityResponses] = responses;
       const nextCounts = { all: allResponse.total || 0 };
 
-      ENTITY_OPTIONS.filter((option) => option.value).forEach((option, index) => {
-        nextCounts[option.value] = entityResponses[index]?.total || 0;
-      });
+      ENTITY_OPTIONS.filter((option) => option.value).forEach(
+        (option, index) => {
+          nextCounts[option.value] = entityResponses[index]?.total || 0;
+        }
+      );
 
       setEntityCounts(nextCounts);
     } catch {
@@ -503,7 +505,7 @@ export default function DashAuditLogs() {
                 </span>
                 <div className="flex gap-2">
                   <Button
-                    color="light"
+                    className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                     size="xs"
                     disabled={page === 1}
                     onClick={() =>
@@ -513,7 +515,7 @@ export default function DashAuditLogs() {
                     Previous
                   </Button>
                   <Button
-                    color="light"
+                    className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                     size="xs"
                     disabled={page >= totalPages}
                     onClick={() =>

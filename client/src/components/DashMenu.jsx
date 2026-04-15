@@ -12,7 +12,13 @@ import {
   TextInput,
   Textarea
 } from 'flowbite-react';
-import { HiOutlineArrowPath, HiOutlinePlusCircle, HiOutlineTrash, HiOutlinePencilSquare, HiOutlineFolder } from 'react-icons/hi2';
+import {
+  HiOutlineArrowPath,
+  HiOutlinePlusCircle,
+  HiOutlineTrash,
+  HiOutlinePencilSquare,
+  HiOutlineFolder
+} from 'react-icons/hi2';
 import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '../utils/permissions';
@@ -86,11 +92,16 @@ export default function DashMenu() {
 
   const canCreateMenu = hasPermission(user, 'menu', 'create');
   const canAddItem = hasPermission(user, 'menu', 'addItem');
-  const canToggleAvailability = hasPermission(user, 'menu', 'toggleAvailability');
+  const canToggleAvailability = hasPermission(
+    user,
+    'menu',
+    'toggleAvailability'
+  );
   const canDeleteMenu = hasPermission(user, 'menu', 'delete');
 
   const selectedRestaurant = useMemo(
-    () => restaurants.find((restaurant) => restaurant._id === selectedRestaurantId),
+    () =>
+      restaurants.find((restaurant) => restaurant._id === selectedRestaurantId),
     [restaurants, selectedRestaurantId]
   );
 
@@ -108,7 +119,9 @@ export default function DashMenu() {
     }
 
     if (user?.restaurantId) {
-      const restaurant = await apiGet(`/api/restaurants/id/${user.restaurantId}`);
+      const restaurant = await apiGet(
+        `/api/restaurants/id/${user.restaurantId}`
+      );
       return restaurant.data ? [restaurant.data] : [];
     }
 
@@ -136,7 +149,9 @@ export default function DashMenu() {
         return data.data || [];
       }
 
-      const generic = await apiGet(`/api/categories?restaurantId=${restaurantId}&page=1&limit=100`);
+      const generic = await apiGet(
+        `/api/categories?restaurantId=${restaurantId}&page=1&limit=100`
+      );
       return generic.data || [];
     },
     [user]
@@ -157,7 +172,9 @@ export default function DashMenu() {
         setAllMenusCount(data.total || 0);
         setTotalPages(Math.max(1, Math.ceil((data.total || 0) / PAGE_SIZE)));
       } else {
-        data = await apiGet(`/api/menus/restaurant/${restaurantId}/all?page=${page}&limit=${PAGE_SIZE}`);
+        data = await apiGet(
+          `/api/menus/restaurant/${restaurantId}/all?page=${page}&limit=${PAGE_SIZE}`
+        );
         setAllMenusCount(data.total || 0);
         setTotalPages(Math.max(1, Math.ceil((data.total || 0) / PAGE_SIZE)));
       }
@@ -177,27 +194,35 @@ export default function DashMenu() {
     }
 
     try {
-      const data = await apiGet(`/api/menus/deleted?page=1&limit=100&restaurantId=${restaurantId}`);
+      const data = await apiGet(
+        `/api/menus/deleted?page=1&limit=100&restaurantId=${restaurantId}`
+      );
       setTrashedMenus(data.data || []);
     } catch {
       setTrashedMenus([]);
     }
   }, []);
 
-  const setPage = useCallback((page) => {
-    setCurrentPage(page);
-    if (selectedRestaurantId) {
-      loadMenus(selectedRestaurantId, page);
-    }
-  }, [selectedRestaurantId, loadMenus]);
+  const setPage = useCallback(
+    (page) => {
+      setCurrentPage(page);
+      if (selectedRestaurantId) {
+        loadMenus(selectedRestaurantId, page);
+      }
+    },
+    [selectedRestaurantId, loadMenus]
+  );
 
-  const handleStatusFilterChange = useCallback((filter) => {
-    setStatusFilter(filter);
-    setCurrentPage(1);
-    if (selectedRestaurantId) {
-      loadMenus(selectedRestaurantId, 1);
-    }
-  }, [selectedRestaurantId, loadMenus]);
+  const handleStatusFilterChange = useCallback(
+    (filter) => {
+      setStatusFilter(filter);
+      setCurrentPage(1);
+      if (selectedRestaurantId) {
+        loadMenus(selectedRestaurantId, 1);
+      }
+    },
+    [selectedRestaurantId, loadMenus]
+  );
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -236,7 +261,7 @@ export default function DashMenu() {
       try {
         const loadedRestaurants = await loadRestaurants();
         setRestaurants(loadedRestaurants);
-        
+
         if (user?.restaurantId && loadedRestaurants.length > 0) {
           const categoriesData = await loadCategories(user.restaurantId);
           setCategories(categoriesData);
@@ -248,7 +273,7 @@ export default function DashMenu() {
         _setLoading(false);
       }
     };
-    
+
     loadInitialData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.restaurantId, user?.role]);
@@ -343,12 +368,16 @@ export default function DashMenu() {
     try {
       const newStatus = currentStatus === 'published' ? 'draft' : 'published';
       await apiPatch(`/api/menus/${menuId}/status`, { status: newStatus });
-      showToast(`Menu ${newStatus === 'published' ? 'published' : 'unpublished'} successfully.`, 'success');
+      showToast(
+        `Menu ${newStatus === 'published' ? 'published' : 'unpublished'} successfully.`,
+        'success'
+      );
       await loadMenus(selectedRestaurantId);
     } catch (publishError) {
       let errorMsg = publishError.data?.message || publishError.message;
       if (errorMsg.includes('Restaurant must be published')) {
-        errorMsg = 'Cannot publish menu: The restaurant must be published first.';
+        errorMsg =
+          'Cannot publish menu: The restaurant must be published first.';
       } else if (errorMsg.includes('Category must be published')) {
         errorMsg = 'Cannot publish menu: The category must be published first.';
       } else if (errorMsg.includes('active item')) {
@@ -409,26 +438,30 @@ export default function DashMenu() {
     const q = search.trim().toLowerCase();
     return menus.filter((menu) => {
       const searchMatch = q
-        ? [
-            menu.categoryId?.name,
-            menu.categoryId
-          ]
+        ? [menu.categoryId?.name, menu.categoryId]
             .filter(Boolean)
             .some((v) => String(v).toLowerCase().includes(q))
         : true;
       const status = menu.status || 'draft';
-      const statusMatch = statusFilter === 'all' ||
+      const statusMatch =
+        statusFilter === 'all' ||
         (statusFilter === 'published' && status === 'published') ||
         (statusFilter === 'draft' && status === 'draft');
       return searchMatch && statusMatch;
     });
   }, [menus, search, statusFilter]);
 
-  const menuCounts = useMemo(() => ({
-    all: allMenusCount,
-    published: filteredMenus.filter((m) => (m.status || 'draft') === 'published').length,
-    draft: filteredMenus.filter((m) => (m.status || 'draft') === 'draft').length
-  }), [filteredMenus, allMenusCount]);
+  const menuCounts = useMemo(
+    () => ({
+      all: allMenusCount,
+      published: filteredMenus.filter(
+        (m) => (m.status || 'draft') === 'published'
+      ).length,
+      draft: filteredMenus.filter((m) => (m.status || 'draft') === 'draft')
+        .length
+    }),
+    [filteredMenus, allMenusCount]
+  );
 
   const handleImageUpload = async (file) => {
     if (!file.type.startsWith('image/')) {
@@ -458,7 +491,10 @@ export default function DashMenu() {
   };
 
   const handleUpdateMenuItem = async () => {
-    if (!editingItem?.menuId || (editingItem?._id === undefined && editingItem?.itemIndex === undefined)) {
+    if (
+      !editingItem?.menuId ||
+      (editingItem?._id === undefined && editingItem?.itemIndex === undefined)
+    ) {
       return;
     }
 
@@ -544,7 +580,9 @@ export default function DashMenu() {
                 Restaurant
               </p>
               <p className="mt-2 text-sm font-semibold text-[#5c1111]">
-                {showAllRestaurants ? 'All Restaurants' : (selectedRestaurant?.name || 'Not selected')}
+                {showAllRestaurants
+                  ? 'All Restaurants'
+                  : selectedRestaurant?.name || 'Not selected'}
               </p>
             </div>
             <div className="rounded-2xl bg-[#f8f7f1] p-4">
@@ -677,8 +715,7 @@ export default function DashMenu() {
             <div></div>
             <div></div>
             <Button
-              color="light"
-              className="w-full xl:w-auto"
+              className="w-full xl:w-auto !bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
               onClick={() => {
                 setSearch('');
                 handleStatusFilterChange('all');
@@ -703,7 +740,9 @@ export default function DashMenu() {
                 {trashedMenus.map((menu) => (
                   <Table.Row key={menu._id}>
                     <Table.Cell>
-                      <p className="font-medium text-[#23411f]">{menu.categoryId?.name || 'Menu'}</p>
+                      <p className="font-medium text-[#23411f]">
+                        {menu.categoryId?.name || 'Menu'}
+                      </p>
                     </Table.Cell>
                     <Table.Cell>
                       <Badge color="failure">Deleted</Badge>
@@ -730,263 +769,351 @@ export default function DashMenu() {
             )}
           </div>
         ) : (
-        <div className="space-y-4">
-          {filteredMenus.map((menu) => {
-            const isExpanded = expandedMenus[menu._id];
-            return (
-            <div
-              key={menu._id}
-              className="rounded-[1.75rem] border border-[#e7edd2] bg-[#fbfcf7] overflow-hidden"
-            >
-              <div 
-                className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 sm:p-5 cursor-pointer hover:bg-[#f0f5e6] transition-colors"
-                onClick={() => toggleMenuExpand(menu._id)}
-              >
-                  <div className="flex items-center gap-3">
-                  <div className={`transform transition-transform ${isExpanded ? 'rotate-90' : ''} text-[#23411f]`}>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h4 className="text-lg font-semibold text-[#23411f]">
-                        {menu.categoryId?.name || 'Menu'}
-                      </h4>
-                      <Badge
-                        color={
-                          menu.status === 'published' ? 'success' : 'warning'
+          <div className="space-y-4">
+            {filteredMenus.map((menu) => {
+              const isExpanded = expandedMenus[menu._id];
+              return (
+                <div
+                  key={menu._id}
+                  className="rounded-[1.75rem] border border-[#e7edd2] bg-[#fbfcf7] overflow-hidden"
+                >
+                  <div
+                    className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 sm:p-5 cursor-pointer hover:bg-[#f0f5e6] transition-colors"
+                    onClick={() => toggleMenuExpand(menu._id)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`transform transition-transform ${isExpanded ? 'rotate-90' : ''} text-[#23411f]`}
+                      >
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h4 className="text-lg font-semibold text-[#23411f]">
+                            {menu.categoryId?.name || 'Menu'}
+                          </h4>
+                          <Badge
+                            color={
+                              menu.status === 'published'
+                                ? 'success'
+                                : 'warning'
+                            }
+                          >
+                            {menu.status || 'draft'}
+                          </Badge>
+                          <button
+                            type="button"
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors cursor-pointer ${
+                              menu.categoryId?.status === 'published'
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                : menu.categoryId?.status === 'draft'
+                                  ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(
+                                `/dashboard?tab=categories&categoryId=${menu.categoryId?._id}`
+                              );
+                            }}
+                          >
+                            <HiOutlineFolder className="h-3 w-3" />
+                            {menu.categoryId?.name || 'N/A'}
+                          </button>
+                          {showAllRestaurants && menu.restaurantId && (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e8f0fe] px-2.5 py-0.5 text-xs font-medium text-[#1a56db]">
+                              {typeof menu.restaurantId === 'object'
+                                ? menu.restaurantId.name
+                                : restaurants.find(
+                                    (r) => r._id === menu.restaurantId
+                                  )?.name || 'Restaurant'}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          {menu.items?.filter((i) => i.isActive !== false)
+                            .length || 0}{' '}
+                          menu items
+                        </p>
+                      </div>
+                    </div>
+                    <div
+                      className="flex flex-wrap gap-2"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Button
+                        size="xs"
+                        className={
+                          menu.status === 'published'
+                            ? '!bg-[#f59e0b] hover:!bg-[#d97706] !text-white'
+                            : '!bg-[#23411f] hover:!bg-[#1a2f16] !text-white'
                         }
+                        onClick={() => handlePublishMenu(menu._id, menu.status)}
                       >
-                        {menu.status || 'draft'}
-                      </Badge>
-                      <button
-                        type="button"
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors cursor-pointer ${
-                          menu.categoryId?.status === 'published'
-                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                            : menu.categoryId?.status === 'draft'
-                            ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/dashboard?tab=categories&categoryId=${menu.categoryId?._id}`);
-                        }}
-                      >
-                        <HiOutlineFolder className="h-3 w-3" />
-                        {menu.categoryId?.name || 'N/A'}
-                      </button>
-                      {showAllRestaurants && menu.restaurantId && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e8f0fe] px-2.5 py-0.5 text-xs font-medium text-[#1a56db]">
-                          {typeof menu.restaurantId === 'object' ? menu.restaurantId.name : restaurants.find(r => r._id === menu.restaurantId)?.name || 'Restaurant'}
-                        </span>
+                        {menu.status === 'published' ? 'Unpublish' : 'Publish'}
+                      </Button>
+                      {canAddItem && (
+                        <Button
+                          size="xs"
+                          className="!bg-[#8fa31e] hover:!bg-[#78871c]"
+                          onClick={() => {
+                            setItemForm(emptyItemForm);
+                            setActiveMenu(menu);
+                          }}
+                        >
+                          <HiOutlinePlusCircle className="mr-1 h-4 w-4" />
+                          Add item
+                        </Button>
+                      )}
+                      {canDeleteMenu && (
+                        <Button
+                          color="failure"
+                          size="xs"
+                          onClick={() => handleDeleteMenu(menu._id)}
+                        >
+                          <HiOutlineTrash className="mr-1 h-4 w-4" />
+                          Delete
+                        </Button>
                       )}
                     </div>
-                    <p className="text-sm text-gray-500">
-                      {menu.items?.filter(i => i.isActive !== false).length || 0} menu items
-                    </p>
                   </div>
-                </div>
-                <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
-                  <Button
-                    size="xs"
-                    className={menu.status === 'published' 
-                      ? '!bg-[#f59e0b] hover:!bg-[#d97706] !text-white' 
-                      : '!bg-[#23411f] hover:!bg-[#1a2f16] !text-white'}
-                    onClick={() => handlePublishMenu(menu._id, menu.status)}
-                  >
-                    {menu.status === 'published' ? 'Unpublish' : 'Publish'}
-                  </Button>
-                  {canAddItem && (
-                    <Button
-                      size="xs"
-                      className="!bg-[#8fa31e] hover:!bg-[#78871c]"
-                      onClick={() => {
-                        setItemForm(emptyItemForm);
-                        setActiveMenu(menu);
-                      }}
-                    >
-                      <HiOutlinePlusCircle className="mr-1 h-4 w-4" />
-                      Add item
-                    </Button>
-                  )}
-                  {canDeleteMenu && (
-                    <Button
-                      color="failure"
-                      size="xs"
-                      onClick={() => handleDeleteMenu(menu._id)}
-                    >
-                      <HiOutlineTrash className="mr-1 h-4 w-4" />
-                      Delete
-                    </Button>
-                  )}
-                </div>
-              </div>
 
-              {isExpanded && (
-              <div className="border-t border-[#e7edd2] bg-white">
-                <div className="mt-4 hidden overflow-x-auto md:block p-4 sm:p-5 pt-0">
-                  {(menu.items && menu.items.filter(i => i.isActive !== false).length > 0) ? (
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="border-b border-gray-200">
-                          <th className="py-3 px-2 font-medium text-gray-600">Image</th>
-                          <th className="py-3 px-2 font-medium text-gray-600">Item</th>
-                          <th className="py-3 px-2 font-medium text-gray-600">Price</th>
-                          <th className="py-3 px-2 font-medium text-gray-600">Status</th>
-                          <th className="py-3 px-2 font-medium text-gray-600">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {(menu.items || []).filter(i => i.isActive !== false).map((item, idx) => (
-                          <tr key={item._id || `item-${idx}`} className="hover:bg-gray-50">
-                            <td className="py-3 px-2">
-                              <div className="flex aspect-square w-12 items-center justify-center rounded-lg border border-dashed border-[#d8dfc0] bg-[#f7faef] overflow-hidden">
-                                {item.image ? (
-                                  <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
-                                ) : (
-                                  <span className="text-xs text-gray-400">+</span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="py-3 px-2">
-                              <p className="font-medium text-[#23411f]">{item.name}</p>
-                              <p className="text-xs text-gray-500">{item.description || 'No description'}</p>
-                            </td>
-                            <td className="py-3 px-2">£{Number(item.price || 0).toFixed(2)}</td>
-                            <td className="py-3 px-2">
-                              <Badge color={item.isAvailable ? 'success' : 'failure'}>
-                                {item.isAvailable ? 'Available' : 'Unavailable'}
-                              </Badge>
-                            </td>
-                            <td className="py-3 px-2">
-                              <div className="flex flex-wrap gap-2">
-                                {canToggleAvailability && (
-                                  <Button
-                                    size="xs"
-                                    className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
-                                    onClick={() => handleToggleAvailability(menu._id, item._id, item.isAvailable)}
+                  {isExpanded && (
+                    <div className="border-t border-[#e7edd2] bg-white">
+                      <div className="mt-4 hidden overflow-x-auto md:block p-4 sm:p-5 pt-0">
+                        {menu.items &&
+                        menu.items.filter((i) => i.isActive !== false).length >
+                          0 ? (
+                          <table className="w-full text-left text-sm">
+                            <thead>
+                              <tr className="border-b border-gray-200">
+                                <th className="py-3 px-2 font-medium text-gray-600">
+                                  Image
+                                </th>
+                                <th className="py-3 px-2 font-medium text-gray-600">
+                                  Item
+                                </th>
+                                <th className="py-3 px-2 font-medium text-gray-600">
+                                  Price
+                                </th>
+                                <th className="py-3 px-2 font-medium text-gray-600">
+                                  Status
+                                </th>
+                                <th className="py-3 px-2 font-medium text-gray-600">
+                                  Actions
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {(menu.items || [])
+                                .filter((i) => i.isActive !== false)
+                                .map((item, idx) => (
+                                  <tr
+                                    key={item._id || `item-${idx}`}
+                                    className="hover:bg-gray-50"
                                   >
-                                    {item.isAvailable ? 'Unavailable' : 'Available'}
-                                  </Button>
-                                )}
-                                <Button
-                                  size="xs"
-                                  className="!bg-[#f59e0b] hover:!bg-[#d97706] !text-white"
-                                  onClick={() => {
-                                    const allItems = menu.items.filter(i => i.isActive !== false);
-                                    const itemIndex = allItems.findIndex(i => i.name === item.name);
-                                    setEditingItem({ ...item, menuId: menu._id, itemIndex });
-                                  }}
-                                >
-                                  <HiOutlinePencilSquare className="mr-1 h-4 w-4" />
-                                  Edit
-                                </Button>
-                                <Button
-                                  size="xs"
-                                  color="failure"
-                                  onClick={() => {
-                                    setMenuForItemDelete(menu._id);
-                                    setItemToDelete(item._id);
-                                    setShowDeleteItemModal(true);
-                                  }}
-                                >
-                                  <HiOutlineTrash className="mr-1 h-4 w-4" />
-                                  Delete
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      No items in this menu. Click "Add item" to add menu items.
+                                    <td className="py-3 px-2">
+                                      <div className="flex aspect-square w-12 items-center justify-center rounded-lg border border-dashed border-[#d8dfc0] bg-[#f7faef] overflow-hidden">
+                                        {item.image ? (
+                                          <img
+                                            src={item.image}
+                                            alt={item.name}
+                                            className="h-full w-full object-cover"
+                                          />
+                                        ) : (
+                                          <span className="text-xs text-gray-400">
+                                            +
+                                          </span>
+                                        )}
+                                      </div>
+                                    </td>
+                                    <td className="py-3 px-2">
+                                      <p className="font-medium text-[#23411f]">
+                                        {item.name}
+                                      </p>
+                                      <p className="text-xs text-gray-500">
+                                        {item.description || 'No description'}
+                                      </p>
+                                    </td>
+                                    <td className="py-3 px-2">
+                                      £{Number(item.price || 0).toFixed(2)}
+                                    </td>
+                                    <td className="py-3 px-2">
+                                      <Badge
+                                        color={
+                                          item.isAvailable
+                                            ? 'success'
+                                            : 'failure'
+                                        }
+                                      >
+                                        {item.isAvailable
+                                          ? 'Available'
+                                          : 'Unavailable'}
+                                      </Badge>
+                                    </td>
+                                    <td className="py-3 px-2">
+                                      <div className="flex flex-wrap gap-2">
+                                        {canToggleAvailability && (
+                                          <Button
+                                            size="xs"
+                                            className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
+                                            onClick={() =>
+                                              handleToggleAvailability(
+                                                menu._id,
+                                                item._id,
+                                                item.isAvailable
+                                              )
+                                            }
+                                          >
+                                            {item.isAvailable
+                                              ? 'Unavailable'
+                                              : 'Available'}
+                                          </Button>
+                                        )}
+                                        <Button
+                                          size="xs"
+                                          className="!bg-[#f59e0b] hover:!bg-[#d97706] !text-white"
+                                          onClick={() => {
+                                            const allItems = menu.items.filter(
+                                              (i) => i.isActive !== false
+                                            );
+                                            const itemIndex =
+                                              allItems.findIndex(
+                                                (i) => i.name === item.name
+                                              );
+                                            setEditingItem({
+                                              ...item,
+                                              menuId: menu._id,
+                                              itemIndex
+                                            });
+                                          }}
+                                        >
+                                          <HiOutlinePencilSquare className="mr-1 h-4 w-4" />
+                                          Edit
+                                        </Button>
+                                        <Button
+                                          size="xs"
+                                          color="failure"
+                                          onClick={() => {
+                                            setMenuForItemDelete(menu._id);
+                                            setItemToDelete(item._id);
+                                            setShowDeleteItemModal(true);
+                                          }}
+                                        >
+                                          <HiOutlineTrash className="mr-1 h-4 w-4" />
+                                          Delete
+                                        </Button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <div className="text-center py-8 text-gray-500">
+                            No items in this menu. Click "Add item" to add menu
+                            items.
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
-              </div>
-              )}
-            </div>
-          );
-          })}
+              );
+            })}
 
-          {statusFilter !== 'trashed' && totalPages > 1 && (
-            <div className="mt-6 flex flex-col items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">
-                  Showing {((currentPage - 1) * PAGE_SIZE) + 1} - {Math.min(currentPage * PAGE_SIZE, allMenusCount)} of {allMenusCount} menus
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  color="light"
-                  size="xs"
-                  disabled={currentPage === 1}
-                  onClick={() => setPage(1)}
-                >
-                  First
-                </Button>
-                <Button
-                  color="light"
-                  size="xs"
-                  disabled={currentPage === 1}
-                  onClick={() => setPage(currentPage - 1)}
-                >
-                  Previous
-                </Button>
-                
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum;
-                  if (totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (currentPage <= 3) {
-                    pageNum = i + 1;
-                  } else if (currentPage >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i;
-                  } else {
-                    pageNum = currentPage - 2 + i;
-                  }
-                  return (
-                    <Button
-                      key={pageNum}
-                      size="xs"
-                      className={currentPage === pageNum ? '!bg-[#23411f] !text-white' : '!bg-[#f5faeb] !text-[#23411f] border border-[#d8dfc0]'}
-                      onClick={() => setPage(pageNum)}
-                    >
-                      {pageNum}
-                    </Button>
-                  );
-                })}
+            {statusFilter !== 'trashed' && totalPages > 1 && (
+              <div className="mt-6 flex flex-col items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">
+                    Showing {(currentPage - 1) * PAGE_SIZE + 1} -{' '}
+                    {Math.min(currentPage * PAGE_SIZE, allMenusCount)} of{' '}
+                    {allMenusCount} menus
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
+                    size="xs"
+                    disabled={currentPage === 1}
+                    onClick={() => setPage(1)}
+                  >
+                    First
+                  </Button>
+                  <Button
+                    className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
+                    size="xs"
+                    disabled={currentPage === 1}
+                    onClick={() => setPage(currentPage - 1)}
+                  >
+                    Previous
+                  </Button>
 
-                <Button
-                  color="light"
-                  size="xs"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setPage(currentPage + 1)}
-                >
-                  Next
-                </Button>
-                <Button
-                  color="light"
-                  size="xs"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setPage(totalPages)}
-                >
-                  Last
-                </Button>
-              </div>
-            </div>
-          )}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        size="xs"
+                        className={
+                          currentPage === pageNum
+                            ? '!bg-[#23411f] !text-white'
+                            : '!bg-[#f5faeb] !text-[#23411f] border border-[#d8dfc0]'
+                        }
+                        onClick={() => setPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
 
-          {filteredMenus.length === 0 && !loading && (
-            <div className="text-center py-8 text-gray-500">
-              No menus found.
-            </div>
-          )}
-        </div>
+                  <Button
+                    className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
+                    size="xs"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setPage(currentPage + 1)}
+                  >
+                    Next
+                  </Button>
+                  <Button
+                    className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
+                    size="xs"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setPage(totalPages)}
+                  >
+                    Last
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {filteredMenus.length === 0 && !loading && (
+              <div className="text-center py-8 text-gray-500">
+                No menus found.
+              </div>
+            )}
+          </div>
         )}
       </Card>
 
@@ -1005,7 +1132,9 @@ export default function DashMenu() {
           <div className="grid gap-6 xl:grid-cols-[0.92fr,1.08fr]">
             <div className="space-y-3">
               <div>
-                <p className="text-sm font-semibold text-[#23411f]">Item image</p>
+                <p className="text-sm font-semibold text-[#23411f]">
+                  Item image
+                </p>
                 <p className="text-xs text-gray-500">
                   Upload an image for this menu item.
                 </p>
@@ -1061,8 +1190,12 @@ export default function DashMenu() {
               />
 
               <div className="space-y-3 pt-4">
-                <p className="text-sm font-semibold text-[#23411f]">Ingredients</p>
-                <p className="text-xs text-gray-500">Add ingredients for this item.</p>
+                <p className="text-sm font-semibold text-[#23411f]">
+                  Ingredients
+                </p>
+                <p className="text-xs text-gray-500">
+                  Add ingredients for this item.
+                </p>
                 <div className="flex gap-2">
                   <TextInput
                     id="newIngredient"
@@ -1077,7 +1210,12 @@ export default function DashMenu() {
                             ...current,
                             ingredients: [
                               ...current.ingredients,
-                              { name: input.value.trim(), removable: true, strict: false, allergens: [] }
+                              {
+                                name: input.value.trim(),
+                                removable: true,
+                                strict: false,
+                                allergens: []
+                              }
                             ]
                           }));
                           input.value = '';
@@ -1098,7 +1236,9 @@ export default function DashMenu() {
                         onClick={() => {
                           setItemForm((current) => ({
                             ...current,
-                            ingredients: current.ingredients.filter((_, i) => i !== idx)
+                            ingredients: current.ingredients.filter(
+                              (_, i) => i !== idx
+                            )
                           }));
                         }}
                         className="text-red-500 hover:text-red-700"
@@ -1112,10 +1252,25 @@ export default function DashMenu() {
                   <Label>Allergens</Label>
                   <div className="flex flex-wrap gap-2">
                     {[
-                      'gluten', 'egg', 'fish', 'crustaceans', 'molluscs', 'milk',
-                      'peanut', 'tree_nuts', 'sesame', 'soya', 'celery', 'mustard', 'sulphites', 'lupin'
+                      'gluten',
+                      'egg',
+                      'fish',
+                      'crustaceans',
+                      'molluscs',
+                      'milk',
+                      'peanut',
+                      'tree_nuts',
+                      'sesame',
+                      'soya',
+                      'celery',
+                      'mustard',
+                      'sulphites',
+                      'lupin'
                     ].map((allergen) => (
-                      <label key={allergen} className="flex items-center gap-1 text-xs">
+                      <label
+                        key={allergen}
+                        className="flex items-center gap-1 text-xs"
+                      >
                         <input
                           type="checkbox"
                           checked={itemForm.allergens.includes(allergen)}
@@ -1125,7 +1280,9 @@ export default function DashMenu() {
                               ...current,
                               allergens: checked
                                 ? [...current.allergens, allergen]
-                                : current.allergens.filter((a) => a !== allergen)
+                                : current.allergens.filter(
+                                    (a) => a !== allergen
+                                  )
                             }));
                           }}
                           className="rounded border-gray-300"
@@ -1139,7 +1296,9 @@ export default function DashMenu() {
 
               <div className="space-y-3 pt-4">
                 <p className="text-sm font-semibold text-[#23411f]">Upsells</p>
-                <p className="text-xs text-gray-500">Add optional extras with prices.</p>
+                <p className="text-xs text-gray-500">
+                  Add optional extras with prices.
+                </p>
                 <div className="flex gap-2">
                   <TextInput
                     id="upsellLabel"
@@ -1164,7 +1323,10 @@ export default function DashMenu() {
                           ...current,
                           upsells: [
                             ...current.upsells,
-                            { label: labelInput.value.trim(), price: Number(priceInput.value) }
+                            {
+                              label: labelInput.value.trim(),
+                              price: Number(priceInput.value)
+                            }
                           ]
                         }));
                         labelInput.value = '';
@@ -1178,10 +1340,15 @@ export default function DashMenu() {
                 </div>
                 <div className="space-y-1">
                   {itemForm.upsells.map((upsell, idx) => (
-                    <div key={idx} className="flex items-center justify-between rounded border border-[#d8dfc0] px-3 py-2">
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between rounded border border-[#d8dfc0] px-3 py-2"
+                    >
                       <div>
                         <span className="font-medium">{upsell.label}</span>
-                        <span className="ml-2 text-sm text-gray-500">+£{upsell.price.toFixed(2)}</span>
+                        <span className="ml-2 text-sm text-gray-500">
+                          +£{upsell.price.toFixed(2)}
+                        </span>
                       </div>
                       <button
                         type="button"
@@ -1280,7 +1447,10 @@ export default function DashMenu() {
                       onChange={(e) =>
                         setItemForm((current) => ({
                           ...current,
-                          dietary: { ...current.dietary, vegetarian: e.target.checked }
+                          dietary: {
+                            ...current.dietary,
+                            vegetarian: e.target.checked
+                          }
                         }))
                       }
                       className="rounded border-gray-300 text-[#8fa31e] focus:ring-[#8fa31e]"
@@ -1294,7 +1464,10 @@ export default function DashMenu() {
                       onChange={(e) =>
                         setItemForm((current) => ({
                           ...current,
-                          dietary: { ...current.dietary, vegan: e.target.checked }
+                          dietary: {
+                            ...current.dietary,
+                            vegan: e.target.checked
+                          }
                         }))
                       }
                       className="rounded border-gray-300 text-[#8fa31e] focus:ring-[#8fa31e]"
@@ -1324,43 +1497,53 @@ export default function DashMenu() {
               <div className="space-y-3 pt-2">
                 <Label>Nutrition Information</Label>
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  {['calories', 'fat', 'saturates', 'sugar', 'salt'].map((nutrient) => (
-                    <div key={nutrient} className="flex items-center gap-2">
-                      <span className="w-20 capitalize text-gray-600">{nutrient}</span>
-                      <TextInput
-                        type="number"
-                        min={0}
-                        value={itemForm.nutrition[nutrient]?.value || 0}
-                        onChange={(e) =>
-                          setItemForm((current) => ({
-                            ...current,
-                            nutrition: {
-                              ...current.nutrition,
-                              [nutrient]: { ...current.nutrition[nutrient], value: Number(e.target.value) }
-                            }
-                          }))
-                        }
-                        className="w-20"
-                      />
-                      <Select
-                        value={itemForm.nutrition[nutrient]?.level || 'green'}
-                        onChange={(e) =>
-                          setItemForm((current) => ({
-                            ...current,
-                            nutrition: {
-                              ...current.nutrition,
-                              [nutrient]: { ...current.nutrition[nutrient], level: e.target.value }
-                            }
-                          }))
-                        }
-                        className="w-24"
-                      >
-                        <option value="green">Green</option>
-                        <option value="amber">Amber</option>
-                        <option value="red">Red</option>
-                      </Select>
-                    </div>
-                  ))}
+                  {['calories', 'fat', 'saturates', 'sugar', 'salt'].map(
+                    (nutrient) => (
+                      <div key={nutrient} className="flex items-center gap-2">
+                        <span className="w-20 capitalize text-gray-600">
+                          {nutrient}
+                        </span>
+                        <TextInput
+                          type="number"
+                          min={0}
+                          value={itemForm.nutrition[nutrient]?.value || 0}
+                          onChange={(e) =>
+                            setItemForm((current) => ({
+                              ...current,
+                              nutrition: {
+                                ...current.nutrition,
+                                [nutrient]: {
+                                  ...current.nutrition[nutrient],
+                                  value: Number(e.target.value)
+                                }
+                              }
+                            }))
+                          }
+                          className="w-20"
+                        />
+                        <Select
+                          value={itemForm.nutrition[nutrient]?.level || 'green'}
+                          onChange={(e) =>
+                            setItemForm((current) => ({
+                              ...current,
+                              nutrition: {
+                                ...current.nutrition,
+                                [nutrient]: {
+                                  ...current.nutrition[nutrient],
+                                  level: e.target.value
+                                }
+                              }
+                            }))
+                          }
+                          className="w-24"
+                        >
+                          <option value="green">Green</option>
+                          <option value="amber">Amber</option>
+                          <option value="red">Red</option>
+                        </Select>
+                      </div>
+                    )
+                  )}
                 </div>
               </div>
             </div>
@@ -1375,10 +1558,13 @@ export default function DashMenu() {
           >
             Add item
           </Button>
-          <Button color="gray" onClick={() => {
-            setActiveMenu(null);
-            setItemForm(emptyItemForm);
-          }}>
+          <Button
+            color="gray"
+            onClick={() => {
+              setActiveMenu(null);
+              setItemForm(emptyItemForm);
+            }}
+          >
             Cancel
           </Button>
         </Modal.Footer>
@@ -1398,7 +1584,9 @@ export default function DashMenu() {
           <div className="grid gap-6 xl:grid-cols-[0.92fr,1.08fr]">
             <div className="space-y-3">
               <div>
-                <p className="text-sm font-semibold text-[#23411f]">Item image</p>
+                <p className="text-sm font-semibold text-[#23411f]">
+                  Item image
+                </p>
                 <p className="text-xs text-gray-500">
                   Update the image for this menu item.
                 </p>
@@ -1454,8 +1642,12 @@ export default function DashMenu() {
               />
 
               <div className="space-y-3 pt-4">
-                <p className="text-sm font-semibold text-[#23411f]">Ingredients</p>
-                <p className="text-xs text-gray-500">Update ingredients for this item.</p>
+                <p className="text-sm font-semibold text-[#23411f]">
+                  Ingredients
+                </p>
+                <p className="text-xs text-gray-500">
+                  Update ingredients for this item.
+                </p>
                 <div className="flex gap-2">
                   <TextInput
                     id="editIngredient"
@@ -1470,7 +1662,12 @@ export default function DashMenu() {
                             ...current,
                             ingredients: [
                               ...current.ingredients,
-                              { name: input.value.trim(), removable: true, strict: false, allergens: [] }
+                              {
+                                name: input.value.trim(),
+                                removable: true,
+                                strict: false,
+                                allergens: []
+                              }
                             ]
                           }));
                           input.value = '';
@@ -1491,7 +1688,9 @@ export default function DashMenu() {
                         onClick={() => {
                           setItemForm((current) => ({
                             ...current,
-                            ingredients: current.ingredients.filter((_, i) => i !== idx)
+                            ingredients: current.ingredients.filter(
+                              (_, i) => i !== idx
+                            )
                           }));
                         }}
                         className="text-red-500 hover:text-red-700"
@@ -1505,10 +1704,25 @@ export default function DashMenu() {
                   <Label>Allergens</Label>
                   <div className="flex flex-wrap gap-2">
                     {[
-                      'gluten', 'egg', 'fish', 'crustaceans', 'molluscs', 'milk',
-                      'peanut', 'tree_nuts', 'sesame', 'soya', 'celery', 'mustard', 'sulphites', 'lupin'
+                      'gluten',
+                      'egg',
+                      'fish',
+                      'crustaceans',
+                      'molluscs',
+                      'milk',
+                      'peanut',
+                      'tree_nuts',
+                      'sesame',
+                      'soya',
+                      'celery',
+                      'mustard',
+                      'sulphites',
+                      'lupin'
                     ].map((allergen) => (
-                      <label key={allergen} className="flex items-center gap-1 text-xs">
+                      <label
+                        key={allergen}
+                        className="flex items-center gap-1 text-xs"
+                      >
                         <input
                           type="checkbox"
                           checked={itemForm.allergens.includes(allergen)}
@@ -1518,7 +1732,9 @@ export default function DashMenu() {
                               ...current,
                               allergens: checked
                                 ? [...current.allergens, allergen]
-                                : current.allergens.filter((a) => a !== allergen)
+                                : current.allergens.filter(
+                                    (a) => a !== allergen
+                                  )
                             }));
                           }}
                           className="rounded border-gray-300"
@@ -1532,7 +1748,9 @@ export default function DashMenu() {
 
               <div className="space-y-3 pt-4">
                 <p className="text-sm font-semibold text-[#23411f]">Upsells</p>
-                <p className="text-xs text-gray-500">Add optional extras with prices.</p>
+                <p className="text-xs text-gray-500">
+                  Add optional extras with prices.
+                </p>
                 <div className="flex gap-2">
                   <TextInput
                     id="editUpsellLabel"
@@ -1550,14 +1768,19 @@ export default function DashMenu() {
                   <Button
                     size="sm"
                     onClick={() => {
-                      const labelInput = document.getElementById('editUpsellLabel');
-                      const priceInput = document.getElementById('editUpsellPrice');
+                      const labelInput =
+                        document.getElementById('editUpsellLabel');
+                      const priceInput =
+                        document.getElementById('editUpsellPrice');
                       if (labelInput?.value.trim() && priceInput?.value) {
                         setItemForm((current) => ({
                           ...current,
                           upsells: [
                             ...current.upsells,
-                            { label: labelInput.value.trim(), price: Number(priceInput.value) }
+                            {
+                              label: labelInput.value.trim(),
+                              price: Number(priceInput.value)
+                            }
                           ]
                         }));
                         labelInput.value = '';
@@ -1571,10 +1794,15 @@ export default function DashMenu() {
                 </div>
                 <div className="space-y-1">
                   {itemForm.upsells.map((upsell, idx) => (
-                    <div key={idx} className="flex items-center justify-between rounded border border-[#d8dfc0] px-3 py-2">
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between rounded border border-[#d8dfc0] px-3 py-2"
+                    >
                       <div>
                         <span className="font-medium">{upsell.label}</span>
-                        <span className="ml-2 text-sm text-gray-500">+£{upsell.price.toFixed(2)}</span>
+                        <span className="ml-2 text-sm text-gray-500">
+                          +£{upsell.price.toFixed(2)}
+                        </span>
                       </div>
                       <button
                         type="button"
@@ -1673,7 +1901,10 @@ export default function DashMenu() {
                       onChange={(e) =>
                         setItemForm((current) => ({
                           ...current,
-                          dietary: { ...current.dietary, vegetarian: e.target.checked }
+                          dietary: {
+                            ...current.dietary,
+                            vegetarian: e.target.checked
+                          }
                         }))
                       }
                       className="rounded border-gray-300 text-[#8fa31e] focus:ring-[#8fa31e]"
@@ -1687,7 +1918,10 @@ export default function DashMenu() {
                       onChange={(e) =>
                         setItemForm((current) => ({
                           ...current,
-                          dietary: { ...current.dietary, vegan: e.target.checked }
+                          dietary: {
+                            ...current.dietary,
+                            vegan: e.target.checked
+                          }
                         }))
                       }
                       className="rounded border-gray-300 text-[#8fa31e] focus:ring-[#8fa31e]"
@@ -1717,43 +1951,53 @@ export default function DashMenu() {
               <div className="space-y-3 pt-2">
                 <Label>Nutrition Information</Label>
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  {['calories', 'fat', 'saturates', 'sugar', 'salt'].map((nutrient) => (
-                    <div key={nutrient} className="flex items-center gap-2">
-                      <span className="w-20 capitalize text-gray-600">{nutrient}</span>
-                      <TextInput
-                        type="number"
-                        min={0}
-                        value={itemForm.nutrition[nutrient]?.value || 0}
-                        onChange={(e) =>
-                          setItemForm((current) => ({
-                            ...current,
-                            nutrition: {
-                              ...current.nutrition,
-                              [nutrient]: { ...current.nutrition[nutrient], value: Number(e.target.value) }
-                            }
-                          }))
-                        }
-                        className="w-20"
-                      />
-                      <Select
-                        value={itemForm.nutrition[nutrient]?.level || 'green'}
-                        onChange={(e) =>
-                          setItemForm((current) => ({
-                            ...current,
-                            nutrition: {
-                              ...current.nutrition,
-                              [nutrient]: { ...current.nutrition[nutrient], level: e.target.value }
-                            }
-                          }))
-                        }
-                        className="w-24"
-                      >
-                        <option value="green">Green</option>
-                        <option value="amber">Amber</option>
-                        <option value="red">Red</option>
-                      </Select>
-                    </div>
-                  ))}
+                  {['calories', 'fat', 'saturates', 'sugar', 'salt'].map(
+                    (nutrient) => (
+                      <div key={nutrient} className="flex items-center gap-2">
+                        <span className="w-20 capitalize text-gray-600">
+                          {nutrient}
+                        </span>
+                        <TextInput
+                          type="number"
+                          min={0}
+                          value={itemForm.nutrition[nutrient]?.value || 0}
+                          onChange={(e) =>
+                            setItemForm((current) => ({
+                              ...current,
+                              nutrition: {
+                                ...current.nutrition,
+                                [nutrient]: {
+                                  ...current.nutrition[nutrient],
+                                  value: Number(e.target.value)
+                                }
+                              }
+                            }))
+                          }
+                          className="w-20"
+                        />
+                        <Select
+                          value={itemForm.nutrition[nutrient]?.level || 'green'}
+                          onChange={(e) =>
+                            setItemForm((current) => ({
+                              ...current,
+                              nutrition: {
+                                ...current.nutrition,
+                                [nutrient]: {
+                                  ...current.nutrition[nutrient],
+                                  level: e.target.value
+                                }
+                              }
+                            }))
+                          }
+                          className="w-24"
+                        >
+                          <option value="green">Green</option>
+                          <option value="amber">Amber</option>
+                          <option value="red">Red</option>
+                        </Select>
+                      </div>
+                    )
+                  )}
                 </div>
               </div>
             </div>
@@ -1768,10 +2012,13 @@ export default function DashMenu() {
           >
             Save Changes
           </Button>
-          <Button color="gray" onClick={() => {
-            setEditingItem(null);
-            setItemForm(emptyItemForm);
-          }}>
+          <Button
+            color="gray"
+            onClick={() => {
+              setEditingItem(null);
+              setItemForm(emptyItemForm);
+            }}
+          >
             Cancel
           </Button>
         </Modal.Footer>

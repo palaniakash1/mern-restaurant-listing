@@ -17,18 +17,18 @@ import {
   HiOutlinePlus,
   HiOutlineTrash
 } from 'react-icons/hi2';
+import PasswordInput from './PasswordInput';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '../utils/permissions';
+import { uploadToCloudinary } from '../utils/cloudinaryUpload';
+import { useToast } from '../context/ToastContext';
+import { useFormChanges } from '../utils/useFormChanges';
 import {
-  buildPermissionPayload,
   buildPermissionStateForRole,
+  buildPermissionPayload,
   PERMISSION_GROUPS
 } from '../constants/permissionTemplates';
-import { uploadToCloudinary } from '../utils/cloudinaryUpload';
-import ImageFrameLoader from './ImageFrameLoader';
-import PasswordInput from './PasswordInput';
-import { useToast } from '../context/ToastContext';
 
 const USER_LIMIT = 10;
 const DEFAULT_ROLE = 'admin';
@@ -146,7 +146,11 @@ function PermissionEditor({ state, onToggle, onReset, role }) {
             Tailor permissions within the selected `{role}` template.
           </p>
         </div>
-        <Button color="light" size="xs" onClick={onReset}>
+        <Button
+          className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
+          size="xs"
+          onClick={onReset}
+        >
           Reset template
         </Button>
       </div>
@@ -231,6 +235,11 @@ export default function DashUsers() {
   const [modalMode, setModalMode] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [privilegedForm, setPrivilegedForm] = useState(buildPrivilegedForm());
+  const {
+    original: originalPrivilegedForm,
+    setChanges: setOriginalPrivilegedForm,
+    resetChanges: resetPrivilegedChanges
+  } = useFormChanges();
   const [managerForm, setManagerForm] = useState(buildManagerForm());
   const [permissionState, setPermissionState] = useState(
     buildPermissionStateForRole(DEFAULT_ROLE)
@@ -335,6 +344,7 @@ export default function DashUsers() {
     setModalMode(null);
     setSelectedUser(null);
     setPrivilegedForm(buildPrivilegedForm());
+    resetPrivilegedChanges();
     setManagerForm(buildManagerForm());
     setPermissionState(buildPermissionStateForRole(DEFAULT_ROLE));
     setAssignmentRestaurantId('');
@@ -344,6 +354,7 @@ export default function DashUsers() {
   };
 
   const permissionsPayload = (role, state) => {
+    if (!role || !state) return {};
     const template = buildPermissionPayload(buildPermissionStateForRole(role));
     const custom = buildPermissionPayload(state);
     return same(template, custom) ? {} : custom;
@@ -396,6 +407,15 @@ export default function DashUsers() {
       isActive: user.isActive !== false,
       profilePicture: user.profilePicture || ''
     });
+    setOriginalPrivilegedForm({
+      userName: user.userName || '',
+      email: user.email || '',
+      password: '',
+      phoneNumber: user.phoneNumber || '',
+      role: user.role || DEFAULT_ROLE,
+      isActive: user.isActive !== false,
+      profilePicture: user.profilePicture || ''
+    });
     const nextState = buildPermissionStateForRole(user.role);
     Object.entries(user.customPermissions || {}).forEach(
       ([resource, actions]) =>
@@ -425,6 +445,14 @@ export default function DashUsers() {
           permissionState
         );
         if (modalMode === 'create') {
+          if (
+            !privilegedForm.userName?.trim() ||
+            !privilegedForm.email?.trim()
+          ) {
+            showToast('Please fill in required fields', 'error');
+            setSubmitting(false);
+            return;
+          }
           const result = await apiPost('/api/admin/users', {
             userName: privilegedForm.userName,
             email: privilegedForm.email,
@@ -442,6 +470,41 @@ export default function DashUsers() {
           }
           showToast('Privileged user created successfully.', 'success');
         } else if (selectedUser) {
+          const formCompare = {
+            userName: privilegedForm.userName || '',
+            email: privilegedForm.email || '',
+            phoneNumber: privilegedForm.phoneNumber || '',
+            role: privilegedForm.role || 'admin',
+            isActive: privilegedForm.isActive !== false,
+            profilePicture: privilegedForm.profilePicture || ''
+          };
+          const currentRoleTemplate = buildPermissionStateForRole(
+            privilegedForm.role || 'admin'
+          );
+          const permissionChanged =
+            permissionState &&
+            currentRoleTemplate &&
+            JSON.stringify(permissionState) !==
+              JSON.stringify(currentRoleTemplate);
+          const hasFieldChanges =
+            formCompare.userName !== (originalPrivilegedForm?.userName || '') ||
+            formCompare.email !== (originalPrivilegedForm?.email || '') ||
+            formCompare.phoneNumber !==
+              (originalPrivilegedForm?.phoneNumber || '') ||
+            formCompare.role !== (originalPrivilegedForm?.role || 'admin') ||
+            formCompare.isActive !==
+              (originalPrivilegedForm?.isActive ?? true) ||
+            formCompare.profilePicture !==
+              (originalPrivilegedForm?.profilePicture || '');
+          const hasChanges =
+            hasFieldChanges ||
+            permissionChanged ||
+            !!privilegedForm.password.trim();
+          if (!hasChanges) {
+            showToast('No changes made', 'info');
+            setSubmitting(false);
+            return;
+          }
           const payload = {
             userName: privilegedForm.userName,
             email: privilegedForm.email,
@@ -467,7 +530,9 @@ export default function DashUsers() {
       resetModalState();
       await fetchUsers();
     } catch (submitError) {
-      showToast(submitError.message, 'error');
+      const message =
+        submitError?.message || 'Failed to update user. Please try again.';
+      showToast(message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -674,8 +739,7 @@ export default function DashUsers() {
               <option value="custom">Custom access</option>
             </Select>
             <Button
-              color="light"
-              className="w-full xl:w-auto"
+              className="w-full xl:w-auto !bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
               onClick={() => {
                 setSearch('');
                 setRoleFilter('all');
@@ -776,7 +840,7 @@ export default function DashUsers() {
                                   user.role
                                 ) && (
                                   <Button
-                                    color="light"
+                                    className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                                     size="xs"
                                     onClick={() => openEditModal(user)}
                                   >
@@ -787,7 +851,7 @@ export default function DashUsers() {
                               {canAssignStoreManager &&
                                 user.role === 'storeManager' && (
                                   <Button
-                                    color="light"
+                                    className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                                     size="xs"
                                     onClick={() => openAssignModal(user)}
                                   >
@@ -876,7 +940,7 @@ export default function DashUsers() {
                             {canCreatePrivilegedUser &&
                               ['admin', 'storeManager'].includes(user.role) && (
                                 <Button
-                                  color="light"
+                                  className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                                   size="xs"
                                   onClick={() => openEditModal(user)}
                                 >
@@ -886,7 +950,7 @@ export default function DashUsers() {
                             {canAssignStoreManager &&
                               user.role === 'storeManager' && (
                                 <Button
-                                  color="light"
+                                  className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                                   size="xs"
                                   onClick={() => openAssignModal(user)}
                                 >
@@ -930,7 +994,7 @@ export default function DashUsers() {
             </span>
             <div className="flex gap-2">
               <Button
-                color="light"
+                className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                 size="xs"
                 disabled={page === 1}
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
@@ -938,7 +1002,7 @@ export default function DashUsers() {
                 Previous
               </Button>
               <Button
-                color="light"
+                className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                 size="xs"
                 disabled={page >= totalPages}
                 onClick={() =>

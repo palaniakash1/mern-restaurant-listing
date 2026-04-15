@@ -41,8 +41,14 @@ const emptyReviewForm = {
 const formatDate = (value) =>
   value ? new Date(value).toLocaleDateString() : 'Unknown';
 
-const ImageUploader = ({ images, onChange, maxImages = 3, uploading, onUpload }) => {
-  const [previews, setPreviews] = useState(() => 
+const ImageUploader = ({
+  images,
+  onChange,
+  maxImages = 3,
+  uploading,
+  onUpload
+}) => {
+  const [previews, setPreviews] = useState(() =>
     images.map((url) => ({ url, isNew: false }))
   );
   const [dragActive, setDragActive] = useState(false);
@@ -63,10 +69,11 @@ const ImageUploader = ({ images, onChange, maxImages = 3, uploading, onUpload })
 
     for (const file of filesToProcess) {
       if (!file.type.startsWith('image/')) continue;
-      
+
       const reader = new FileReader();
       const preview = await new Promise((resolve) => {
-        reader.onload = (e) => resolve({ url: e.target.result, file, isNew: true });
+        reader.onload = (e) =>
+          resolve({ url: e.target.result, file, isNew: true });
         reader.readAsDataURL(file);
       });
       newPreviews.push(preview);
@@ -114,7 +121,10 @@ const ImageUploader = ({ images, onChange, maxImages = 3, uploading, onUpload })
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
-        onClick={() => images.length < maxImages && document.getElementById('review-image-input')?.click()}
+        onClick={() =>
+          images.length < maxImages &&
+          document.getElementById('review-image-input')?.click()
+        }
       >
         <input
           id="review-image-input"
@@ -168,7 +178,11 @@ const StarRating = ({ rating, showValue = true }) => {
           className={`h-4 w-4 ${filled ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
         />
       ))}
-      {showValue && <span className="ml-1 text-sm font-medium text-gray-600">({rating})</span>}
+      {showValue && (
+        <span className="ml-1 text-sm font-medium text-gray-600">
+          ({rating})
+        </span>
+      )}
     </div>
   );
 };
@@ -176,7 +190,7 @@ const StarRating = ({ rating, showValue = true }) => {
 const StarRatingInput = ({ value, onChange }) => {
   const [hover, setHover] = useState(0);
   const rating = Number(value) || 0;
-  
+
   return (
     <div className="flex items-center gap-1">
       {[1, 2, 3, 4, 5].map((star) => (
@@ -222,7 +236,11 @@ export default function DashReviews() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [overviewCounts, setOverviewCounts] = useState({ total: 0, active: 0, hidden: 0 });
+  const [overviewCounts, setOverviewCounts] = useState({
+    total: 0,
+    active: 0,
+    hidden: 0
+  });
   const [imageUploading, setImageUploading] = useState(false);
   const [lightboxImages, setLightboxImages] = useState(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -251,17 +269,23 @@ export default function DashReviews() {
 
   const loadRestaurants = useCallback(async () => {
     if (isCustomer) {
-      const data = await apiGet(`/api/restaurants?page=1&limit=${REVIEW_FILTER_LIMIT}`);
+      const data = await apiGet(
+        `/api/restaurants?page=1&limit=${REVIEW_FILTER_LIMIT}`
+      );
       return data.data || [];
     }
 
     if (isSuperAdmin) {
-      const data = await apiGet(`/api/restaurants/all?page=1&limit=${REVIEW_FILTER_LIMIT}`);
+      const data = await apiGet(
+        `/api/restaurants/all?page=1&limit=${REVIEW_FILTER_LIMIT}`
+      );
       return data.data || [];
     }
 
     if (isAdmin) {
-      const data = await apiGet(`/api/restaurants/me/all?page=1&limit=${REVIEW_FILTER_LIMIT}`);
+      const data = await apiGet(
+        `/api/restaurants/me/all?page=1&limit=${REVIEW_FILTER_LIMIT}`
+      );
       return data.data || [];
     }
 
@@ -275,7 +299,7 @@ export default function DashReviews() {
 
   const loadOverviewCounts = useCallback(async () => {
     if (!isModerator) return;
-    
+
     try {
       const countsData = await apiGet('/api/reviews/admin/counts');
       if (countsData.success) {
@@ -295,7 +319,10 @@ export default function DashReviews() {
         setRestaurants(restaurantList);
 
         const defaultRestaurantId =
-          selectedRestaurantId || user?.restaurantId || restaurantList[0]?._id || '';
+          selectedRestaurantId ||
+          user?.restaurantId ||
+          restaurantList[0]?._id ||
+          '';
 
         if (!selectedRestaurantId && defaultRestaurantId) {
           setSelectedRestaurantId(defaultRestaurantId);
@@ -337,16 +364,27 @@ export default function DashReviews() {
             setTotalItems(data.total || 0);
             setSelectedRestaurantId(restaurantList[0]._id);
           }
-}
         }
-
-        await loadOverviewCounts();
-      } catch (loadError) {
-        showToast(loadError.message, 'error');
-      } finally {
-        setLoading(false);
       }
-    }, [isCustomer, isSuperAdmin, isModerator, loadRestaurants, loadOverviewCounts, selectedRestaurantId, user?.restaurantId, canReadOwnReviews, page, sortOrder]);
+
+      await loadOverviewCounts();
+    } catch (loadError) {
+      showToast(loadError.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    isCustomer,
+    isSuperAdmin,
+    isModerator,
+    loadRestaurants,
+    loadOverviewCounts,
+    selectedRestaurantId,
+    user?.restaurantId,
+    canReadOwnReviews,
+    page,
+    sortOrder
+  ]);
 
   useEffect(() => {
     loadReviewData();
@@ -362,7 +400,8 @@ export default function DashReviews() {
   }, [isCustomer, selectedRestaurantId]);
 
   const selectedRestaurant = useMemo(
-    () => restaurants.find((restaurant) => restaurant._id === selectedRestaurantId),
+    () =>
+      restaurants.find((restaurant) => restaurant._id === selectedRestaurantId),
     [restaurants, selectedRestaurantId]
   );
 
@@ -370,21 +409,19 @@ export default function DashReviews() {
     const q = search.trim().toLowerCase();
     return allReviews.filter((review) => {
       const searchMatch = q
-        ? [
-            review.restaurantId?.name,
-            review.comment
-          ]
+        ? [review.restaurantId?.name, review.comment]
             .filter(Boolean)
             .some((v) => v.toLowerCase().includes(q))
         : true;
-      const statusMatch = statusFilter === 'all' || 
+      const statusMatch =
+        statusFilter === 'all' ||
         (statusFilter === 'active' ? review.isActive : !review.isActive);
       return searchMatch && statusMatch;
     });
   }, [allReviews, search, statusFilter]);
 
-  const activeCount = allReviews.filter(r => r.isActive).length;
-  const hiddenCount = allReviews.filter(r => !r.isActive).length;
+  const activeCount = allReviews.filter((r) => r.isActive).length;
+  const hiddenCount = allReviews.filter((r) => !r.isActive).length;
 
   const handleCreateReview = async (event) => {
     event.preventDefault();
@@ -482,7 +519,10 @@ export default function DashReviews() {
   const handleModerateReview = async (reviewId, isActive) => {
     try {
       await apiPatch(`/api/reviews/${reviewId}/moderate`, { isActive });
-      showToast(`Review ${isActive ? 'approved' : 'hidden'} successfully.`, 'success');
+      showToast(
+        `Review ${isActive ? 'approved' : 'hidden'} successfully.`,
+        'success'
+      );
       await loadReviewData();
     } catch (moderateError) {
       showToast(moderateError.message, 'error');
@@ -496,7 +536,10 @@ export default function DashReviews() {
         reviewIds: selectedReviews,
         isActive
       });
-      showToast(`${selectedReviews.length} review(s) ${isActive ? 'approved' : 'hidden'} successfully.`, 'success');
+      showToast(
+        `${selectedReviews.length} review(s) ${isActive ? 'approved' : 'hidden'} successfully.`,
+        'success'
+      );
       setSelectedReviews([]);
       await loadReviewData();
     } catch (bulkError) {
@@ -671,8 +714,7 @@ export default function DashReviews() {
               </Select>
               <div></div>
               <Button
-                color="light"
-                className="w-full xl:w-auto"
+                className="w-full xl:w-auto !bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                 onClick={() => {
                   setSearch('');
                   setStatusFilter('all');
@@ -685,9 +727,7 @@ export default function DashReviews() {
               </Button>
             </div>
 
-            {loading && (
-              <InlineLoader message="Loading reviews..." />
-            )}
+            {loading && <InlineLoader message="Loading reviews..." />}
 
             {!loading && filteredReviews.length === 0 && (
               <div className="mt-6 rounded-2xl border border-dashed border-[#dce6c1] p-8 text-center">
@@ -903,7 +943,7 @@ export default function DashReviews() {
               </span>
               <div className="flex gap-2">
                 <Button
-                  color="light"
+                  className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                   size="xs"
                   disabled={page === 1}
                   onClick={() => setPage((current) => Math.max(1, current - 1))}
@@ -911,7 +951,7 @@ export default function DashReviews() {
                   Previous
                 </Button>
                 <Button
-                  color="light"
+                  className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                   size="xs"
                   disabled={page >= totalPages}
                   onClick={() =>

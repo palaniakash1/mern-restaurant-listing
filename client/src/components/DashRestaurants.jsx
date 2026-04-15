@@ -84,18 +84,10 @@ const normalizeWebsiteUrl = (value = '') => {
 };
 
 const limitTaglineWords = (value = '', maxWords = 7) =>
-  value
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, maxWords)
-    .join(' ');
+  value.trim().split(/\s+/).filter(Boolean).slice(0, maxWords).join(' ');
 
 const getTaglineWordCount = (value = '') =>
-  value
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean).length;
+  value.trim().split(/\s+/).filter(Boolean).length;
 
 const getPreviewHero = (formData) =>
   formData.bannerImage || formData.imageLogo || '';
@@ -333,7 +325,16 @@ function BannerUpload({ value, progress, uploading, onCropComplete, onError }) {
   );
 }
 
-function RestaurantPageContent({ formData, website, address, fsaBadge, fallbackLocation, todayHours, openingHours, heroImage }) {
+function RestaurantPageContent({
+  formData,
+  website,
+  address,
+  fsaBadge,
+  fallbackLocation,
+  todayHours,
+  openingHours,
+  heroImage
+}) {
   return (
     <div className="min-h-screen bg-[#f6fdeb] text-[#23411f]">
       <header className="relative h-[50vh] min-h-[300px] flex items-center justify-center overflow-hidden">
@@ -356,8 +357,12 @@ function RestaurantPageContent({ formData, website, address, fsaBadge, fallbackL
           </p>
           <div className="flex items-center justify-center flex-wrap gap-x-6 gap-y-2 text-white font-bold text-sm tracking-widest uppercase">
             <span className="flex items-center gap-1">
-              <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              <svg
+                className="w-5 h-5 text-yellow-400"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
               </svg>
               New Rating
             </span>
@@ -392,28 +397,35 @@ function RestaurantPageContent({ formData, website, address, fsaBadge, fallbackL
                       Designed to feel like a destination, not a list
                     </h2>
                     <p className="mt-4 text-base leading-7 text-[#6d6358]">
-                      Browse the standout dishes, signature sections, and high-intent menu story of{' '}
+                      Browse the standout dishes, signature sections, and
+                      high-intent menu story of{' '}
                       {formData.name || 'this restaurant'}.
                     </p>
                   </div>
 
                   <div className="flex flex-wrap gap-3">
-                    {['Chef selection', 'Signature plates', 'Drinks'].map((label) => (
-                      <span
-                        key={label}
-                        className="rounded-full bg-[#f1eadd] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-[#675d52]"
-                      >
-                        {label}
-                      </span>
-                    ))}
+                    {['Chef selection', 'Signature plates', 'Drinks'].map(
+                      (label) => (
+                        <span
+                          key={label}
+                          className="rounded-full bg-[#f1eadd] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-[#675d52]"
+                        >
+                          {label}
+                        </span>
+                      )
+                    )}
                   </div>
                 </div>
               </div>
 
               <div className="p-6 sm:p-8">
                 <div className="rounded-[1.5rem] border border-dashed border-[#dce6c1] bg-[#faf6ef] px-6 py-10 text-center">
-                  <p className="text-sm uppercase tracking-[0.32em] text-[#8e5c2d]">Menu</p>
-                  <h3 className="mt-3 text-2xl font-bold text-[#23411f]">Coming Soon</h3>
+                  <p className="text-sm uppercase tracking-[0.32em] text-[#8e5c2d]">
+                    Menu
+                  </p>
+                  <h3 className="mt-3 text-2xl font-bold text-[#23411f]">
+                    Coming Soon
+                  </h3>
                   <p className="mt-3 text-sm leading-7 text-[#6d6358]">
                     This restaurant has not published its dishes yet.
                   </p>
@@ -427,7 +439,8 @@ function RestaurantPageContent({ formData, website, address, fsaBadge, fallbackL
                   Culinary identity
                 </p>
                 <p className="mt-4 text-lg font-black leading-tight">
-                  Premium presentation that gives the restaurant real brand presence.
+                  Premium presentation that gives the restaurant real brand
+                  presence.
                 </p>
               </div>
 
@@ -436,7 +449,8 @@ function RestaurantPageContent({ formData, website, address, fsaBadge, fallbackL
                   Atmosphere
                 </p>
                 <p className="mt-4 text-sm leading-6 text-[#6d6358]">
-                  Hero banner, logo treatment, and layered content blocks work together to make the page feel intentional.
+                  Hero banner, logo treatment, and layered content blocks work
+                  together to make the page feel intentional.
                 </p>
               </div>
 
@@ -445,7 +459,8 @@ function RestaurantPageContent({ formData, website, address, fsaBadge, fallbackL
                   Brand clarity
                 </p>
                 <p className="mt-4 text-sm leading-6 text-[#6d6358]">
-                  Structured information and softer premium surfaces make the restaurant easier to trust.
+                  Structured information and softer premium surfaces make the
+                  restaurant easier to trust.
                 </p>
               </div>
             </section>
@@ -459,12 +474,14 @@ function RestaurantPageContent({ formData, website, address, fsaBadge, fallbackL
                   The Guest Journal
                 </h2>
                 <p className="mt-3 text-base text-[#6d6358]">
-                  Reviews displayed like editorial testimonials rather than generic cards.
+                  Reviews displayed like editorial testimonials rather than
+                  generic cards.
                 </p>
               </div>
 
               <div className="rounded-[1.5rem] border border-dashed border-[#dce6c1] bg-white px-6 py-10 text-center text-[#6d6358] shadow-[0_18px_45px_rgba(64,48,20,0.04)]">
-                Reviews will appear here once guests start sharing their experience.
+                Reviews will appear here once guests start sharing their
+                experience.
               </div>
             </section>
           </div>
@@ -482,23 +499,52 @@ function RestaurantPageContent({ formData, website, address, fsaBadge, fallbackL
               </div>
               <div className="p-5">
                 <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
                   </svg>
                   Location
                 </p>
                 <h3 className="mt-4 text-xl font-black text-[#23411f]">
-                  {formData.address?.areaLocality || formData.address?.city || 'Visit us'}
+                  {formData.address?.areaLocality ||
+                    formData.address?.city ||
+                    'Visit us'}
                 </h3>
-                <p className="mt-2 text-sm leading-6 text-[#6d6358]">{address || 'Address preview'}</p>
+                <p className="mt-2 text-sm leading-6 text-[#6d6358]">
+                  {address || 'Address preview'}
+                </p>
               </div>
             </div>
 
             <div className="rounded-[1.5rem] border border-[#dce6c1] bg-white p-5 shadow-[0_18px_50px_rgba(64,48,20,0.06)]">
               <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
                 Quick facts
               </p>
@@ -524,8 +570,18 @@ function RestaurantPageContent({ formData, website, address, fsaBadge, fallbackL
 
             <div className="rounded-[1.5rem] border border-[#dce6c1] bg-white p-5 shadow-[0_18px_50px_rgba(64,48,20,0.06)]">
               <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
                 Opening Hours
               </p>
@@ -534,14 +590,27 @@ function RestaurantPageContent({ formData, website, address, fsaBadge, fallbackL
                   <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/65">
                     {todayHours.status}
                   </p>
-                  <p className="mt-1 text-sm font-medium text-white">{todayHours.hours}</p>
+                  <p className="mt-1 text-sm font-medium text-white">
+                    {todayHours.hours}
+                  </p>
                 </div>
               ) : null}
               <div className="mt-4 space-y-3 text-sm">
                 {openingHours.map(({ day, short, label, isClosed }) => (
-                  <div key={day} className="flex items-center justify-between gap-3">
-                    <span className="uppercase tracking-[0.18em] text-[#9d9284]">{short}</span>
-                    <span className={isClosed ? 'text-[#b62828]' : 'font-medium text-[#23411f]'}>
+                  <div
+                    key={day}
+                    className="flex items-center justify-between gap-3"
+                  >
+                    <span className="uppercase tracking-[0.18em] text-[#9d9284]">
+                      {short}
+                    </span>
+                    <span
+                      className={
+                        isClosed
+                          ? 'text-[#b62828]'
+                          : 'font-medium text-[#23411f]'
+                      }
+                    >
                       {label}
                     </span>
                   </div>
@@ -551,20 +620,42 @@ function RestaurantPageContent({ formData, website, address, fsaBadge, fallbackL
 
             <div className="rounded-[1.5rem] border border-[#dce6c1] bg-white p-5 shadow-[0_18px_50px_rgba(64,48,20,0.06)]">
               <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                  />
                 </svg>
                 Inquiries
               </p>
               <div className="mt-4 space-y-4">
                 <div className="flex items-center gap-3">
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#faf6ef] text-[#8e5c2d]">
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                      />
                     </svg>
                   </span>
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9d9284]">Reservations</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9d9284]">
+                      Reservations
+                    </p>
                     <p className="mt-1 text-sm font-medium text-[#23411f]">
                       {formData.contactNumber || 'Contact number'}
                     </p>
@@ -572,12 +663,24 @@ function RestaurantPageContent({ formData, website, address, fsaBadge, fallbackL
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#faf6ef] text-[#8e5c2d]">
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                      />
                     </svg>
                   </span>
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9d9284]">Email</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9d9284]">
+                      Email
+                    </p>
                     <p className="mt-1 text-sm font-medium text-[#23411f] break-all">
                       {formData.email || 'restaurant@email.com'}
                     </p>
@@ -585,12 +688,24 @@ function RestaurantPageContent({ formData, website, address, fsaBadge, fallbackL
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#faf6ef] text-[#8e5c2d]">
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+                      />
                     </svg>
                   </span>
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9d9284]">Website</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9d9284]">
+                      Website
+                    </p>
                     <p className="mt-1 text-sm font-medium text-[#23411f]">
                       {website || 'Visit restaurant website'}
                     </p>
@@ -617,16 +732,31 @@ function RestaurantPagePreview({ formData }) {
 
   const getTodayHours = () => {
     if (!formData.openingHours) return null;
-    const day = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][
-      new Date().getDay()
-    ];
+    const day = [
+      'sunday',
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday'
+    ][new Date().getDay()];
     const value = formData.openingHours[day];
-    if (!value || value.isClosed) return { status: 'Closed Today', hours: 'Closed' };
+    if (!value || value.isClosed)
+      return { status: 'Closed Today', hours: 'Closed' };
     return { status: 'Open Today', hours: `${value.open} - ${value.close}` };
   };
 
   const formatHours = () => {
-    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const days = [
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+      'sunday'
+    ];
     return days.map((day) => {
       const value = formData.openingHours?.[day];
       return !value || value.isClosed
@@ -744,7 +874,8 @@ export default function DashRestaurants() {
             .filter(Boolean)
             .some((v) => v.toLowerCase().includes(q))
         : true;
-      const statusMatch = statusFilter === 'all' || item.status === statusFilter;
+      const statusMatch =
+        statusFilter === 'all' || item.status === statusFilter;
       return searchMatch && statusMatch;
     });
     return filtered;
@@ -768,7 +899,9 @@ export default function DashRestaurants() {
   }, []);
   const removeRestaurantRecord = useCallback((restaurantId) => {
     setRestaurants((current) =>
-      current.filter((restaurant) => String(restaurant._id) !== String(restaurantId))
+      current.filter(
+        (restaurant) => String(restaurant._id) !== String(restaurantId)
+      )
     );
   }, []);
 
@@ -780,9 +913,7 @@ export default function DashRestaurants() {
 
     try {
       setLoading(true);
-      const firstPage = await apiGet(
-        `${listBaseEndpoint}?page=1&limit=100`
-      );
+      const firstPage = await apiGet(`${listBaseEndpoint}?page=1&limit=100`);
       const pages = Math.max(1, firstPage.totalPages || 1);
       let dataset = firstPage.data || [];
 
@@ -1145,9 +1276,12 @@ export default function DashRestaurants() {
 
   const handleStatusChange = async (restaurant, status) => {
     try {
-      const response = await apiPatch(`/api/restaurants/id/${restaurant._id}/status`, {
-        status
-      });
+      const response = await apiPatch(
+        `/api/restaurants/id/${restaurant._id}/status`,
+        {
+          status
+        }
+      );
       if (response?.data) {
         syncRestaurantRecord(response.data);
       }
@@ -1159,7 +1293,10 @@ export default function DashRestaurants() {
 
   const handleRestoreRestaurant = async (restaurant) => {
     try {
-      const response = await apiPatch(`/api/restaurants/id/${restaurant._id}/restore`, {});
+      const response = await apiPatch(
+        `/api/restaurants/id/${restaurant._id}/restore`,
+        {}
+      );
       if (response?.data) {
         syncRestaurantRecord(response.data);
       }
@@ -1345,8 +1482,7 @@ export default function DashRestaurants() {
             <div></div>
             <div></div>
             <Button
-              color="light"
-              className="w-full xl:w-auto"
+              className="w-full xl:w-auto !bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
               onClick={() => {
                 setSearch('');
                 setStatusFilter('all');
@@ -1437,7 +1573,9 @@ export default function DashRestaurants() {
                         <Button
                           size="xs"
                           className="!bg-[#8fa31e] !text-white hover:!bg-[#78871c]"
-                          onClick={() => navigate(`/restaurants/${restaurant.slug}`)}
+                          onClick={() =>
+                            navigate(`/restaurants/${restaurant.slug}`)
+                          }
                         >
                           <HiOutlineEye className="mr-1 h-4 w-4" />
                           View
@@ -1490,7 +1628,7 @@ export default function DashRestaurants() {
                           restaurant.status === 'blocked' && (
                             <Button
                               size="xs"
-                              color="light"
+                              className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                               onClick={() =>
                                 handleRestoreRestaurant(restaurant)
                               }
@@ -1597,7 +1735,7 @@ export default function DashRestaurants() {
                   {canRestoreRestaurant && restaurant.status === 'blocked' && (
                     <Button
                       size="xs"
-                      color="light"
+                      className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                       onClick={() => handleRestoreRestaurant(restaurant)}
                     >
                       Restore
@@ -1619,7 +1757,7 @@ export default function DashRestaurants() {
             </span>
             <div className="flex gap-2">
               <Button
-                color="light"
+                className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                 size="xs"
                 disabled={page === 1}
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
@@ -1627,7 +1765,7 @@ export default function DashRestaurants() {
                 Previous
               </Button>
               <Button
-                color="light"
+                className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
                 size="xs"
                 disabled={page >= totalPages}
                 onClick={() =>
@@ -1881,7 +2019,15 @@ export default function DashRestaurants() {
                   </p>
                 </div>
                 <div className="space-y-3">
-                  {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => (
+                  {[
+                    'monday',
+                    'tuesday',
+                    'wednesday',
+                    'thursday',
+                    'friday',
+                    'saturday',
+                    'sunday'
+                  ].map((day) => (
                     <div key={day} className="flex items-center gap-2">
                       <span className="w-20 text-sm capitalize text-gray-600">
                         {day}
@@ -2053,16 +2199,12 @@ export default function DashRestaurants() {
               </div>
             </div>
 
-              <div className="rounded-[1.25rem] border !border-[#dce6c1] bg-white p-4">
-                <p className="text-sm font-semibold text-[#23411f]">
-                  Preview
-                </p>
-                <div className="mt-3 h-[60vh] overflow-y-auto rounded-lg bg-[#f6fdeb]">
-                  <RestaurantPagePreview
-                    formData={formData}
-                  />
-                </div>
+            <div className="rounded-[1.25rem] border !border-[#dce6c1] bg-white p-4">
+              <p className="text-sm font-semibold text-[#23411f]">Preview</p>
+              <div className="mt-3 h-[60vh] overflow-y-auto rounded-lg bg-[#f6fdeb]">
+                <RestaurantPagePreview formData={formData} />
               </div>
+            </div>
 
             <div className="flex justify-end gap-3">
               <Button color="gray" onClick={resetModalState}>
