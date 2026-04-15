@@ -31,7 +31,10 @@ export function ToastProvider({ children }) {
 
 function ToastContainer({ toasts, onHide }) {
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-3">
+    <div
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-3"
+      onClick={(e) => e.stopPropagation()}
+    >
       {toasts.map((toast) => (
         <Toast key={toast.id} toast={toast} onHide={onHide} />
       ))}
@@ -71,23 +74,63 @@ function Toast({ toast, onHide }) {
 
   const icons = {
     success: (
-      <svg className={`w-5 h-5 flex-shrink-0 ${style.iconColor}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+      <svg
+        className={`w-5 h-5 flex-shrink-0 ${style.iconColor}`}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M5 13l4 4L19 7"
+        />
       </svg>
     ),
     error: (
-      <svg className={`w-5 h-5 flex-shrink-0 ${style.iconColor}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <svg
+        className={`w-5 h-5 flex-shrink-0 ${style.iconColor}`}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
       </svg>
     ),
     warning: (
-      <svg className={`w-5 h-5 flex-shrink-0 ${style.iconColor}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      <svg
+        className={`w-5 h-5 flex-shrink-0 ${style.iconColor}`}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+        />
       </svg>
     ),
     info: (
-      <svg className={`w-5 h-5 flex-shrink-0 ${style.iconColor}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <svg
+        className={`w-5 h-5 flex-shrink-0 ${style.iconColor}`}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
       </svg>
     )
   };
@@ -98,7 +141,9 @@ function Toast({ toast, onHide }) {
       role="alert"
     >
       {icons[toast.type]}
-      <p className="text-sm font-medium flex-1 leading-tight">{toast.message}</p>
+      <p className="text-sm font-medium flex-1 leading-tight">
+        {toast.message}
+      </p>
       <button
         type="button"
         onClick={(e) => {
@@ -109,8 +154,18 @@ function Toast({ toast, onHide }) {
         className={`flex-shrink-0 p-1 rounded-full hover:bg-black/5 transition-colors ${style.text} opacity-60 hover:opacity-100`}
         aria-label="Close"
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        <svg
+          className="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M6 18L18 6M6 6l12 12"
+          />
         </svg>
       </button>
     </div>
