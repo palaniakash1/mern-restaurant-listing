@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   Badge,
   Button,
   Card,
@@ -29,6 +28,7 @@ import {
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
 import ImageFrameLoader from './ImageFrameLoader';
 import PasswordInput from './PasswordInput';
+import { useToast } from '../context/ToastContext';
 
 const USER_LIMIT = 10;
 const DEFAULT_ROLE = 'admin';
@@ -228,8 +228,6 @@ export default function DashUsers() {
   const [accessFilter, setAccessFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
   const [modalMode, setModalMode] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [privilegedForm, setPrivilegedForm] = useState(buildPrivilegedForm());
@@ -243,6 +241,7 @@ export default function DashUsers() {
   const [imageUploadProgress, setImageUploadProgress] = useState(0);
   const [pendingDeleteUser, setPendingDeleteUser] = useState(null);
   const [pendingUnassignUser, setPendingUnassignUser] = useState(null);
+  const { showToast } = useToast();
 
   const listEndpoint = useMemo(() => {
     if (canListAllUsers)
@@ -269,7 +268,6 @@ export default function DashUsers() {
     }
     try {
       setLoading(true);
-      setError(null);
       const [userData, restaurantData] = await Promise.all([
         apiGet(listEndpoint),
         fetchRestaurants()
@@ -279,7 +277,7 @@ export default function DashUsers() {
       setTotalUsers(userData.total || 0);
       setRestaurants(restaurantData);
     } catch (fetchError) {
-      setError(fetchError.message);
+      showToast(fetchError.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -353,7 +351,7 @@ export default function DashUsers() {
 
   const handleImageUpload = async (file) => {
     if (!file.type.startsWith('image/')) {
-      setError('Please choose a valid image file.');
+      showToast('Please choose a valid image file.', 'error');
       return;
     }
     setImagePreviewUrl(URL.createObjectURL(file));
@@ -374,7 +372,7 @@ export default function DashUsers() {
         profilePicture: uploaded.url
       }));
     } catch (uploadError) {
-      setError(uploadError.message);
+      showToast(uploadError.message, 'error');
     } finally {
       setImageUploading(false);
     }
@@ -421,8 +419,6 @@ export default function DashUsers() {
     event.preventDefault();
     try {
       setSubmitting(true);
-      setError(null);
-      setSuccess(null);
       if (canCreatePrivilegedUser) {
         const permissions = permissionsPayload(
           privilegedForm.role,
@@ -444,7 +440,7 @@ export default function DashUsers() {
               profilePicture: privilegedForm.profilePicture
             });
           }
-          setSuccess('Privileged user created successfully.');
+          showToast('Privileged user created successfully.', 'success');
         } else if (selectedUser) {
           const payload = {
             userName: privilegedForm.userName,
@@ -462,16 +458,16 @@ export default function DashUsers() {
             `/api/admin/users/${getUserId(selectedUser)}`,
             payload
           );
-          setSuccess('User updated successfully.');
+          showToast('User updated successfully.', 'success');
         }
       } else if (canCreateStoreManager && modalMode === 'create') {
         await apiPost('/api/users', managerForm);
-        setSuccess('Store manager created successfully.');
+        showToast('Store manager created successfully.', 'success');
       }
       resetModalState();
       await fetchUsers();
     } catch (submitError) {
-      setError(submitError.message);
+      showToast(submitError.message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -481,10 +477,10 @@ export default function DashUsers() {
     try {
       await apiDelete(`/api/users/${getUserId(user)}`);
       setPendingDeleteUser(null);
-      setSuccess('User deleted successfully.');
+      showToast('User deleted successfully.', 'success');
       await fetchUsers();
     } catch (deleteError) {
-      setError(deleteError.message);
+      showToast(deleteError.message, 'error');
     }
   };
 
@@ -495,10 +491,10 @@ export default function DashUsers() {
         restaurantId: assignmentRestaurantId
       });
       resetModalState();
-      setSuccess('Store manager assignment updated.');
+      showToast('Store manager assignment updated.', 'success');
       await fetchUsers();
     } catch (assignError) {
-      setError(assignError.message);
+      showToast(assignError.message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -508,10 +504,10 @@ export default function DashUsers() {
     try {
       await apiDelete(`/api/users/${getUserId(user)}/restaurant`);
       setPendingUnassignUser(null);
-      setSuccess('Store manager unassigned successfully.');
+      showToast('Store manager unassigned successfully.', 'success');
       await fetchUsers();
     } catch (unassignError) {
-      setError(unassignError.message);
+      showToast(unassignError.message, 'error');
     }
   };
 
@@ -529,9 +525,6 @@ export default function DashUsers() {
   return (
     <>
       <div className="space-y-5">
-        {error && <Alert color="failure">{error}</Alert>}
-        {success && <Alert color="success">{success}</Alert>}
-
         <Card className="border !border-[#dce6c1] bg-white shadow-sm">
           <div className="grid gap-5 xl:grid-cols-[1.05fr,0.95fr]">
             <div className="space-y-3">

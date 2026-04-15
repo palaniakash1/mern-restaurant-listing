@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   Badge,
   Button,
   Card,
@@ -25,6 +24,7 @@ import {
 import { apiDelete, apiGet, apiPatch, apiPost } from '../utils/api';
 import { hasPermission } from '../utils/permissions';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
 import { InlineLoader } from './PageLoader';
 import DeleteConfirmModal from './DeleteConfirmModal';
@@ -217,8 +217,6 @@ export default function DashReviews() {
   const [editingReview, setEditingReview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortOrder, setSortOrder] = useState('desc');
   const [page, setPage] = useState(1);
@@ -230,6 +228,7 @@ export default function DashReviews() {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [myReviewSearch, setMyReviewSearch] = useState('');
   const [myReviewFilter, setMyReviewFilter] = useState('');
+  const { showToast } = useToast();
   const [search, setSearch] = useState('');
   const [selectedReviews, setSelectedReviews] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -290,7 +289,6 @@ export default function DashReviews() {
   const loadReviewData = useCallback(async () => {
     try {
       setLoading(true);
-      setError(null);
 
       if (isCustomer) {
         const restaurantList = await loadRestaurants();
@@ -339,16 +337,16 @@ export default function DashReviews() {
             setTotalItems(data.total || 0);
             setSelectedRestaurantId(restaurantList[0]._id);
           }
+}
         }
 
         await loadOverviewCounts();
+      } catch (loadError) {
+        showToast(loadError.message, 'error');
+      } finally {
+        setLoading(false);
       }
-    } catch (loadError) {
-      setError(loadError.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [isCustomer, isSuperAdmin, isModerator, loadRestaurants, loadOverviewCounts, selectedRestaurantId, user?.restaurantId, canReadOwnReviews, page, sortOrder]);
+    }, [isCustomer, isSuperAdmin, isModerator, loadRestaurants, loadOverviewCounts, selectedRestaurantId, user?.restaurantId, canReadOwnReviews, page, sortOrder]);
 
   useEffect(() => {
     loadReviewData();
@@ -393,8 +391,6 @@ export default function DashReviews() {
 
     try {
       setSubmitting(true);
-      setError(null);
-      setSuccess(null);
 
       const uploadedImages = [];
       if (reviewForm.images && reviewForm.images.length > 0) {
@@ -420,11 +416,11 @@ export default function DashReviews() {
         comment: reviewForm.comment,
         images: uploadedImages
       });
-      setSuccess('Review submitted successfully.');
+      showToast('Review submitted successfully.', 'success');
       setReviewForm(emptyReviewForm);
       await loadReviewData();
     } catch (submitError) {
-      setError(submitError.message);
+      showToast(submitError.message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -449,17 +445,15 @@ export default function DashReviews() {
 
     try {
       setSubmitting(true);
-      setError(null);
-      setSuccess(null);
       await apiPatch(`/api/reviews/${editingReview._id}`, {
         rating: Number(editingReview.rating),
         comment: editingReview.comment
       });
-      setSuccess('Review updated successfully.');
+      showToast('Review updated successfully.', 'success');
       setEditingReview(null);
       await loadReviewData();
     } catch (updateError) {
-      setError(updateError.message);
+      showToast(updateError.message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -474,13 +468,11 @@ export default function DashReviews() {
     if (!reviewToDelete) return;
 
     try {
-      setError(null);
-      setSuccess(null);
       await apiDelete(`/api/reviews/${reviewToDelete}`);
-      setSuccess('Review deleted successfully.');
+      showToast('Review deleted successfully.', 'success');
       await loadReviewData();
     } catch (deleteError) {
-      setError(deleteError.message);
+      showToast(deleteError.message, 'error');
     } finally {
       setShowDeleteModal(false);
       setReviewToDelete(null);
@@ -489,30 +481,26 @@ export default function DashReviews() {
 
   const handleModerateReview = async (reviewId, isActive) => {
     try {
-      setError(null);
-      setSuccess(null);
       await apiPatch(`/api/reviews/${reviewId}/moderate`, { isActive });
-      setSuccess(`Review ${isActive ? 'approved' : 'hidden'} successfully.`);
+      showToast(`Review ${isActive ? 'approved' : 'hidden'} successfully.`, 'success');
       await loadReviewData();
     } catch (moderateError) {
-      setError(moderateError.message);
+      showToast(moderateError.message, 'error');
     }
   };
 
   const handleBulkModerate = async (isActive) => {
     if (selectedReviews.length === 0) return;
     try {
-      setError(null);
-      setSuccess(null);
       await apiPatch('/api/reviews/bulk-moderate', {
         reviewIds: selectedReviews,
         isActive
       });
-      setSuccess(`${selectedReviews.length} review(s) ${isActive ? 'approved' : 'hidden'} successfully.`);
+      showToast(`${selectedReviews.length} review(s) ${isActive ? 'approved' : 'hidden'} successfully.`, 'success');
       setSelectedReviews([]);
       await loadReviewData();
     } catch (bulkError) {
-      setError(bulkError.message);
+      showToast(bulkError.message, 'error');
     }
   };
 
@@ -536,9 +524,6 @@ export default function DashReviews() {
     return (
       <>
         <div className="space-y-5">
-          {error && <Alert color="failure">{error}</Alert>}
-          {success && <Alert color="success">{success}</Alert>}
-
           <Card className="border !border-[#dce6c1] bg-white shadow-sm">
             <div className="grid gap-5 xl:grid-cols-[1.1fr,0.9fr]">
               <div className="space-y-3">
@@ -1094,9 +1079,6 @@ export default function DashReviews() {
 
   return (
     <div className="space-y-5">
-      {error && <Alert color="failure">{error}</Alert>}
-      {success && <Alert color="success">{success}</Alert>}
-
       <div className="grid gap-5 xl:grid-cols-[1fr,1fr]">
         {canCreateReview && (
           <Card className="border !border-[#dce6c1] bg-white shadow-sm xl:col-span-2">
@@ -1166,16 +1148,6 @@ export default function DashReviews() {
                   onUpload={handleImageUpload}
                 />
               </div>
-              {error && (
-                <Alert color="failure" className="text-sm">
-                  {error}
-                </Alert>
-              )}
-              {success && (
-                <Alert color="success" className="text-sm">
-                  {success}
-                </Alert>
-              )}
               <Button
                 type="submit"
                 className="!bg-[#8fa31e] hover:!bg-[#78871c]"

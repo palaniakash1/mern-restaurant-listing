@@ -3,8 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import OAuth from '../components/OAuth';
 import wavepattern from '../assets/wavepattern.png';
 import logo from '../assets/eatwisely.ico';
-import { Alert, Modal } from 'flowbite-react';
+import { Modal } from 'flowbite-react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { forgotPassword } from '../services/authService';
 
 const EyeIcon = (props) => (
@@ -101,11 +102,9 @@ const CloseIcon = (props) => (
 
 export default function SignIn() {
   const [formData, setFormData] = useState({});
-  const { login, isLoading, error: authError, clearError } = useAuth();
+  const { login, isLoading } = useAuth();
+  const { showToast } = useToast();
   const navigate = useNavigate();
-  const [localError, setLocalError] = useState(null);
-
-  const error = authError;
 
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -117,12 +116,6 @@ export default function SignIn() {
   const [resetError, setResetError] = useState(null);
 
   const handleChange = (e) => {
-    if (error) {
-      clearError();
-    }
-    if (localError) {
-      setLocalError(null);
-    }
     setFormData({
       ...formData,
       [e.target.id]: e.target.value
@@ -136,7 +129,7 @@ export default function SignIn() {
     e.preventDefault();
 
     if (!formData.email || !formData.password) {
-      setLocalError('Please fill in all fields');
+      showToast('Please fill in all fields', 'error');
       return;
     }
 
@@ -147,33 +140,30 @@ export default function SignIn() {
       return;
     }
 
-    setLocalError(result.error);
+    showToast(result.error, 'error');
   };
 
   const handleForgotPassword = async (e) => {
     e.preventDefault();
 
     if (!resetEmail) {
-      setResetError('Please enter your email address');
+      showToast('Please enter your email address', 'error');
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(resetEmail)) {
-      setResetError('Please enter a valid email address');
+      showToast('Please enter a valid email address', 'error');
       return;
     }
 
     setResetLoading(true);
-    setResetError(null);
 
     try {
       await forgotPassword(resetEmail);
       setResetSuccess(true);
     } catch (err) {
-      setResetError(
-        err.message || 'Failed to send reset email. Please try again.'
-      );
+      showToast(err.message || 'Failed to send reset email. Please try again.', 'error');
     } finally {
       setResetLoading(false);
     }
@@ -310,19 +300,6 @@ export default function SignIn() {
                 </div>
               </div>
 
-              {(localError || error) && (
-                <Alert
-                  color="failure"
-                  onDismiss={() => {
-                    setLocalError(null);
-                    clearError();
-                  }}
-                  className="m-4"
-                >
-                  <span className="font-medium">Oops!</span>{' '}
-                  {localError || error}
-                </Alert>
-              )}
               <button
                 disabled={isLoading}
                 className=" p-2 rounded-[5px] !bg-[#8fa31e] hover:!bg-[#7a8c1a] text-white !rounded-[4px] border-none"
@@ -418,12 +395,6 @@ export default function SignIn() {
                   />
                 </div>
               </div>
-
-              {resetError && (
-                <Alert color="failure" className="mt-2">
-                  {resetError}
-                </Alert>
-              )}
 
               <div className="flex gap-3">
                 <button

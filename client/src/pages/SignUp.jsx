@@ -4,7 +4,6 @@ import wavepattern from "../assets/wavepattern.png";
 import OAuth from "../components/OAuth";
 import logo from "../assets/eatwisely.ico";
 import PasswordStrength from "../components/PasswordStrength";
-import { Alert } from "flowbite-react";
 import { useAuth } from "../context/AuthContext";
 
 const EyeIcon = (props) => (
@@ -194,12 +193,6 @@ export default function SignUp() {
                 </div>
                 <PasswordStrength password={password} />
               </div>
-
-              {error && (
-                <Alert color="failure" onDismiss={clearError}>
-                  {error}
-                </Alert>
-              )}
 
               <button
                 disabled={isLoading}

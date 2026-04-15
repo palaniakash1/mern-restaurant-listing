@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Alert,
   Badge,
   Button,
   Card,
@@ -21,6 +20,7 @@ import { uploadToCloudinary } from '../utils/cloudinaryUpload';
 import DeleteConfirmModal from './DeleteConfirmModal';
 import ImageUploadCropper from './ImageUploadCropper';
 import ImageFrameLoader from './ImageFrameLoader';
+import { useToast } from '../context/ToastContext';
 
 const emptyMenuForm = {
   restaurantId: '',
@@ -67,8 +67,6 @@ export default function DashMenu() {
   const [editingItem, setEditingItem] = useState(null);
   const [loading, _setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [menuToDelete, setMenuToDelete] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -82,6 +80,7 @@ export default function DashMenu() {
   const [showDeleteItemModal, setShowDeleteItemModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const { showToast } = useToast();
 
   const PAGE_SIZE = 12;
 
@@ -275,16 +274,14 @@ export default function DashMenu() {
 
     try {
       setSubmitting(true);
-      setError(null);
-      setSuccess(null);
       await apiPost('/api/menus', {
         restaurantId: menuForm.restaurantId,
         categoryId: menuForm.categoryId
       });
-      setSuccess('Menu created successfully.');
+      showToast('Menu created successfully.', 'success');
       await loadMenus(selectedRestaurantId);
     } catch (createError) {
-      setError(createError.message);
+      showToast(createError.message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -295,8 +292,6 @@ export default function DashMenu() {
 
     try {
       setSubmitting(true);
-      setError(null);
-      setSuccess(null);
       await apiPost(`/api/menus/${activeMenu._id}/items`, {
         items: [
           {
@@ -314,12 +309,12 @@ export default function DashMenu() {
           }
         ]
       });
-      setSuccess('Menu item added successfully.');
+      showToast('Menu item added successfully.', 'success');
       setActiveMenu(null);
       setItemForm(emptyItemForm);
       await loadMenus(selectedRestaurantId);
     } catch (itemError) {
-      setError(itemError.message);
+      showToast(itemError.message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -327,15 +322,13 @@ export default function DashMenu() {
 
   const handleToggleAvailability = async (menuId, itemId, isAvailable) => {
     try {
-      setError(null);
-      setSuccess(null);
       await apiPatch(`/api/menus/${menuId}/items/${itemId}/availability`, {
         isAvailable: !isAvailable
       });
-      setSuccess('Menu item availability updated.');
+      showToast('Menu item availability updated.', 'success');
       await loadMenus(selectedRestaurantId);
     } catch (toggleError) {
-      setError(toggleError.message);
+      showToast(toggleError.message, 'error');
     }
   };
 
@@ -348,11 +341,9 @@ export default function DashMenu() {
 
   const handlePublishMenu = async (menuId, currentStatus) => {
     try {
-      setError(null);
-      setSuccess(null);
       const newStatus = currentStatus === 'published' ? 'draft' : 'published';
       await apiPatch(`/api/menus/${menuId}/status`, { status: newStatus });
-      setSuccess(`Menu ${newStatus === 'published' ? 'published' : 'unpublished'} successfully.`);
+      showToast(`Menu ${newStatus === 'published' ? 'published' : 'unpublished'} successfully.`, 'success');
       await loadMenus(selectedRestaurantId);
     } catch (publishError) {
       let errorMsg = publishError.data?.message || publishError.message;
@@ -363,20 +354,18 @@ export default function DashMenu() {
       } else if (errorMsg.includes('active item')) {
         errorMsg = 'Cannot publish menu: Add at least one menu item.';
       }
-      setError(errorMsg);
+      showToast(errorMsg, 'error');
     }
   };
 
   const handleRestoreMenu = async (menuId) => {
     try {
-      setError(null);
-      setSuccess(null);
       await apiPatch(`/api/menus/${menuId}/restore`);
-      setSuccess('Menu restored successfully.');
+      showToast('Menu restored successfully.', 'success');
       await loadMenus(selectedRestaurantId);
       await loadTrashedMenus(selectedRestaurantId);
     } catch (restoreError) {
-      setError(restoreError.message);
+      showToast(restoreError.message, 'error');
     }
   };
 
@@ -384,16 +373,14 @@ export default function DashMenu() {
     if (!menuForItemDelete || !itemToDelete) return;
 
     try {
-      setError(null);
-      setSuccess(null);
       await apiDelete(`/api/menus/${menuForItemDelete}/items/${itemToDelete}`);
-      setSuccess('Menu item deleted successfully.');
+      showToast('Menu item deleted successfully.', 'success');
       setShowDeleteItemModal(false);
       setItemToDelete(null);
       setMenuForItemDelete(null);
       await loadMenus(selectedRestaurantId);
     } catch (deleteError) {
-      setError(deleteError.message);
+      showToast(deleteError.message, 'error');
     }
   };
 
@@ -406,14 +393,12 @@ export default function DashMenu() {
     if (!menuToDelete) return;
 
     try {
-      setError(null);
-      setSuccess(null);
       await apiDelete(`/api/menus/${menuToDelete}`);
-      setSuccess('Menu deleted successfully.');
+      showToast('Menu deleted successfully.', 'success');
       await loadMenus(selectedRestaurantId);
       await loadTrashedMenus(selectedRestaurantId);
     } catch (deleteError) {
-      setError(deleteError.message);
+      showToast(deleteError.message, 'error');
     } finally {
       setShowDeleteModal(false);
       setMenuToDelete(null);
@@ -447,7 +432,7 @@ export default function DashMenu() {
 
   const handleImageUpload = async (file) => {
     if (!file.type.startsWith('image/')) {
-      setError('Please choose a valid image file.');
+      showToast('Please choose a valid image file.', 'error');
       return;
     }
     setImageUploading(true);
@@ -466,7 +451,7 @@ export default function DashMenu() {
         image: uploaded.url
       }));
     } catch (uploadError) {
-      setError(uploadError.message);
+      showToast(uploadError.message, 'error');
     } finally {
       setImageUploading(false);
     }
@@ -481,8 +466,6 @@ export default function DashMenu() {
 
     try {
       setSubmitting(true);
-      setError(null);
-      setSuccess(null);
       await apiPut(`/api/menus/${editingItem.menuId}/items/${itemIdentifier}`, {
         name: itemForm.name,
         description: itemForm.description,
@@ -496,12 +479,12 @@ export default function DashMenu() {
         nutrition: itemForm.nutrition,
         upsells: itemForm.upsells
       });
-      setSuccess('Menu item updated successfully.');
+      showToast('Menu item updated successfully.', 'success');
       setEditingItem(null);
       setItemForm(emptyItemForm);
       await loadMenus(selectedRestaurantId);
     } catch (updateError) {
-      setError(updateError.message);
+      showToast(updateError.message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -509,9 +492,6 @@ export default function DashMenu() {
 
   return (
     <div className="space-y-5">
-      {error && <Alert color="failure">{error}</Alert>}
-      {success && <Alert color="success">{success}</Alert>}
-
       <div className="grid gap-4 xl:grid-cols-[1.15fr,0.85fr]">
         <Card className="border !border-[#dce6c1] bg-white shadow-sm">
           <div className="space-y-2">

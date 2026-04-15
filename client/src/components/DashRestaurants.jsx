@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Alert,
   Badge,
   Button,
   Card,
@@ -28,6 +27,7 @@ import DeleteConfirmModal from './DeleteConfirmModal';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '../utils/permissions';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
+import { useToast } from '../context/ToastContext';
 import ImageFrameLoader from './ImageFrameLoader';
 import ImageUploadCropper from './ImageUploadCropper';
 
@@ -663,8 +663,6 @@ export default function DashRestaurants() {
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -676,6 +674,7 @@ export default function DashRestaurants() {
   const [logoUploading, setLogoUploading] = useState(false);
   const [bannerProgress, setBannerProgress] = useState(0);
   const [bannerUploading, setBannerUploading] = useState(false);
+  const { showToast } = useToast();
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [fsaOptions, setFsaOptions] = useState([]);
   const [fsaLoading, setFsaLoading] = useState(false);
@@ -781,7 +780,6 @@ export default function DashRestaurants() {
 
     try {
       setLoading(true);
-      setError(null);
       const firstPage = await apiGet(
         `${listBaseEndpoint}?page=1&limit=100`
       );
@@ -801,7 +799,7 @@ export default function DashRestaurants() {
 
       setRestaurants(dataset);
     } catch (fetchError) {
-      setError(fetchError.message);
+      showToast(fetchError.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -880,7 +878,7 @@ export default function DashRestaurants() {
 
   const handleLogoUpload = async (file) => {
     if (!file.type.startsWith('image/')) {
-      setError('Please choose a valid image file.');
+      showToast('Please choose a valid image file.', 'error');
       return;
     }
 
@@ -905,7 +903,7 @@ export default function DashRestaurants() {
         imageLogo: uploaded.url
       }));
     } catch (uploadError) {
-      setError(uploadError.message);
+      showToast(uploadError.message, 'error');
     } finally {
       setLogoUploading(false);
     }
@@ -929,7 +927,7 @@ export default function DashRestaurants() {
         bannerImage: uploaded.url
       }));
     } catch (uploadError) {
-      setError(uploadError.message);
+      showToast(uploadError.message, 'error');
     } finally {
       setBannerUploading(false);
     }
@@ -1091,8 +1089,6 @@ export default function DashRestaurants() {
 
     try {
       setSubmitting(true);
-      setError(null);
-      setSuccess(null);
 
       if (
         modalMode === 'create' &&
@@ -1104,7 +1100,7 @@ export default function DashRestaurants() {
 
       if (modalMode === 'create') {
         await apiPost('/api/restaurants', buildRestaurantPayload());
-        setSuccess('Restaurant created successfully.');
+        showToast('Restaurant created successfully.', 'success');
       }
 
       if (modalMode === 'edit' && selectedRestaurant) {
@@ -1124,13 +1120,13 @@ export default function DashRestaurants() {
             }
           );
         }
-        setSuccess('Restaurant updated successfully.');
+        showToast('Restaurant updated successfully.', 'success');
       }
 
       resetModalState();
       await fetchRestaurants();
     } catch (submitError) {
-      setError(submitError.message);
+      showToast(submitError.message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -1138,44 +1134,38 @@ export default function DashRestaurants() {
 
   const handleDeleteRestaurant = async (restaurant) => {
     try {
-      setError(null);
-      setSuccess(null);
       await apiDelete(`/api/restaurants/id/${restaurant._id}`);
       removeRestaurantRecord(restaurant._id);
-      setSuccess('Restaurant deleted successfully.');
+      showToast('Restaurant deleted successfully.', 'success');
       setPendingDeleteRestaurant(null);
     } catch (deleteError) {
-      setError(deleteError.message);
+      showToast(deleteError.message, 'error');
     }
   };
 
   const handleStatusChange = async (restaurant, status) => {
     try {
-      setError(null);
-      setSuccess(null);
       const response = await apiPatch(`/api/restaurants/id/${restaurant._id}/status`, {
         status
       });
       if (response?.data) {
         syncRestaurantRecord(response.data);
       }
-      setSuccess(`Restaurant moved to ${status}.`);
+      showToast(`Restaurant moved to ${status}.`, 'success');
     } catch (statusError) {
-      setError(statusError.message);
+      showToast(statusError.message, 'error');
     }
   };
 
   const handleRestoreRestaurant = async (restaurant) => {
     try {
-      setError(null);
-      setSuccess(null);
       const response = await apiPatch(`/api/restaurants/id/${restaurant._id}/restore`, {});
       if (response?.data) {
         syncRestaurantRecord(response.data);
       }
-      setSuccess('Restaurant restored successfully.');
+      showToast('Restaurant restored successfully.', 'success');
     } catch (restoreError) {
-      setError(restoreError.message);
+      showToast(restoreError.message, 'error');
     }
   };
 
@@ -1192,9 +1182,6 @@ export default function DashRestaurants() {
   return (
     <>
       <div className="space-y-5">
-        {error && <Alert color="failure">{error}</Alert>}
-        {success && <Alert color="success">{success}</Alert>}
-
         <Card className="border !border-[#dce6c1] bg-white shadow-sm">
           <div className="grid gap-5 xl:grid-cols-[1.1fr,0.9fr]">
             <div className="space-y-3">
@@ -1680,7 +1667,7 @@ export default function DashRestaurants() {
                   progress={bannerProgress}
                   uploading={bannerUploading}
                   onCropComplete={handleBannerUpload}
-                  onError={setError}
+                  onError={(msg) => showToast(msg, 'error')}
                 />
               </div>
 

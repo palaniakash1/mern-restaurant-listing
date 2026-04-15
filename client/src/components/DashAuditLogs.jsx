@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   Badge,
   Button,
   Card,
@@ -12,6 +11,7 @@ import {
 } from 'flowbite-react';
 import { HiOutlineEye } from 'react-icons/hi2';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { apiGet } from '../utils/api';
 import { hasPermission } from '../utils/permissions';
 
@@ -143,7 +143,6 @@ export default function DashAuditLogs() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [countLoading, setCountLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalLogs, setTotalLogs] = useState(0);
@@ -151,6 +150,8 @@ export default function DashAuditLogs() {
   const [action, setAction] = useState('');
   const [selectedLog, setSelectedLog] = useState(null);
   const [entityCounts, setEntityCounts] = useState({ all: 0 });
+
+  const { showToast } = useToast();
 
   const canReadAuditLogs = hasPermission(user, 'audit', 'read');
 
@@ -162,7 +163,6 @@ export default function DashAuditLogs() {
 
     try {
       setLoading(true);
-      setError(null);
 
       const params = new URLSearchParams({
         page: String(page),
@@ -177,7 +177,7 @@ export default function DashAuditLogs() {
       setTotalPages(Math.max(1, response.totalPages || 1));
       setTotalLogs(response.total || 0);
     } catch (loadError) {
-      setError(loadError.message);
+      showToast(loadError.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -253,8 +253,6 @@ export default function DashAuditLogs() {
   return (
     <>
       <div className="space-y-5">
-        {error && <Alert color="failure">{error}</Alert>}
-
         <Card className="border !border-[#dce6c1] bg-white shadow-sm">
           <div className="grid gap-5 xl:grid-cols-[1.15fr,0.85fr]">
             <div className="space-y-3">

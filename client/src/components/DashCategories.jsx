@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-  Alert,
   Badge,
   Button,
   Card,
@@ -20,6 +19,7 @@ import {
 } from 'react-icons/hi2';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { hasPermission } from '../utils/permissions';
 import DeleteConfirmModal from './DeleteConfirmModal';
 import ImageUploadCropper from './ImageUploadCropper';
@@ -107,8 +107,6 @@ export default function DashCategories() {
   const [editImageUploading, setEditImageUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [linkedMenus, setLinkedMenus] = useState([]);
   const [showUnassignModal, setShowUnassignModal] = useState(false);
@@ -116,6 +114,8 @@ export default function DashCategories() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [imageProgress, setImageProgress] = useState(0);
   const [imageUploading, setImageUploading] = useState(false);
+
+  const { showToast } = useToast();
 
   const canReadAllCategories = hasPermission(user, 'category', 'readAll');
   const canReadOwnCategories = hasPermission(user, 'category', 'readMine');
@@ -158,7 +158,6 @@ export default function DashCategories() {
 
     try {
       setLoading(true);
-      setError(null);
       const [categoryData, restaurantData] = await Promise.all([
         apiGet(listEndpoint),
         loadRestaurants()
@@ -170,7 +169,7 @@ export default function DashCategories() {
         restaurantId: current.restaurantId || restaurantData[0]?._id || ''
       }));
     } catch (loadError) {
-      setError(loadError.message);
+      showToast(loadError.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -185,8 +184,6 @@ export default function DashCategories() {
 
     try {
       setSubmitting(true);
-      setError(null);
-      setSuccess(null);
       await apiPost('/api/categories', {
         name: formData.name,
         order: Number(formData.order) || 0,
@@ -194,12 +191,12 @@ export default function DashCategories() {
         restaurantId: formData.isGeneric ? undefined : formData.restaurantId,
         image: formData.image || undefined
       });
-      setSuccess('Category created successfully.');
+      showToast('Category created successfully.', 'success');
       setFormData(buildCategoryForm());
       setShowCreateModal(false);
       await loadCategories();
     } catch (createError) {
-      setError(createError.message);
+      showToast(createError.message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -207,7 +204,7 @@ export default function DashCategories() {
 
   const handleEditImageSelect = async (file) => {
     if (!file.type.startsWith('image/')) {
-      setError('Please choose a valid image file.');
+      showToast('Please choose a valid image file.', 'error');
       return;
     }
     setEditImageUploading(true);
@@ -226,7 +223,7 @@ export default function DashCategories() {
         image: uploaded.url
       }));
     } catch (uploadError) {
-      setError(uploadError.message);
+      showToast(uploadError.message, 'error');
     } finally {
       setEditImageUploading(false);
     }
@@ -237,18 +234,16 @@ export default function DashCategories() {
 
     try {
       setSubmitting(true);
-      setError(null);
-      setSuccess(null);
       await apiPatch(`/api/categories/${editingCategory._id}`, {
         name: editingCategory.name,
         order: Number(editingCategory.order) || 0,
         image: editingCategory.image || undefined
       });
-      setSuccess('Category updated successfully.');
+      showToast('Category updated successfully.', 'success');
       setEditingCategory(null);
       await loadCategories();
     } catch (updateError) {
-      setError(updateError.message);
+      showToast(updateError.message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -263,10 +258,8 @@ export default function DashCategories() {
     if (!categoryToDelete) return;
 
     try {
-      setError(null);
-      setSuccess(null);
       await apiDelete(`/api/categories/${categoryToDelete}/hard`);
-      setSuccess('Category deleted successfully.');
+      showToast('Category deleted successfully.', 'success');
       await loadCategories();
       setShowDeleteModal(false);
       setCategoryToDelete(null);
@@ -282,28 +275,24 @@ export default function DashCategories() {
         setShowDeleteModal(false);
         setShowUnassignModal(true);
       } else {
-        setError(deleteError.message);
+        showToast(deleteError.message, 'error');
       }
     }
   };
 
   const handleUnassignMenus = async () => {
     try {
-      setError(null);
-      setSuccess(null);
       // Unassign category from all linked menus by setting categoryId to null
       const promises = linkedMenus.map((menu) =>
         apiPatch(`/api/menus/${menu.id}`, { categoryId: null })
       );
       await Promise.all(promises);
-      setSuccess(
-        'Category unassigned from all menus. You can now delete the category.'
-      );
+      showToast('Category unassigned from all menus. You can now delete the category.', 'success');
       setShowUnassignModal(false);
       setLinkedMenus([]);
       await loadCategories();
     } catch (unassignError) {
-      setError(unassignError.message);
+      showToast(unassignError.message, 'error');
     }
   };
 
@@ -358,7 +347,7 @@ export default function DashCategories() {
         image: uploaded.url
       }));
     } catch (uploadError) {
-      setError(uploadError.message || 'Failed to upload image');
+      showToast(uploadError.message || 'Failed to upload image', 'error');
     } finally {
       setImageUploading(false);
     }
@@ -367,22 +356,18 @@ export default function DashCategories() {
   const handleStatusChange = async (categoryId, currentStatus) => {
     const newStatus = currentStatus === 'published' ? 'draft' : 'published';
     try {
-      setError(null);
-      setSuccess(null);
       await apiPatch(`/api/categories/${categoryId}/status`, {
         status: newStatus
       });
-      setSuccess(`Category marked as ${newStatus}.`);
+      showToast(`Category marked as ${newStatus}.`, 'success');
       await loadCategories();
     } catch (statusError) {
-      setError(statusError.message);
+      showToast(statusError.message, 'error');
     }
   };
 
   const handleImageUpdate = async (categoryId, file) => {
     try {
-      setError(null);
-      setSuccess(null);
       const uploaded = await uploadToCloudinary({
         file,
         folder: 'categories',
@@ -390,10 +375,10 @@ export default function DashCategories() {
         publicIdPrefix: 'category-image'
       });
       await apiPatch(`/api/categories/${categoryId}`, { image: uploaded.url });
-      setSuccess('Category image updated.');
+      showToast('Category image updated.', 'success');
       await loadCategories();
     } catch (uploadError) {
-      setError(uploadError.message || 'Failed to update image');
+      showToast(uploadError.message || 'Failed to update image', 'error');
     }
   };
 
@@ -464,9 +449,6 @@ export default function DashCategories() {
 
   return (
     <div className="space-y-5">
-      {error && <Alert color="failure">{error}</Alert>}
-      {success && <Alert color="success">{success}</Alert>}
-
       <Card className="border !border-[#dce6c1] bg-white shadow-sm">
         <div className="grid gap-5 xl:grid-cols-[1.1fr,0.9fr]">
           <div className="space-y-3">

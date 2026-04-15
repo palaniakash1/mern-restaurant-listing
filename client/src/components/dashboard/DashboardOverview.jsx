@@ -29,6 +29,7 @@ import {
 import { FaUtensils } from 'react-icons/fa';
 import dashboardApi from '../../services/dashboardApi';
 import { SkeletonCard } from '../SkeletonCard';
+import { useToast } from '../../context/ToastContext';
 
 const ROLE_COLORS = ['#576500', '#8fa31e', '#476640', '#b62828', '#c7c8b1'];
 const ACTION_COLORS = {
@@ -142,10 +143,11 @@ export default function DashboardOverview({ role = 'superAdmin' }) {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
   const [realtimeData, setRealtimeData] = useState(null);
-  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [timeframe, setTimeframe] = useState('monthly');
+
+  const { showToast } = useToast();
 
   const isDashboardAdmin = role === 'superAdmin' || role === 'admin';
   const isSuperAdmin = role === 'superAdmin';
@@ -156,7 +158,6 @@ export default function DashboardOverview({ role = 'superAdmin' }) {
     } else {
       setLoading(true);
     }
-    setError(null);
 
     try {
       const [overviewResponse, realtimeResponse] = await Promise.all([
@@ -172,7 +173,7 @@ export default function DashboardOverview({ role = 'superAdmin' }) {
         setRealtimeData(realtimeResponse.data);
       }
     } catch (loadError) {
-      setError(loadError.message || 'Failed to load dashboard overview.');
+      showToast(loadError.message || 'Failed to load dashboard overview.', 'error');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -360,8 +361,6 @@ export default function DashboardOverview({ role = 'superAdmin' }) {
 
   return (
     <div className="space-y-5">
-      {error && <Alert color="failure">{error}</Alert>}
-
       <Card className="border !border-[#dce6c1] bg-white shadow-sm">
         <div className="grid gap-5 xl:grid-cols-[1.05fr,0.95fr]">
           <div className="space-y-3">

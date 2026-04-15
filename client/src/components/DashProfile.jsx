@@ -1,6 +1,6 @@
 import imageCompression from 'browser-image-compression';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Badge, Button, Card, Modal, Spinner } from 'flowbite-react';
+import { Badge, Button, Card, Modal, Spinner } from 'flowbite-react';
 import {
   HiOutlineEnvelope,
   HiOutlineCamera,
@@ -14,6 +14,7 @@ import ImageFrameLoader from './ImageFrameLoader';
 import PasswordInput from './PasswordInput';
 import DeleteConfirmModal from './DeleteConfirmModal';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { apiDelete, apiPatch } from '../utils/api';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
 
@@ -81,9 +82,9 @@ export default function DashProfile() {
     user: currentUser,
     updateUser,
     logout,
-    isLoading,
-    error: authError
+    isLoading
   } = useAuth();
+  const { showToast } = useToast();
   const filePickerRef = useRef(null);
   const userId = currentUser?._id || currentUser?.id;
 
@@ -91,10 +92,7 @@ export default function DashProfile() {
   const [imageFileUrl, setImageFileUrl] = useState(null);
   const [imageFileUploadingProgress, setImageFileUploadingProgress] =
     useState(null);
-  const [imageFileUploadingError, setImageFileUploadingError] = useState(null);
   const [imageFileUploading, setImageFileUploading] = useState(false);
-  const [updateUserSuccess, setUpdateUserSuccess] = useState(null);
-  const [updateUserError, setUpdateUserError] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [formData, setFormData] = useState({
     userName: '',
@@ -123,7 +121,6 @@ export default function DashProfile() {
 
       setImageFileUploading(true);
       setImageFileUploadingProgress(12);
-      setImageFileUploadingError(null);
 
       try {
         const uploaded = await uploadToCloudinary({
@@ -138,9 +135,7 @@ export default function DashProfile() {
         setImageFileUrl(uploaded.url);
         setFormData((prev) => ({ ...prev, profilePicture: uploaded.url }));
       } catch (uploadError) {
-        setImageFileUploadingError(
-          uploadError.message || "Couldn't upload image."
-        );
+        showToast(uploadError.message || "Couldn't upload image.", 'error');
       } finally {
         setImageFileUploading(false);
         setImageFile(null);
@@ -155,13 +150,12 @@ export default function DashProfile() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setImageFileUploadingError('Only image files are allowed.');
+      showToast('Only image files are allowed.', 'error');
       event.target.value = null;
       return;
     }
 
     try {
-      setImageFileUploadingError(null);
       const preparedFile =
         file.size > 2 * 1024 * 1024
           ? await imageCompression(file, {
@@ -173,9 +167,8 @@ export default function DashProfile() {
 
       setImageFile(preparedFile);
       setImageFileUrl(URL.createObjectURL(preparedFile));
-    } catch {
-      setImageFileUploadingError('Compression failed. Try a smaller photo.');
-    } finally {
+} catch {
+      showToast('Compression failed. Try a smaller photo.', 'error');
       event.target.value = null;
     }
   };
@@ -186,8 +179,6 @@ export default function DashProfile() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setUpdateUserError(null);
-    setUpdateUserSuccess(null);
 
     const payload = {};
 
@@ -211,12 +202,12 @@ export default function DashProfile() {
     }
 
     if (Object.keys(payload).length === 0) {
-      setUpdateUserError('No changes made to update.');
+      showToast('No changes made to update.', 'error');
       return;
     }
 
     if (imageFileUploading) {
-      setUpdateUserError('Please wait for the profile photo upload to finish.');
+      showToast('Please wait for the profile photo upload to finish.', 'error');
       return;
     }
 
@@ -224,9 +215,9 @@ export default function DashProfile() {
       const data = await apiPatch(`/api/users/${userId}`, payload);
       updateUser(data.data);
       setFormData((prev) => ({ ...prev, password: '' }));
-      setUpdateUserSuccess('Profile updated successfully.');
+      showToast('Profile updated successfully.', 'success');
     } catch (submitError) {
-      setUpdateUserError(submitError.message);
+      showToast(submitError.message, 'error');
     }
   };
 
@@ -237,7 +228,7 @@ export default function DashProfile() {
       await apiDelete(`/api/users/${userId}`);
       await logout();
     } catch (deleteError) {
-      setUpdateUserError(deleteError.message);
+      showToast(deleteError.message, 'error');
     }
   };
 
@@ -275,15 +266,6 @@ export default function DashProfile() {
   return (
     <>
       <div className="space-y-5">
-        {(authError || updateUserError || imageFileUploadingError) && (
-          <Alert color="failure">
-            {authError || updateUserError || imageFileUploadingError}
-          </Alert>
-        )}
-        {updateUserSuccess && (
-          <Alert color="success">{updateUserSuccess}</Alert>
-        )}
-
         <Card className="overflow-hidden border !border-[#dce6c1] bg-white shadow-[0_25px_80px_rgba(60,79,25,0.08)]">
           <div className="rounded-[1.8rem] bg-[linear-gradient(135deg,#576500_0%,#8fa31e_50%,#b62828_100%)] p-6 text-white sm:p-8">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
