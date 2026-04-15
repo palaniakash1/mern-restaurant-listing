@@ -31,7 +31,7 @@ export function ToastProvider({ children }) {
 
 function ToastContainer({ toasts, onHide }) {
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-3">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-3">
       {toasts.map((toast) => (
         <Toast key={toast.id} toast={toast} onHide={onHide} />
       ))}
