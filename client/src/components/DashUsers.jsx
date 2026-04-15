@@ -1028,7 +1028,8 @@ export default function DashUsers() {
             : 'Create user workspace'}
         </Modal.Header>
         <Modal.Body>
-          <form className="space-y-6" onSubmit={submitUser}>
+          <div onClick={(e) => e.stopPropagation()}>
+            <form className="space-y-6" onSubmit={submitUser}>
             <div className="rounded-[1.5rem] bg-[linear-gradient(135deg,#f8fbf1_0%,#fff4f4_100%)] p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#b62828]">
                 {modalMode === 'edit' ? 'User refinement' : 'User onboarding'}
@@ -1225,6 +1226,7 @@ export default function DashUsers() {
               </Button>
             </div>
           </form>
+          </div>
         </Modal.Body>
       </Modal>
 
@@ -1265,7 +1267,7 @@ export default function DashUsers() {
         </Modal.Body>
         <Modal.Footer>
           <Button
-            className="bg-[#8fa31e] hover:bg-[#78871c]"
+            className="!bg-[#8fa31e] hover:!bg-[#78871c]"
             onClick={assignRestaurant}
             isProcessing={submitting}
             disabled={!assignmentRestaurantId}
