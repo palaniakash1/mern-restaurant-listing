@@ -101,7 +101,11 @@ function Toast({ toast, onHide }) {
       <p className="text-sm font-medium flex-1 leading-tight">{toast.message}</p>
       <button
         type="button"
-        onClick={() => onHide(toast.id)}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onHide(toast.id);
+        }}
         className={`flex-shrink-0 p-1 rounded-full hover:bg-black/5 transition-colors ${style.text} opacity-60 hover:opacity-100`}
         aria-label="Close"
       >
