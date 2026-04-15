@@ -95,8 +95,8 @@ export const sendPasswordResetEmail = async ({ to, resetToken, userId }) => {
           This link will expire in 1 hour. If you didn't request a password reset, 
           please ignore this email or contact support if you have concerns.
         </p>
-        <p style="color: #999; font-size: 12px; margin-top: 30px;">
-          Or copy this link to your browser: <a href="${resetUrl}">${resetUrl}</a>
+        <p style="color: #999; font-size: 12px; margin-top: 30px; word-break: break-all;">
+          Or copy this link to your browser: <a href="${resetUrl}" style="color: #8fa31e;">${resetUrl.length > 50 ? resetUrl.substring(0, 50) + '...' : resetUrl}</a>
         </p>
       </div>
     </div>
