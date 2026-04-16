@@ -151,7 +151,7 @@ function Toast({ toast, onHide }) {
           e.stopPropagation();
           onHide(toast.id);
         }}
-        className={`flex-shrink-0 p-1 rounded-full hover:bg-black/5 transition-colors ${style.text} opacity-60 hover:opacity-100`}
+        className="flex-shrink-0 p-1 rounded-full transition-colors text-red-500 hover:text-red-700 opacity-80 hover:opacity-100 font-bold"
         aria-label="Close"
       >
         <svg
