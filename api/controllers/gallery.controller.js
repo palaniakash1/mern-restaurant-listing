@@ -18,18 +18,13 @@ export const getGalleryRestaurantImages = async (req, res, next) => {
     const filter = { ...publicRestaurantFilter };
     filter.gallery = { $exists: true, $ne: [], $not: { $size: 0 } };
 
-    const total = await Restaurant.countDocuments(filter);
-    const pagination = paginate({ page: pageNum, limit: limitNum, total });
-
     const restaurants = await Restaurant.find(filter, { gallery: 1, name: 1, slug: 1 })
-      .skip(pagination.skip)
-      .limit(pagination.limit)
       .lean();
 
-    const images = [];
+    const allImages = [];
     restaurants.forEach((restaurant) => {
       (restaurant.gallery || []).forEach((url) => {
-        images.push({
+        allImages.push({
           url,
           source: 'restaurant',
           sourceId: restaurant._id,
@@ -39,12 +34,16 @@ export const getGalleryRestaurantImages = async (req, res, next) => {
       });
     });
 
+    const total = allImages.length;
+    const pagination = paginate({ page: pageNum, limit: limitNum, total });
+    const paginatedImages = allImages.slice(pagination.skip, pagination.skip + pagination.limit);
+
     res.json({
       success: true,
       page: pagination.page,
       pages: pagination.pages,
       total,
-      data: images
+      data: paginatedImages
     });
   } catch (error) {
     next(error);
@@ -61,26 +60,26 @@ export const getGalleryMenuImages = async (req, res, next) => {
       throw errorHandler(400, 'Invalid pagination values');
     }
 
-    const filter = { status: 'active', 'items.image': { $exists: true, $ne: '' } };
-    const total = await Menu.countDocuments(filter);
-    const pagination = paginate({ page: pageNum, limit: limitNum, total });
+    const filter = {
+      status: 'published',
+      isActive: true
+    };
 
-    const menus = await Menu.find(filter, { items: 1, category: 1, restaurantId: 1 })
+    const menus = await Menu.find(filter, { items: 1, categoryId: 1, restaurantId: 1 })
+      .populate('categoryId', 'name')
       .populate('restaurantId', 'name slug')
-      .skip(pagination.skip)
-      .limit(pagination.limit)
       .lean();
 
-    const images = [];
+    const allImages = [];
     menus.forEach((menu) => {
       (menu.items || []).forEach((item) => {
         if (item.image && item.isActive !== false) {
-          images.push({
+          allImages.push({
             url: item.image,
             source: 'menu',
             sourceId: item._id,
             sourceName: item.name,
-            menuName: menu.category || 'Menu',
+            menuName: menu.categoryId?.name || 'Menu',
             restaurantName: menu.restaurantId?.name,
             restaurantSlug: menu.restaurantId?.slug
           });
@@ -88,12 +87,16 @@ export const getGalleryMenuImages = async (req, res, next) => {
       });
     });
 
+    const total = allImages.length;
+    const pagination = paginate({ page: pageNum, limit: limitNum, total });
+    const paginatedImages = allImages.slice(pagination.skip, pagination.skip + pagination.limit);
+
     res.json({
       success: true,
       page: pagination.page,
       pages: pagination.pages,
       total,
-      data: images
+      data: paginatedImages
     });
   } catch (error) {
     next(error);
@@ -116,20 +119,15 @@ export const getGalleryReviewImages = async (req, res, next) => {
       images: { $exists: true, $ne: [], $not: { $size: 0 } }
     };
 
-    const total = await Review.countDocuments(filter);
-    const pagination = paginate({ page: pageNum, limit: limitNum, total });
-
     const reviews = await Review.find(filter, { images: 1, userId: 1, restaurantId: 1, rating: 1 })
       .populate('userId', 'userName profilePicture')
       .populate('restaurantId', 'name slug')
-      .skip(pagination.skip)
-      .limit(pagination.limit)
       .lean();
 
-    const images = [];
+    const allImages = [];
     reviews.forEach((review) => {
       (review.images || []).forEach((url) => {
-        images.push({
+        allImages.push({
           url,
           source: 'review',
           sourceId: review._id,
@@ -142,12 +140,16 @@ export const getGalleryReviewImages = async (req, res, next) => {
       });
     });
 
+    const total = allImages.length;
+    const pagination = paginate({ page: pageNum, limit: limitNum, total });
+    const paginatedImages = allImages.slice(pagination.skip, pagination.skip + pagination.limit);
+
     res.json({
       success: true,
       page: pagination.page,
       pages: pagination.pages,
       total,
-      data: images
+      data: paginatedImages
     });
   } catch (error) {
     next(error);

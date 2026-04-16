@@ -1,19 +1,40 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { HiOutlineCamera, HiOutlineShoppingBag, HiOutlineStar, HiOutlineArrowRight } from 'react-icons/hi';
+import { HiOutlineCamera, HiOutlineShoppingBag, HiOutlineStar, HiOutlineArrowRight, HiOutlineChevronLeft, HiOutlineChevronRight } from 'react-icons/hi';
 import { publicShellClass, sectionWrapClass, sectionEyebrowClass } from '../utils/publicPage';
 import { getGalleryRestaurantImages, getGalleryMenuImages, getGalleryReviewImages } from '../services/restaurantService';
 
 const INITIAL_LIMIT = 20;
 
 const ImageSection = ({ title, icon: Icon, images, loading, hasMore, onLoadMore, total }) => {
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedIndex, setSelectedIndex] = useState(null);
   // eslint-disable-next-line no-unused-vars
   const IconComponent = Icon;
 
+  const handlePrev = (e) => {
+    e.stopPropagation();
+    setSelectedIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
+  };
+
+  const handleNext = (e) => {
+    e.stopPropagation();
+    setSelectedIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
+  };
+
+  const handleKeyDown = (e) => {
+    if (selectedIndex === null) return;
+    if (e.key === 'ArrowLeft') {
+      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
+    } else if (e.key === 'ArrowRight') {
+      setSelectedIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
+    } else if (e.key === 'Escape') {
+      setSelectedIndex(null);
+    }
+  };
+
   return (
-    <div className="mb-16">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="mb-16" onKeyDown={handleKeyDown} tabIndex={0}>
+      <div className="mb-6">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f5faeb]">
             <IconComponent className="h-5 w-5 text-[#8fa31e]" />
@@ -23,20 +44,6 @@ const ImageSection = ({ title, icon: Icon, images, loading, hasMore, onLoadMore,
             <p className="text-sm text-gray-500">{total} images</p>
           </div>
         </div>
-        {hasMore && (
-          <button
-            onClick={onLoadMore}
-            disabled={loading}
-            className="flex items-center gap-2 rounded-full bg-[#f5faeb] px-4 py-2 text-sm font-semibold text-[#23411f] transition hover:bg-[#dce6c1] disabled:opacity-50"
-          >
-            {loading ? (
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#8fa31e] border-t-transparent" />
-            ) : (
-              <HiOutlineArrowRight className="h-4 w-4" />
-            )}
-            Load more
-          </button>
-        )}
       </div>
 
       {loading && images.length === 0 ? (
@@ -50,87 +57,122 @@ const ImageSection = ({ title, icon: Icon, images, loading, hasMore, onLoadMore,
           <p className="text-sm text-gray-500">No images available</p>
         </div>
       ) : (
-        <div className="columns-2 gap-4 space-y-4 md:columns-3 lg:columns-4 xl:columns-5">
-          {images.map((image, index) => (
-            <button
-              key={`${image.url}-${index}`}
-              onClick={() => setSelectedImage(image)}
-              className="group relative break-inside-avoid overflow-hidden rounded-xl transition-all hover:shadow-lg hover:ring-2 hover:ring-[#8fa31e] hover:ring-offset-2"
-            >
-              <img
-                src={image.url}
-                alt={image.sourceName || image.source || 'Gallery image'}
-                className="h-auto w-full object-cover transition duration-500 group-hover:scale-105"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 transition group-hover:opacity-100" />
-              <div className="absolute bottom-0 left-0 right-0 p-3 opacity-0 transition group-hover:opacity-100">
-                {image.sourceName && (
-                  <p className="text-xs font-semibold text-white truncate">
-                    {image.sourceName}
-                  </p>
+        <>
+          <div className="columns-2 gap-4 space-y-4 md:columns-3 lg:columns-4 xl:grid-cols-5">
+            {images.map((image, index) => (
+              <button
+                key={`${image.url}-${index}`}
+                onClick={() => setSelectedIndex(index)}
+                className="group relative break-inside-avoid overflow-hidden rounded-xl transition-all hover:shadow-lg hover:ring-2 hover:ring-[#8fa31e] hover:ring-offset-2"
+              >
+                <img
+                  src={image.url}
+                  alt={image.sourceName || image.source || 'Gallery image'}
+                  className="h-auto w-full object-cover transition duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 transition group-hover:opacity-100" />
+                <div className="absolute bottom-0 left-0 right-0 p-3 opacity-0 transition group-hover:opacity-100">
+                  {image.sourceName && (
+                    <p className="text-xs font-semibold text-white truncate">
+                      {image.sourceName}
+                    </p>
+                  )}
+                  {image.restaurantName && (
+                    <p className="text-[10px] text-white/80 truncate">
+                      {image.restaurantName}
+                    </p>
+                  )}
+                  {image.userName && (
+                    <p className="text-xs font-medium text-white truncate">
+                      by {image.userName}
+                    </p>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {hasMore && (
+            <div className="mt-8 flex justify-center">
+              <button
+                onClick={onLoadMore}
+                disabled={loading}
+                className="flex items-center gap-2 rounded-full bg-[#8fa31e] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#78871c] disabled:opacity-50"
+              >
+                {loading ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                ) : (
+                  <>
+                    Load more
+                    <HiOutlineArrowRight className="h-4 w-4" />
+                  </>
                 )}
-                {image.restaurantName && (
-                  <p className="text-[10px] text-white/80 truncate">
-                    {image.restaurantName}
-                  </p>
-                )}
-                {image.userName && (
-                  <p className="text-xs font-medium text-white truncate">
-                    by {image.userName}
-                  </p>
-                )}
-              </div>
-            </button>
-          ))}
-        </div>
+              </button>
+            </div>
+          )}
+        </>
       )}
 
-      {selectedImage && (
+      {selectedIndex !== null && images[selectedIndex] && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
-          onClick={() => setSelectedImage(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 pb-28"
+          onClick={() => setSelectedIndex(null)}
         >
           <button
-            className="absolute right-4 top-4 rounded-full bg-white/10 p-3 text-white hover:bg-white/20 transition"
-            onClick={() => setSelectedImage(null)}
+            className="absolute right-4 top-4 z-10 rounded-full bg-white/10 p-3 text-white hover:bg-white/20 transition"
+            onClick={() => setSelectedIndex(null)}
           >
             <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
 
-          <div className="relative max-h-[90vh] max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={handlePrev}
+            className="absolute left-4 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white hover:bg-white/20 transition md:p-4"
+          >
+            <HiOutlineChevronLeft className="h-6 w-6 md:h-8 md:w-8" />
+          </button>
+
+          <button
+            onClick={handleNext}
+            className="absolute right-4 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white hover:bg-white/20 transition md:p-4"
+          >
+            <HiOutlineChevronRight className="h-6 w-6 md:h-8 md:w-8" />
+          </button>
+
+          <div className="relative max-h-full max-w-full" onClick={(e) => e.stopPropagation()}>
             <img
-              src={selectedImage.url}
-              alt={selectedImage.sourceName || 'Gallery image'}
-              className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+              src={images[selectedIndex].url}
+              alt={images[selectedIndex].sourceName || 'Gallery image'}
+              className="max-h-[65vh] max-w-[85vw] rounded-lg object-contain"
             />
 
             <div className="absolute bottom-0 left-0 right-0 rounded-b-lg bg-gradient-to-t from-black/80 to-transparent p-4">
               <div className="flex items-center justify-between text-white">
                 <div>
-                  {selectedImage.sourceName && (
-                    <p className="font-semibold">{selectedImage.sourceName}</p>
+                  {images[selectedIndex].sourceName && (
+                    <p className="font-semibold">{images[selectedIndex].sourceName}</p>
                   )}
-                  {selectedImage.restaurantName && (
+                  {images[selectedIndex].restaurantName && (
                     <Link
-                      to={`/restaurant/${selectedImage.restaurantSlug || selectedImage.restaurantId}`}
+                      to={`/restaurant/${images[selectedIndex].restaurantSlug || images[selectedIndex].restaurantId}`}
                       className="text-sm text-white/80 hover:text-white"
-                      onClick={() => setSelectedImage(null)}
+                      onClick={() => setSelectedIndex(null)}
                     >
-                      {selectedImage.restaurantName}
+                      {images[selectedIndex].restaurantName}
                     </Link>
                   )}
-                  {selectedImage.menuName && (
-                    <p className="text-xs text-white/70">{selectedImage.menuName}</p>
+                  {images[selectedIndex].menuName && (
+                    <p className="text-xs text-white/70">{images[selectedIndex].menuName}</p>
                   )}
-                  {selectedImage.userName && (
+                  {images[selectedIndex].userName && (
                     <p className="text-sm text-white/80">
-                      by {selectedImage.userName}
-                      {selectedImage.rating && (
+                      by {images[selectedIndex].userName}
+                      {images[selectedIndex].rating && (
                         <span className="ml-2 text-yellow-400">
-                          {' '}{'★'.repeat(selectedImage.rating)}
+                          {' '}{'★'.repeat(images[selectedIndex].rating)}
                         </span>
                       )}
                     </p>
@@ -138,17 +180,20 @@ const ImageSection = ({ title, icon: Icon, images, loading, hasMore, onLoadMore,
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {selectedImage.source === 'restaurant' && (
+                  <span className="text-sm text-white/70">
+                    {selectedIndex + 1} / {images.length}
+                  </span>
+                  {images[selectedIndex].source === 'restaurant' && (
                     <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-medium">
                       Restaurant
                     </span>
                   )}
-                  {selectedImage.source === 'menu' && (
+                  {images[selectedIndex].source === 'menu' && (
                     <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-medium">
                       Menu Item
                     </span>
                   )}
-                  {selectedImage.source === 'review' && (
+                  {images[selectedIndex].source === 'review' && (
                     <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-medium">
                       Review
                     </span>
@@ -156,6 +201,29 @@ const ImageSection = ({ title, icon: Icon, images, loading, hasMore, onLoadMore,
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="fixed bottom-4 left-1/2 z-10 flex max-w-[95vw] -translate-x-1/2 gap-2 overflow-x-auto pb-2">
+            {images.map((image, idx) => (
+              <button
+                key={`thumb-${idx}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedIndex(idx);
+                }}
+                className={`relative flex-shrink-0 overflow-hidden rounded-lg transition-all ${
+                  idx === selectedIndex
+                    ? 'ring-2 ring-[#8fa31e] ring-offset-2'
+                    : 'opacity-50 hover:opacity-100'
+                }`}
+              >
+                <img
+                  src={image.url}
+                  alt=""
+                  className="h-14 w-14 object-cover md:h-16 md:w-16"
+                />
+              </button>
+            ))}
           </div>
         </div>
       )}
