@@ -234,7 +234,7 @@ export default function ImageUploadCropper({
   return (
     <>
       {triggerElement && typeof triggerElement === 'object' ? (
-        <div 
+        <div
           onClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -259,98 +259,115 @@ export default function ImageUploadCropper({
         key={imageSrc ? 'file-with-src' : 'file-empty'}
       />
 
-      {isOpen && createPortal(
-        <Modal show={isOpen} onClose={closeModal} dismissible={true} size="4xl">
-          <Modal.Header>{modalTitle}</Modal.Header>
-          <Modal.Body>
-            <div className="space-y-4">
-              <div className="rounded-[1.5rem] border border-[#dce6c1] bg-[#f7faef] p-4">
-                <div
-                  className="relative mx-auto w-full max-w-3xl overflow-hidden rounded-[1.25rem] bg-black"
-                  style={{ aspectRatio }}
-                >
-                  {imageSrc ? (
-                    <img
-                      ref={imageRef}
-                      src={imageSrc}
-                      alt="Crop source"
-                      className="h-full w-full object-cover"
-                      style={{
-                        transform: `scale(${zoom}) translate(${offsetX * 20}%, ${offsetY * 20}%)`,
-                        transformOrigin: 'center center'
-                      }}
+      {isOpen &&
+        createPortal(
+          <Modal
+            show={isOpen}
+            onClose={closeModal}
+            dismissible={true}
+            size="4xl"
+          >
+            <Modal.Header>{modalTitle}</Modal.Header>
+            <Modal.Body>
+              <div className="space-y-4">
+                <div className="rounded-[1.5rem] border border-[#dce6c1] bg-[#f7faef] p-4">
+                  <div
+                    className="relative mx-auto w-full max-w-3xl overflow-hidden rounded-[1.25rem] bg-black"
+                    style={{ aspectRatio }}
+                  >
+                    {imageSrc ? (
+                      <img
+                        ref={imageRef}
+                        src={imageSrc}
+                        alt="Crop source"
+                        className="h-full w-full object-cover"
+                        style={{
+                          transform: `scale(${zoom}) translate(${offsetX * 20}%, ${offsetY * 20}%)`,
+                          transformOrigin: 'center center'
+                        }}
+                      />
+                    ) : null}
+                    <div className="pointer-events-none absolute inset-0 border border-white/70 shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.28)]" />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 rounded-[1.25rem] border border-[#e8eecf] bg-[#fbfcf7] px-4 py-4 text-sm text-gray-600 md:grid-cols-3">
+                  <label className="space-y-2">
+                    <span className="font-semibold text-[#23411f]">Zoom</span>
+                    <input
+                      type="range"
+                      min="1"
+                      max="2.5"
+                      step="0.01"
+                      value={zoom}
+                      onChange={(event) => setZoom(Number(event.target.value))}
+                      className="w-full"
                     />
-                  ) : null}
-                  <div className="pointer-events-none absolute inset-0 border border-white/70 shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.28)]" />
+                  </label>
+                  <label className="space-y-2">
+                    <span className="font-semibold text-[#23411f]">
+                      Horizontal
+                    </span>
+                    <input
+                      type="range"
+                      min="-1"
+                      max="1"
+                      step="0.01"
+                      value={offsetX}
+                      onChange={(event) =>
+                        setOffsetX(Number(event.target.value))
+                      }
+                      className="w-full"
+                    />
+                  </label>
+                  <label className="space-y-2">
+                    <span className="font-semibold text-[#23411f]">
+                      Vertical
+                    </span>
+                    <input
+                      type="range"
+                      min="-1"
+                      max="1"
+                      step="0.01"
+                      value={offsetY}
+                      onChange={(event) =>
+                        setOffsetY(Number(event.target.value))
+                      }
+                      className="w-full"
+                    />
+                  </label>
                 </div>
-              </div>
 
-              <div className="grid gap-4 rounded-[1.25rem] border border-[#e8eecf] bg-[#fbfcf7] px-4 py-4 text-sm text-gray-600 md:grid-cols-3">
-                <label className="space-y-2">
-                  <span className="font-semibold text-[#23411f]">Zoom</span>
-                  <input
-                    type="range"
-                    min="1"
-                    max="2.5"
-                    step="0.01"
-                    value={zoom}
-                    onChange={(event) => setZoom(Number(event.target.value))}
-                    className="w-full"
-                  />
-                </label>
-                <label className="space-y-2">
-                  <span className="font-semibold text-[#23411f]">Horizontal</span>
-                  <input
-                    type="range"
-                    min="-1"
-                    max="1"
-                    step="0.01"
-                    value={offsetX}
-                    onChange={(event) => setOffsetX(Number(event.target.value))}
-                    className="w-full"
-                  />
-                </label>
-                <label className="space-y-2">
-                  <span className="font-semibold text-[#23411f]">Vertical</span>
-                  <input
-                    type="range"
-                    min="-1"
-                    max="1"
-                    step="0.01"
-                    value={offsetY}
-                    onChange={(event) => setOffsetY(Number(event.target.value))}
-                    className="w-full"
-                  />
-                </label>
-              </div>
-
-              <div className="rounded-[1.25rem] border border-[#e8eecf] bg-[#fbfcf7] px-4 py-3 text-sm text-gray-600">
-                Frame the strongest part of the image, then apply the crop. The
-                output keeps a {aspectRatio.toFixed(2).replace('.00', '')}:1
-                ratio.
-              </div>
-
-              {error && (
-                <div className="rounded-[1.25rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                  {error}
+                <div className="rounded-[1.25rem] border border-[#e8eecf] bg-[#fbfcf7] px-4 py-3 text-sm text-gray-600">
+                  Frame the strongest part of the image, then apply the crop.
+                  The output keeps a {aspectRatio.toFixed(2).replace('.00', '')}
+                  :1 ratio.
                 </div>
-              )}
-            </div>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button
-              className="!bg-[#8fa31e] hover:!bg-[#78871c]"
-              onClick={handleApplyCrop}
-            >
-              Apply crop
-            </Button>
-            <Button color="gray" onClick={closeModal}>
-              Cancel
-            </Button>
-          </Modal.Footer>
-        </Modal>,
-        document.body
-      )}
+
+                {error && (
+                  <div className="rounded-[1.25rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {error}
+                  </div>
+                )}
+              </div>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button
+                className="!bg-[#8fa31e] hover:!bg-[#78871c]"
+                onClick={handleApplyCrop}
+              >
+                Apply crop
+              </Button>
+              <Button
+                className="!bg-[#B42627] hover:!bg-[#910712]"
+                onClick={closeModal}
+              >
+                Cancel
+              </Button>
+            </Modal.Footer>
+          </Modal>,
+          document.body
+        )}
     </>
   );
 }
