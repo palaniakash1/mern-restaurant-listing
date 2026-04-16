@@ -26,7 +26,7 @@ import { hasPermission } from '../utils/permissions';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
-import { InlineLoader } from './PageLoader';
+import { SkeletonCard } from './SkeletonCard';
 import DeleteConfirmModal from './DeleteConfirmModal';
 
 const REVIEW_FILTER_LIMIT = 50;
@@ -727,7 +727,11 @@ export default function DashReviews() {
               </Button>
             </div>
 
-            {loading && <InlineLoader message="Loading reviews..." />}
+            {loading && (
+              <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <SkeletonCard variant="review" count={6} />
+              </div>
+            )}
 
             {!loading && filteredReviews.length === 0 && (
               <div className="mt-6 rounded-2xl border border-dashed border-[#dce6c1] p-8 text-center">
@@ -1250,7 +1254,9 @@ export default function DashReviews() {
           </div>
 
           {loading ? (
-            <InlineLoader message="Loading your reviews..." />
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <SkeletonCard variant="review" count={4} />
+            </div>
           ) : myReviews.length === 0 ? (
             <p className="py-4 text-sm text-gray-500">
               You haven't posted any reviews yet.

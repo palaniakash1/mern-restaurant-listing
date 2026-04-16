@@ -61,6 +61,33 @@ export function SkeletonCard({ variant = 'restaurant', count = 1 }) {
           </div>
         ))}
       </div>
+    ),
+    review: (
+      <div className="rounded-2xl border border-[#e6eccf] bg-white p-4 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-full bg-[#edf4dc] animate-pulse" />
+          <div className="flex-1">
+            <div className="h-4 w-32 rounded bg-[#edf4dc] animate-pulse" />
+            <div className="mt-1 h-3 w-24 rounded bg-[#edf4dc] animate-pulse" />
+          </div>
+        </div>
+        <div className="mt-3 flex items-center gap-2">
+          <div className="h-4 w-24 rounded bg-[#edf4dc] animate-pulse" />
+          <div className="h-3 w-20 rounded bg-[#edf4dc] animate-pulse" />
+        </div>
+        <div className="mt-3 space-y-2">
+          <div className="h-3 w-full rounded bg-[#edf4dc] animate-pulse" />
+          <div className="h-3 w-3/4 rounded bg-[#edf4dc] animate-pulse" />
+        </div>
+        <div className="mt-3 flex gap-2">
+          <div className="h-16 w-16 rounded-lg bg-[#edf4dc] animate-pulse" />
+          <div className="h-16 w-16 rounded-lg bg-[#edf4dc] animate-pulse" />
+        </div>
+        <div className="mt-4 flex gap-2 border-t border-[#e6eccf] pt-3">
+          <div className="h-6 w-16 rounded bg-[#edf4dc] animate-pulse" />
+          <div className="h-6 w-16 rounded bg-[#edf4dc] animate-pulse" />
+        </div>
+      </div>
     )
   };
 
