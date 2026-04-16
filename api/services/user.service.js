@@ -1,6 +1,8 @@
 import bcryptjs from 'bcryptjs';
 
 import userRepository from '../repositories/user.repository.js';
+import User from '../models/user.model.js';
+import Restaurant from '../models/restaurant.model.js';
 import { withTransaction } from '../utils/withTransaction.js';
 import { sanitizeAuditData } from '../utils/sanitizeAuditData.js';
 import { logAudit } from '../utils/auditLogger.js';
@@ -587,6 +589,70 @@ export const transferStoreManagerOwner = async ({
   );
 };
 
+export const assignRestaurantsToAdmin = async ({
+  actor,
+  adminId,
+  restaurantIds,
+  req
+}) => {
+  return traceAuthOperation(
+    'assignRestaurantsToAdmin',
+    actor.id,
+    { adminId, restaurantIds },
+    async () =>
+      withTransaction(async (session) => {
+        if (!restaurantIds || !Array.isArray(restaurantIds)) {
+          throw errorHandler(400, 'restaurantIds array required');
+        }
+
+        const admin = await userRepository.findUserById(adminId, { session });
+        if (!admin || admin.role !== 'admin') {
+          throw errorHandler(404, 'Admin not found');
+        }
+
+        const restaurants = await Restaurant.find({ _id: { $in: restaurantIds } })
+          .session(session)
+          .lean();
+        if (restaurants.length !== restaurantIds.length) {
+          throw errorHandler(404, 'One or more restaurants not found');
+        }
+
+        const currentRestaurantIds = admin.restaurantIds?.map((id) => id.toString()) || [];
+        const addedRestaurantIds = restaurantIds.filter(
+          (id) => !currentRestaurantIds.includes(id)
+        );
+
+        if (addedRestaurantIds.length === 0) {
+          throw errorHandler(400, 'No new restaurants to assign');
+        }
+
+        await User.findByIdAndUpdate(
+          admin._id,
+          { $addToSet: { restaurantIds: { $each: addedRestaurantIds } } },
+          { session }
+        );
+
+        for (const restaurantId of addedRestaurantIds) {
+          await Restaurant.findByIdAndUpdate(
+            restaurantId,
+            { adminId: admin._id },
+            { session }
+          );
+        }
+
+        await logAudit({
+          actorId: actor.id,
+          actorRole: actor.role,
+          entityType: 'user',
+          entityId: admin._id,
+          action: 'ASSIGN_RESTAURANTS',
+          after: { restaurantIds: addedRestaurantIds },
+          ipAddress: getClientIp(req)
+        });
+      })
+  );
+};
+
 export default {
   updateUserProfile,
   deleteUserAccount,
@@ -598,5 +664,6 @@ export default {
   assignStoreManagerRestaurant,
   listStoreManagers,
   unassignStoreManagerRestaurant,
-  transferStoreManagerOwner
+  transferStoreManagerOwner,
+  assignRestaurantsToAdmin
 };

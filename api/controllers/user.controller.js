@@ -147,6 +147,24 @@ export const assignStoreManagerToRestaurant = async (req, res, next) => {
   }
 };
 
+export const assignRestaurantsToAdmin = async (req, res, next) => {
+  try {
+    await userService.assignRestaurantsToAdmin({
+      actor: req.user,
+      adminId: req.params.id,
+      restaurantIds: req.body.restaurantIds,
+      req
+    });
+
+    res.json({
+      success: true,
+      message: 'Restaurants assigned to admin'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getStoreManagers = async (req, res, next) => {
   try {
     const result = await userService.listStoreManagers({

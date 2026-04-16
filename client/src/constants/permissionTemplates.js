@@ -115,6 +115,11 @@ export const PERMISSION_GROUPS = [
         description: 'Unassign store managers from restaurants.'
       },
       {
+        key: 'user.reassignAdmin',
+        label: 'Reassign Restaurants',
+        description: 'Reassign restaurants to admins.'
+      },
+      {
         key: 'user.updateSelf',
         label: 'Edit Own Profile',
         description: 'Update their own user profile details.'

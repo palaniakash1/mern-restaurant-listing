@@ -233,6 +233,9 @@ export const userValidators = {
   }),
   changeStoreManagerOwner: Joi.object({
     newAdminId: objectId.required()
+  }),
+  assignRestaurantsToAdmin: Joi.object({
+    restaurantIds: Joi.array().items(objectId).min(1).required()
   })
 };
 

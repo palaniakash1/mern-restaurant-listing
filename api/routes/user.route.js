@@ -11,7 +11,8 @@ import {
   getStoreManagers,
   assignStoreManagerToRestaurant,
   unassignStoreManager,
-  changeStoreManagerOwner
+  changeStoreManagerOwner,
+  assignRestaurantsToAdmin
 } from '../controllers/user.controller.js';
 import { verifyToken } from '../utils/verifyUser.js';
 import { can, canAny } from '../utils/policy.js';
@@ -107,6 +108,15 @@ router.delete(
   can('unassignStoreManager', 'user'),
   validate(userValidators.idParam, 'params'),
   unassignStoreManager
+);
+
+router.patch(
+  '/:id/restaurants',
+  verifyToken,
+  can('reassignAdmin', 'user'),
+  validate(userValidators.idParam, 'params'),
+  validate(userValidators.assignRestaurantsToAdmin),
+  assignRestaurantsToAdmin
 );
 
 export default router;
