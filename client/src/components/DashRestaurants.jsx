@@ -2207,7 +2207,10 @@ export default function DashRestaurants() {
             </div>
 
             <div className="flex justify-end gap-3">
-              <Button color="gray" onClick={resetModalState}>
+              <Button
+                className="!bg-[#B42627] hover:!bg-[#910712]"
+                onClick={resetModalState}
+              >
                 Cancel
               </Button>
               <Button

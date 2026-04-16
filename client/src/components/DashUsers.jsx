@@ -17,6 +17,7 @@ import {
   HiOutlinePlus,
   HiOutlineTrash
 } from 'react-icons/hi2';
+import ImageFrameLoader from './ImageFrameLoader';
 import PasswordInput from './PasswordInput';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
@@ -29,6 +30,7 @@ import {
   buildPermissionPayload,
   PERMISSION_GROUPS
 } from '../constants/permissionTemplates';
+import MultiSelectSearch from './MultiSelectSearch';
 
 const USER_LIMIT = 10;
 const DEFAULT_ROLE = 'admin';
@@ -46,7 +48,8 @@ const buildPrivilegedForm = () => ({
   phoneNumber: '',
   role: DEFAULT_ROLE,
   isActive: true,
-  profilePicture: ''
+  profilePicture: '',
+  restaurantIds: []
 });
 
 const buildManagerForm = () => ({
@@ -57,6 +60,26 @@ const buildManagerForm = () => ({
 
 const getUserId = (user) => user?._id || user?.id;
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+const getRestaurantNames = (user, restaurantLookup) => {
+  const names = [];
+  if (user.restaurantId) {
+    const id =
+      typeof user.restaurantId === 'object'
+        ? user.restaurantId._id || user.restaurantId
+        : user.restaurantId;
+    const name = restaurantLookup.get(id) || user.restaurantId?.name;
+    if (name) names.push(name);
+  }
+  if (user.restaurantIds && user.restaurantIds.length > 0) {
+    user.restaurantIds.forEach((id) => {
+      const rid = typeof id === 'object' ? id._id || id : id;
+      const name = restaurantLookup.get(rid) || id?.name;
+      if (name && !names.includes(name)) names.push(name);
+    });
+  }
+  return names.length > 0 ? names : ['Unassigned'];
+};
 
 function Metric({ label, value }) {
   return (
@@ -97,7 +120,7 @@ function UploadPreview({ value, progress, uploading, onSelect }) {
           event.target.value = '';
         }}
       />
-      <div className="relative aspect-square w-full max-w-[260px] overflow-hidden rounded-[1.5rem] border !border-[#dce6c1] bg-[#f7faef]">
+      <div className="relative aspect-square w-full max-w-[360px] overflow-hidden rounded-[1.5rem] border !border-[#dce6c1] bg-[#f7faef]">
         {value ? (
           <button
             type="button"
@@ -220,6 +243,11 @@ export default function DashUsers() {
     'user',
     'unassignStoreManager'
   );
+  const canReassignAdminRestaurant = hasPermission(
+    currentUser,
+    'user',
+    'reassignAdmin'
+  );
 
   const [users, setUsers] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
@@ -245,11 +273,14 @@ export default function DashUsers() {
     buildPermissionStateForRole(DEFAULT_ROLE)
   );
   const [assignmentRestaurantId, setAssignmentRestaurantId] = useState('');
+  const [selectedRestaurantIds, setSelectedRestaurantIds] = useState([]);
   const [imagePreviewUrl, setImagePreviewUrl] = useState('');
   const [imageUploading, setImageUploading] = useState(false);
   const [imageUploadProgress, setImageUploadProgress] = useState(0);
   const [pendingDeleteUser, setPendingDeleteUser] = useState(null);
   const [pendingUnassignUser, setPendingUnassignUser] = useState(null);
+  const [viewMoreRestaurantsUser, setViewMoreRestaurantsUser] = useState(null);
+  const [viewMoreRestaurantIds, setViewMoreRestaurantIds] = useState([]);
   const { showToast } = useToast();
 
   const listEndpoint = useMemo(() => {
@@ -305,14 +336,10 @@ export default function DashUsers() {
   const filteredUsers = useMemo(() => {
     const q = search.trim().toLowerCase();
     return users.filter((user) => {
-      const restaurantName =
-        restaurantLookup.get(user.restaurantId) ||
-        restaurantLookup.get(user.restaurantId?._id) ||
-        user.restaurantId?.name ||
-        user.restaurantId ||
-        '';
+      const restaurantNames = getRestaurantNames(user, restaurantLookup);
+      const restaurantNameStr = restaurantNames.join(', ');
       const searchMatch = q
-        ? [user.userName, user.email, user.role, restaurantName]
+        ? [user.userName, user.email, user.role, restaurantNameStr]
             .filter(Boolean)
             .some((v) => v.toLowerCase().includes(q))
         : true;
@@ -348,6 +375,7 @@ export default function DashUsers() {
     setManagerForm(buildManagerForm());
     setPermissionState(buildPermissionStateForRole(DEFAULT_ROLE));
     setAssignmentRestaurantId('');
+    setSelectedRestaurantIds([]);
     setImagePreviewUrl('');
     setImageUploading(false);
     setImageUploadProgress(0);
@@ -398,6 +426,9 @@ export default function DashUsers() {
     resetModalState();
     setSelectedUser(user);
     setModalMode('edit');
+    const userRestaurantIds = user.restaurantIds?.map((id) =>
+      typeof id === 'object' ? id._id || id : id
+    ) || [];
     setPrivilegedForm({
       userName: user.userName || '',
       email: user.email || '',
@@ -405,7 +436,8 @@ export default function DashUsers() {
       phoneNumber: user.phoneNumber || '',
       role: user.role || DEFAULT_ROLE,
       isActive: user.isActive !== false,
-      profilePicture: user.profilePicture || ''
+      profilePicture: user.profilePicture || '',
+      restaurantIds: userRestaurantIds
     });
     setOriginalPrivilegedForm({
       userName: user.userName || '',
@@ -414,7 +446,8 @@ export default function DashUsers() {
       phoneNumber: user.phoneNumber || '',
       role: user.role || DEFAULT_ROLE,
       isActive: user.isActive !== false,
-      profilePicture: user.profilePicture || ''
+      profilePicture: user.profilePicture || '',
+      restaurantIds: userRestaurantIds
     });
     const nextState = buildPermissionStateForRole(user.role);
     Object.entries(user.customPermissions || {}).forEach(
@@ -468,6 +501,11 @@ export default function DashUsers() {
               profilePicture: privilegedForm.profilePicture
             });
           }
+          if (privilegedForm.restaurantIds?.length > 0 && createdId) {
+            await apiPatch(`/api/users/${createdId}/restaurants`, {
+              restaurantIds: privilegedForm.restaurantIds
+            });
+          }
           showToast('Privileged user created successfully.', 'success');
         } else if (selectedUser) {
           const formCompare = {
@@ -476,7 +514,8 @@ export default function DashUsers() {
             phoneNumber: privilegedForm.phoneNumber || '',
             role: privilegedForm.role || 'admin',
             isActive: privilegedForm.isActive !== false,
-            profilePicture: privilegedForm.profilePicture || ''
+            profilePicture: privilegedForm.profilePicture || '',
+            restaurantIds: privilegedForm.restaurantIds || []
           };
           const currentRoleTemplate = buildPermissionStateForRole(
             privilegedForm.role || 'admin'
@@ -495,7 +534,9 @@ export default function DashUsers() {
             formCompare.isActive !==
               (originalPrivilegedForm?.isActive ?? true) ||
             formCompare.profilePicture !==
-              (originalPrivilegedForm?.profilePicture || '');
+              (originalPrivilegedForm?.profilePicture || '') ||
+            JSON.stringify(formCompare.restaurantIds) !==
+              JSON.stringify(originalPrivilegedForm?.restaurantIds || []);
           const hasChanges =
             hasFieldChanges ||
             permissionChanged ||
@@ -521,6 +562,11 @@ export default function DashUsers() {
             `/api/admin/users/${getUserId(selectedUser)}`,
             payload
           );
+          if (privilegedForm.restaurantIds?.length > 0) {
+            await apiPatch(`/api/users/${getUserId(selectedUser)}/restaurants`, {
+              restaurantIds: privilegedForm.restaurantIds
+            });
+          }
           showToast('User updated successfully.', 'success');
         }
       } else if (canCreateStoreManager && modalMode === 'create') {
@@ -552,11 +598,19 @@ export default function DashUsers() {
   const assignRestaurant = async () => {
     try {
       setSubmitting(true);
-      await apiPatch(`/api/users/${getUserId(selectedUser)}/restaurant`, {
-        restaurantId: assignmentRestaurantId
-      });
+      const userRole = selectedUser?.role;
+      if (userRole === 'admin') {
+        await apiPatch(`/api/users/${getUserId(selectedUser)}/restaurants`, {
+          restaurantIds: selectedRestaurantIds
+        });
+        showToast('Restaurants assigned to admin.', 'success');
+      } else {
+        await apiPatch(`/api/users/${getUserId(selectedUser)}/restaurant`, {
+          restaurantId: assignmentRestaurantId
+        });
+        showToast('Store manager assignment updated.', 'success');
+      }
       resetModalState();
-      showToast('Store manager assignment updated.', 'success');
       await fetchUsers();
     } catch (assignError) {
       showToast(assignError.message, 'error');
@@ -779,12 +833,10 @@ export default function DashUsers() {
                   </Table.Head>
                   <Table.Body className="divide-y">
                     {filteredUsers.map((user) => {
-                      const restaurantName =
-                        restaurantLookup.get(user.restaurantId) ||
-                        restaurantLookup.get(user.restaurantId?._id) ||
-                        user.restaurantId?.name ||
-                        user.restaurantId ||
-                        'Unassigned';
+                      const restaurantNames = getRestaurantNames(
+                        user,
+                        restaurantLookup
+                      );
                       return (
                         <Table.Row key={getUserId(user)}>
                           <Table.Cell>
@@ -830,8 +882,32 @@ export default function DashUsers() {
                               ? 'Custom Access'
                               : 'Role Template'}
                           </Table.Cell>
-                          <Table.Cell className="text-sm text-gray-600">
-                            {restaurantName}
+                          <Table.Cell className="text-sm text-gray-600 max-w-[200px]">
+                            <div className="flex flex-col gap-1 max-h-[72px] overflow-y-auto">
+                              {restaurantNames.slice(0, 3).map((name, idx) => (
+                                <span key={idx} className="truncate">
+                                  {name}
+                                </span>
+                              ))}
+                              {restaurantNames.length > 3 && (
+                                <button
+                                  type="button"
+                                  className="text-xs text-[#8fa31e] hover:underline text-left"
+                                  onClick={() => {
+                                    const userRestaurantIds =
+                                      user.restaurantIds?.map((id) =>
+                                        typeof id === 'object'
+                                          ? id._id || id
+                                          : id
+                                      ) || [];
+                                    setViewMoreRestaurantsUser(user);
+                                    setViewMoreRestaurantIds(userRestaurantIds);
+                                  }}
+                                >
+                                  +{restaurantNames.length - 3} more
+                                </button>
+                              )}
+                            </div>
                           </Table.Cell>
                           <Table.Cell>
                             <div className="flex flex-wrap gap-2">
@@ -848,16 +924,18 @@ export default function DashUsers() {
                                     Edit
                                   </Button>
                                 )}
-                              {canAssignStoreManager &&
-                                user.role === 'storeManager' && (
-                                  <Button
-                                    className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
-                                    size="xs"
-                                    onClick={() => openAssignModal(user)}
-                                  >
-                                    Manage
-                                  </Button>
-                                )}
+                              {(canAssignStoreManager &&
+                                user.role === 'storeManager') ||
+                                (canReassignAdminRestaurant &&
+                                  user.role === 'admin' && (
+                                    <Button
+                                      className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
+                                      size="xs"
+                                      onClick={() => openAssignModal(user)}
+                                    >
+                                      Manage
+                                    </Button>
+                                  ))}
                               {canUnassignStoreManager &&
                                 user.role === 'storeManager' &&
                                 user.restaurantId && (
@@ -890,12 +968,10 @@ export default function DashUsers() {
 
               <div className="mt-5 space-y-3 md:hidden">
                 {filteredUsers.map((user) => {
-                  const restaurantName =
-                    restaurantLookup.get(user.restaurantId) ||
-                    restaurantLookup.get(user.restaurantId?._id) ||
-                    user.restaurantId?.name ||
-                    user.restaurantId ||
-                    'Unassigned';
+                  const restaurantNames = getRestaurantNames(
+                    user,
+                    restaurantLookup
+                  );
                   return (
                     <div
                       key={getUserId(user)}
@@ -934,7 +1010,24 @@ export default function DashUsers() {
                                 : 'Role Template'}
                             </span>
                             <span>•</span>
-                            <span>{restaurantName}</span>
+                            {restaurantNames.length > 2 ? (
+                              <button
+                                type="button"
+                                className="text-[#8fa31e] hover:underline"
+                                onClick={() => {
+                                  const userRestaurantIds =
+                                    user.restaurantIds?.map((id) =>
+                                      typeof id === 'object' ? id._id || id : id
+                                    ) || [];
+                                  setViewMoreRestaurantsUser(user);
+                                  setViewMoreRestaurantIds(userRestaurantIds);
+                                }}
+                              >
+                                View all ({restaurantNames.length})
+                              </button>
+                            ) : (
+                              <span>{restaurantNames.join(', ')}</span>
+                            )}
                           </div>
                           <div className="mt-4 flex flex-wrap gap-2">
                             {canCreatePrivilegedUser &&
@@ -1030,202 +1123,218 @@ export default function DashUsers() {
         <Modal.Body>
           <div onClick={(e) => e.stopPropagation()}>
             <form className="space-y-6" onSubmit={submitUser}>
-            <div className="rounded-[1.5rem] bg-[linear-gradient(135deg,#f8fbf1_0%,#fff4f4_100%)] p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#b62828]">
-                {modalMode === 'edit' ? 'User refinement' : 'User onboarding'}
-              </p>
-              <h3 className="mt-2 text-xl font-bold text-[#23411f]">
-                {canCreatePrivilegedUser
-                  ? 'Role-aware user configuration'
-                  : 'Store manager creation flow'}
-              </h3>
-            </div>
+              <div className="rounded-[1.5rem] bg-[linear-gradient(135deg,#f8fbf1_0%,#fff4f4_100%)] p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#b62828]">
+                  {modalMode === 'edit' ? 'User refinement' : 'User onboarding'}
+                </p>
+                <h3 className="mt-2 text-xl font-bold text-[#23411f]">
+                  {canCreatePrivilegedUser
+                    ? 'Role-aware user configuration'
+                    : 'Store manager creation flow'}
+                </h3>
+              </div>
 
-            <div className="grid gap-6 xl:grid-cols-[0.9fr,1.1fr]">
-              {canCreatePrivilegedUser ? (
-                <UploadPreview
-                  value={imagePreviewUrl || privilegedForm.profilePicture}
-                  progress={imageUploadProgress}
-                  uploading={imageUploading}
-                  onSelect={handleImageUpload}
-                />
-              ) : (
-                <div className="rounded-[1.5rem] border !border-[#e4ebce] bg-[#fbfcf7] p-5 text-sm text-gray-600">
-                  <p className="font-semibold text-[#23411f]">
-                    Store manager contract
-                  </p>
-                  <p className="mt-2 leading-7">
-                    The current backend endpoint for admin-created store
-                    managers does not accept profile images during creation, so
-                    this modal stays aligned with the live API.
-                  </p>
-                </div>
-              )}
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="userName">Username</Label>
-                  <TextInput
-                    id="userName"
-                    value={currentForm.userName}
-                    onChange={(event) =>
-                      canCreatePrivilegedUser
-                        ? setPrivilegedForm((current) => ({
-                            ...current,
-                            userName: event.target.value
-                          }))
-                        : setManagerForm((current) => ({
-                            ...current,
-                            userName: event.target.value
-                          }))
-                    }
-                    required
+              <div className="grid gap-6 xl:grid-cols-[0.9fr,1.1fr]">
+                {canCreatePrivilegedUser ? (
+                  <UploadPreview
+                    value={imagePreviewUrl || privilegedForm.profilePicture}
+                    progress={imageUploadProgress}
+                    uploading={imageUploading}
+                    onSelect={handleImageUpload}
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <TextInput
-                    id="email"
-                    type="email"
-                    value={currentForm.email}
-                    onChange={(event) =>
-                      canCreatePrivilegedUser
-                        ? setPrivilegedForm((current) => ({
-                            ...current,
-                            email: event.target.value
-                          }))
-                        : setManagerForm((current) => ({
-                            ...current,
-                            email: event.target.value
-                          }))
-                    }
-                    required
-                  />
-                </div>
-                {canCreatePrivilegedUser && (
-                  <div className="space-y-2">
-                    <Label htmlFor="phoneNumber">Phone Number</Label>
-                    <TextInput
-                      id="phoneNumber"
-                      type="tel"
-                      value={privilegedForm.phoneNumber}
-                      onChange={(event) =>
-                        setPrivilegedForm((current) => ({
-                          ...current,
-                          phoneNumber: event.target.value
-                        }))
-                      }
-                      placeholder="+44 123 456 7890"
-                    />
+                ) : (
+                  <div className="rounded-[1.5rem] border !border-[#e4ebce] bg-[#fbfcf7] p-5 text-sm text-gray-600">
+                    <p className="font-semibold text-[#23411f]">
+                      Store manager contract
+                    </p>
+                    <p className="mt-2 leading-7">
+                      The current backend endpoint for admin-created store
+                      managers does not accept profile images during creation,
+                      so this modal stays aligned with the live API.
+                    </p>
                   </div>
                 )}
-                <div className="space-y-2">
-                  <Label htmlFor="password">
-                    {modalMode === 'edit'
-                      ? 'Password reset'
-                      : 'Temporary password'}
-                  </Label>
-                  <PasswordInput
-                    id="password"
-                    value={currentForm.password}
-                    onChange={(event) =>
-                      canCreatePrivilegedUser
-                        ? setPrivilegedForm((current) => ({
-                            ...current,
-                            password: event.target.value
-                          }))
-                        : setManagerForm((current) => ({
-                            ...current,
-                            password: event.target.value
-                          }))
-                    }
-                    placeholder={
-                      modalMode === 'edit'
-                        ? 'Leave blank to keep current password'
-                        : 'Minimum 8 chars, 1 capital, 1 number'
-                    }
-                    required={modalMode === 'create'}
-                  />
-                </div>
-                {canCreatePrivilegedUser && (
-                  <>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="userName">Username</Label>
+                    <TextInput
+                      id="userName"
+                      value={currentForm.userName}
+                      onChange={(event) =>
+                        canCreatePrivilegedUser
+                          ? setPrivilegedForm((current) => ({
+                              ...current,
+                              userName: event.target.value
+                            }))
+                          : setManagerForm((current) => ({
+                              ...current,
+                              userName: event.target.value
+                            }))
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <TextInput
+                      id="email"
+                      type="email"
+                      value={currentForm.email}
+                      onChange={(event) =>
+                        canCreatePrivilegedUser
+                          ? setPrivilegedForm((current) => ({
+                              ...current,
+                              email: event.target.value
+                            }))
+                          : setManagerForm((current) => ({
+                              ...current,
+                              email: event.target.value
+                            }))
+                      }
+                      required
+                    />
+                  </div>
+                  {canCreatePrivilegedUser && (
                     <div className="space-y-2">
-                      <Label htmlFor="role">Role</Label>
-                      <Select
-                        id="role"
-                        value={privilegedForm.role}
-                        onChange={(event) => {
+                      <Label htmlFor="phoneNumber">Phone Number</Label>
+                      <TextInput
+                        id="phoneNumber"
+                        type="tel"
+                        value={privilegedForm.phoneNumber}
+                        onChange={(event) =>
                           setPrivilegedForm((current) => ({
                             ...current,
-                            role: event.target.value
-                          }));
-                          setPermissionState(
-                            buildPermissionStateForRole(event.target.value)
-                          );
-                        }}
-                      >
-                        <option value="admin">Admin</option>
-                        <option value="storeManager">Store Manager</option>
-                      </Select>
+                            phoneNumber: event.target.value
+                          }))
+                        }
+                        placeholder="+44 123 456 7890"
+                      />
                     </div>
-                    <div className="space-y-2 sm:col-span-2">
-                      <Label>Status</Label>
-                      <div className="rounded-[1rem] border !border-[#e4ebce] bg-[#fbfcf7] px-4 py-3">
-                        <ToggleSwitch
-                          checked={privilegedForm.isActive}
-                          label={
-                            privilegedForm.isActive
-                              ? 'Active account'
-                              : 'Inactive account'
-                          }
-                          onChange={(checked) =>
+                  )}
+                  <div className="space-y-2">
+                    <Label htmlFor="password">
+                      {modalMode === 'edit'
+                        ? 'Password reset'
+                        : 'Temporary password'}
+                    </Label>
+                    <PasswordInput
+                      id="password"
+                      value={currentForm.password}
+                      onChange={(event) =>
+                        canCreatePrivilegedUser
+                          ? setPrivilegedForm((current) => ({
+                              ...current,
+                              password: event.target.value
+                            }))
+                          : setManagerForm((current) => ({
+                              ...current,
+                              password: event.target.value
+                            }))
+                      }
+                      placeholder={
+                        modalMode === 'edit'
+                          ? 'Leave blank to keep current password'
+                          : 'Minimum 8 chars, 1 capital, 1 number'
+                      }
+                      required={modalMode === 'create'}
+                    />
+                  </div>
+                  {canCreatePrivilegedUser && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="role">Role</Label>
+                        <Select
+                          id="role"
+                          value={privilegedForm.role}
+                          onChange={(event) => {
                             setPrivilegedForm((current) => ({
                               ...current,
-                              isActive: checked
-                            }))
-                          }
-                        />
+                              role: event.target.value
+                            }));
+                            setPermissionState(
+                              buildPermissionStateForRole(event.target.value)
+                            );
+                          }}
+                        >
+                          <option value="admin">Admin</option>
+                          <option value="storeManager">Store Manager</option>
+                        </Select>
                       </div>
-                    </div>
-                  </>
-                )}
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label>Status</Label>
+                        <div className="rounded-[1rem] border !border-[#e4ebce] bg-[#fbfcf7] px-4 py-3">
+                          <ToggleSwitch
+                            checked={privilegedForm.isActive}
+                            label={
+                              privilegedForm.isActive
+                                ? 'Active account'
+                                : 'Inactive account'
+                            }
+                            onChange={(checked) =>
+                              setPrivilegedForm((current) => ({
+                                ...current,
+                                isActive: checked
+                              }))
+                            }
+                          />
+                        </div>
+                      </div>
+                      {privilegedForm.role === 'admin' && (
+                        <div className="sm:col-span-2">
+                          <MultiSelectSearch
+                            label="Assign Restaurants"
+                            options={restaurants}
+                            selectedIds={privilegedForm.restaurantIds || []}
+                            onChange={(ids) =>
+                              setPrivilegedForm((current) => ({
+                                ...current,
+                                restaurantIds: ids
+                              }))
+                            }
+                            placeholder="Search and select restaurants..."
+                          />
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
 
-            {canCreatePrivilegedUser && (
-              <PermissionEditor
-                state={permissionState}
-                role={privilegedForm.role}
-                onToggle={(key) =>
-                  setPermissionState((current) => ({
-                    ...current,
-                    [key]: !current[key]
-                  }))
-                }
-                onReset={() =>
-                  setPermissionState(
-                    buildPermissionStateForRole(privilegedForm.role)
-                  )
-                }
-              />
-            )}
+              {canCreatePrivilegedUser && (
+                <PermissionEditor
+                  state={permissionState}
+                  role={privilegedForm.role}
+                  onToggle={(key) =>
+                    setPermissionState((current) => ({
+                      ...current,
+                      [key]: !current[key]
+                    }))
+                  }
+                  onReset={() =>
+                    setPermissionState(
+                      buildPermissionStateForRole(privilegedForm.role)
+                    )
+                  }
+                />
+              )}
 
-            <div className="flex justify-end gap-3">
-              <Button
-                className="!bg-[#B42627] hover:!bg-[#910712]"
-                onClick={resetModalState}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                className="!bg-[#8fa31e] hover:!bg-[#78871c]"
-                isProcessing={submitting}
-                disabled={imageUploading}
-              >
-                {modalMode === 'edit' ? 'Save changes' : 'Create user'}
-              </Button>
-            </div>
-          </form>
+              <div className="flex justify-end gap-3">
+                <Button
+                  className="!bg-[#B42627] hover:!bg-[#910712]"
+                  onClick={resetModalState}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="!bg-[#8fa31e] hover:!bg-[#78871c]"
+                  isProcessing={submitting}
+                  disabled={imageUploading}
+                >
+                  {modalMode === 'edit' ? 'Save changes' : 'Create user'}
+                </Button>
+              </div>
+            </form>
           </div>
         </Modal.Body>
       </Modal>
@@ -1235,7 +1344,11 @@ export default function DashUsers() {
         onClose={resetModalState}
         dismissible={true}
       >
-        <Modal.Header>Assign restaurant</Modal.Header>
+        <Modal.Header>
+          {selectedUser?.role === 'admin'
+            ? 'Assign restaurants'
+            : 'Assign restaurant'}
+        </Modal.Header>
         <Modal.Body>
           <div className="space-y-4">
             <div>
@@ -1243,26 +1356,63 @@ export default function DashUsers() {
                 {selectedUser?.userName}
               </p>
               <p className="text-xs text-gray-500">
-                Select the restaurant this store manager should operate.
+                {selectedUser?.role === 'admin'
+                  ? 'Select restaurants this admin should manage.'
+                  : 'Select the restaurant this store manager should operate.'}
               </p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="assignmentRestaurant">Restaurant</Label>
-              <Select
-                id="assignmentRestaurant"
-                value={assignmentRestaurantId}
-                onChange={(event) =>
-                  setAssignmentRestaurantId(event.target.value)
-                }
-              >
-                <option value="">Select restaurant</option>
-                {restaurants.map((restaurant) => (
-                  <option key={restaurant._id} value={restaurant._id}>
-                    {restaurant.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
+            {selectedUser?.role === 'admin' ? (
+              <div className="space-y-2">
+                <Label>Restaurants</Label>
+                <div className="max-h-60 overflow-y-auto space-y-2 rounded-lg border border-[#dce6c1] p-3">
+                  {restaurants.map((restaurant) => (
+                    <label
+                      key={restaurant._id}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300 text-[#8fa31e] focus:ring-[#8fa31e]"
+                        checked={selectedRestaurantIds.includes(restaurant._id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedRestaurantIds((prev) => [
+                              ...prev,
+                              restaurant._id
+                            ]);
+                          } else {
+                            setSelectedRestaurantIds((prev) =>
+                              prev.filter((id) => id !== restaurant._id)
+                            );
+                          }
+                        }}
+                      />
+                      <span className="text-sm text-gray-700">
+                        {restaurant.name}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="assignmentRestaurant">Restaurant</Label>
+                <Select
+                  id="assignmentRestaurant"
+                  value={assignmentRestaurantId}
+                  onChange={(event) =>
+                    setAssignmentRestaurantId(event.target.value)
+                  }
+                >
+                  <option value="">Select restaurant</option>
+                  {restaurants.map((restaurant) => (
+                    <option key={restaurant._id} value={restaurant._id}>
+                      {restaurant.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            )}
           </div>
         </Modal.Body>
         <Modal.Footer>
@@ -1270,11 +1420,20 @@ export default function DashUsers() {
             className="!bg-[#8fa31e] hover:!bg-[#78871c]"
             onClick={assignRestaurant}
             isProcessing={submitting}
-            disabled={!assignmentRestaurantId}
+            disabled={
+              selectedUser?.role === 'admin'
+                ? selectedRestaurantIds.length === 0
+                : !assignmentRestaurantId
+            }
           >
-            Save assignment
+            {selectedUser?.role === 'admin'
+              ? 'Assign restaurants'
+              : 'Save assignment'}
           </Button>
-          <Button color="gray" onClick={resetModalState}>
+          <Button
+            className="!bg-[#B42627] hover:!bg-[#910712]"
+            onClick={resetModalState}
+          >
             Cancel
           </Button>
         </Modal.Footer>
@@ -1299,7 +1458,10 @@ export default function DashUsers() {
           >
             Confirm delete
           </Button>
-          <Button color="gray" onClick={() => setPendingDeleteUser(null)}>
+          <Button
+            className="!bg-[#B42627] hover:!bg-[#910712]"
+            onClick={() => setPendingDeleteUser(null)}
+          >
             Cancel
           </Button>
         </Modal.Footer>
@@ -1326,8 +1488,41 @@ export default function DashUsers() {
           >
             Confirm unassign
           </Button>
-          <Button color="gray" onClick={() => setPendingUnassignUser(null)}>
+          <Button
+            className="!bg-[#B42627] hover:!bg-[#910712]"
+            onClick={() => setPendingUnassignUser(null)}
+          >
             Cancel
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal
+        show={Boolean(viewMoreRestaurantsUser)}
+        onClose={() => setViewMoreRestaurantsUser(null)}
+        dismissible={true}
+        size="lg"
+      >
+        <Modal.Header>
+          {viewMoreRestaurantsUser?.userName}'s Restaurants
+        </Modal.Header>
+        <Modal.Body>
+          <div onClick={(e) => e.stopPropagation()}>
+            <MultiSelectSearch
+              label="Manage Restaurants"
+              options={restaurants}
+              selectedIds={viewMoreRestaurantIds}
+              onChange={(ids) => setViewMoreRestaurantIds(ids)}
+              placeholder="Search restaurants to add..."
+            />
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            className="!bg-[#B42627] hover:!bg-[#910712]"
+            onClick={() => setViewMoreRestaurantsUser(null)}
+          >
+            Close
           </Button>
         </Modal.Footer>
       </Modal>

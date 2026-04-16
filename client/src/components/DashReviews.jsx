@@ -1007,7 +1007,10 @@ export default function DashReviews() {
             >
               Save changes
             </Button>
-            <Button color="gray" onClick={() => setEditingReview(null)}>
+            <Button
+              className="!bg-[#B42627] hover:!bg-[#910712]"
+              onClick={() => setEditingReview(null)}
+            >
               Cancel
             </Button>
           </Modal.Footer>
@@ -1371,7 +1374,10 @@ export default function DashReviews() {
           >
             Save changes
           </Button>
-          <Button color="gray" onClick={() => setEditingReview(null)}>
+          <Button
+            className="!bg-[#B42627] hover:!bg-[#910712]"
+            onClick={() => setEditingReview(null)}
+          >
             Cancel
           </Button>
         </Modal.Footer>

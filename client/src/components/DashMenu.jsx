@@ -1559,7 +1559,7 @@ export default function DashMenu() {
             Add item
           </Button>
           <Button
-            color="gray"
+            className="!bg-[#B42627] hover:!bg-[#910712]"
             onClick={() => {
               setActiveMenu(null);
               setItemForm(emptyItemForm);
@@ -2013,7 +2013,7 @@ export default function DashMenu() {
             Save Changes
           </Button>
           <Button
-            color="gray"
+            className="!bg-[#B42627] hover:!bg-[#910712]"
             onClick={() => {
               setEditingItem(null);
               setItemForm(emptyItemForm);

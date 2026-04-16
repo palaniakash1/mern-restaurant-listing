@@ -94,6 +94,7 @@ const CloseIcon = (props) => (
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
+    className='text-red-500'
   >
     <path d="M18 6 6 18" />
     <path d="m6 6 12 12" />
@@ -163,7 +164,10 @@ export default function SignIn() {
       await forgotPassword(resetEmail);
       setResetSuccess(true);
     } catch (err) {
-      showToast(err.message || 'Failed to send reset email. Please try again.', 'error');
+      showToast(
+        err.message || 'Failed to send reset email. Please try again.',
+        'error'
+      );
     } finally {
       setResetLoading(false);
     }
@@ -400,7 +404,7 @@ export default function SignIn() {
                 <button
                   type="button"
                   onClick={closeForgotModal}
-                  className="flex-1 p-3 rounded-[5px] bg-gray-100 hover:bg-gray-200 text-gray-700 border-none cursor-pointer font-medium"
+                  className="flex-1 p-3 rounded-[5px] !bg-[#B42627] hover:!bg-[#910712] text-gray-700 border-none cursor-pointer font-medium"
                 >
                   Cancel
                 </button>

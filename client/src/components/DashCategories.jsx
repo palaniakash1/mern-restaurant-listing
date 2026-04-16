@@ -879,7 +879,10 @@ export default function DashCategories() {
           >
             Save Changes
           </Button>
-          <Button color="gray" onClick={() => setEditingCategory(null)}>
+          <Button
+            className="!bg-[#B42627] hover:!bg-[#910712]"
+            onClick={() => setEditingCategory(null)}
+          >
             Cancel
           </Button>
         </Modal.Footer>
@@ -940,7 +943,10 @@ export default function DashCategories() {
           >
             Unassign from All Menus
           </Button>
-          <Button color="gray" onClick={() => setShowUnassignModal(false)}>
+          <Button
+            className="!bg-[#B42627] hover:!bg-[#910712]"
+            onClick={() => setShowUnassignModal(false)}
+          >
             Cancel
           </Button>
         </Modal.Footer>
@@ -1063,7 +1069,10 @@ export default function DashCategories() {
           >
             Create Category
           </Button>
-          <Button color="gray" onClick={() => setShowCreateModal(false)}>
+          <Button
+            className="!bg-[#B42627] hover:!bg-[#910712]"
+            onClick={() => setShowCreateModal(false)}
+          >
             Cancel
           </Button>
         </Modal.Footer>
