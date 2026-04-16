@@ -85,3 +85,24 @@ export const listRestaurants = async (options = {}) => {
   const response = await apiGet(`/api/restaurants?${params}`);
   return response;
 };
+
+export const getGalleryRestaurantImages = async (options = {}) => {
+  const { page = 1, limit = 20 } = options;
+  const params = new URLSearchParams({ page, limit }).toString();
+  const response = await apiGet(`/api/gallery/restaurants?${params}`);
+  return response;
+};
+
+export const getGalleryMenuImages = async (options = {}) => {
+  const { page = 1, limit = 20 } = options;
+  const params = new URLSearchParams({ page, limit }).toString();
+  const response = await apiGet(`/api/gallery/menus?${params}`);
+  return response;
+};
+
+export const getGalleryReviewImages = async (options = {}) => {
+  const { page = 1, limit = 20 } = options;
+  const params = new URLSearchParams({ page, limit }).toString();
+  const response = await apiGet(`/api/gallery/reviews?${params}`);
+  return response;
+};

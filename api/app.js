@@ -17,6 +17,7 @@ import dashboardRoutes from './routes/dashboard.route.js';
 import fsaRouter from './routes/fsa.routes.js';
 import placesRouter from './routes/places.routes.js';
 import mediaRouter from './routes/media.routes.js';
+import galleryRouter from './routes/gallery.route.js';
 
 // API Versioning
 import v1Routes from './routes/v1/index.js';
@@ -135,6 +136,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/fsa', fsaRouter);
 app.use('/api/places', placesRouter);
 app.use('/api/media', mediaRouter);
+app.use('/api/gallery', galleryRouter);
 
 // API v1 routes (for future versioning)
 app.use('/api/v1', v1Routes);
