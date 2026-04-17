@@ -86,10 +86,31 @@ export function ImageLightbox({ images, selectedIndex, onClose, onIndexChange })
         <div className="absolute bottom-0 left-0 right-0 rounded-b-lg bg-gradient-to-t from-black/80 to-transparent p-4">
           <div className="flex items-center justify-between text-white">
             <div>
-              {currentImage.sourceName && (
+              {currentImage.source === 'restaurant' && currentImage.sourceName && (
+                <Link
+                  to={`/restaurants/${currentImage.sourceSlug || currentImage.sourceId}`}
+                  className="font-semibold hover:text-[#8fa31e] transition"
+                  onClick={onClose}
+                >
+                  {currentImage.sourceName}
+                </Link>
+              )}
+              {currentImage.source !== 'restaurant' && currentImage.sourceName && (
                 <p className="font-semibold">{currentImage.sourceName}</p>
               )}
-              {currentImage.restaurantName && (
+              {currentImage.source === 'review' && currentImage.restaurantName && (
+                <p className="text-xs text-white/60">
+                  Review for{' '}
+                  <Link
+                    to={`/restaurants/${currentImage.restaurantSlug || currentImage.restaurantId}`}
+                    className="text-white/90 hover:text-[#8fa31e] transition"
+                    onClick={onClose}
+                  >
+                    {currentImage.restaurantName}
+                  </Link>
+                </p>
+              )}
+              {currentImage.source !== 'review' && currentImage.restaurantName && (
                 <Link
                   to={`/restaurants/${currentImage.restaurantSlug || currentImage.restaurantId}`}
                   className="text-sm text-white/80 hover:text-white"
@@ -97,6 +118,9 @@ export function ImageLightbox({ images, selectedIndex, onClose, onIndexChange })
                 >
                   {currentImage.restaurantName}
                 </Link>
+              )}
+              {currentImage.imageType && (
+                <p className="text-xs text-white/60 capitalize">{currentImage.imageType}</p>
               )}
               {currentImage.menuName && (
                 <p className="text-xs text-white/70">{currentImage.menuName}</p>

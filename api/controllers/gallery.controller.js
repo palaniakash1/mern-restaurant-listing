@@ -16,22 +16,44 @@ export const getGalleryRestaurantImages = async (req, res, next) => {
     }
 
     const filter = { ...publicRestaurantFilter };
-    filter.gallery = { $exists: true, $ne: [], $not: { $size: 0 } };
 
-    const restaurants = await Restaurant.find(filter, { gallery: 1, name: 1, slug: 1 })
+    const restaurants = await Restaurant.find(filter, { gallery: 1, bannerImage: 1, imageLogo: 1, name: 1, slug: 1 })
       .lean();
 
     const allImages = [];
     restaurants.forEach((restaurant) => {
-      (restaurant.gallery || []).forEach((url) => {
+      if (restaurant.bannerImage) {
         allImages.push({
-          url,
+          url: restaurant.bannerImage,
           source: 'restaurant',
+          imageType: 'banner',
           sourceId: restaurant._id,
           sourceName: restaurant.name,
           sourceSlug: restaurant.slug
         });
-      });
+      }
+      if (restaurant.gallery && restaurant.gallery.length > 0) {
+        restaurant.gallery.forEach((url) => {
+          allImages.push({
+            url,
+            source: 'restaurant',
+            imageType: 'gallery',
+            sourceId: restaurant._id,
+            sourceName: restaurant.name,
+            sourceSlug: restaurant.slug
+          });
+        });
+      }
+      if (!restaurant.bannerImage && (!restaurant.gallery || restaurant.gallery.length === 0) && restaurant.imageLogo) {
+        allImages.push({
+          url: restaurant.imageLogo,
+          source: 'restaurant',
+          imageType: 'logo',
+          sourceId: restaurant._id,
+          sourceName: restaurant.name,
+          sourceSlug: restaurant.slug
+        });
+      }
     });
 
     const total = allImages.length;
