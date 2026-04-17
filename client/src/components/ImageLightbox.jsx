@@ -36,19 +36,11 @@ export function ImageLightbox({ images, selectedIndex, onClose, onIndexChange })
   useEffect(() => {
     if (selectedIndex !== null && selectedIndex !== undefined && images && images.length > 0) {
       document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
     }
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
     };
   }, [selectedIndex, handleKeyDown, images]);
-
-  useEffect(() => {
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, []);
 
   if (selectedIndex === null || selectedIndex === undefined || !images || images.length === 0) {
     return null;
