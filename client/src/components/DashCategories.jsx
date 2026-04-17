@@ -173,6 +173,7 @@ export default function DashCategories() {
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listEndpoint, loadRestaurants]);
 
   useEffect(() => {

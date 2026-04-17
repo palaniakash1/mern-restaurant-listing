@@ -178,6 +178,7 @@ export default function DashboardOverview({ role = 'superAdmin' }) {
       setLoading(false);
       setRefreshing(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

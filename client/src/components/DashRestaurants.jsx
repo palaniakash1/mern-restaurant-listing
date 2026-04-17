@@ -934,6 +934,7 @@ export default function DashRestaurants() {
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listBaseEndpoint]);
 
   useEffect(() => {

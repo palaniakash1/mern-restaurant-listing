@@ -16,6 +16,7 @@ export const getOverview = async (req, res) => {
       data: summary
     });
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Dashboard overview error:', error);
     res.status(500).json({
       success: false,
@@ -39,6 +40,7 @@ export const getStats = async (req, res) => {
       data: { overview, userAnalytics, contentAnalytics }
     });
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Dashboard stats error:', error);
     res.status(500).json({
       success: false,
@@ -81,6 +83,7 @@ export const getAnalytics = async (req, res) => {
       });
     }
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Dashboard analytics error:', error);
     res.status(500).json({
       success: false,
@@ -98,6 +101,7 @@ export const getRealtime = async (req, res) => {
       data: stats
     });
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Dashboard realtime error:', error);
     res.status(500).json({
       success: false,

@@ -181,6 +181,7 @@ export default function DashAuditLogs() {
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [action, canReadAuditLogs, entityType, page]);
 
   const loadEntityCounts = useCallback(async () => {

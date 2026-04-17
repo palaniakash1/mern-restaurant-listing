@@ -321,6 +321,7 @@ export default function DashUsers() {
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchRestaurants, listEndpoint]);
 
   useEffect(() => {
