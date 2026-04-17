@@ -34,17 +34,17 @@ const ImageSection = ({ title, icon: Icon, images, loading, hasMore, onLoadMore,
         </div>
       ) : (
         <>
-          <div className="columns-2 gap-4 space-y-4 md:columns-3 lg:columns-4 xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {images.map((image, index) => (
               <button
                 key={`${image.url}-${index}`}
                 onClick={() => onImageClick(index)}
-                className="group relative break-inside-avoid overflow-hidden rounded-xl transition-all hover:shadow-lg hover:ring-2 hover:ring-[#8fa31e] hover:ring-offset-2"
+                className="group relative aspect-square overflow-hidden rounded-xl transition-all hover:shadow-lg hover:ring-2 hover:ring-[#8fa31e] hover:ring-offset-2"
               >
                 <img
                   src={image.url}
                   alt={image.sourceName || image.source || 'Gallery image'}
-                  className="h-auto w-full object-cover transition duration-500 group-hover:scale-105"
+                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 transition group-hover:opacity-100" />
