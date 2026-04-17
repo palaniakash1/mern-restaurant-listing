@@ -25,7 +25,7 @@ export default function Dashboard() {
   const tab = activeTab?.id || 'dashboard';
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#fdf0f0_0%,#f6fbe9_35%,#edf4dc_100%)]">
+    <div className="min-h-screen overflow-auto bg-[radial-gradient(circle_at_top,#fdf0f0_0%,#f6fbe9_35%,#edf4dc_100%)]">
       {isSidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
@@ -33,7 +33,7 @@ export default function Dashboard() {
         />
       )}
 
-      <div className="mx-auto flex min-h-screen w-full max-w-[1600px] gap-0 xl:px-5">
+      <div className="mx-auto flex h-full w-full max-w-[1600px] gap-0 xl:px-5">
         <div className="hidden w-[310px] shrink-0 p-4 lg:block xl:p-5">
           <div className="sticky top-4">
             <DashSidebar />
@@ -48,7 +48,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col px-3 pb-6 pt-3 sm:px-4 lg:px-0 lg:pr-5">
+        <div className="flex min-w-0 flex-1 flex-col overflow-auto px-3 pb-6 pt-3 sm:px-4 lg:px-0 lg:pr-5">
           <div className="sticky top-5 z-30 rounded-b-[1.75rem] border border-white/50 bg-white/80 px-4 py-4 shadow-[0_18px_60px_rgba(77,103,22,0.12)] backdrop-blur lg:mt-4 lg:rounded-[2rem]">
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between gap-3">

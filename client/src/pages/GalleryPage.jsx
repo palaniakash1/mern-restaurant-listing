@@ -7,9 +7,7 @@ import { ImageLightbox } from '../components/ImageLightbox';
 const INITIAL_LIMIT = 20;
 
 const ImageSection = ({ title, icon: Icon, images, loading, hasMore, onLoadMore, total, onImageClick }) => {
-  // eslint-disable-next-line no-unused-vars
   const IconComponent = Icon;
-
   return (
     <div className="mb-16">
       <div className="mb-6">

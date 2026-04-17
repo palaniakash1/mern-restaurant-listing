@@ -12,8 +12,6 @@ import {
 import {
   HiOutlineArrowPath,
   HiOutlineCheck,
-  HiOutlineChevronLeft,
-  HiOutlineChevronRight,
   HiOutlineEyeSlash,
   HiOutlinePencilSquare,
   HiOutlinePhoto,
@@ -28,6 +26,7 @@ import { useToast } from '../context/ToastContext';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
 import { SkeletonCard } from './SkeletonCard';
 import DeleteConfirmModal from './DeleteConfirmModal';
+import { ImageLightbox } from './ImageLightbox';
 
 const REVIEW_FILTER_LIMIT = 50;
 
@@ -1020,95 +1019,12 @@ export default function DashReviews() {
           </Modal.Footer>
         </Modal>
 
-        {lightboxImages && lightboxImages.length > 0 && (
-          <div
-            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/95 backdrop-blur-sm"
-            onClick={() => setLightboxImages(null)}
-          >
-            <div
-              className="relative w-full max-w-5xl mx-4"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => setLightboxImages(null)}
-                className="absolute -top-12 right-0 text-gray-600 hover:text-[#23411f] transition-colors"
-              >
-                <HiOutlineXMark className="h-8 w-8" />
-              </button>
-
-              <div className="relative bg-white rounded-2xl shadow-2xl overflow-hidden border border-[#dce6c1]">
-                <div className="relative aspect-video bg-gradient-to-br from-[#f7faef] to-[#fbfcf7]">
-                  <img
-                    src={lightboxImages[lightboxIndex]}
-                    alt=""
-                    className="w-full h-full object-contain"
-                  />
-
-                  {lightboxImages.length > 1 && (
-                    <>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setLightboxIndex((i) =>
-                            i === 0 ? lightboxImages.length - 1 : i - 1
-                          );
-                        }}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-lg text-[#23411f] hover:bg-[#8fa31e] hover:text-white transition-all"
-                      >
-                        <HiOutlineChevronLeft className="h-6 w-6" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setLightboxIndex((i) =>
-                            i === lightboxImages.length - 1 ? 0 : i + 1
-                          );
-                        }}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-lg text-[#23411f] hover:bg-[#8fa31e] hover:text-white transition-all"
-                      >
-                        <HiOutlineChevronRight className="h-6 w-6" />
-                      </button>
-                    </>
-                  )}
-                </div>
-
-                {lightboxImages.length > 1 && (
-                  <div className="flex items-center justify-center gap-2 p-4 bg-white border-t border-[#dce6c1]">
-                    {lightboxImages.map((img, idx) => (
-                      <button
-                        key={idx}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setLightboxIndex(idx);
-                        }}
-                        className={`relative overflow-hidden rounded-lg transition-all ${
-                          idx === lightboxIndex
-                            ? 'ring-2 ring-[#8fa31e] ring-offset-2'
-                            : 'opacity-60 hover:opacity-100'
-                        }`}
-                      >
-                        <img
-                          src={img}
-                          alt=""
-                          className="h-16 w-16 object-cover"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between px-4 py-3 bg-[#f7faef] border-t border-[#dce6c1]">
-                  <span className="text-sm text-[#23411f] font-medium">
-                    {lightboxIndex + 1} of {lightboxImages.length}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    Click outside to close
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        <ImageLightbox
+          images={lightboxImages?.map((url) => ({ url, source: 'review' })) || []}
+          selectedIndex={lightboxIndex}
+          onClose={() => setLightboxImages(null)}
+          onIndexChange={setLightboxIndex}
+        />
         <DeleteConfirmModal
           show={showDeleteModal}
           onClose={() => {
@@ -1389,95 +1305,12 @@ export default function DashReviews() {
         </Modal.Footer>
       </Modal>
 
-      {lightboxImages && lightboxImages.length > 0 && (
-        <div
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/95 backdrop-blur-sm"
-          onClick={() => setLightboxImages(null)}
-        >
-          <div
-            className="relative w-full max-w-5xl mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setLightboxImages(null)}
-              className="absolute -top-12 right-0 text-gray-600 hover:text-[#23411f] transition-colors"
-            >
-              <HiOutlineXMark className="h-8 w-8" />
-            </button>
-
-            <div className="relative bg-white rounded-2xl shadow-2xl overflow-hidden border border-[#dce6c1]">
-              <div className="relative aspect-video bg-gradient-to-br from-[#f7faef] to-[#fbfcf7]">
-                <img
-                  src={lightboxImages[lightboxIndex]}
-                  alt=""
-                  className="w-full h-full object-contain"
-                />
-
-                {lightboxImages.length > 1 && (
-                  <>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setLightboxIndex((i) =>
-                          i === 0 ? lightboxImages.length - 1 : i - 1
-                        );
-                      }}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-lg text-[#23411f] hover:bg-[#8fa31e] hover:text-white transition-all"
-                    >
-                      <HiOutlineChevronLeft className="h-6 w-6" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setLightboxIndex((i) =>
-                          i === lightboxImages.length - 1 ? 0 : i + 1
-                        );
-                      }}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-lg text-[#23411f] hover:bg-[#8fa31e] hover:text-white transition-all"
-                    >
-                      <HiOutlineChevronRight className="h-6 w-6" />
-                    </button>
-                  </>
-                )}
-              </div>
-
-              {lightboxImages.length > 1 && (
-                <div className="flex items-center justify-center gap-2 p-4 bg-white border-t border-[#dce6c1]">
-                  {lightboxImages.map((img, idx) => (
-                    <button
-                      key={idx}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setLightboxIndex(idx);
-                      }}
-                      className={`relative overflow-hidden rounded-lg transition-all ${
-                        idx === lightboxIndex
-                          ? 'ring-2 ring-[#8fa31e] ring-offset-2'
-                          : 'opacity-60 hover:opacity-100'
-                      }`}
-                    >
-                      <img
-                        src={img}
-                        alt=""
-                        className="h-16 w-16 object-cover"
-                      />
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <div className="flex items-center justify-between px-4 py-3 bg-[#f7faef] border-t border-[#dce6c1]">
-                <span className="text-sm text-[#23411f] font-medium">
-                  {lightboxIndex + 1} of {lightboxImages.length}
-                </span>
-                <span className="text-xs text-gray-500">
-                  Click outside to close
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ImageLightbox
+        images={lightboxImages?.map((url) => ({ url, source: 'review' })) || []}
+        selectedIndex={lightboxIndex}
+        onClose={() => setLightboxImages(null)}
+        onIndexChange={setLightboxIndex}
+      />
 
       <DeleteConfirmModal
         show={showDeleteModal}

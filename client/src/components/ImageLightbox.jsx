@@ -34,7 +34,7 @@ export function ImageLightbox({ images, selectedIndex, onClose, onIndexChange })
   }, [currentIndex, onIndexChange, images.length, onClose]);
 
   useEffect(() => {
-    if (selectedIndex !== null && selectedIndex !== undefined) {
+    if (selectedIndex !== null && selectedIndex !== undefined && images && images.length > 0) {
       document.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden';
     }
@@ -42,7 +42,13 @@ export function ImageLightbox({ images, selectedIndex, onClose, onIndexChange })
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = '';
     };
-  }, [selectedIndex, handleKeyDown]);
+  }, [selectedIndex, handleKeyDown, images]);
+
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
 
   if (selectedIndex === null || selectedIndex === undefined || !images || images.length === 0) {
     return null;
