@@ -200,6 +200,7 @@ export const listRestaurantReviews = async (req, res, next) => {
 
         const data = await Review.find(filter)
           .populate('userId', 'userName profilePicture')
+          .populate('restaurantId', 'name slug')
           .sort({ createdAt: direction })
           .skip(pagination.skip)
           .limit(pagination.limit)
@@ -211,6 +212,36 @@ export const listRestaurantReviews = async (req, res, next) => {
     );
 
     res.status(200).json(cachedData);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const listAllReviewsPublic = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 20, sort = 'desc' } = req.query;
+
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+
+    if (pageNum < 1 || limitNum < 1) {
+      throw errorHandler(400, 'Invalid pagination values');
+    }
+
+    const filter = { isActive: true, isDeleted: { $ne: true } };
+    const total = await Review.countDocuments(filter);
+    const pagination = paginate({ page: pageNum, limit: limitNum, total });
+    const direction = sort === 'asc' ? 1 : -1;
+
+    const data = await Review.find(filter)
+      .populate('userId', 'userName profilePicture')
+      .populate('restaurantId', 'name slug')
+      .sort({ createdAt: direction })
+      .skip(pagination.skip)
+      .limit(pagination.limit)
+      .lean();
+
+    res.status(200).json({ success: true, ...pagination, data });
   } catch (error) {
     next(error);
   }

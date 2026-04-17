@@ -14,7 +14,8 @@ import {
   listAllReviewsForSuperAdmin,
   moderateReview,
   bulkModerateReviews,
-  getReviewCountsForAdmin
+  getReviewCountsForAdmin,
+  listAllReviewsPublic
 } from '../controllers/review.controller.js';
 import { listRestaurantReviews } from '../controllers/review.controller.js';
 
@@ -40,6 +41,12 @@ router.get(
   validate(reviewValidators.restaurantParam, 'params'),
   validate(reviewValidators.listRestaurantQuery, 'query'),
   listRestaurantReviews
+);
+
+// Public endpoint to list all reviews
+router.get(
+  '/',
+  listAllReviewsPublic
 );
 router.get(
   '/restaurant/:restaurantId/summary',
