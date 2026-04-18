@@ -51,8 +51,10 @@ export default function AddReviewModal({
       if (images.length > 0) {
         photoUrls = await Promise.all(
           images.map(async (img) => {
-            if (img.url || img.preview) {
-              return img.url || img.preview;
+            const isValidCloudinaryUrl = img.url && (img.url.startsWith('http') || img.url.startsWith('https')) && !img.url.startsWith('blob:');
+            
+            if (isValidCloudinaryUrl) {
+              return img.url;
             }
 
             const result = await uploadToCloudinary({
@@ -71,7 +73,7 @@ export default function AddReviewModal({
         comment: comment.trim(),
         photos: photoUrls
       });
-
+      
       resetForm();
       onSuccess?.();
       onClose();

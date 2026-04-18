@@ -870,14 +870,17 @@ export default function SingleRestaurant() {
                           </p>
                           {hasImages && (
                             <div className="mt-4 flex gap-2 overflow-hidden rounded-lg">
-                              {reviewImages.slice(0, 3).map((img, idx) => (
-                                <img
-                                  key={idx}
-                                  src={img}
-                                  alt={`Review image ${idx + 1}`}
-                                  className="h-16 w-16 object-cover"
-                                />
-                              ))}
+                              {reviewImages.slice(0, 3).map((img, idx) => {
+                                const src = typeof img === 'string' ? img : img?.url || img;
+                                return (
+                                  <img
+                                    key={idx}
+                                    src={src}
+                                    alt={`Review image ${idx + 1}`}
+                                    className="h-16 w-16 object-cover"
+                                  />
+                                );
+                              })}
                               {reviewImages.length > 3 && (
                                 <div className="flex h-16 w-16 items-center justify-center bg-[#f6fdeb] text-xs font-semibold text-[#8e5c2d]">
                                   +{reviewImages.length - 3}

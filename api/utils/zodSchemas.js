@@ -135,8 +135,8 @@ export const createReviewSchema = z.object({
   restaurantId: z.string().min(1),
   rating: z.number().int().min(1).max(5),
   comment: z.string().max(1000).optional(),
-  photos: z.array(z.string().url()).optional(),
-  images: z.array(z.string().url()).optional()
+  photos: z.array(z.string()).optional(),
+  images: z.array(z.string()).optional()
 });
 
 export const updateReviewSchema = z.object({

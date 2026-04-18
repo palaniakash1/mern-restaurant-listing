@@ -104,7 +104,7 @@ export default function ReviewsPage() {
           {restaurantSlug ? (
             <div className="mb-4">
               <Link
-                to={`/restaurant/${restaurantSlug}`}
+                to={`/restaurants/${restaurantSlug}`}
                 className="inline-flex items-center gap-1 text-sm text-[#8fa31e] hover:underline"
               >
                 <HiArrowSmLeft className="h-4 w-4" />
@@ -229,14 +229,17 @@ export default function ReviewsPage() {
                               setLightboxIndex(startIdx >= 0 ? startIdx : 0);
                             }}
                           >
-                            {reviewImages.slice(0, 3).map((img, idx) => (
-                              <img
-                                key={idx}
-                                src={img}
-                                alt={`Review image ${idx + 1}`}
-                                className="h-14 w-14 object-cover transition hover:opacity-80"
-                              />
-                            ))}
+                            {reviewImages.slice(0, 3).map((img, idx) => {
+                              const src = typeof img === 'string' ? img : img?.url || img;
+                              return (
+                                <img
+                                  key={idx}
+                                  src={src}
+                                  alt={`Review image ${idx + 1}`}
+                                  className="h-14 w-14 object-cover transition hover:opacity-80"
+                                />
+                              );
+                            })}
                             {reviewImages.length > 3 && (
                               <div className="flex h-14 w-14 items-center justify-center bg-[#f6fdeb] text-xs font-semibold text-[#8e5c2d]">
                                 +{reviewImages.length - 3}
@@ -255,7 +258,7 @@ export default function ReviewsPage() {
                             </p>
                             {!restaurantSlug && review.restaurantId?.slug && (
                               <Link
-                                to={`/restaurant/${review.restaurantId.slug}`}
+                                to={`/restaurants/${review.restaurantId.slug}`}
                                 className="text-xs text-[#8fa31e] hover:underline truncate block"
                               >
                                 {review.restaurantId.name}

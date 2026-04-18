@@ -27,6 +27,7 @@ import { uploadToCloudinary } from '../utils/cloudinaryUpload';
 import { SkeletonCard } from './SkeletonCard';
 import DeleteConfirmModal from './DeleteConfirmModal';
 import { ImageLightbox } from './ImageLightbox';
+import { InlineLoader } from './PageLoader';
 
 const REVIEW_FILTER_LIMIT = 50;
 
@@ -849,7 +850,7 @@ export default function DashReviews() {
                               className="relative overflow-hidden rounded-lg"
                             >
                               <img
-                                src={img}
+                                src={typeof img === 'string' ? img : img?.url || img}
                                 alt=""
                                 className="h-16 w-16 object-cover transition-transform hover:scale-110"
                               />
@@ -929,7 +930,7 @@ export default function DashReviews() {
                       {review.images.slice(0, 3).map((img, idx) => (
                         <img
                           key={idx}
-                          src={img}
+                          src={typeof img === 'string' ? img : img?.url || img}
                           alt={`Review img ${idx + 1}`}
                           className="h-12 w-12 rounded object-cover"
                         />
@@ -1021,7 +1022,7 @@ export default function DashReviews() {
         </Modal>
 
         <ImageLightbox
-          images={lightboxImages?.map((url) => ({ url, source: 'review' })) || []}
+          images={lightboxImages?.map((img) => ({ url: typeof img === 'string' ? img : img?.url, source: 'review' })) || []}
           selectedIndex={lightboxIndex}
           onClose={() => setLightboxImages(null)}
           onIndexChange={setLightboxIndex}
@@ -1228,7 +1229,7 @@ export default function DashReviews() {
                             className="focus:outline-none"
                           >
                             <img
-                              src={img}
+                              src={typeof img === 'string' ? img : img?.url || img}
                               alt=""
                               className="h-12 w-12 rounded object-cover hover:opacity-80 transition-opacity"
                             />
