@@ -708,7 +708,7 @@ export const run = async (db) => {
         dietary: item.dietary || { vegetarian: false, vegan: false },
         ingredients: [],
         allergens: item.allergens || detectAllergens(item.name, item.description),
-        nutrition: {},
+        nutrition: generateNutrition(item.name, categoryKey),
         upsells: getUpsells(item.name, categoryKey),
         isMeal: categoryKey === 'mains',
         isAvailable: true,
@@ -717,20 +717,34 @@ export const run = async (db) => {
       }));
 
       if (menu) {
-        // Preserve existing items, only add new ones
+        // Preserve existing items, and update them with nutrition/allergens if missing
         const existingItems = menu.items.filter(i => i.isActive);
+        let updatedCount = 0;
+
+        const updatedItems = existingItems.map((item) => {
+          const needsUpdate = !item.nutrition || Object.keys(item.nutrition).length === 0;
+          if (needsUpdate) {
+            item.nutrition = generateNutrition(item.name, categoryKey);
+            item.allergens = item.allergens || detectAllergens(item.name, item.description || '');
+            updatedCount++;
+          }
+          return item;
+        });
+
         const existingNames = new Set(existingItems.map(i => i.name));
         const newItems = menuItemsData.filter(i => !existingNames.has(i.name));
 
-        if (newItems.length > 0) {
-          const updatedItems = [...existingItems, ...newItems];
-          await db.collection('menus').updateOne(
-            { _id: menu._id },
-            { $set: { items: updatedItems } }
-          );
-          console.log(`  - Updated ${category.name}: ${newItems.length} new items added (${existingItems.length} preserved)`);
+        const allItems = [...updatedItems, ...newItems];
+
+        await db.collection('menus').updateOne(
+          { _id: menu._id },
+          { $set: { items: allItems } }
+        );
+
+        if (updatedCount > 0 || newItems.length > 0) {
+          console.log(`  - Updated ${category.name}: ${updatedCount} items enriched, ${newItems.length} new items added`);
         } else {
-          console.log(`  - Preserved ${category.name}: ${existingItems.length} items (no new items)`);
+          console.log(`  - Preserved ${category.name}: ${existingItems.length} items`);
         }
         totalItems += menuItemsData.length;
       } else {
@@ -788,6 +802,61 @@ function getItemsForRestaurant(templates, restaurantSlug) {
     }
   }
   return templates[0].items;
+}
+
+function generateNutrition(itemName, categoryKey) {
+  const name = itemName.toLowerCase();
+  const category = categoryKey;
+
+  // Generate realistic nutrition based on item type
+  let baseCalories = 200;
+  let baseFat = 10;
+  let baseSaturates = 3;
+  let baseSugar = 5;
+  let baseSalt = 0.5;
+
+  if (category === 'starters' || category === 'mains') {
+    if (name.includes('salad')) { baseCalories = 150; baseFat = 8; baseSaturates = 1; baseSugar = 3; baseSalt = 0.3; }
+    else if (name.includes('burger') || name.includes('fries')) { baseCalories = 650; baseFat = 35; baseSaturates = 12; baseSugar = 6; baseSalt = 1.2; }
+    else if (name.includes('steak') || name.includes('beef')) { baseCalories = 450; baseFat = 28; baseSaturates = 10; baseSugar = 2; baseSalt = 0.8; }
+    else if (name.includes('chicken')) { baseCalories = 350; baseFat = 15; baseSaturates = 4; baseSugar = 2; baseSalt = 0.6; }
+    else if (name.includes('fish') || name.includes('salmon') || name.includes('cod')) { baseCalories = 280; baseFat = 12; baseSaturates = 2; baseSugar = 1; baseSalt = 0.5; }
+    else if (name.includes('pasta') || name.includes('risotto')) { baseCalories = 480; baseFat = 18; baseSaturates = 6; baseSugar = 4; baseSalt = 0.9; }
+    else if (name.includes('pizza')) { baseCalories = 320; baseFat = 12; baseSaturates = 5; baseSugar = 3; baseSalt = 0.7; }
+    else if (name.includes('soup')) { baseCalories = 180; baseFat = 8; baseSaturates = 2; baseSugar = 4; baseSalt = 0.8; }
+    else if (name.includes('sandwich') || name.includes('wrap')) { baseCalories = 420; baseFat = 20; baseSaturates = 7; baseSugar = 5; baseSalt = 1.0; }
+    else { baseCalories = 380; baseFat = 16; baseSaturates = 5; baseSugar = 3; baseSalt = 0.7; }
+  } else if (category === 'desserts') {
+    if (name.includes('cake') || name.includes('cheesecake')) { baseCalories = 450; baseFat = 25; baseSaturates = 12; baseSugar = 35; baseSalt = 0.3; }
+    else if (name.includes('ice cream') || name.includes('gelato')) { baseCalories = 280; baseFat = 15; baseSaturates = 9; baseSugar = 22; baseSalt = 0.1; }
+    else if (name.includes('tiramisu')) { baseCalories = 380; baseFat = 20; baseSaturates = 10; baseSugar = 28; baseSalt = 0.2; }
+    else if (name.includes('crumble') || name.includes('pie')) { baseCalories = 320; baseFat = 14; baseSaturates = 6; baseSugar = 24; baseSalt = 0.2; }
+    else { baseCalories = 300; baseFat = 12; baseSaturates = 5; baseSugar = 20; baseSalt = 0.2; }
+  } else if (category === 'drinks') {
+    if (name.includes('wine')) { baseCalories = 125; baseFat = 0; baseSaturates = 0; baseSugar = 4; baseSalt = 0; }
+    else if (name.includes('beer') || name.includes('ale')) { baseCalories = 180; baseFat = 0; baseSaturates = 0; baseSugar = 3; baseSalt = 0; }
+    else if (name.includes('coffee')) { baseCalories = 5; baseFat = 0; baseSaturates = 0; baseSugar = 0; baseSalt = 0; }
+    else if (name.includes('juice') || name.includes('smoothie')) { baseCalories = 120; baseFat = 1; baseSaturates = 0; baseSugar = 22; baseSalt = 0; }
+    else if (name.includes('tea')) { baseCalories = 0; baseFat = 0; baseSaturates = 0; baseSugar = 0; baseSalt = 0; }
+    else { baseCalories = 80; baseFat = 1; baseSaturates = 0; baseSugar = 15; baseSalt = 0; }
+  }
+
+  const getLevel = (val, type) => {
+    if (type === 'calories') return val < 200 ? 'green' : val < 400 ? 'amber' : 'red';
+    if (type === 'fat') return val < 5 ? 'green' : val < 10 ? 'amber' : 'red';
+    if (type === 'saturates') return val < 2 ? 'green' : val < 5 ? 'amber' : 'red';
+    if (type === 'sugar') return val < 6 ? 'green' : val < 15 ? 'amber' : 'red';
+    if (type === 'salt') return val < 0.5 ? 'green' : val < 1.5 ? 'amber' : 'red';
+    return 'green';
+  };
+
+  return {
+    calories: { value: Math.round(baseCalories + (Math.random() * 40 - 20)), level: getLevel(baseCalories, 'calories') },
+    fat: { value: parseFloat((baseFat + (Math.random() * 4 - 2)).toFixed(1)), level: getLevel(baseFat, 'fat') },
+    saturates: { value: parseFloat((baseSaturates + (Math.random() * 2 - 1)).toFixed(1)), level: getLevel(baseSaturates, 'saturates') },
+    sugar: { value: Math.round(baseSugar + (Math.random() * 4 - 2)), level: getLevel(baseSugar, 'sugar') },
+    salt: { value: parseFloat((baseSalt + (Math.random() * 0.2 - 0.1)).toFixed(2)), level: getLevel(baseSalt, 'salt') }
+  };
 }
 
 function getUpsells(itemName, categoryKey) {

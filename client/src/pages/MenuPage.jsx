@@ -84,7 +84,7 @@ const MenuItemCard = ({ item, restaurant }) => {
             </h4>
             {restaurant && (
               <Link
-                to={`/restaurant/${restaurant.slug || restaurant._id}`}
+                to={`/restaurants/${restaurant.slug || restaurant._id}`}
                 className="text-xs font-medium text-[#8fa31e] hover:underline whitespace-nowrap"
               >
                 {restaurant.name}
@@ -135,7 +135,7 @@ const MenuSection = ({ menu, restaurant }) => {
           </h3>
           {restaurant && (
             <Link
-              to={`/restaurant/${restaurant.slug || restaurant._id}`}
+              to={`/restaurants/${restaurant.slug || restaurant._id}`}
               className="text-xs text-[#8fa31e] hover:underline"
             >
               {restaurant.name}

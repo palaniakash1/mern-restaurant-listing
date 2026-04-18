@@ -1133,6 +1133,7 @@ export const getMenuByRestaurant = async (req, res, next) => {
               image: item.image,
               price: item.price,
               dietary: item.dietary,
+              allergens: item.allergens,
               ingredients: item.ingredients,
               nutrition: item.nutrition,
               upsells: item.upsells,

@@ -3,11 +3,13 @@ import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   HiArrowSmRight,
+  HiChevronDown,
   HiClock,
   HiGlobe,
   HiLocationMarker,
   HiMail,
   HiPhone,
+  HiPlus,
   HiStar
 } from 'react-icons/hi';
 import {
@@ -149,6 +151,17 @@ const getItemAllergens = (item) => {
   return [...values];
 };
 
+const getItemNutrition = (item) => {
+  const nutrition = item?.nutrition || {};
+  return Object.entries(nutrition)
+    .filter(([, value]) => value?.value != null)
+    .map(([key, value]) => ({
+      label: key.charAt(0).toUpperCase() + key.slice(1),
+      value: value.value,
+      level: value.level
+    }));
+};
+
 const jumpToCategory = (category) => {
   const element = document.getElementById(
     `menu-category-${category.replace(/\s+/g, '-')}`
@@ -203,6 +216,8 @@ export default function SingleRestaurant() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeCategory, setActiveCategory] = useState(null);
+  const [expandedAllergens, setExpandedAllergens] = useState({});
+  const [expandedNutrition, setExpandedNutrition] = useState({});
   const [relatedRestaurants, setRelatedRestaurants] = useState([]);
   const [nearbyRestaurants, setNearbyRestaurants] = useState([]);
 
@@ -446,77 +461,185 @@ export default function SingleRestaurant() {
                           </span>
                         </div>
 
-                        <div className="grid gap-6 md:grid-cols-2">
+                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                           {(menu.items || []).map((item, itemIndex) => {
                             const itemBadges = getItemBadges(item);
                             const itemAllergens = getItemAllergens(item);
+                            const itemNutrition = getItemNutrition(item);
+                            const itemKey = `${item.name || 'item'}-${itemIndex}`;
+                            const isAllergensExpanded = expandedAllergens[itemKey];
+                            const isNutritionExpanded = expandedNutrition[itemKey];
 
                             return (
                               <article
-                                key={`${item.name || 'item'}-${itemIndex}`}
-                                className="group overflow-hidden rounded-[1.9rem] border border-[#ebf0d7] bg-[linear-gradient(135deg,#ffffff_0%,#fbfcf7_100%)] shadow-[0_18px_45px_rgba(64,48,20,0.06)]"
+                                key={itemKey}
+                                className="group overflow-hidden rounded-[1.2rem] border border-[#ebf0d7] bg-[linear-gradient(135deg,#ffffff_0%,#fbfcf7_100%)] shadow-[0_4px_16px_rgba(64,48,20,0.04)]"
                               >
-                                <div className="relative h-56 overflow-hidden bg-[#f4ede2]">
+                                <div className="relative h-32 overflow-hidden bg-[#f4ede2]">
                                   <img
                                     src={getItemImage(item, restaurant)}
                                     alt={item.name}
                                     className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                                   />
-                                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(20,20,18,0.32)_100%)]" />
-                                  {item.isAvailable === false ? (
-                                    <span className="absolute right-4 top-4 rounded-full bg-[#b62828] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-white">
+                                  {item.isAvailable === false && (
+                                    <span className="absolute left-2 top-2 rounded-full bg-[#b62828] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-white">
                                       Unavailable
                                     </span>
-                                  ) : null}
-                                  <div className="absolute bottom-4 left-4">
-                                    <div className="inline-flex rounded-full bg-white/95 px-4 py-2 text-sm font-black text-[#2f6a34] shadow-sm">
+                                  )}
+                                </div>
+
+                                <div className="p-3">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="min-w-0 flex-1">
+                                      <h4 className="text-base font-black tracking-tight text-[#23411f] truncate">
+                                        {item.name}
+                                      </h4>
+                                      <p className="mt-1 text-xs leading-5 text-[#6d6358] line-clamp-2">
+                                        {item.description ||
+                                          'Signature details coming soon.'}
+                                      </p>
+                                    </div>
+                                    <div className="text-lg font-black text-[#2f6a34] shrink-0">
                                       {priceFormatter.format(
                                         Number(item.price || 0)
                                       )}
                                     </div>
                                   </div>
-                                </div>
 
-                                <div className="flex h-full flex-col p-6 sm:p-7">
-                                  <div>
-                                    <h4 className="text-2xl font-black tracking-tight text-[#23411f]">
-                                      {item.name}
-                                    </h4>
-                                    <p className="mt-3 max-w-2xl text-sm leading-8 text-[#6d6358]">
-                                      {item.description ||
-                                        'Signature details coming soon.'}
-                                    </p>
-                                  </div>
-
-                                  <div className="mt-6 flex flex-wrap gap-2">
+                                  <div className="mt-2 flex flex-wrap gap-1">
                                     {itemBadges.map((badge) => (
                                       <span
                                         key={badge}
-                                        className="rounded-full bg-[#edf3e4] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#47692e]"
+                                        className="rounded-full bg-[#edf3e4] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-[#47692e]"
                                       >
                                         {badge}
                                       </span>
                                     ))}
-                                    {itemAllergens
-                                      .slice(0, 4)
-                                      .map((allergen) => (
+                                  </div>
+
+                                  <div className="mt-3 flex items-center justify-between gap-2">
+                                    <button
+                                      type="button"
+                                      disabled={itemAllergens.length === 0}
+                                      onClick={() =>
+                                        setExpandedAllergens((prev) => ({
+                                          ...prev,
+                                          [itemKey]: !prev[itemKey]
+                                        }))
+                                      }
+                                      className={`flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.18em] transition ${
+                                        itemAllergens.length === 0
+                                          ? 'text-[#ccc] cursor-not-allowed'
+                                          : isAllergensExpanded
+                                            ? 'text-[#b62828]'
+                                            : 'text-[#b62828] hover:text-[#8e1d1d]'
+                                      }`}
+                                    >
+                                      <span>
+                                        {isAllergensExpanded
+                                          ? 'Hide'
+                                          : 'Allergens'}
+                                      </span>
+                                      <HiChevronDown
+                                        className={`h-3 w-3 transition-transform ${
+                                          isAllergensExpanded
+                                            ? 'rotate-180'
+                                            : ''
+                                        }`}
+                                      />
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      disabled={itemNutrition.length === 0}
+                                      onClick={() =>
+                                        setExpandedNutrition((prev) => ({
+                                          ...prev,
+                                          [itemKey]: !prev[itemKey]
+                                        }))
+                                      }
+                                      className={`flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.18em] transition ${
+                                        itemNutrition.length === 0
+                                          ? 'text-[#ccc] cursor-not-allowed'
+                                          : isNutritionExpanded
+                                            ? 'text-[#8e5c2d]'
+                                            : 'text-[#8e5c2d] hover:text-[#6d4520]'
+                                      }`}
+                                    >
+                                      <span>
+                                        {isNutritionExpanded
+                                          ? 'Hide'
+                                          : 'Nutrition'}
+                                      </span>
+                                      <HiChevronDown
+                                        className={`h-3 w-3 transition-transform ${
+                                          isNutritionExpanded
+                                            ? 'rotate-180'
+                                            : ''
+                                        }`}
+                                      />
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      disabled={item.isAvailable === false}
+                                      className={`flex h-8 w-8 items-center justify-center rounded-full transition ${
+                                        item.isAvailable === false
+                                          ? 'cursor-not-allowed bg-[#eee5d7] text-[#9d9284]'
+                                          : 'bg-[#1f2e17] text-white hover:bg-[#2d4121]'
+                                      }`}
+                                    >
+                                      <HiPlus className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {isAllergensExpanded && itemAllergens.length > 0 && (
+                                  <div className="border-t border-[#ebf0d7] bg-[#fff1f1] px-3 py-2">
+                                    <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#b62828] mb-1">
+                                      Allergens
+                                    </p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {itemAllergens.map((allergen) => (
                                         <span
                                           key={allergen}
-                                          className="rounded-full bg-[#fff1f1] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#b62828]"
+                                          className="rounded-full bg-white px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#b62828]"
                                         >
                                           {allergen}
                                         </span>
                                       ))}
-                                  </div>
-
-                                  <div className="mt-auto pt-8">
-                                    <div className="rounded-[1.5rem] bg-[#fbfcf7] px-5 py-4 text-sm leading-7 text-[#6d6358]">
-                                      Rich imagery, stronger typography, and
-                                      softer luxury surfaces turn each dish into
-                                      a more memorable showcase block.
                                     </div>
                                   </div>
-                                </div>
+                                )}
+
+                                {isNutritionExpanded && itemNutrition.length > 0 && (
+                                  <div className="border-t border-[#ebf0d7] bg-[#faf6ef] px-3 py-2">
+                                    <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#8e5c2d] mb-1">
+                                      Nutrition per serving
+                                    </p>
+                                    <div className="grid grid-cols-3 gap-1">
+                                      {itemNutrition.map((nutrient) => (
+                                        <div
+                                          key={nutrient.label}
+                                          className={`rounded-md px-2 py-1 text-center ${
+                                            nutrient.level === 'red'
+                                              ? 'bg-[#fee2e2]'
+                                              : nutrient.level === 'amber'
+                                                ? 'bg-[#fef3c7]'
+                                                : 'bg-[#dcfce7]'
+                                          }`}
+                                        >
+                                          <p className="text-[10px] font-semibold text-[#23411f]">
+                                            {nutrient.value}
+                                          </p>
+                                          <p className="text-[8px] uppercase tracking-[0.1em] text-[#6d6358]">
+                                            {nutrient.label}
+                                          </p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                               </article>
                             );
                           })}
