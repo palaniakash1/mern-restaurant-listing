@@ -54,6 +54,16 @@ const ALLERGY_LABELS = {
   lupin: 'Lupin'
 };
 
+const ALLERGEN_KEYS = Object.keys(ALLERGY_LABELS);
+
+const DIETARY_OPTIONS = [
+  { key: 'vegan', label: 'Vegan' },
+  { key: 'vegetarian', label: 'Vegetarian' },
+  { key: 'gf', label: 'Gluten-Free' },
+  { key: 'halal', label: 'Halal' },
+  { key: 'kosher', label: 'Kosher' }
+];
+
 const priceFormatter = new Intl.NumberFormat('en-GB', {
   style: 'currency',
   currency: 'GBP'
@@ -166,6 +176,30 @@ const getItemNutrition = (item) => {
     }));
 };
 
+const isItemUnsuitable = (item, allergens = [], dietary = []) => {
+  const itemAllergens = item?.allergens || [];
+  (item?.ingredients || []).forEach((ingredient) => {
+    (ingredient.allergens || []).forEach((allergen) => {
+      itemAllergens.push(allergen);
+    });
+  });
+  
+  for (const allergen of allergens) {
+    if (itemAllergens.includes(allergen)) return true;
+  }
+  
+  const itemDietary = item?.dietary || {};
+  for (const diet of dietary) {
+    if (diet === 'vegan' && !itemDietary.vegan) return true;
+    if (diet === 'vegetarian' && !itemDietary.vegetarian && !itemDietary.vegan) return true;
+    if (diet === 'gf' && !itemDietary.gf) return true;
+    if (diet === 'halal' && !itemDietary.halal) return true;
+    if (diet === 'kosher' && !itemDietary.kosher) return true;
+  }
+  
+  return false;
+};
+
 const jumpToCategory = (category) => {
   const element = document.getElementById(
     `menu-category-${category.replace(/\s+/g, '-')}`
@@ -222,6 +256,8 @@ export default function SingleRestaurant() {
   const [activeCategory, setActiveCategory] = useState(null);
   const [expandedAllergens, setExpandedAllergens] = useState({});
   const [expandedNutrition, setExpandedNutrition] = useState({});
+  const [selectedAllergens, setSelectedAllergens] = useState([]);
+  const [selectedDietary, setSelectedDietary] = useState([]);
   const [relatedRestaurants, setRelatedRestaurants] = useState([]);
   const [nearbyRestaurants, setNearbyRestaurants] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -455,7 +491,59 @@ export default function SingleRestaurant() {
                     high-intent menu story of {restaurant.name}.
                   </p>
                 </div>
-
+                
+                <div className="mt-6 border-t border-[#ebf0d7] pt-4">
+                  <div className="flex flex-wrap gap-4">
+                    <div className="flex flex-wrap gap-2">
+                      <span className="text-[10px] uppercase tracking-[0.15em] text-[#8e5c2d]">Allergens:</span>
+                      {ALLERGEN_KEYS.map((key) => (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => {
+                              setSelectedAllergens((prev) =>
+                                prev.includes(key)
+                                  ? prev.filter((a) => a !== key)
+                                  : [...prev, key]
+                              );
+                            }}
+                            className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] transition ${
+                              selectedAllergens.includes(key)
+                                ? '!bg-[#b62828] !text-white'
+                                : '!bg-[#f4ede2] !text-[#6d6358]'
+                            }`}
+                          >
+                            {ALLERGY_LABELS[key]}
+                          </button>
+                        ))}
+                    </div>
+                    
+                      <div className="flex flex-wrap gap-2 ml-4">
+                        <span className="text-[10px] uppercase tracking-[0.15em] !text-[#8e5c2d]">Diet:</span>
+                        {DIETARY_OPTIONS.map((opt) => (
+                          <button
+                            key={opt.key}
+                            type="button"
+                            onClick={() => {
+                              setSelectedDietary((prev) =>
+                                prev.includes(opt.key)
+                                  ? prev.filter((d) => d !== opt.key)
+                                  : [...prev, opt.key]
+                              );
+                            }}
+                            className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] transition ${
+                              selectedDietary.includes(opt.key)
+                                ? '!bg-[#8fa31e] !text-white'
+                                : '!bg-[#f4ede2] !text-[#6d6358]'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                
                 <div className="flex flex-wrap gap-3 my-3">
                   {categories.map((category) => (
                     <button
@@ -516,11 +604,16 @@ export default function SingleRestaurant() {
                             const itemKey = `${item.name || 'item'}-${itemIndex}`;
                             const isAllergensExpanded = expandedAllergens[itemKey];
                             const isNutritionExpanded = expandedNutrition[itemKey];
+                            const isUnsuitable = isItemUnsuitable(item, selectedAllergens, selectedDietary);
 
                             return (
                               <article
                                 key={itemKey}
-                                className="group overflow-hidden rounded-[1.2rem] border border-[#ebf0d7] bg-[linear-gradient(135deg,#ffffff_0%,#fbfcf7_100%)] shadow-[0_4px_16px_rgba(64,48,20,0.04)]"
+                                className={`group overflow-hidden rounded-[1.2rem] border shadow-[0_4px_16px_rgba(64,48,20,0.04)] ${
+                                  isUnsuitable
+                                    ? 'border-[#d4cec4] bg-[linear-gradient(135deg,#f5f2ed_0%,#eae7e0_100%)] opacity-60'
+                                    : 'border-[#ebf0d7] bg-[linear-gradient(135deg,#ffffff_0%,#fbfcf7_100%)]'
+                                }`}
                               >
                                 <div className="relative h-32 overflow-hidden bg-[#f4ede2]">
                                   <img
@@ -531,6 +624,13 @@ export default function SingleRestaurant() {
                                   {item.isAvailable === false && (
                                     <span className="absolute left-2 top-2 rounded-full bg-[#b62828] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-white">
                                       Unavailable
+                                    </span>
+                                  )}
+                                  {isUnsuitable && (
+                                    <span className="absolute inset-0 flex items-center justify-center">
+                                      <span className="rotate-12 rounded-full bg-[#dc2626] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white">
+                                        Not Suitable
+                                      </span>
                                     </span>
                                   )}
                                 </div>
@@ -633,7 +733,7 @@ export default function SingleRestaurant() {
                                       className={`flex h-8 w-8 items-center justify-center rounded-full transition ${
                                         item.isAvailable === false
                                           ? 'cursor-not-allowed bg-[#eee5d7] text-[#9d9284]'
-                                          : 'bg-[#1f2e17] text-white hover:bg-[#2d4121]'
+                                          : '!bg-[#1f2e17] text-white hover:!bg-[#2d4121]'
                                       }`}
                                     >
                                       <HiPlus className="h-4 w-4" />
