@@ -277,7 +277,7 @@ export function CinematicBanner() {
         </div>
 
         <div className="w-full max-w-4xl mx-auto">
-          <div className="bg-white/10 backdrop-blur-xl p-4 rounded-lg flex flex-col md:flex-row items-stretch md:items-center gap-3 border border-white/10 shadow-2xl shadow-[#23411f]/20">
+          <div className="bg-white/10 backdrop-blur-xl p-4 rounded-lg flex flex-col md:flex-row items-stretch md:items-center gap-3 border border-white/10 shadow-2xl shadow-[#23411f]/20 z-20 relative">
             <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
               <SearchableDropdown
                 options={LOCATIONS}
@@ -309,7 +309,7 @@ export function CinematicBanner() {
           </div>
         </div>
 
-        <div className="w-full max-w-5xl mx-auto space-y-4">
+        <div className="w-full max-w-5xl mx-auto space-y-4 z-10 relative">
           <div className="flex items-center justify-center gap-4">
             <h3 className="text-white/60 font-['Inter'] text-xs uppercase tracking-widest font-bold">
               Dietary Sensitivities
