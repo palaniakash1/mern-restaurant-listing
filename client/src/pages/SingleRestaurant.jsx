@@ -134,8 +134,34 @@ const getTodayHours = (hours) => {
   ][new Date().getDay()];
   const value = hours[day];
   if (!value || value.isClosed)
-    return { status: 'Closed Today', hours: 'Closed' };
-  return { status: 'Open Today', hours: `${value.open} - ${value.close}` };
+    return { status: 'Closed', hours: 'Closed', statusType: 'closed' };
+
+  const now = new Date();
+  const currentTime = now.getHours() * 60 + now.getMinutes();
+
+  const [openHour, openMin] = value.open.split(':').map(Number);
+  const [closeHour, closeMin] = value.close.split(':').map(Number);
+  const openTime = openHour * 60 + openMin;
+  const closeTime = closeHour * 60 + closeMin;
+
+  let statusType = 'closed';
+  let statusText = 'Closed';
+
+  if (currentTime >= openTime && currentTime < closeTime) {
+    const minutesUntilClose = closeTime - currentTime;
+    if (minutesUntilClose <= 30) {
+      statusType = 'closes-soon';
+      statusText = 'Closes Soon';
+    } else {
+      statusType = 'open';
+      statusText = 'Open Now';
+    }
+  } else if (currentTime >= closeTime || currentTime < openTime) {
+    statusType = 'closed';
+    statusText = 'Closed';
+  }
+
+  return { status: statusText, hours: `${value.open} - ${value.close}`, statusType };
 };
 
 const getReviewAuthor = (review) =>
@@ -464,6 +490,22 @@ export default function SingleRestaurant() {
                 restaurant.address?.areaLocality ||
                 'UK'}
             </span>
+            {todayHours && (
+              <>
+                <span className="opacity-40">|</span>
+                <span
+                  className={`font-semibold ${
+                    todayHours.statusType === 'open'
+                      ? '!text-green-400'
+                      : todayHours.statusType === 'closes-soon'
+                      ? '!text-yellow-400'
+                      : '!text-red-400'
+                  }`}
+                >
+                  {todayHours.status}
+                </span>
+              </>
+            )}
           </div>
           {restaurant.fsaRating?.value &&
             restaurant.fsaRating.value !== 'Exempt' && (
