@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
 import { useAuth } from '../context/AuthContext';
+import { toggleAllergen } from '../redux/allergen/allergenSlice';
 import {
   HiArrowSmRight,
   HiChevronDown,
@@ -256,9 +258,11 @@ export default function SingleRestaurant() {
   const [activeCategory, setActiveCategory] = useState(null);
   const [expandedAllergens, setExpandedAllergens] = useState({});
   const [expandedNutrition, setExpandedNutrition] = useState({});
-  const [selectedAllergens, setSelectedAllergens] = useState([]);
   const [selectedDietary, setSelectedDietary] = useState([]);
   const [relatedRestaurants, setRelatedRestaurants] = useState([]);
+  const dispatch = useDispatch();
+  const allergenState = useSelector((state) => state.allergen || { selectedAllergens: [] });
+  const selectedAllergens = allergenState.selectedAllergens || [];
   const [nearbyRestaurants, setNearbyRestaurants] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
@@ -500,13 +504,7 @@ export default function SingleRestaurant() {
                           <button
                             key={key}
                             type="button"
-                            onClick={() => {
-                              setSelectedAllergens((prev) =>
-                                prev.includes(key)
-                                  ? prev.filter((a) => a !== key)
-                                  : [...prev, key]
-                              );
-                            }}
+                            onClick={() => dispatch(toggleAllergen(key))}
                             className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] transition ${
                               selectedAllergens.includes(key)
                                 ? '!bg-[#b62828] !text-white'
