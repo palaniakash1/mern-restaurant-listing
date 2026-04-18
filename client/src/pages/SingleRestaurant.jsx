@@ -18,7 +18,11 @@ import {
   getNearbyRestaurants,
   listRestaurants
 } from '../services/restaurantService';
+import { listRestaurantReviews } from '../services/reviewService';
 import RestaurantSpotlightCard from '../components/public/RestaurantSpotlightCard';
+import ImageLightbox from '../components/ImageLightbox';
+import AddReviewModal from '../components/public/AddReviewModal';
+import { Modal, Button } from 'flowbite-react';
 
 const FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1600';
@@ -220,6 +224,12 @@ export default function SingleRestaurant() {
   const [expandedNutrition, setExpandedNutrition] = useState({});
   const [relatedRestaurants, setRelatedRestaurants] = useState([]);
   const [nearbyRestaurants, setNearbyRestaurants] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showThankYou, setShowThankYou] = useState(false);
+  const [lightboxImages, setLightboxImages] = useState([]);
+  const [lightboxIndex, setLightboxIndex] = useState(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -273,6 +283,23 @@ export default function SingleRestaurant() {
     }
   }, [slug]);
 
+  const loadReviews = useCallback(async () => {
+    if (!restaurant || !restaurant._id) return;
+    try {
+      setReviewsLoading(true);
+      const data = await listRestaurantReviews(restaurant._id, {
+        limit: 20,
+        sortBy: 'createdAt',
+        sortOrder: 'desc'
+      });
+      setReviews(data?.reviews || []);
+    } catch (err) {
+      console.error('Failed to load reviews:', err);
+    } finally {
+      setReviewsLoading(false);
+    }
+  }, [restaurant?._id]);
+
   useEffect(() => {
     loadData();
   }, [loadData]);
@@ -280,6 +307,12 @@ export default function SingleRestaurant() {
   useEffect(() => {
     setActiveCategory(menus.find((menu) => menu.category)?.category || null);
   }, [menus]);
+
+  useEffect(() => {
+    if (restaurant?._id) {
+      loadReviews();
+    }
+  }, [restaurant?._id, loadReviews]);
 
   if (loading) return <Skeleton />;
 
@@ -338,8 +371,21 @@ export default function SingleRestaurant() {
   const todayHours = getTodayHours(restaurant.openingHours);
   const openingHours = formatHours(restaurant.openingHours);
   const categories = menus.map((menu) => menu.category).filter(Boolean);
-  const reviews = restaurant.reviews || [];
   const mapsUrl = buildMapsUrl(restaurant, address);
+
+  const openLightbox = (images, startIndex) => {
+    setLightboxImages(images);
+    setLightboxIndex(startIndex);
+  };
+
+  const handleReviewSuccess = () => {
+    loadReviews();
+    setShowThankYou(true);
+  };
+
+  const handleThankYouClose = () => {
+    setShowThankYou(false);
+  };
 
   return (
     <div className="min-h-screen bg-[#f6fdeb] pt-24 text-[#23411f]">
@@ -684,57 +730,191 @@ export default function SingleRestaurant() {
             </section>
 
             <section className="mt-16">
-              <div className="mb-10">
-                <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[#8e5c2d]">
-                  Guest Impressions
-                </p>
-                <h2 className="mt-3 text-4xl font-black tracking-tight text-[#23411f]">
-                  The Guest Journal
-                </h2>
-                <p className="mt-3 text-base text-[#6d6358]">
-                  Reviews displayed like editorial testimonials rather than
-                  generic cards.
-                </p>
+              <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[#8e5c2d]">
+                    Guest Impressions
+                  </p>
+                  <h2 className="mt-3 text-4xl font-black tracking-tight text-[#23411f]">
+                    The Guest Journal
+                  </h2>
+                  <p className="mt-3 text-base text-[#6d6358]">
+                    Reviews displayed like editorial testimonials rather than
+                    generic cards.
+                  </p>
+                </div>
+                {user && (
+                  <button
+                    type="button"
+                    onClick={() => setShowReviewModal(true)}
+                    className="flex items-center gap-2 rounded-full !bg-[#1f2e17] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] !text-white transition hover:!bg-[#2d4121]"
+                  >
+                    <HiPlus className="h-4 w-4" />
+                    Add Review
+                  </button>
+                )}
               </div>
 
-              {reviews.length === 0 ? (
-                <div className="rounded-[2rem] border border-dashed border-[#dce6c1] bg-white px-6 py-12 text-center text-[#6d6358] shadow-[0_18px_45px_rgba(64,48,20,0.04)]">
-                  Reviews will appear here once guests start sharing their
-                  experience.
-                </div>
-              ) : (
+              {reviewsLoading ? (
                 <div className="grid gap-6 md:grid-cols-3">
-                  {reviews.slice(0, 3).map((review, index) => (
-                    <article
-                      key={`${getReviewAuthor(review)}-${index}`}
-                      className="rounded-[2rem] border border-[#dce6c1] bg-white p-7 shadow-[0_18px_45px_rgba(64,48,20,0.06)]"
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="animate-pulse rounded-[2rem] border border-[#dce6c1] bg-[#faf6ef] p-7"
                     >
-                      <div className="flex gap-1 text-[#efb634]">
-                        {[...Array(5)].map((_, starIndex) => (
-                          <HiStar
-                            key={starIndex}
-                            className={`h-5 w-5 ${starIndex < (review.rating || 5) ? 'fill-current' : 'text-[#ddd1bc]'}`}
-                          />
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((j) => (
+                          <HiStar key={j} className="h-5 w-5 text-[#ddd1bc]" />
                         ))}
                       </div>
-                      <p className="mt-6 text-[15px] italic leading-8 text-[#4f473d]">
-                        "{review.comment || 'Wonderful food and warm service.'}"
-                      </p>
+                      <div className="mt-6 h-20 rounded-lg bg-[#e8e2d6]" />
                       <div className="mt-7 flex items-center gap-3">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1f2e17] text-sm font-semibold text-white">
-                          {getReviewAuthor(review).charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-[#23411f]">
-                            {getReviewAuthor(review)}
-                          </p>
-                          <p className="text-xs uppercase tracking-[0.18em] text-[#9d9284]">
-                            {review.date || 'Recent guest'}
-                          </p>
-                        </div>
+                        <div className="h-12 w-12 rounded-full bg-[#e8e2d6]" />
+                        <div className="h-8 w-24 rounded-lg bg-[#e8e2d6]" />
                       </div>
-                    </article>
+                    </div>
                   ))}
+                </div>
+              ) : reviews.length === 0 ? (
+                <div className="rounded-[2rem] border border-dashed border-[#dce6c1] bg-[#fbfcf7] px-6 py-12 text-center shadow-[0_18px_45px_rgba(64,48,20,0.04)]">
+                  {user ? (
+                    <>
+                      <p className="text-base text-[#6d6358]">
+                        Be the first to share your experience!
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setShowReviewModal(true)}
+                        className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#8fa31e] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[#78871c]"
+                      >
+                        <HiPlus className="h-4 w-4" />
+                        Write a review
+                      </button>
+                    </>
+                  ) : (
+                    <div className="space-y-4">
+                      <p className="text-base text-[#6d6358]">
+                        Join the community to share your dining experience and help others discover this restaurant.
+                      </p>
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                        <Link
+                          to="/login"
+                          className="inline-flex items-center justify-center gap-2 rounded-full bg-[#8fa31e] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[#78871c]"
+                        >
+                          Login
+                        </Link>
+                        <Link
+                          to="/register"
+                          className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-[#23411f] border border-[#d8dfc0] transition hover:bg-[#f7faef]"
+                        >
+                          Register
+                        </Link>
+                      </div>
+                      <p className="text-xs text-[#9d9284]">
+                        Reviews will appear here once guests start sharing their experience.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  <div className="grid gap-6 md:grid-cols-3">
+                    {reviews.slice(0, 3).map((review, index) => {
+                      const reviewImages = review.images || [];
+                      const hasImages = reviewImages.length > 0;
+
+                      return (
+                        <article
+                          key={`${review._id || index}-${index}`}
+                          className="group cursor-pointer rounded-[2rem] border border-[#dce6c1] bg-white p-7 shadow-[0_18px_45px_rgba(64,48,20,0.06)] transition hover:border-[#8fa31e]"
+                          onClick={() => {
+                            if (hasImages) {
+                              const imageList = [];
+                              reviews.forEach((r) => {
+                                (r.images || []).forEach((img) => {
+                                  imageList.push({
+                                    url: img,
+                                    source: 'review',
+                                    sourceName: getReviewAuthor(r),
+                                    restaurantName: restaurant?.name,
+                                    rating: r.rating,
+                                    restaurantSlug: restaurant?.slug,
+                                    restaurantId: restaurant?._id
+                                  });
+                                });
+                              });
+                              const startIdx = imageList.findIndex(
+                                (img) =>
+                                  img.sourceName === getReviewAuthor(review) &&
+                                  imageList.indexOf(img) < imageList.length
+                              );
+                              openLightbox(imageList, startIdx >= 0 ? startIdx : 0);
+                            }
+                          }}
+                        >
+                          <div className="flex gap-1 text-[#efb634]">
+                            {[...Array(5)].map((_, starIndex) => (
+                              <HiStar
+                                key={starIndex}
+                                className={`h-5 w-5 ${
+                                  starIndex < (review.rating || 5)
+                                    ? 'fill-current'
+                                    : 'text-[#ddd1bc]'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <p className="mt-6 text-[15px] italic leading-8 text-[#4f473d]">
+                            "{review.comment || 'Wonderful food and warm service.'}"
+                          </p>
+                          {hasImages && (
+                            <div className="mt-4 flex gap-2 overflow-hidden rounded-lg">
+                              {reviewImages.slice(0, 3).map((img, idx) => (
+                                <img
+                                  key={idx}
+                                  src={img}
+                                  alt={`Review image ${idx + 1}`}
+                                  className="h-16 w-16 object-cover"
+                                />
+                              ))}
+                              {reviewImages.length > 3 && (
+                                <div className="flex h-16 w-16 items-center justify-center bg-[#f6fdeb] text-xs font-semibold text-[#8e5c2d]">
+                                  +{reviewImages.length - 3}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          <div className="mt-7 flex items-center gap-3">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1f2e17] text-sm font-semibold text-white">
+                              {getReviewAuthor(review).charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-[#23411f]">
+                                {getReviewAuthor(review)}
+                              </p>
+                              <p className="text-xs uppercase tracking-[0.18em] text-[#9d9284]">
+                                {review.createdAt
+                                  ? new Date(
+                                      review.createdAt
+                                    ).toLocaleDateString('en-GB', {
+                                      day: 'numeric',
+                                      month: 'short',
+                                      year: 'numeric'
+                                    })
+                                  : 'Recent guest'}
+                              </p>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+
+                  {reviews.length > 3 && (
+                    <p className="text-center text-sm text-[#9d9284]">
+                      +{reviews.length - 3} more reviews
+                    </p>
+                  )}
                 </div>
               )}
             </section>
@@ -957,6 +1137,47 @@ export default function SingleRestaurant() {
           )}
         </section>
       )}
+
+      <AddReviewModal
+        show={showReviewModal}
+        onClose={() => setShowReviewModal(false)}
+        restaurant={restaurant}
+        onSuccess={handleReviewSuccess}
+      />
+
+      <ImageLightbox
+        images={lightboxImages}
+        selectedIndex={lightboxIndex}
+        onClose={() => setLightboxIndex(null)}
+        onIndexChange={setLightboxIndex}
+      />
+
+      <Modal show={showThankYou} onClose={handleThankYouClose} size="sm">
+        <div className="text-center p-6">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#f5faeb]">
+            <HiStar className="h-8 w-8 fill-[#8fa31e] text-[#8fa31e]" />
+          </div>
+          <Modal.Header className="justify-center text-center">
+            Thank You!
+          </Modal.Header>
+          <Modal.Body>
+            <p className="text-sm leading-7 text-[#6d6358]">
+              Your review helps other diners discover what makes{' '}
+              <span className="font-semibold text-[#23411f]">{restaurant?.name}</span> special.
+              <br />
+              Thanks for sharing your experience!
+            </p>
+          </Modal.Body>
+          <Modal.Footer className="justify-center">
+            <Button
+              onClick={handleThankYouClose}
+              className="!bg-[#8fa31e] hover:!bg-[#78871c]"
+            >
+              Got it
+            </Button>
+          </Modal.Footer>
+        </div>
+      </Modal>
     </div>
   );
 }

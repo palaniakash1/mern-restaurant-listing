@@ -82,7 +82,8 @@ export const createReview = async (req, res, next) => {
   try {
     assertPublicUser(req);
     const { restaurantId } = req.params;
-    const { rating, comment = '', images = [] } = req.body;
+    const { rating, comment = '', photos = [], images: imagesFromBody = [] } = req.body;
+    const images = photos?.length > 0 ? photos : imagesFromBody?.length > 0 ? imagesFromBody : [];
 
     if (!isValidObjectId(restaurantId)) {
       throw errorHandler(400, 'Invalid restaurant ID format');
