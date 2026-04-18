@@ -134,17 +134,22 @@ export default function SearchResults() {
                     </h2>
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                       {menuItems.map((menuDoc) =>
-                        (menuDoc.items || []).map((item, itemIdx) => (
-                          <Link
-                            key={`${menuDoc._id}-${itemIdx}`}
-                            to={`/restaurants?menu=${encodeURIComponent(menuDoc.name)}&q=${encodeURIComponent(item.name)}`}
-                            className="block p-4 rounded-lg border border-gray-200 hover:border-[#8fa31e] hover:shadow-md transition-all"
-                          >
-                            <p className="font-medium text-[#171d13]">{item.name}</p>
-                            <p className="text-sm text-gray-500">from {menuDoc.name || 'Menu'}</p>
-                            <p className="text-sm text-[#8fa31e] font-semibold">£{item.price}</p>
-                          </Link>
-                        ))
+                        (menuDoc.items || []).map((item, itemIdx) => {
+                          const slug = menuDoc.restaurant?.slug;
+                          return (
+                            <Link
+                              key={`${menuDoc._id}-${itemIdx}`}
+                              to={slug ? `/restaurants/${slug}?menuItem=${encodeURIComponent(item.name)}` : `/restaurants?q=${encodeURIComponent(item.name)}`}
+                              className="block p-4 rounded-lg border border-gray-200 hover:border-[#8fa31e] hover:shadow-md transition-all"
+                            >
+                              <p className="font-medium text-[#171d13]">{item.name}</p>
+                              <p className="text-sm text-gray-500">
+                                {menuDoc.restaurant?.name || 'Restaurant'}
+                              </p>
+                              <p className="text-sm text-[#8fa31e] font-semibold">£{item.price}</p>
+                            </Link>
+                          );
+                        })
                       )}
                     </div>
                   </div>

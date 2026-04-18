@@ -1297,11 +1297,16 @@ export const getMyRestaurantById = async (req, res, next) => {
 export const getCities = async (req, res, next) => {
   try {
     const cities = await Restaurant.distinct('address.city', { ...publicRestaurantFilter });
+    const localities = await Restaurant.distinct('address.areaLocality', { ...publicRestaurantFilter });
+
     const uniqueCities = cities.filter(Boolean).sort();
+    const uniqueLocalities = localities.filter(Boolean).sort();
+
+    const allLocations = [...new Set([...uniqueCities, ...uniqueLocalities])].sort();
 
     res.status(200).json({
       success: true,
-      data: uniqueCities
+      data: allLocations
     });
   } catch (error) {
     next(error);
@@ -1335,7 +1340,13 @@ export const searchAll = async (req, res, next) => {
     }));
 
     const restaurantFilter = { ...publicRestaurantFilter, $and: orConditions };
-    if (city) restaurantFilter['address.city'] = city;
+    if (city) {
+      const cityLower = city.toLowerCase().replace(/-/g, ' ');
+      restaurantFilter.$or = [
+        { 'address.city': new RegExp(cityLower, 'i') },
+        { 'address.areaLocality': new RegExp(cityLower, 'i') }
+      ];
+    }
 
     // Search restaurants
     const restaurants = await Restaurant.find(
@@ -1354,24 +1365,34 @@ export const searchAll = async (req, res, next) => {
 
     // Search menus by name (fuzzy) across ALL restaurants (not just filtered ones)
     const menuOrConditions = words.map((word) => ({ name: new RegExp(word, 'i') }));
+
+    const menuBaseFilter = { ...publicRestaurantFilter, $and: menuOrConditions, isDeleted: { $ne: true } };
+
     const menus = await Menu.find(
-      { ...publicRestaurantFilter, $and: menuOrConditions, isDeleted: { $ne: true } },
-      { name: 1, restaurant: 1 }
+      menuBaseFilter,
+      { name: 1, restaurantId: 1 }
     ).limit(5);
 
     const menuIds = menus.map((m) => m._id);
 
     // Search menu items by name (fuzzy) - search in items array with relevance scoring
     let menuItems = [];
-    const allMenus = menuIds.length > 0
-      ? await Menu.find(
-        { _id: { $in: menuIds }, isDeleted: { $ne: true } },
-        { name: 1, restaurant: 1, items: 1 }
-      ).limit(50)
-      : await Menu.find(
-        { ...publicRestaurantFilter, isDeleted: { $ne: true } },
-        { name: 1, restaurant: 1, items: 1 }
-      ).limit(50);
+    const menuQuery = menuIds.length > 0
+      ? { _id: { $in: menuIds }, isDeleted: { $ne: true } }
+      : { ...publicRestaurantFilter, isDeleted: { $ne: true } };
+
+    const allMenus = await Menu.find(menuQuery).limit(50);
+
+    const restaurantIds = [...new Set(allMenus.map((m) => m.restaurantId).filter(Boolean))];
+    const relatedRestaurants = await Restaurant.find(
+      { _id: { $in: restaurantIds } },
+      { name: 1, slug: 1 }
+    );
+
+    const restaurantMap = relatedRestaurants.reduce((acc, r) => {
+      acc[r._id?.toString()] = { name: r.name, slug: r.slug };
+      return acc;
+    }, {});
 
     const queryLower = q.toLowerCase();
     const scoredItems = [];
@@ -1391,7 +1412,13 @@ export const searchAll = async (req, res, next) => {
         }
 
         if (score > 0) {
-          scoredItems.push({ ...menu.toObject(), items: [item], score });
+          const restInfo = restaurantMap[menu.restaurantId?.toString()];
+          scoredItems.push({
+            ...menu.toObject(),
+            items: [item],
+            score,
+            restaurant: restInfo || null
+          });
         }
       });
     });
