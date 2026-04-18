@@ -1278,3 +1278,104 @@ export const getMyRestaurantById = async (req, res, next) => {
     next(error);
   }
 };
+
+// ===============================================================================
+// 🔷 GET /api/restaurants/cities — Get unique cities from registered restaurants
+// ===============================================================================
+
+export const getCities = async (req, res, next) => {
+  try {
+    const cities = await Restaurant.distinct('address.city', { ...publicRestaurantFilter });
+    const uniqueCities = cities.filter(Boolean).sort();
+
+    res.status(200).json({
+      success: true,
+      data: uniqueCities
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ===============================================================================
+// 🔷 GET /api/restaurants/search-all — Search restaurants, categories, menus (fuzzy)
+// ===============================================================================
+
+export const searchAll = async (req, res, next) => {
+  try {
+    const { q, city } = req.query;
+
+    if (!q || q.length < 1) {
+      return res.status(200).json({
+        success: true,
+        data: { restaurants: [], categories: [], menus: [], menuItems: [] }
+      });
+    }
+
+    // Fuzzy search: split query into words and create ORregex for partial matching
+    const words = q.trim().split(/\s+/);
+    const orConditions = words.map((word) => ({
+      $or: [
+        { name: new RegExp(word, 'i') },
+        { 'address.city': new RegExp(word, 'i') },
+        { 'address.areaLocality': new RegExp(word, 'i') },
+        { tagline: new RegExp(word, 'i') }
+      ]
+    }));
+
+    const restaurantFilter = { ...publicRestaurantFilter, $and: orConditions };
+    if (city) restaurantFilter['address.city'] = city;
+
+    // Search restaurants
+    const restaurants = await Restaurant.find(
+      restaurantFilter,
+      { name: 1, slug: 1, 'address.city': 1, 'address.areaLocality': 1, rating: 1, priceRange: 1, categories: 1, image: 1 }
+    ).limit(10);
+
+    // Search categories by name (fuzzy)
+    const categoryOrConditions = words.map((word) => ({
+      $or: [{ name: new RegExp(word, 'i') }, { slug: new RegExp(word, 'i') }]
+    }));
+    const categories = await Category.find(
+      { $and: categoryOrConditions, isActive: true },
+      { name: 1, slug: 1, image: 1 }
+    ).limit(5);
+
+    // Search menus by name (fuzzy) across ALL restaurants (not just filtered ones)
+    const menuOrConditions = words.map((word) => ({ name: new RegExp(word, 'i') }));
+    const menus = await Menu.find(
+      { ...publicRestaurantFilter, $and: menuOrConditions, isDeleted: { $ne: true } },
+      { name: 1, restaurant: 1 }
+    ).limit(5);
+
+    const menuIds = menus.map((m) => m._id);
+
+    // Search menu items by name (fuzzy) - search in items array
+    let menuItems = [];
+    if (menuIds.length > 0) {
+      const menuItemOrConditions = words.map((word) => ({
+        'items.name': new RegExp(word, 'i')
+      }));
+      menuItems = await Menu.find(
+        { _id: { $in: menuIds }, $and: menuItemOrConditions },
+        { name: 1, restaurant: 1, items: 1 }
+      ).limit(10);
+    } else {
+      // If no menus matched, search items directly across all menus
+      const menuItemOrConditions = words.map((word) => ({
+        'items.name': new RegExp(word, 'i')
+      }));
+      menuItems = await Menu.find(
+        { ...publicRestaurantFilter, $and: menuItemOrConditions, isDeleted: { $ne: true } },
+        { name: 1, restaurant: 1, items: 1 }
+      ).limit(10);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: { restaurants, categories, menus, menuItems }
+    });
+  } catch (error) {
+    next(error);
+  }
+};

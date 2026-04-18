@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { HiSearch, HiLocationMarker } from 'react-icons/hi';
 import { IoRestaurant } from 'react-icons/io5';
@@ -10,227 +10,7 @@ import {
 import { ALLERGEN_FILTERS } from '../../utils/allergenConstants';
 import { SearchableDropdown } from '../ui/SearchableDropdown';
 import { joinClasses } from '../../utils/publicPage';
-
-const LOCATIONS = [
-  { value: 'london-west-wickham', label: 'West Wickham, London' },
-  { value: 'london-croydon', label: 'Croydon, London' },
-  { value: 'london-bromley', label: 'Bromley, London' },
-  { value: 'london-beckenham', label: 'Beckenham, London' },
-  { value: 'london-petts-wood', label: 'Petts Wood, London' },
-  { value: 'london-orpington', label: 'Orpington, London' },
-  { value: 'london-kensington', label: 'Kensington, London' },
-  { value: 'london-westminster', label: 'Westminster, London' },
-  { value: 'london-camden', label: 'Camden, London' },
-  { value: 'london-shoreditch', label: 'Shoreditch, London' },
-  { value: 'paris-marais', label: 'Marais, Paris' },
-  { value: 'paris-latin', label: 'Latin Quarter, Paris' },
-  { value: 'paris-champs', label: 'Champs-Élysées, Paris' },
-  { value: 'tokyo-shibuya', label: 'Shibuya, Tokyo' },
-  { value: 'tokyo-ginza', label: 'Ginza, Tokyo' },
-  { value: 'tokyo-shinjuku', label: 'Shinjuku, Tokyo' },
-  { value: 'new-york-manhattan', label: 'Manhattan, New York' },
-  { value: 'new-york-brooklyn', label: 'Brooklyn, New York' },
-  { value: 'new-york-queens', label: 'Queens, New York' },
-  { value: 'dubai-marina', label: 'Marina, Dubai' },
-  { value: 'dubai-downtown', label: 'Downtown, Dubai' },
-  { value: 'sydney-cbd', label: 'CBD, Sydney' },
-  { value: 'sydney-bondi', label: 'Bondi, Sydney' },
-  { value: 'singapore-marina-bay', label: 'Marina Bay, Singapore' },
-  { value: 'singapore-orchard', label: 'Orchard, Singapore' }
-];
-
-const RESTAURANTS = [
-  {
-    value: 'kfc-west-wickham',
-    label: 'KFC - West Wickham',
-    sublabel: 'Fast Food • Chicken'
-  },
-  {
-    value: 'kfc-croydon',
-    label: 'KFC - Croydon',
-    sublabel: 'Fast Food • Chicken'
-  },
-  {
-    value: 'kfc-bromley',
-    label: 'KFC - Bromley',
-    sublabel: 'Fast Food • Chicken'
-  },
-  {
-    value: 'mcdonalds-west-wickham',
-    label: "McDonald's - West Wickham",
-    sublabel: 'Fast Food • Burgers'
-  },
-  {
-    value: 'mcdonalds-croydon',
-    label: "McDonald's - Croydon",
-    sublabel: 'Fast Food • Burgers'
-  },
-  {
-    value: 'mcdonalds-orpington',
-    label: "McDonald's - Orpington",
-    sublabel: 'Fast Food • Burgers'
-  },
-  {
-    value: 'burger-king-bromley',
-    label: 'Burger King - Bromley',
-    sublabel: 'Fast Food • Burgers'
-  },
-  {
-    value: 'burger-king-shoreditch',
-    label: 'Burger King - Shoreditch',
-    sublabel: 'Fast Food • Burgers'
-  },
-  {
-    value: 'subway-west-wickham',
-    label: 'Subway - West Wickham',
-    sublabel: 'Fast Food • Sandwiches'
-  },
-  {
-    value: 'subway-croydon',
-    label: 'Subway - Croydon',
-    sublabel: 'Fast Food • Sandwiches'
-  },
-  {
-    value: 'greggs-croydon',
-    label: 'Greggs - Croydon',
-    sublabel: 'Bakery • Pastries'
-  },
-  {
-    value: 'greggs-bromley',
-    label: 'Greggs - Bromley',
-    sublabel: 'Bakery • Pastries'
-  },
-  {
-    value: 'starbucks-west-wickham',
-    label: 'Starbucks - West Wickham',
-    sublabel: 'Coffee Shop'
-  },
-  {
-    value: 'starbucks-croydon',
-    label: 'Starbucks - Croydon',
-    sublabel: 'Coffee Shop'
-  },
-  {
-    value: 'starbucks-kensington',
-    label: 'Starbucks - Kensington',
-    sublabel: 'Coffee Shop'
-  },
-  {
-    value: 'costa-croydon',
-    label: 'Costa Coffee - Croydon',
-    sublabel: 'Coffee Shop'
-  },
-  {
-    value: 'costa-bromley',
-    label: 'Costa Coffee - Bromley',
-    sublabel: 'Coffee Shop'
-  },
-  {
-    value: 'nando-s-kensington',
-    label: "Nando's - Kensington",
-    sublabel: 'Restaurant • Peri-Peri Chicken'
-  },
-  {
-    value: 'nando-s-camden',
-    label: "Nando's - Camden",
-    sublabel: 'Restaurant • Peri-Peri Chicken'
-  },
-  {
-    value: 'frankie-bennie-s-camden',
-    label: "Frankie & Benny's - Camden",
-    sublabel: 'Restaurant • Italian'
-  },
-  {
-    value: 'frankie-bennie-s-westminster',
-    label: "Frankie & Benny's - Westminster",
-    sublabel: 'Restaurant • Italian'
-  },
-  {
-    value: 'five-guys-shoreditch',
-    label: 'Five Guys - Shoreditch',
-    sublabel: 'Fast Food • Burgers'
-  },
-  {
-    value: 'five-guys-kensington',
-    label: 'Five Guys - Kensington',
-    sublabel: 'Fast Food • Burgers'
-  },
-  {
-    value: 'pizza-express-marais',
-    label: 'Pizza Express - Marais',
-    sublabel: 'Restaurant • Italian'
-  },
-  {
-    value: 'pizza-express-champs',
-    label: 'Pizza Express - Champs-Élysées',
-    sublabel: 'Restaurant • Italian'
-  },
-  {
-    value: 'wagamama-shibuya',
-    label: 'Wagamama - Shibuya',
-    sublabel: 'Restaurant • Japanese'
-  },
-  {
-    value: 'wagamama-ginza',
-    label: 'Wagamama - Ginza',
-    sublabel: 'Restaurant • Japanese'
-  },
-  {
-    value: 'itsu-shibuya',
-    label: 'itsu - Shibuya',
-    sublabel: 'Restaurant • Japanese'
-  },
-  {
-    value: 'itsu-camden',
-    label: 'itsu - Camden',
-    sublabel: 'Restaurant • Japanese'
-  },
-  {
-    value: 'the-wolseley-marais',
-    label: 'The Wolseley - Marais',
-    sublabel: 'Restaurant • European'
-  },
-  {
-    value: 'le-drupa-latin',
-    label: 'Le Durga - Latin Quarter',
-    sublabel: 'Restaurant • French'
-  },
-  {
-    value: 'michelin-star-manhattan',
-    label: 'Le Jardin - Manhattan',
-    sublabel: 'Michelin Star • Fine Dining'
-  },
-  {
-    value: 'masa-manhattan',
-    label: 'Masa - Manhattan',
-    sublabel: 'Michelin Star • Japanese'
-  },
-  {
-    value: 'per-se-brooklyn',
-    label: 'Per Se - Brooklyn',
-    sublabel: 'Michelin Star • American'
-  },
-  {
-    value: 'botanical-garden-marina',
-    label: 'The Botanical Garden - Marina Bay',
-    sublabel: 'Restaurant • Botanical Dining'
-  },
-  {
-    value: 'greenhouse-dubai',
-    label: 'The Greenhouse - Downtown Dubai',
-    sublabel: 'Restaurant • Middle Eastern'
-  },
-  {
-    value: 'orchid-marina-bay',
-    label: 'Orchid - Marina Bay',
-    sublabel: 'Restaurant • Asian Fusion'
-  },
-  {
-    value: 'seaforth-bondi',
-    label: 'Seaforth - Bondi',
-    sublabel: 'Restaurant • Seafood'
-  }
-];
+import { getCities, searchAll } from '../../services/restaurantService';
 
 export function CinematicBanner() {
   const dispatch = useDispatch();
@@ -239,11 +19,54 @@ export function CinematicBanner() {
   );
   const [location, setLocation] = useState('');
   const [restaurant, setRestaurant] = useState('');
+  const [locations, setLocations] = useState([]);
+  const [searchResults, setSearchResults] = useState({
+    restaurants: [],
+    categories: [],
+    menus: [],
+    menuItems: []
+  });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [locationSearch, setLocationSearch] = useState('');
+
+  useEffect(() => {
+    const fetchCities = async () => {
+      try {
+        const cities = await getCities();
+        const formatted = cities.map((city) => ({
+          value: city.toLowerCase().replace(/\s+/g, '-'),
+          label: city
+        }));
+        setLocations(formatted);
+      } catch (err) {
+        console.error('Failed to fetch cities:', err);
+      }
+    };
+    fetchCities();
+  }, []);
+
+  useEffect(() => {
+    const fetchSearchResults = async () => {
+      if (searchQuery.length < 1) {
+        setSearchResults({ restaurants: [], categories: [], menus: [], menuItems: [] });
+        return;
+      }
+      try {
+        const results = await searchAll({ q: searchQuery, city: location || '' });
+        setSearchResults(results);
+      } catch (err) {
+        console.error('Failed to fetch search results:', err);
+      }
+    };
+    const debounce = setTimeout(fetchSearchResults, 300);
+    return () => clearTimeout(debounce);
+  }, [searchQuery, location]);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
-    if (location) params.set('location', location);
+    if (location) params.set('city', location);
     if (restaurant) params.set('restaurant', restaurant);
+    if (searchQuery) params.set('q', searchQuery);
     if (selectedAllergens.length > 0)
       params.set('allergens', selectedAllergens.join(','));
     window.location.href = `/restaurants?${params.toString()}`;
@@ -280,21 +103,58 @@ export function CinematicBanner() {
           <div className="bg-white/10 backdrop-blur-xl p-4 rounded-lg flex flex-col md:flex-row items-stretch md:items-center gap-3 border border-white/10 shadow-2xl shadow-[#23411f]/20 z-20 relative">
             <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
               <SearchableDropdown
-                options={LOCATIONS}
+                options={locations.filter((loc) =>
+                  loc.label.toLowerCase().includes(locationSearch.toLowerCase())
+                )}
                 value={location}
                 onChange={setLocation}
                 placeholder="Select location"
-                searchPlaceholder="Search location..."
+                searchPlaceholder="Search locations..."
                 icon={HiLocationMarker}
+                searchValue={locationSearch}
+                onSearchChange={setLocationSearch}
+                emptyMessage="Type to search locations..."
               />
 
               <SearchableDropdown
-                options={RESTAURANTS}
+                options={(() => {
+                  const dishOptions = (searchResults.menuItems || [])
+                    .flatMap((menu) =>
+                      (menu.items || []).map((item) => ({
+                        value: `dish:${item.name}`,
+                        label: item.name,
+                        sublabel: `Dish • ${menu.name}`,
+                        priority: 1
+                      }))
+                    );
+                  const menuOptions = (searchResults.menus || []).map((m) => ({
+                    value: `menu:${m.name}`,
+                    label: m.name,
+                    sublabel: 'Menu',
+                    priority: 2
+                  }));
+                  const categoryOptions = (searchResults.categories || []).map((c) => ({
+                    value: `category:${c.slug}`,
+                    label: c.name,
+                    sublabel: 'Category',
+                    priority: 3
+                  }));
+                  const restaurantOptions = (searchResults.restaurants || []).map((r) => ({
+                    value: r.slug,
+                    label: r.name,
+                    sublabel: r.address?.areaLocality ? `${r.address.areaLocality}, ${r.address.city}` : r.address?.city,
+                    priority: 4
+                  }));
+                  return [...dishOptions, ...menuOptions, ...categoryOptions, ...restaurantOptions];
+                })()}
                 value={restaurant}
                 onChange={setRestaurant}
-                placeholder="Search restaurant"
-                searchPlaceholder="Type restaurant name..."
+                placeholder="Search dishes, categories, restaurants"
+                searchPlaceholder="Type restaurant, category, or dish..."
                 icon={IoRestaurant}
+                searchValue={searchQuery}
+                onSearchChange={setSearchQuery}
+                emptyMessage="Type to search restaurants, categories, or dishes..."
               />
             </div>
 

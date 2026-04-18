@@ -19,7 +19,9 @@ import {
   getRestaurantDetails,
   getAdminRestaurantSummary,
   updateRestaurantStatus,
-  restoreRestaurant
+  restoreRestaurant,
+  getCities,
+  searchAll
 } from '../controllers/restaurant.controller.js';
 
 import { verifyToken } from '../utils/verifyUser.js';
@@ -48,6 +50,8 @@ router.get(
   validate(restaurantValidators.featuredTrendingQuery, 'query'),
   getTrendingRestaurants
 );
+router.get('/cities', getCities);
+router.get('/search-all', searchAll);
 
 // =======================
 // PUBLIC DETAILS

@@ -10,15 +10,17 @@ export function SearchableDropdown({
   searchPlaceholder = 'Type to search...',
   icon: Icon,
   allowClear = true,
-  className = ''
+  className = '',
+  searchValue = '',
+  onSearchChange = null,
+  emptyMessage = 'Type to search...'
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState('');
   const inputRef = useRef(null);
   const containerRef = useRef(null);
 
   const filteredOptions = options.filter((option) =>
-    option.label.toLowerCase().includes(search.toLowerCase())
+    option.label.toLowerCase().includes(searchValue.toLowerCase())
   );
 
   const selectedOption = options.find((opt) => opt.value === value);
@@ -27,12 +29,12 @@ export function SearchableDropdown({
     const handleClickOutside = (event) => {
       if (containerRef.current && !containerRef.current.contains(event.target)) {
         setIsOpen(false);
-        setSearch('');
+        if (onSearchChange) onSearchChange('');
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [onSearchChange]);
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
@@ -43,13 +45,13 @@ export function SearchableDropdown({
   const handleSelect = (option) => {
     onChange(option.value);
     setIsOpen(false);
-    setSearch('');
+    if (onSearchChange) onSearchChange('');
   };
 
   const handleClear = (e) => {
     e.stopPropagation();
     onChange('');
-    setSearch('');
+    if (onSearchChange) onSearchChange('');
     inputRef.current?.focus();
   };
 
@@ -93,8 +95,8 @@ export function SearchableDropdown({
               <input
                 ref={inputRef}
                 type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={searchValue}
+                onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
                 placeholder={searchPlaceholder}
                 className="flex-1 bg-transparent border-none focus:outline-none text-sm text-[#171d13] placeholder:text-gray-400"
               />
@@ -102,9 +104,13 @@ export function SearchableDropdown({
           </div>
 
           <div className="max-h-60 overflow-y-auto">
-            {filteredOptions.length === 0 ? (
+            {!searchValue ? (
+              <div className="px-4 py-3 text-sm text-gray-400 text-center italic">
+                {emptyMessage}
+              </div>
+            ) : filteredOptions.length === 0 ? (
               <div className="px-4 py-3 text-sm text-gray-500 text-center">
-                No results found
+                No results found for "{searchValue}"
               </div>
             ) : (
               filteredOptions.map((option) => (

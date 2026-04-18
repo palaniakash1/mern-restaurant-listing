@@ -106,3 +106,15 @@ export const getGalleryReviewImages = async (options = {}) => {
   const response = await apiGet(`/api/gallery/reviews?${params}`);
   return response;
 };
+
+export const getCities = async () => {
+  const response = await apiGet('/api/restaurants/cities');
+  return response.data;
+};
+
+export const searchAll = async (options = {}) => {
+  const { q = '', city = '' } = options;
+  const params = new URLSearchParams({ q, city }).toString();
+  const response = await apiGet(`/api/restaurants/search-all?${params}`);
+  return response.data;
+};
