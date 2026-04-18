@@ -43,11 +43,62 @@ router.get(
   listRestaurantReviews
 );
 
+// Get reviews by restaurant slug
+router.get('/restaurant-by-slug/:slug', async (req, res, next) => {
+  try {
+    const { slug } = req.params;
+    const { page = 1, limit = 20, sort = 'desc' } = req.query;
+
+    const Restaurant = (await import('../models/restaurant.model.js')).default;
+    const restaurant = await Restaurant.findOne({
+      slug,
+      isActive: true,
+      status: 'published'
+    }).lean();
+
+    if (!restaurant) {
+      return res
+        .status(404)
+        .json({ success: false, message: 'Restaurant not found' });
+    }
+
+    const Review = (await import('../models/review.model.js')).default;
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+    const filter = {
+      restaurantId: restaurant._id,
+      isActive: true,
+      isDeleted: { $ne: true }
+    };
+
+    const total = await Review.countDocuments(filter);
+    const totalPages = Math.ceil(total / limitNum);
+    const skip = (pageNum - 1) * limitNum;
+    const direction = sort === 'asc' ? 1 : -1;
+
+    const data = await Review.find(filter)
+      .populate('userId', 'userName profilePicture')
+      .populate('restaurantId', 'name slug')
+      .sort({ createdAt: direction })
+      .skip(skip)
+      .limit(limitNum)
+      .lean();
+
+    res.json({
+      success: true,
+      page: pageNum,
+      pages: totalPages,
+      limit: limitNum,
+      total,
+      data
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Public endpoint to list all reviews
-router.get(
-  '/',
-  listAllReviewsPublic
-);
+router.get('/', listAllReviewsPublic);
 router.get(
   '/restaurant/:restaurantId/summary',
   validate(reviewValidators.restaurantParam, 'params'),
@@ -65,11 +116,7 @@ router.get(
 );
 
 // Get review counts for admin overview
-router.get(
-  '/admin/counts',
-  verifyToken,
-  getReviewCountsForAdmin
-);
+router.get('/admin/counts', verifyToken, getReviewCountsForAdmin);
 
 // Protected endpoints
 router.get(

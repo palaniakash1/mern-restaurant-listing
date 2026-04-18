@@ -129,7 +129,7 @@ const getTodayHours = (hours) => {
 const getReviewAuthor = (review) =>
   typeof review?.user === 'string' && review.user.trim()
     ? review.user
-    : review?.user?.userName || 'Guest diner';
+    : review?.userId?.userName || review?.user?.userName || 'Guest diner';
 
 const getItemBadges = (item) => {
   const list = [];
@@ -287,12 +287,13 @@ export default function SingleRestaurant() {
     if (!restaurant || !restaurant._id) return;
     try {
       setReviewsLoading(true);
-      const data = await listRestaurantReviews(restaurant._id, {
+      const response = await listRestaurantReviews(restaurant._id, {
         limit: 20,
         sortBy: 'createdAt',
         sortOrder: 'desc'
       });
-      setReviews(data?.reviews || []);
+      const reviewsArray = Array.isArray(response) ? response : (response?.data || []);
+      setReviews(reviewsArray);
     } catch (err) {
       console.error('Failed to load reviews:', err);
     } finally {
@@ -785,7 +786,7 @@ export default function SingleRestaurant() {
                       <button
                         type="button"
                         onClick={() => setShowReviewModal(true)}
-                        className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#8fa31e] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[#78871c]"
+                        className="mt-4 inline-flex items-center gap-2 rounded-full !bg-[#8fa31e] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:!bg-[#78871c]"
                       >
                         <HiPlus className="h-4 w-4" />
                         Write a review
@@ -911,9 +912,15 @@ export default function SingleRestaurant() {
                   </div>
 
                   {reviews.length > 3 && (
-                    <p className="text-center text-sm text-[#9d9284]">
-                      +{reviews.length - 3} more reviews
-                    </p>
+                    <div className="text-center">
+                      <Link
+                        to={`/reviews?restaurant=${restaurant.slug}&restaurantName=${encodeURIComponent(restaurant.name)}`}
+                        className="inline-flex items-center gap-2 text-sm font-semibold text-[#8fa31e] hover:underline"
+                      >
+                        View all {reviews.length} reviews
+                        <HiArrowSmRight className="h-4 w-4" />
+                      </Link>
+                    </div>
                   )}
                 </div>
               )}
