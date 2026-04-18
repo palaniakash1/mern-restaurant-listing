@@ -827,7 +827,7 @@ export default function SingleRestaurant() {
                       return (
                         <article
                           key={`${review._id || index}-${index}`}
-                          className="group cursor-pointer rounded-[2rem] border border-[#dce6c1] bg-white p-7 shadow-[0_18px_45px_rgba(64,48,20,0.06)] transition hover:border-[#8fa31e]"
+                          className="group cursor-pointer overflow-hidden rounded-[2rem] border border-[#dce6c1] bg-white p-7 shadow-[0_18px_45px_rgba(64,48,20,0.06)] transition hover:border-[#8fa31e]"
                           onClick={() => {
                             if (hasImages) {
                               const imageList = [];
@@ -853,42 +853,7 @@ export default function SingleRestaurant() {
                             }
                           }}
                         >
-                          <div className="flex gap-1 text-[#efb634]">
-                            {[...Array(5)].map((_, starIndex) => (
-                              <HiStar
-                                key={starIndex}
-                                className={`h-5 w-5 ${
-                                  starIndex < (review.rating || 5)
-                                    ? 'fill-current'
-                                    : 'text-[#ddd1bc]'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          <p className="mt-6 text-[15px] italic leading-8 text-[#4f473d]">
-                            "{review.comment || 'Wonderful food and warm service.'}"
-                          </p>
-                          {hasImages && (
-                            <div className="mt-4 flex gap-2 overflow-hidden rounded-lg">
-                              {reviewImages.slice(0, 3).map((img, idx) => {
-                                const src = typeof img === 'string' ? img : img?.url || img;
-                                return (
-                                  <img
-                                    key={idx}
-                                    src={src}
-                                    alt={`Review image ${idx + 1}`}
-                                    className="h-16 w-16 object-cover"
-                                  />
-                                );
-                              })}
-                              {reviewImages.length > 3 && (
-                                <div className="flex h-16 w-16 items-center justify-center bg-[#f6fdeb] text-xs font-semibold text-[#8e5c2d]">
-                                  +{reviewImages.length - 3}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          <div className="mt-7 flex items-center gap-3">
+                          <div className="flex items-center gap-3">
                             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1f2e17] text-sm font-semibold text-white">
                               {getReviewAuthor(review).charAt(0).toUpperCase()}
                             </div>
@@ -909,6 +874,44 @@ export default function SingleRestaurant() {
                               </p>
                             </div>
                           </div>
+                          
+                          <div className="mt-4 flex gap-1 text-[#efb634]">
+                            {[...Array(5)].map((_, starIndex) => (
+                              <HiStar
+                                key={starIndex}
+                                className={`h-5 w-5 ${
+                                  starIndex < (review.rating || 5)
+                                    ? 'fill-current'
+                                    : 'text-[#ddd1bc]'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          
+                          {hasImages && (
+                            <div className="mt-4 flex gap-2">
+                              {reviewImages.slice(0, 3).map((img, idx) => {
+                                const src = typeof img === 'string' ? img : img?.url || img;
+                                return (
+                                  <img
+                                    key={idx}
+                                    src={src}
+                                    alt={`Review image ${idx + 1}`}
+                                    className="h-16 w-16 object-cover"
+                                  />
+                                );
+                              })}
+                              {reviewImages.length > 3 && (
+                                <div className="flex h-16 w-16 items-center justify-center bg-[#f6fdeb] text-xs font-semibold text-[#8e5c2d]">
+                                  +{reviewImages.length - 3}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          <p className="mt-6 text-[15px] italic leading-8 text-[#4f473d]">
+                            "{review.comment || 'Wonderful food and warm service.'}"
+                          </p>
                         </article>
                       );
                     })}

@@ -9,15 +9,6 @@ import {
 import { apiGet } from '../utils/api';
 import { ImageLightbox } from '../components/ImageLightbox';
 
-const formatDate = (dateString) => {
-  if (!dateString) return '';
-  return new Date(dateString).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  });
-};
-
 const INITIAL_LIMIT = 20;
 
 export default function ReviewsPage() {
@@ -188,9 +179,37 @@ export default function ReviewsPage() {
                     return (
                       <article
                         key={review._id || review.id}
-                        className="group rounded-[2rem] border border-[#dce6c1] bg-white p-6 shadow-[0_18px_45px_rgba(64,48,20,0.06)] transition hover:border-[#8fa31e]"
+                        className="group overflow-hidden rounded-[2rem] border border-[#dce6c1] bg-white p-6 shadow-[0_18px_45px_rgba(64,48,20,0.06)] transition hover:border-[#8fa31e]"
                       >
-                        <div className="flex gap-1 text-[#efb634]">
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1f2e17] text-xs font-semibold text-white">
+                            {getReviewAuthor(review).charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-[#23411f] truncate">
+                              {getReviewAuthor(review)}
+                            </p>
+                            {!restaurantSlug && review.restaurantId?.slug && (
+                              <Link
+                                to={`/restaurants/${review.restaurantId.slug}`}
+                                className="text-xs text-[#8fa31e] hover:underline truncate block"
+                              >
+                                {review.restaurantId.name}
+                              </Link>
+                            )}
+                            <p className="text-xs text-[#9d9284]">
+                              {review.createdAt
+                                ? new Date(review.createdAt).toLocaleDateString('en-GB', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric'
+                                  })
+                                : 'Recent'}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-4 flex gap-1 text-[#efb634]">
                           {[...Array(5)].map((_, starIndex) => (
                             <HiStar
                               key={starIndex}
@@ -202,13 +221,10 @@ export default function ReviewsPage() {
                             />
                           ))}
                         </div>
-                        <p className="mt-4 text-sm italic leading-6 text-[#4f473d] line-clamp-4">
-                          "{review.comment || 'Wonderful food and warm service.'}"
-                        </p>
                         
                         {hasImages && (
                           <div 
-                            className="mt-4 flex gap-1.5 overflow-hidden rounded-lg cursor-pointer"
+                            className="mt-4 flex gap-1.5 cursor-pointer"
                             onClick={() => {
                               const imageList = [];
                               reviews.forEach((r) => {
@@ -247,28 +263,10 @@ export default function ReviewsPage() {
                             )}
                           </div>
                         )}
-
-                        <div className="mt-5 flex items-center gap-2.5">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1f2e17] text-xs font-semibold text-white">
-                            {getReviewAuthor(review).charAt(0).toUpperCase()}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-[#23411f] truncate">
-                              {getReviewAuthor(review)}
-                            </p>
-                            {!restaurantSlug && review.restaurantId?.slug && (
-                              <Link
-                                to={`/restaurants/${review.restaurantId.slug}`}
-                                className="text-xs text-[#8fa31e] hover:underline truncate block"
-                              >
-                                {review.restaurantId.name}
-                              </Link>
-                            )}
-                            <p className="text-[10px] uppercase tracking-[0.18em] text-[#9d9284]">
-                              {formatDate(review.createdAt)}
-                            </p>
-                          </div>
-                        </div>
+                        
+                        <p className="mt-4 text-sm italic leading-6 text-[#4f473d] line-clamp-4">
+                          "{review.comment || 'Wonderful food and warm service.'}"
+                        </p>
                       </article>
                     );
                   })}
