@@ -64,6 +64,9 @@ const gracefulShutdown = async (signal) => {
 
 const startServer = async () => {
   try {
+    mongoose.plugin((schema) => {
+      schema.options.strictPopulate = false;
+    });
     await initTracing();
     await jwtRotationService.ready;
     await mongoose.connect(config.databaseUrl);

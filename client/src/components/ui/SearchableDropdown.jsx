@@ -29,12 +29,11 @@ export function SearchableDropdown({
     const handleClickOutside = (event) => {
       if (containerRef.current && !containerRef.current.contains(event.target)) {
         setIsOpen(false);
-        if (onSearchChange) onSearchChange('');
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [onSearchChange]);
+  }, []);
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
@@ -45,7 +44,6 @@ export function SearchableDropdown({
   const handleSelect = (option) => {
     onChange(option.value);
     setIsOpen(false);
-    if (onSearchChange) onSearchChange('');
   };
 
   const handleClear = (e) => {
@@ -69,9 +67,9 @@ export function SearchableDropdown({
         {Icon && <Icon className="text-[#576500] mr-3 w-5 h-5 flex-shrink-0" />}
         <span className={joinClasses(
           'flex-1 text-left truncate',
-          selectedOption ? 'text-[#171d13] font-medium' : 'text-gray-400'
+          selectedOption || searchValue ? 'text-[#171d13] font-medium' : 'text-gray-400'
         )}>
-          {selectedOption ? selectedOption.label : placeholder}
+          {selectedOption ? selectedOption.label : searchValue || placeholder}
         </span>
         {allowClear && value && (
           <HiX

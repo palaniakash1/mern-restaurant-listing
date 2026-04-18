@@ -1361,26 +1361,43 @@ export const searchAll = async (req, res, next) => {
 
     const menuIds = menus.map((m) => m._id);
 
-    // Search menu items by name (fuzzy) - search in items array
+    // Search menu items by name (fuzzy) - search in items array with relevance scoring
     let menuItems = [];
-    if (menuIds.length > 0) {
-      const menuItemOrConditions = words.map((word) => ({
-        'items.name': new RegExp(word, 'i')
-      }));
-      menuItems = await Menu.find(
-        { _id: { $in: menuIds }, $and: menuItemOrConditions },
+    const allMenus = menuIds.length > 0
+      ? await Menu.find(
+        { _id: { $in: menuIds }, isDeleted: { $ne: true } },
         { name: 1, restaurant: 1, items: 1 }
-      ).limit(10);
-    } else {
-      // If no menus matched, search items directly across all menus
-      const menuItemOrConditions = words.map((word) => ({
-        'items.name': new RegExp(word, 'i')
-      }));
-      menuItems = await Menu.find(
-        { ...publicRestaurantFilter, $and: menuItemOrConditions, isDeleted: { $ne: true } },
+      ).limit(50)
+      : await Menu.find(
+        { ...publicRestaurantFilter, isDeleted: { $ne: true } },
         { name: 1, restaurant: 1, items: 1 }
-      ).limit(10);
-    }
+      ).limit(50);
+
+    const queryLower = q.toLowerCase();
+    const scoredItems = [];
+
+    allMenus.forEach((menu) => {
+      (menu.items || []).forEach((item) => {
+        const itemName = item.name?.toLowerCase() || '';
+        let score = 0;
+
+        if (itemName === queryLower) score = 100;
+        else if (itemName.startsWith(queryLower)) score = 80;
+        else if (itemName.includes(queryLower)) score = 60;
+        else {
+          const firstWord = queryLower.split(' ')[0];
+          if (itemName.startsWith(firstWord)) score = 50;
+          else if (itemName.includes(firstWord)) score = 30;
+        }
+
+        if (score > 0) {
+          scoredItems.push({ ...menu.toObject(), items: [item], score });
+        }
+      });
+    });
+
+    scoredItems.sort((a, b) => b.score - a.score);
+    menuItems = scoredItems.slice(0, 10);
 
     res.status(200).json({
       success: true,

@@ -8,16 +8,16 @@ import {
   primaryButtonClass,
   inputClass
 } from '../utils/publicPage';
-import { listRestaurants } from '../services/restaurantService';
+import { listRestaurants, searchAll } from '../services/restaurantService';
 import RestaurantSpotlightCard from '../components/public/RestaurantSpotlightCard';
 import EmptyState from '../components/public/EmptyState';
 
 export default function SearchResults() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [restaurants, setRestaurants] = useState([]);
+  const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [pagination, setPagination] = useState({ page: 1, total: 0, limit: 12 });
 
   const query = searchParams.get('q') || '';
   const city = searchParams.get('city') || '';
@@ -28,40 +28,41 @@ export default function SearchResults() {
   const page = parseInt(searchParams.get('page') || '1', 10);
 
   useEffect(() => {
-    const fetchRestaurants = async () => {
+    const fetchSearchResults = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await listRestaurants({
-          q: query,
-          city,
-          categories,
-          isFeatured: featured,
-          isTrending: trending,
-          page,
-          limit: 12
-        });
-        let results = response.data?.restaurants || response.data || [];
+        if (query) {
+          const searchData = await searchAll({ q: query, city });
+          setMenuItems(searchData.menuItems || []);
+          setRestaurants(searchData.restaurants || []);
+        } else {
+          const response = await listRestaurants({
+            q: query,
+            city,
+            categories,
+            isFeatured: featured,
+            isTrending: trending,
+            page,
+            limit: 12
+          });
+          let results = response.data?.restaurants || response.data || [];
 
-        if (fsa === '5') {
-          results = results.filter(
-            (r) => r.fsaRating?.value === '5' || r.fsaRating?.value === 5
-          );
+          if (fsa === '5') {
+            results = results.filter(
+              (r) => r.fsaRating?.value === '5' || r.fsaRating?.value === 5
+            );
+          }
+
+          setRestaurants(results);
         }
-
-        setRestaurants(results);
-        setPagination((prev) => ({
-          ...prev,
-          page,
-          total: response.data?.total || results.length
-        }));
       } catch {
         setError('Unable to search restaurants');
       } finally {
         setLoading(false);
       }
     };
-    fetchRestaurants();
+    fetchSearchResults();
   }, [query, city, categories, featured, trending, fsa, page]);
 
   const handleSearch = (e) => {
@@ -99,7 +100,7 @@ export default function SearchResults() {
               type="text"
               name="q"
               defaultValue={query}
-              placeholder="Search restaurants, cuisines..."
+              placeholder="Search restaurants, dishes, categories..."
               className={inputClass + ' pl-12'}
             />
           </div>
@@ -122,29 +123,68 @@ export default function SearchResults() {
               </button>
             }
           />
-        ) : restaurants.length === 0 ? (
-          <EmptyState
-            title="No Restaurants Found"
-            description="Try adjusting your search or browse all restaurants"
-            action={
-              <Link to="/restaurants" className={primaryButtonClass}>
-                Browse All
-              </Link>
-            }
-          />
         ) : (
           <>
-            <div className="mb-4 text-sm text-gray-500">
-              {pagination.total} restaurant{pagination.total !== 1 ? 's' : ''} found
-            </div>
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {restaurants.map((restaurant) => (
-                <RestaurantSpotlightCard
-                  key={restaurant._id || restaurant.id}
-                  restaurant={restaurant}
-                />
-              ))}
-            </div>
+            {query && (menuItems.length > 0 || restaurants.length > 0) ? (
+              <>
+                {menuItems.length > 0 && (
+                  <div className="mb-8">
+                    <h2 className="mb-4 text-lg font-semibold text-[#23411f]">
+                      Menu Items
+                    </h2>
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                      {menuItems.map((menuDoc) =>
+                        (menuDoc.items || []).map((item, itemIdx) => (
+                          <Link
+                            key={`${menuDoc._id}-${itemIdx}`}
+                            to={`/restaurants?menu=${encodeURIComponent(menuDoc.name)}&q=${encodeURIComponent(item.name)}`}
+                            className="block p-4 rounded-lg border border-gray-200 hover:border-[#8fa31e] hover:shadow-md transition-all"
+                          >
+                            <p className="font-medium text-[#171d13]">{item.name}</p>
+                            <p className="text-sm text-gray-500">from {menuDoc.name || 'Menu'}</p>
+                            <p className="text-sm text-[#8fa31e] font-semibold">£{item.price}</p>
+                          </Link>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+                {restaurants.length > 0 && (
+                  <div>
+                    <h2 className="mb-4 text-lg font-semibold text-[#23411f]">
+                      Restaurants
+                    </h2>
+                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                      {restaurants.map((restaurant) => (
+                        <RestaurantSpotlightCard
+                          key={restaurant._id || restaurant.id}
+                          restaurant={restaurant}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : restaurants.length === 0 ? (
+              <EmptyState
+                title="No Results Found"
+                description="Try adjusting your search or browse all restaurants"
+                action={
+                  <Link to="/restaurants" className={primaryButtonClass}>
+                    Browse All
+                  </Link>
+                }
+              />
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                {restaurants.map((restaurant) => (
+                  <RestaurantSpotlightCard
+                    key={restaurant._id || restaurant.id}
+                    restaurant={restaurant}
+                  />
+                ))}
+              </div>
+            )}
           </>
         )}
       </section>

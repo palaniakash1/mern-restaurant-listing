@@ -33,7 +33,14 @@ export function CinematicBanner() {
     const fetchCities = async () => {
       try {
         const cities = await getCities();
-        const formatted = cities.map((city) => ({
+        const seen = new Set();
+        const uniqueCities = cities.filter((city) => {
+          const normalized = city.toLowerCase();
+          if (seen.has(normalized)) return false;
+          seen.add(normalized);
+          return true;
+        });
+        const formatted = uniqueCities.map((city) => ({
           value: city.toLowerCase().replace(/\s+/g, '-'),
           label: city
         }));
@@ -69,24 +76,22 @@ export function CinematicBanner() {
       params.set('allergens', selectedAllergens.join(','));
 
     if (restaurant) {
-      if (restaurant.startsWith('dish:')) {
-        const dishName = decodeURIComponent(restaurant.replace('dish:', ''));
-        params.set('q', dishName);
-        window.location.href = `/restaurants?${params.toString()}`;
-      } else if (restaurant.startsWith('category:')) {
-        const categorySlug = decodeURIComponent(restaurant.replace('category:', ''));
-        params.set('categories', categorySlug);
-        window.location.href = `/restaurants?${params.toString()}`;
-      } else if (restaurant.startsWith('menu:')) {
-        const menuName = decodeURIComponent(restaurant.replace('menu:', ''));
-        params.set('q', menuName);
-        window.location.href = `/restaurants?${params.toString()}`;
+      const value = restaurant.split('-')[0].replace('dish:', '').replace('menu:', '').replace('category:', '').replace('restaurant:', '');
+      if (restaurant.startsWith('dish:') || restaurant.match(/^dish:/)) {
+        params.set('q', value);
+        window.location.href = `/search?${params.toString()}`;
+      } else if (restaurant.startsWith('category:') || restaurant.match(/^category:/)) {
+        params.set('categories', value);
+        window.location.href = `/search?${params.toString()}`;
+      } else if (restaurant.startsWith('menu:') || restaurant.match(/^menu:/)) {
+        params.set('q', value);
+        window.location.href = `/search?${params.toString()}`;
       } else {
-        window.location.href = `/restaurants/${restaurant}?${params.toString()}`;
+        window.location.href = `/restaurants/${restaurant.split('-').pop()}?${params.toString()}`;
       }
     } else if (searchQuery) {
       params.set('q', searchQuery);
-      window.location.href = `/restaurants?${params.toString()}`;
+      window.location.href = `/search?${params.toString()}`;
     } else {
       window.location.href = `/restaurants?${params.toString()}`;
     }
@@ -138,33 +143,55 @@ export function CinematicBanner() {
 
               <SearchableDropdown
                 options={(() => {
+                  const seen = new Set();
                   const dishOptions = (searchResults.menuItems || [])
-                    .flatMap((menu) =>
-                      (menu.items || []).map((item) => ({
-                        value: `dish:${item.name}`,
-                        label: item.name,
-                        sublabel: `Dish • ${menu.name}`,
-                        priority: 1
-                      }))
-                    );
-                  const menuOptions = (searchResults.menus || []).map((m) => ({
-                    value: `menu:${m.name}`,
-                    label: m.name,
-                    sublabel: 'Menu',
-                    priority: 2
-                  }));
-                  const categoryOptions = (searchResults.categories || []).map((c) => ({
-                    value: `category:${c.slug}`,
-                    label: c.name,
-                    sublabel: 'Category',
-                    priority: 3
-                  }));
-                  const restaurantOptions = (searchResults.restaurants || []).map((r) => ({
-                    value: r.slug,
-                    label: r.name,
-                    sublabel: r.address?.areaLocality ? `${r.address.areaLocality}, ${r.address.city}` : r.address?.city,
-                    priority: 4
-                  }));
+                    .flatMap((menuDoc, miIdx) =>
+                      (menuDoc.items || []).map((item, itemIdx) => {
+                        const key = `dish:${item.name}-${miIdx}-${itemIdx}`;
+                        if (seen.has(key)) return null;
+                        seen.add(key);
+                        return {
+                          value: key,
+                          label: item.name,
+                          sublabel: 'Dish',
+                          priority: 1
+                        };
+                      })
+                    )
+                    .filter(Boolean);
+                  const menuOptions = (searchResults.menus || []).map((m, idx) => {
+                    const key = `menu:${m.name}-${idx}`;
+                    if (seen.has(key)) return null;
+                    seen.add(key);
+                    return {
+                      value: key,
+                      label: m.name,
+                      sublabel: 'Menu',
+                      priority: 2
+                    };
+                  }).filter(Boolean);
+                  const categoryOptions = (searchResults.categories || []).map((c, idx) => {
+                    const key = `category:${c.slug}-${idx}`;
+                    if (seen.has(key)) return null;
+                    seen.add(key);
+                    return {
+                      value: key,
+                      label: c.name,
+                      sublabel: 'Category',
+                      priority: 3
+                    };
+                  }).filter(Boolean);
+                  const restaurantOptions = (searchResults.restaurants || []).map((r, idx) => {
+                    const key = `restaurant:${r.slug}-${idx}`;
+                    if (seen.has(key)) return null;
+                    seen.add(key);
+                    return {
+                      value: r.slug,
+                      label: r.name,
+                      sublabel: r.address?.areaLocality ? `${r.address.areaLocality}, ${r.address.city}` : r.address?.city,
+                      priority: 4
+                    };
+                  }).filter(Boolean);
                   return [...dishOptions, ...menuOptions, ...categoryOptions, ...restaurantOptions];
                 })()}
                 value={restaurant}
