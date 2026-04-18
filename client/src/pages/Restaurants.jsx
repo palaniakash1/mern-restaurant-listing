@@ -1,11 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { listRestaurants } from '../services/restaurantService';
 import { SkeletonCard } from '../components/SkeletonCard';
 
 export default function Restaurants() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [category, setCategory] = useState('');
+  const [searchParams] = useSearchParams();
+  const query = searchParams.get('q') || '';
+  const categoryParam = searchParams.get('categories') || searchParams.get('category') || '';
+  const [searchTerm, setSearchTerm] = useState(query);
+  const [category, setCategory] = useState(categoryParam);
   const [sortBy, setSortBy] = useState('rating');
   const [restaurants, setRestaurants] = useState([]);
   const [allRestaurants, setAllRestaurants] = useState([]);
@@ -30,14 +33,23 @@ export default function Restaurants() {
 
   useEffect(() => {
     const filtered = allRestaurants.filter((restaurant) => {
-      const matchesSearch =
-        restaurant.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        restaurant.tagline?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory =
-        !category ||
-        (restaurant.categories || []).includes(category) ||
-        restaurant.category === category;
-      return matchesSearch && matchesCategory;
+      const query = searchParams.get('q') || '';
+      const categoryParam = searchParams.get('categories') || searchParams.get('category') || '';
+      const cityParam = searchParams.get('city') || '';
+
+      const matchesSearch = !query ||
+        restaurant.name?.toLowerCase().includes(query.toLowerCase()) ||
+        restaurant.tagline?.toLowerCase().includes(query.toLowerCase()) ||
+        (restaurant.categories || []).some((c) => c.toLowerCase().includes(query.toLowerCase()));
+
+      const matchesCategory = !categoryParam ||
+        (restaurant.categories || []).includes(categoryParam) ||
+        restaurant.category === categoryParam;
+
+      const matchesCity = !cityParam ||
+        restaurant.address?.city?.toLowerCase() === cityParam.toLowerCase().replace(/-/g, ' ');
+
+      return matchesSearch && matchesCategory && matchesCity;
     });
 
     const sorted = [...filtered].sort((a, b) => {
@@ -48,7 +60,7 @@ export default function Restaurants() {
     });
 
     setRestaurants(sorted);
-  }, [searchTerm, category, sortBy, allRestaurants]);
+  }, [searchParams, allRestaurants, sortBy]);
 
   const categories = useMemo(() => {
     return [

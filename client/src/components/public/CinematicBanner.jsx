@@ -65,11 +65,31 @@ export function CinematicBanner() {
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (location) params.set('city', location);
-    if (restaurant) params.set('restaurant', restaurant);
-    if (searchQuery) params.set('q', searchQuery);
     if (selectedAllergens.length > 0)
       params.set('allergens', selectedAllergens.join(','));
-    window.location.href = `/restaurants?${params.toString()}`;
+
+    if (restaurant) {
+      if (restaurant.startsWith('dish:')) {
+        const dishName = decodeURIComponent(restaurant.replace('dish:', ''));
+        params.set('q', dishName);
+        window.location.href = `/restaurants?${params.toString()}`;
+      } else if (restaurant.startsWith('category:')) {
+        const categorySlug = decodeURIComponent(restaurant.replace('category:', ''));
+        params.set('categories', categorySlug);
+        window.location.href = `/restaurants?${params.toString()}`;
+      } else if (restaurant.startsWith('menu:')) {
+        const menuName = decodeURIComponent(restaurant.replace('menu:', ''));
+        params.set('q', menuName);
+        window.location.href = `/restaurants?${params.toString()}`;
+      } else {
+        window.location.href = `/restaurants/${restaurant}?${params.toString()}`;
+      }
+    } else if (searchQuery) {
+      params.set('q', searchQuery);
+      window.location.href = `/restaurants?${params.toString()}`;
+    } else {
+      window.location.href = `/restaurants?${params.toString()}`;
+    }
   };
 
   return (
@@ -149,8 +169,8 @@ export function CinematicBanner() {
                 })()}
                 value={restaurant}
                 onChange={setRestaurant}
-                placeholder="Search dishes, categories, restaurants"
-                searchPlaceholder="Type restaurant, category, or dish..."
+                placeholder={searchQuery || "Search dishes, categories, restaurants"}
+                searchPlaceholder="Search dishes, categories, restaurants..."
                 icon={IoRestaurant}
                 searchValue={searchQuery}
                 onSearchChange={setSearchQuery}

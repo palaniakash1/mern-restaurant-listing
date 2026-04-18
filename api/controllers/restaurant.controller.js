@@ -948,11 +948,22 @@ export const listRestaurants = async (req, res, next) => {
     if (q) {
       const escapedQ = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const regex = new RegExp(escapedQ, 'i');
+
+      const word = q.trim().split(/\s+/)[0];
+      const itemRegex = new RegExp(word, 'i');
+
+      const menusWithItems = await Menu.find(
+        { ...publicRestaurantFilter, 'items.name': itemRegex, isDeleted: { $ne: true } },
+        { restaurant: 1 }
+      ).limit(20);
+      const restaurantIdsFromItems = menusWithItems.map((m) => m.restaurant).filter(Boolean);
+
       filter.$or = [
         { name: regex },
         { 'address.city': regex },
         { 'address.areaLocality': regex },
-        { tagline: regex }
+        { tagline: regex },
+        { _id: { $in: restaurantIdsFromItems } }
       ];
     } else {
       if (sortBy === 'rating') sort = { rating: -1 };
