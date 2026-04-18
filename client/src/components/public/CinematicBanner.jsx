@@ -7,16 +7,23 @@ import {
   toggleAllergen,
   clearAllergens
 } from '../../redux/allergen/allergenSlice';
+import { setDietary, clearDietary } from '../../redux/dietary/dietarySlice';
 import { ALLERGEN_FILTERS } from '../../utils/allergenConstants';
 import { SearchableDropdown } from '../ui/SearchableDropdown';
 import { joinClasses } from '../../utils/publicPage';
 import { getCities, searchAll } from '../../services/restaurantService';
+
+const DIETARY_OPTIONS = [
+  { id: 'vegan', label: 'Vegan', emoji: '🌱' },
+  { id: 'vegetarian', label: 'Vegetarian', emoji: '🥗' }
+];
 
 export function CinematicBanner() {
   const dispatch = useDispatch();
   const selectedAllergens = useSelector(
     (state) => state.allergen.selectedAllergens
   );
+  const selectedDiet = useSelector((state) => state.dietary.selectedDiet);
   const [location, setLocation] = useState('');
   const [restaurant, setRestaurant] = useState('');
   const [locations, setLocations] = useState([]);
@@ -74,6 +81,8 @@ export function CinematicBanner() {
     if (location) params.set('city', location);
     if (selectedAllergens.length > 0)
       params.set('allergens', selectedAllergens.join(','));
+    if (selectedDiet)
+      params.set('dietary', selectedDiet);
 
     if (restaurant) {
       const value = restaurant.split('-')[0].replace('dish:', '').replace('menu:', '').replace('category:', '').replace('restaurant:', '');
@@ -256,6 +265,51 @@ export function CinematicBanner() {
                   </span>
                   <span className="text-xs font-semibold">
                     {allergen.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center justify-center gap-4 mt-6">
+            <h3 className="text-white/60 font-['Inter'] text-xs uppercase tracking-widest font-bold">
+              Dietary Preferences
+            </h3>
+            {selectedDiet && (
+              <button
+                type="button"
+                onClick={() => dispatch(clearDietary())}
+                className="text-white/60 hover:text-white text-xs font-medium underline underline-offset-2 transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+          <div
+            className="flex flex-wrap justify-center gap-3 mt-4"
+            role="group"
+            aria-label="Dietary preferences filter"
+          >
+            {DIETARY_OPTIONS.map((diet) => {
+              const isSelected = selectedDiet === diet.id;
+              return (
+                <button
+                  key={diet.id}
+                  type="button"
+                  onClick={() => dispatch(setDietary(isSelected ? null : diet.id))}
+                  aria-pressed={isSelected}
+                  className={joinClasses(
+                    'inline-flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 border',
+                    isSelected
+                      ? 'bg-gradient-to-r from-[#8fa31e] to-[#d7ee64] border-transparent text-white shadow-xl shadow-[#8fa31e]/40 scale-105 font-bold'
+                      : 'bg-white/10 backdrop-blur-md border-white/20 text-white hover:bg-[#8fa31e] hover:border-transparent hover:scale-105'
+                  )}
+                >
+                  <span className="text-base leading-none">
+                    {diet.emoji}
+                  </span>
+                  <span className="text-xs font-semibold">
+                    {diet.label}
                   </span>
                 </button>
               );
