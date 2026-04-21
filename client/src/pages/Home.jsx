@@ -20,6 +20,10 @@ export default function Home() {
       </div>
 
       <div className="my-16">
+        <FeaturedByMenu />
+      </div>
+
+      <div className="my-16">
         <NearbyRestaurants />
       </div>
 
@@ -29,10 +33,6 @@ export default function Home() {
 
       <div className="my-16">
         <TrendingRestaurants />
-      </div>
-
-      <div className="my-16">
-        <FeaturedByMenu />
       </div>
 
       <div className="my-16">
