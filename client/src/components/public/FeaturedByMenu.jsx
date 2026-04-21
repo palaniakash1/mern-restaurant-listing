@@ -1,88 +1,136 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { HiArrowRight, HiMenu, HiStar } from 'react-icons/hi';
 import { joinClasses, sectionWrapClass, sectionEyebrowClass, primaryButtonClass, elevatedCardClass } from '../../utils/publicPage';
-
-const menus = [
-  {
-    id: 1,
-    name: 'Sunday Roast',
-    description: 'Traditional British roast with all the trimmings',
-    image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80',
-    price: '£24',
-    category: 'British',
-    restaurant: 'The Old Oak'
-  },
-  {
-    id: 2,
-    name: 'Sushi Platter',
-    description: 'Assorted fresh sashimi and nigiri selection',
-    image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=600&q=80',
-    price: '£38',
-    category: 'Japanese',
-    restaurant: 'Sakura House'
-  },
-  {
-    id: 3,
-    name: 'Beef Burger Deluxe',
-    description: 'Premium beef patty with truffle mayo and aged cheddar',
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80',
-    price: '£18',
-    category: 'American',
-    restaurant: 'Burgers & Co'
-  }
-];
+import { searchAll } from '../../services/restaurantService';
 
 export function FeaturedByMenu() {
+  const [dishes, setDishes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const selectedAllergens = useSelector((state) => state.allergen.selectedAllergens);
+  const selectedDiet = useSelector((state) => state.dietary.selectedDiet);
+
+  useEffect(() => {
+    const fetchPopularDishes = async () => {
+      try {
+        const results = await searchAll({ q: '', city: '' });
+        const menuItems = results.menuItems || [];
+        const flatDishes = [];
+        menuItems.forEach((menuDoc) => {
+          if (menuDoc.items && menuDoc.items.length > 0) {
+            menuDoc.items.slice(0, 2).forEach((item) => {
+              flatDishes.push({
+                ...item,
+                restaurantName: menuDoc.restaurantName,
+                restaurantSlug: menuDoc.restaurantSlug,
+                categoryName: menuDoc.categoryName
+              });
+            });
+          }
+        });
+        setDishes(flatDishes.slice(0, 8));
+      } catch (err) {
+        console.error('Failed to fetch popular dishes:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPopularDishes();
+  }, []);
+
+  const buildFilterParams = () => {
+    const params = new URLSearchParams();
+    if (selectedAllergens.length > 0) {
+      params.set('allergens', selectedAllergens.join(','));
+    }
+    if (selectedDiet) {
+      params.set('dietary', selectedDiet);
+    }
+    return params.toString();
+  };
+
+  const getDishLink = (dish) => {
+    const filterParams = buildFilterParams();
+    const baseUrl = `/restaurants/${dish.restaurantSlug}`;
+    return filterParams ? `${baseUrl}?${filterParams}` : baseUrl;
+  };
+
   return (
-    <section className={sectionWrapClass}>
+    <section className={joinClasses(sectionWrapClass, 'bg-[#fff1f0] rounded-xl')}>
       <div className="mb-8 flex items-end justify-between gap-4">
         <div className="max-w-3xl">
-          <p className={sectionEyebrowClass}>Chef&apos;s Specials</p>
+          <p className={sectionEyebrowClass}>Top Rated Picks</p>
           <h2 className="mt-3 text-2xl font-bold text-[#23411f] sm:text-3xl">
-            Featured Menus
+            Popular dishes in your area
           </h2>
           <p className="mt-3 text-sm leading-7 text-gray-600 sm:text-base">
             Signature dishes and chef&apos;s specials from top restaurants
           </p>
         </div>
-        <Link to="/menu" className={primaryButtonClass}>
-          View All Menus
+        <Link to="/search" className={primaryButtonClass}>
+          View all
           <HiArrowRight className="h-5 w-5" />
         </Link>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {menus.map((menu) => (
-          <article key={menu.id} className={joinClasses(elevatedCardClass, 'group overflow-hidden')}>
-            <div className="relative h-48 overflow-hidden">
-              <img
-                src={menu.image}
-                alt={menu.name}
-                className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.1),rgba(0,0,0,0.6))]" />
-              <div className="absolute bottom-4 left-4 right-4">
-                <span className="rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#23411f]">
-                  {menu.category}
-                </span>
+      {loading ? (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className={joinClasses(elevatedCardClass, 'overflow-hidden')}>
+              <div className="h-48 bg-gray-200 animate-pulse" />
+              <div className="p-5">
+                <div className="h-4 bg-gray-200 animate-pulse w-3/4 mb-2" />
+                <div className="h-3 bg-gray-200 animate-pulse w-1/2" />
               </div>
             </div>
-            <div className="p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-lg font-bold text-[#23411f]">{menu.name}</h3>
-                  <p className="mt-1 text-sm text-gray-600 line-clamp-2">{menu.description}</p>
+          ))}
+        </div>
+      ) : dishes.length > 0 ? (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {dishes.map((dish, idx) => (
+            <Link
+              key={dish._id || `${dish.name}-${idx}`}
+              to={getDishLink(dish)}
+              className={joinClasses(elevatedCardClass, 'group overflow-hidden bg-white border border-[#d8c2c0]/10')}
+            >
+              <div className="relative h-48 overflow-hidden">
+                <img
+                  src={dish.image || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80'}
+                  alt={dish.name}
+                  className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.1),rgba(0,0,0,0.6))]" />
+                <div className="absolute bottom-4 left-4 right-4">
+                  {dish.categoryName && (
+                    <span className="rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#23411f]">
+                      {dish.categoryName}
+                    </span>
+                  )}
                 </div>
-                <span className="shrink-0 text-lg font-bold text-[#8fa31e]">{menu.price}</span>
               </div>
-              <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
-                <HiMenu className="h-4 w-4" />
-                <span>{menu.restaurant}</span>
+              <div className="p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-lg font-bold text-[#23411f] line-clamp-1">{dish.name}</h3>
+                  <div className="flex items-center gap-1 bg-[#bf1e18]/10 px-2 py-0.5 rounded text-[#bf1e18] font-bold text-sm">
+                    <span>{dish.rating?.toFixed(1) || '4.5'}</span>
+                    <HiStar className="text-xs" style={{ fill: 'currentColor' }} />
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 line-clamp-2 mb-3">{dish.description || 'Delicious dish from our featured restaurants.'}</p>
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <HiMenu className="h-4 w-4" />
+                  <span>{dish.restaurantName}</span>
+                </div>
               </div>
-            </div>
-          </article>
-        ))}
-      </div>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-8 text-gray-500">
+          <p>No popular dishes found</p>
+        </div>
+      )}
     </section>
   );
 }

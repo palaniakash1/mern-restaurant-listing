@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { HiArrowRight, HiLocationMarker, HiStar } from 'react-icons/hi';
 import { elevatedCardClass, getRestaurantCategoryNames, pickRestaurantImage, secondaryButtonClass, joinClasses } from '../../utils/publicPage';
 
 export function NearbyRestaurantCard({ restaurant, distance }) {
   const categoryNames = getRestaurantCategoryNames(restaurant);
+  const selectedAllergens = useSelector((state) => state.allergen.selectedAllergens);
+  const selectedDiet = useSelector((state) => state.dietary.selectedDiet);
 
   const formatDistance = (dist) => {
     if (!dist) return null;
@@ -11,6 +14,23 @@ export function NearbyRestaurantCard({ restaurant, distance }) {
       return `${Math.round(dist * 1000)}m away`;
     }
     return `${dist.toFixed(1)}km away`;
+  };
+
+  const buildFilterParams = () => {
+    const params = new URLSearchParams();
+    if (selectedAllergens.length > 0) {
+      params.set('allergens', selectedAllergens.join(','));
+    }
+    if (selectedDiet) {
+      params.set('dietary', selectedDiet);
+    }
+    return params.toString();
+  };
+
+  const getRestaurantLink = () => {
+    const filterParams = buildFilterParams();
+    const baseUrl = `/restaurants/${restaurant.slug}`;
+    return filterParams ? `${baseUrl}?${filterParams}` : baseUrl;
   };
 
   return (
@@ -68,7 +88,7 @@ export function NearbyRestaurantCard({ restaurant, distance }) {
         </div>
 
         <Link
-          to={`/restaurants/${restaurant.slug}`}
+          to={getRestaurantLink()}
           className={joinClasses(secondaryButtonClass, 'mt-4 w-full justify-center')}
         >
           View Details
