@@ -248,7 +248,7 @@ export function CinematicBanner() {
                 <img
                   src={cloudAllergyImg}
                   alt="I am allergic to"
-                  className="h-16 w-auto animate-pulse drop-shadow-md"
+                  className="h-16 w-auto"
                 />
               </div>
               <div className="flex flex-col items-center gap-4 w-full mt-4">
