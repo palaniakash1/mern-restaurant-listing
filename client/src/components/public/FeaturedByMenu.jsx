@@ -61,10 +61,10 @@ export function FeaturedByMenu() {
       <div className="mb-8 flex items-end justify-between gap-4">
         <div className="max-w-3xl">
           <p className={sectionEyebrowClass}>Top Rated Picks</p>
-          <h2 className="mt-3 text-2xl font-bold text-[#23411f] sm:text-3xl">
+          <h2 className="mt-3 text-2xl font-bold text-[#201a1a] sm:text-3xl font-[Manrope]">
             Popular dishes in your area
           </h2>
-          <p className="mt-3 text-sm leading-7 text-gray-600 sm:text-base">
+          <p className="mt-3 text-sm leading-7 text-[#534342] sm:text-base">
             Signature dishes and chef&apos;s specials from top restaurants
           </p>
         </div>
@@ -92,7 +92,7 @@ export function FeaturedByMenu() {
             <Link
               key={dish._id || `${dish.name}-${idx}`}
               to={getDishLink(dish)}
-              className={joinClasses(elevatedCardClass, 'group overflow-hidden bg-white border border-[#d8c2c0]/10')}
+              className={joinClasses(elevatedCardClass, 'group overflow-hidden bg-white')}
             >
               <div className="relative h-48 overflow-hidden">
                 <img
@@ -101,24 +101,24 @@ export function FeaturedByMenu() {
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.1),rgba(0,0,0,0.6))]" />
-                <div className="absolute bottom-4 left-4 right-4">
-                  {dish.categoryName && (
+                {dish.categoryName && (
+                  <div className="absolute bottom-4 left-4">
                     <span className="rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#23411f]">
                       {dish.categoryName}
                     </span>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
               <div className="p-4">
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-lg font-bold text-[#23411f] line-clamp-1">{dish.name}</h3>
+                  <h3 className="text-lg font-bold text-[#201a1a] line-clamp-1 font-[Manrope]">{dish.name}</h3>
                   <div className="flex items-center gap-1 bg-[#bf1e18]/10 px-2 py-0.5 rounded text-[#bf1e18] font-bold text-sm">
                     <span>{dish.rating?.toFixed(1) || '4.5'}</span>
                     <HiStar className="text-xs" style={{ fill: 'currentColor' }} />
                   </div>
                 </div>
-                <p className="text-sm text-gray-600 line-clamp-2 mb-3">{dish.description || 'Delicious dish from our featured restaurants.'}</p>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
+                <p className="text-sm text-[#534342] line-clamp-2 mb-3">{dish.description || 'Delicious dish from our featured restaurants.'}</p>
+                <div className="flex items-center gap-2 text-sm text-[#534342]">
                   <HiMenu className="h-4 w-4" />
                   <span>{dish.restaurantName}</span>
                 </div>
@@ -127,7 +127,7 @@ export function FeaturedByMenu() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-[#534342]">
           <p>No popular dishes found</p>
         </div>
       )}

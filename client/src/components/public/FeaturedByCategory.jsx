@@ -77,10 +77,10 @@ export function FeaturedByCategory() {
       <div className="mb-8 flex items-end justify-between gap-4">
         <div className="max-w-3xl">
           <p className={sectionEyebrowClass}>Explore by Cuisine</p>
-          <h2 className="mt-3 text-2xl font-bold text-[#23411f] sm:text-3xl">
+          <h2 className="mt-3 text-2xl font-bold text-[#201a1a] sm:text-3xl font-[Manrope]">
             What&apos;s on your mind?
           </h2>
-          <p className="mt-3 text-sm leading-7 text-gray-600 sm:text-base">
+          <p className="mt-3 text-sm leading-7 text-[#534342] sm:text-base">
             Discover restaurants by your favorite cuisine types
           </p>
         </div>

@@ -152,12 +152,12 @@ export function NearbyRestaurants() {
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="max-w-3xl">
           <p className={sectionEyebrowClass}>Discovery</p>
-          <h2 className="mt-3 text-2xl font-bold text-[#23411f] sm:text-3xl">
+          <h2 className="mt-3 text-2xl font-bold text-[#201a1a] sm:text-3xl font-[Manrope]">
             {!locationEnabled && locationError
               ? 'Enable location to view restaurants near you!'
               : 'Nearby Restaurants'}
           </h2>
-          <p className="mt-3 text-sm leading-7 text-gray-600 sm:text-base">
+          <p className="mt-3 text-sm leading-7 text-[#534342] sm:text-base">
             Discover exceptional dining right in your neighborhood
           </p>
         </div>
@@ -165,10 +165,10 @@ export function NearbyRestaurants() {
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={joinClasses(
-              'flex items-center gap-2 rounded-lg border border-[#dce6c1] px-4 py-2 text-sm font-medium transition-colors',
+              'flex items-center gap-2 rounded-full border border-[#d8c2c0] px-4 py-2 text-sm font-medium transition-colors',
               showFilters
-                ? 'bg-[#23411f] text-white'
-                : 'text-[#23411f] hover:bg-[#dce6c1]/30'
+                ? 'bg-[#bf1e18] text-white'
+                : 'text-[#bf1e18] hover:bg-[#fff1f0]'
             )}
           >
             <HiFilter className="h-5 w-5" />
