@@ -17,9 +17,9 @@ const categoryImages = {
   Indian:
     'https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=400&q=80',
   British:
-    'https://images.unsplash.com/photo-1599619351208-3e6f839e60b8?auto=format&fit=crop&w=400&q=80',
+    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80',
   Chinese:
-    'https://images.unsplash.com/photo-1615092678631-3567e4858658?auto=format&fit=crop&w=400&q=80',
+    'https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=400&q=80',
   French:
     'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=400&q=80',
   Thai: 'https://images.unsplash.com/photo-1559314809-0d155014e29e?auto=format&fit=crop&w=400&q=80',
