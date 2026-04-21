@@ -1,4 +1,4 @@
-# Public-Facing Design System: Botanical Atelier
+# Public-Facing Design System: EatWisely
 
 This document captures the visual language for public-facing pages (home, search, restaurant details).
 
