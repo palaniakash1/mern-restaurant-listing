@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import {
   HiArrowRight,
-  HiHeart,
   HiLocationMarker,
   HiStar
 } from 'react-icons/hi';
@@ -15,6 +14,7 @@ import {
   pickRestaurantImage,
   secondaryButtonClass
 } from '../../utils/publicPage';
+import { useSelector } from 'react-redux';
 
 export function RestaurantSpotlightCard({
   restaurant,
@@ -22,8 +22,19 @@ export function RestaurantSpotlightCard({
   href = `/restaurants/${restaurant.slug}`,
   favoriteAction
 }) {
+  const selectedAllergens = useSelector((state) => state.allergen.selectedAllergens);
+  const selectedDiet = useSelector((state) => state.dietary.selectedDiet);
+
   const categoryNames = getRestaurantCategoryNames(restaurant);
   const badgeUrl = getFsaBadgeUrl(restaurant?.fsaRating?.value);
+
+  const buildHref = () => {
+    const params = new URLSearchParams();
+    if (selectedAllergens.length > 0) params.set('allergens', selectedAllergens.join(','));
+    if (selectedDiet) params.set('dietary', selectedDiet);
+    const qs = params.toString();
+    return qs ? `${href}?${qs}` : href;
+  };
 
   return (
     <article className={joinClasses(elevatedCardClass, 'group overflow-hidden')}>
@@ -36,12 +47,12 @@ export function RestaurantSpotlightCard({
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.06),rgba(10,14,8,0.68))]" />
         <div className="absolute left-5 top-5 flex flex-wrap gap-2">
           {badge ? (
-            <span className="rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#23411f]">
+            <span className="rounded-full !bg-white/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] !text-[#bf1e18]">
               {badge}
             </span>
           ) : null}
           {restaurant?.isTrending ? (
-            <span className="rounded-full bg-[#b62828] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-white">
+            <span className="rounded-full !bg-[#bf1e18] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] !text-white">
               Trending
             </span>
           ) : null}
@@ -49,50 +60,50 @@ export function RestaurantSpotlightCard({
         <div className="absolute right-5 top-5 flex items-center gap-2">
           {favoriteAction ? favoriteAction : null}
           {badgeUrl ? (
-            <span className="rounded-[0.35rem] border border-[#dce6c1] bg-white/95 p-1 shadow-md">
+            <span className="rounded-[0.35rem] border border-[#d8c2c0] !bg-white/95 p-1 shadow-md">
               <img src={badgeUrl} alt={`FSA ${restaurant?.fsaRating?.value}`} className="h-9 w-auto" />
             </span>
           ) : null}
         </div>
         <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/65">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] !text-white/65">
               {categoryNames[0] || 'Signature dining'}
             </p>
-            <h3 className="mt-2 text-2xl font-bold text-white">{restaurant.name}</h3>
+            <h3 className="mt-2 text-2xl font-bold !text-white">{restaurant.name}</h3>
           </div>
-          <div className="rounded-full bg-white/15 px-3 py-2 text-sm font-semibold text-white backdrop-blur">
+          <div className="rounded-full !bg-white/15 px-3 py-2 text-sm font-semibold !text-white backdrop-blur">
             {restaurant?.priceRange || '$$'}
           </div>
         </div>
       </div>
       <div className="p-6">
-        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-          <span className="inline-flex items-center gap-1.5 font-semibold text-[#23411f]">
-            <HiStar className="h-4 w-4 text-[#efb634]" />
+        <div className="flex flex-wrap items-center gap-4 text-sm !text-[#534342]">
+          <span className="inline-flex items-center gap-1.5 font-semibold !text-[#bf1e18]">
+            <HiStar className="h-4 w-4 !text-[#bf1e18]" />
             {Number(restaurant?.rating || 0).toFixed(1)}
           </span>
-          <span>{restaurant?.reviewCount || 0} guest reviews</span>
+          <span className="!text-[#534342]">{restaurant?.reviewCount || 0} guest reviews</span>
           <span className="inline-flex items-center gap-1.5">
-            <HiLocationMarker className="h-4 w-4 text-[#8fa31e]" />
+            <HiLocationMarker className="h-4 w-4 !text-[#8fa31e]" />
             {getRestaurantLocationLabel(restaurant) || 'Location coming soon'}
           </span>
         </div>
-        <p className="mt-4 text-sm leading-7 text-gray-600">
+        <p className="mt-4 text-sm leading-7 !text-[#534342]">
           {restaurant?.tagline || 'A polished dining destination shaped for memorable occasions.'}
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           {categoryNames.slice(0, 3).map((category) => (
             <span
               key={category}
-              className="rounded-full bg-[#f5faeb] px-3 py-1.5 text-[11px] font-semibold text-[#4f5f1d]"
+              className="rounded-full !bg-[#fff1f0] px-3 py-1.5 text-[11px] font-semibold !text-[#bf1e18]"
             >
               {category}
             </span>
           ))}
         </div>
         <div className="mt-6 flex items-center justify-between gap-3">
-          <Link to={href} className={secondaryButtonClass}>
+          <Link to={buildHref()} className={secondaryButtonClass}>
             Explore restaurant
             <HiArrowRight className="h-4 w-4" />
           </Link>
