@@ -1,24 +1,24 @@
 export const joinClasses = (...values) => values.filter(Boolean).join(' ');
 
 export const publicShellClass =
-  'min-h-screen !bg-[radial-gradient(circle_at_top,#fdf0f0_0%,#f6fbe9_35%,#edf4dc_100%)] !text-[#23411f]';
+  'min-h-screen !bg-[#fff8f7] !text-[#201a1a]';
 
-export const sectionWrapClass = 'mx-auto w-full max-w-[1600px] px-4 sm:px-6 xl:px-8';
+export const sectionWrapClass = 'max-w-7xl mx-auto px-6 py-16';
 
 export const surfaceCardClass =
-  '!rounded-[1.75rem] !border-[#dce6c1] !bg-white shadow-sm';
+  '!rounded-2xl !border-[#d8c2c0]/30 !bg-white shadow-sm';
 
 export const elevatedCardClass =
-  '!rounded-[1.75rem] !border-[#dce6c1] !bg-white !shadow-[0_25px_80px_rgba(60,79,25,0.08)]';
+  '!rounded-xl !border-[#d8c2c0]/10 !bg-white shadow-lg hover:shadow-xl transition-shadow';
 
 export const mutedPanelClass =
   'rounded-[1.5rem] !border-[#ebf0d7] !bg-[#fbfcf7] shadow-sm';
 
 export const primaryButtonClass =
-  'inline-flex items-center justify-center gap-2 rounded-[1rem] !bg-[#8fa31e] !px-5 !py-3 text-sm font-semibold !text-white transition hover:!bg-[#78871c]';
+  'inline-flex items-center justify-center gap-2 rounded-full !bg-[#bf1e18] !px-6 !py-3 text-sm font-bold !text-white transition hover:opacity-90 hover:scale-105 active:scale-95';
 
 export const secondaryButtonClass =
-  'inline-flex items-center justify-center gap-2 rounded-[1rem] !border-[#e6eccf] !bg-white !px-5 !py-3 text-sm font-semibold !text-[#23411f] transition hover:!bg-[#23411f] hover:!text-white';
+  'inline-flex items-center justify-center gap-2 rounded-full !border border-[#d8c2c0] !bg-white !px-6 !py-3 text-sm font-bold !text-[#bf1e18] transition hover:!bg-[#bf1e18] hover:!text-white';
 
 export const ghostButtonClass =
   'inline-flex items-center justify-center gap-2 rounded-[1rem] !border-[#d9e2bc] !bg-[#f8fbf1] !px-4 !py-3 text-sm font-semibold !text-[#4f5f1d] transition hover:!border-[#8fa31e] hover:!bg-white';
@@ -27,7 +27,7 @@ export const inputClass =
   'w-full rounded-[1rem] !border-[#d9e2bc] !bg-[#f8fbf1] !px-4 !py-3 text-sm !text-[#23411f] placeholder:!text-[#6b7280] focus:!border-[#8fa31e] focus:!bg-white focus:!outline-none focus:!ring-4 focus:!ring-[#dbe9ab]/50';
 
 export const sectionEyebrowClass =
-  'text-xs font-semibold uppercase tracking-[0.35em] !text-[#b62828]';
+  'text-xs font-bold uppercase tracking-[0.2em] !text-[#bf1e18]';
 
 export const getRestaurantCategoryNames = (restaurant) =>
   (restaurant?.categories || [])
