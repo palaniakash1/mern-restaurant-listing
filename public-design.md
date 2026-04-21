@@ -79,6 +79,33 @@ The guidance below is derived from:
 - Outline: `#857371`
 - Outline variant: `#d8c2c0`
 
+## Search Suggestions Dropdown
+
+### Trigger behavior
+
+- Show dropdown on input focus when there's text
+- Debounce API calls by 300ms
+- Close dropdown on click outside
+
+### Dropdown styling
+
+```css
+absolute top-full left-0 right-0 mt-1 !bg-white rounded-xl shadow-2xl z-50 max-h-80 overflow-auto
+```
+
+### Suggestion item
+
+- Layout: flex, justify-between
+- Text: `font-medium !text-[#201a1a]`
+- Sublabel: `text-xs !text-[#534342] ml-2`
+- Hover: `hover:!bg-[#fff1f0]`
+- Arrow icon: `HiArrowRight !text-[#534342]`
+
+### Click behavior
+
+- Restaurant suggestion: navigate directly to restaurant page
+- Dish/Menu/Category: fill the search input, close dropdown (user clicks Search to navigate)
+
 ## Hero/Banner Section (CinematicBanner)
 
 ### Background gradient
@@ -173,6 +200,40 @@ max-w-7xl mx-auto px-6 py-16
 - Image height: `h-64 rounded-xl`
 - Overlay gradient: `bg-[linear-gradient(180deg,rgba(0,0,0,0.1),rgba(10,14,8,0.75))]`
 - Rating badge: `!bg-[#8fa31e]/90 px-3 py-1.5 text-xs font-bold !text-white`
+
+## Search Results Page (SearchResults.jsx)
+
+### Hero section
+
+- Background: `!bg-gradient-to-br from-[#c31e18] to-[#df2921]`
+- Decorative blur: same as CinematicBanner
+- Padding: `p-8 lg:p-12`
+- Title: `font-[Manrope] text-3xl lg:text-5xl font-extrabold !text-white`
+
+### Search bar
+
+- White background with `rounded-full`
+- Shadow: `shadow-2xl`
+- Location + Search inputs in row
+- Search button: `!bg-[#bf1e18] !text-white rounded-full`
+
+### Active filter badges
+
+- Style: `!bg-white/20 !text-white px-3 py-1 rounded-full text-xs font-medium`
+- Remove button: `×` on hover
+
+### Menu item card
+
+- Background: `!bg-white rounded-xl`
+- Border: `border border-[#d8c2c0]/30`
+- Hover: `hover:border-[#bf1e18] hover:shadow-lg`
+- Price: `!text-[#bf1e18] font-semibold`
+- Arrow: `!text-[#bf1e18] h-4 w-4 opacity-0 group-hover:opacity-100`
+
+### Section heading
+
+- Font: `font-[Manrope] text-xl sm:text-2xl font-bold`
+- Color: `!text-[#201a1a]`
 
 ## Restaurants Listing Page (Restaurants.jsx)
 
