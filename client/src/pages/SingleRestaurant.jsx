@@ -196,13 +196,13 @@ const getFeaturedDishImage = (restaurant, menus) => {
 };
 
 const Skeleton = () => (
-  <div className="min-h-screen bg-[#f6fdeb] pt-24">
-    <div className="h-[75vh] animate-pulse bg-[#d8ccb8]" />
+  <div className="min-h-screen !bg-[#fff8f7] pt-24">
+    <div className="h-[75vh] animate-pulse !bg-[#d8c2c0]" />
     <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 lg:grid-cols-[minmax(0,1.6fr)_390px]">
-      <div className="h-[560px] rounded-[2rem] bg-[#eee5d7]" />
+      <div className="h-[560px] rounded-[2rem] !bg-[#d8c2c0]" />
       <div className="space-y-6">
-        <div className="h-72 rounded-[2rem] bg-[#eee5d7]" />
-        <div className="h-72 rounded-[2rem] bg-[#eee5d7]" />
+        <div className="h-72 rounded-[2rem] !bg-[#d8c2c0]" />
+        <div className="h-72 rounded-[2rem] !bg-[#d8c2c0]" />
       </div>
     </div>
   </div>
@@ -320,21 +320,21 @@ export default function SingleRestaurant() {
 
   if (!isPublished && !isAdmin) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f6fdeb] px-4 pt-24">
-        <div className="max-w-md rounded-[2rem] border border-[#dce6c1] bg-white p-8 text-center shadow-[0_18px_50px_rgba(64,48,20,0.05)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
+      <div className="flex min-h-screen items-center justify-center !bg-[#fff8f7] px-4 pt-24">
+        <div className="max-w-md rounded-[2rem] border border-[#c4dcc1] !bg-white p-8 text-center shadow-[0_18px_50px_rgba(64,48,20,0.05)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] !text-[#2f6a34]">
             Restaurant
           </p>
-          <h1 className="mt-3 text-3xl font-black text-[#23411f]">
+          <h1 className="mt-3 text-3xl font-black !text-[#201a1a]">
             Not Available
           </h1>
-          <p className="mt-3 text-sm leading-7 text-[#6d6358]">
+          <p className="mt-3 text-sm leading-7 !text-[#534342]">
             This restaurant is currently {restaurant?.status || 'unavailable'}{' '}
             and cannot be viewed.
           </p>
           <Link
             to="/restaurants"
-            className="mt-6 inline-flex rounded-full bg-[#1f2e17] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#2d4121]"
+            className="mt-6 inline-flex rounded-full !bg-[#bf1e18] px-6 py-3 text-sm font-semibold !text-white transition hover:opacity-90"
           >
             Browse restaurants
           </Link>
@@ -345,18 +345,18 @@ export default function SingleRestaurant() {
 
   if (error || !restaurant) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f6fdeb] px-4 pt-24">
-        <div className="max-w-md rounded-[2rem] border border-[#dce6c1] bg-white p-8 text-center shadow-[0_18px_50px_rgba(64,48,20,0.05)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
+      <div className="flex min-h-screen items-center justify-center !bg-[#fff8f7] px-4 pt-24">
+        <div className="max-w-md rounded-[2rem] border border-[#c4dcc1] !bg-white p-8 text-center shadow-[0_18px_50px_rgba(64,48,20,0.05)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] !text-[#2f6a34]">
             Restaurant
           </p>
-          <h1 className="mt-3 text-3xl font-black text-[#23411f]">Not Found</h1>
-          <p className="mt-3 text-sm leading-7 text-[#6d6358]">
+          <h1 className="mt-3 text-3xl font-black !text-[#201a1a]">Not Found</h1>
+          <p className="mt-3 text-sm leading-7 !text-[#534342]">
             {error || 'This restaurant page is not available right now.'}
           </p>
           <Link
             to="/restaurants"
-            className="mt-6 inline-flex rounded-full bg-[#1f2e17] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#2d4121]"
+            className="mt-6 inline-flex rounded-full !bg-[#bf1e18] px-6 py-3 text-sm font-semibold !text-white transition hover:opacity-90"
           >
             Browse restaurants
           </Link>
@@ -387,7 +387,7 @@ export default function SingleRestaurant() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f6fdeb] pt-24 text-[#23411f]">
+    <div className="min-h-screen !bg-[#fff8f7] pt-24 !text-[#201a1a]">
       {/* Hero Section */}
       <header className="relative h-[80vh] min-h-[600px] flex items-center justify-center overflow-hidden">
         <img
@@ -415,7 +415,7 @@ export default function SingleRestaurant() {
               {restaurant.rating?.toFixed(1) || 'New'} Rating
             </span>
             <span className="opacity-40">|</span>
-            <span>{restaurant.priceRange || '$$'}</span>
+            <span className="!text-[#bf1e18]">{restaurant.priceRange || '$$'}</span>
             <span className="opacity-40">|</span>
             <span>
               {restaurant.address?.city ||
@@ -455,25 +455,25 @@ export default function SingleRestaurant() {
       <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-20">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1.7fr)_360px]">
           <div>
-            <section className="overflow-hidden rounded-[2.2rem] border border-[#dce6c1] bg-white shadow-[0_22px_70px_rgba(65,48,24,0.08)]">
-              <div className="border-b border-[#ebf0d7] bg-[linear-gradient(135deg,#fbfcf7_0%,#f5faeb_100%)] p-6 sm:p-8">
+            <section className="overflow-hidden rounded-[2.2rem] border border-[#c4dcc1] !bg-white shadow-[0_22px_70px_rgba(65,48,24,0.08)]">
+              <div className="border-b border-[#c4dcc1] !bg-[#fff8f7] p-6 sm:p-8">
                 <div className="max-w-2xl">
-                  <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[#8e5c2d]">
+                  <p className="text-xs font-semibold uppercase tracking-[0.32em] !text-[#2f6a34]">
                     Curated Menu
                   </p>
-                  <h2 className="mt-3 text-4xl font-black tracking-tight text-[#23411f]">
+                  <h2 className="mt-3 text-4xl font-black tracking-tight !text-[#201a1a]">
                     Designed to feel like a destination, not a list
                   </h2>
-                  <p className="mt-4 text-base leading-8 text-[#6d6358]">
+                  <p className="mt-4 text-base leading-8 !text-[#534342]">
                     Browse the standout dishes, signature sections, and
                     high-intent menu story of {restaurant.name}.
                   </p>
                 </div>
                 
-                <div className="mt-6 border-t border-[#ebf0d7] pt-4">
+                <div className="mt-6 border-t border-[#c4dcc1] pt-4">
                   <div className="flex flex-wrap gap-4">
                     <div className="flex flex-wrap gap-2">
-                      <span className="text-[10px] uppercase tracking-[0.15em] text-[#8e5c2d]">Allergens:</span>
+                      <span className="text-[10px] uppercase tracking-[0.15em] !text-[#2f6a34]">Allergens:</span>
                       {ALLERGEN_KEYS.map((key) => (
                           <button
                             key={key}
@@ -481,8 +481,8 @@ export default function SingleRestaurant() {
                             onClick={() => dispatch(toggleAllergen(key))}
                             className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] transition ${
                               selectedAllergens.includes(key)
-                                ? '!bg-[#b62828] !text-white'
-                                : '!bg-[#f4ede2] !text-[#6d6358]'
+                                ? '!bg-[#bf1e18] !text-white'
+                                : '!bg-[#fff1f0] !text-[#534342]'
                             }`}
                           >
                             {ALLERGY_LABELS[key]}
@@ -491,7 +491,7 @@ export default function SingleRestaurant() {
                     </div>
                     
                       <div className="flex flex-wrap gap-2 ml-4">
-                        <span className="text-[10px] uppercase tracking-[0.15em] !text-[#8e5c2d]">Diet:</span>
+                        <span className="text-[10px] uppercase tracking-[0.15em] !text-[#2f6a34]">Diet:</span>
                         {DIETARY_OPTIONS.map((opt) => (
                           <button
                             key={opt.key}
@@ -500,7 +500,7 @@ export default function SingleRestaurant() {
                             className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] transition ${
                               selectedDiet === opt.key
                                 ? '!bg-[#bf1e18] !text-white'
-                                : '!bg-[#f4ede2] !text-[#6d6358]'
+                                : '!bg-[#fff1f0] !text-[#534342]'
                             }`}
                           >
                             {opt.label}
@@ -521,8 +521,8 @@ export default function SingleRestaurant() {
                       }}
                       className={`group relative rounded-full px-5 py-2.5 text-xs font-bold uppercase tracking-[0.2em] transition-all duration-300 ${
                         activeCategory === category
-                          ? '!bg-[#8fa31e] !text-white shadow-[0_6px_24px_rgba(143,163,30,0.4)] ring-2 ring-[#8fa31e] ring-offset-2 ring-offset-[#f6fdeb]'
-                          : 'bg-[#f6fdeb] text-[#47692e] hover:!bg-[#23411f] hover:!text-white hover:shadow-[0_6px_20px_rgba(35,65,31,0.3)]'
+                          ? '!bg-[#bf1e18] !text-white shadow-lg'
+                          : '!bg-[#fff1f0] !text-[#2f6a34] hover:!bg-[#bf1e18] hover:!text-white'
                       }`}
                     >
                       <span className="relative z-10 flex items-center justify-center gap-2">
@@ -535,14 +535,14 @@ export default function SingleRestaurant() {
 
               <div className="p-6 sm:p-8">
                 {menus.length === 0 ? (
-                  <div className="rounded-[1.9rem] border border-dashed border-[#dce6c1] bg-[#faf6ef] px-6 py-14 text-center">
-                    <p className="text-sm uppercase tracking-[0.32em] text-[#8e5c2d]">
+                  <div className="rounded-[1.9rem] border-2 border-dashed border-[#c4dcc1] !bg-[#fff8f7] px-6 py-14 text-center">
+                    <p className="text-sm uppercase tracking-[0.32em] !text-[#2f6a34]">
                       Menu
                     </p>
-                    <h3 className="mt-3 text-2xl font-bold text-[#23411f]">
+                    <h3 className="mt-3 text-2xl font-bold !text-[#201a1a]">
                       Coming Soon
                     </h3>
-                    <p className="mt-3 text-sm leading-7 text-[#6d6358]">
+                    <p className="mt-3 text-sm leading-7 !text-[#534342]">
                       This restaurant has not published its dishes yet.
                     </p>
                   </div>
@@ -553,11 +553,11 @@ export default function SingleRestaurant() {
                         key={`${menu.category || 'menu'}-${index}`}
                         id={`menu-category-${(menu.category || 'menu').replace(/\s+/g, '-')}`}
                       >
-                        <div className="mb-8 flex items-end justify-between gap-4 border-b border-[#ebf0d7] pb-4">
-                          <h3 className="text-3xl font-black uppercase tracking-tight text-[#23411f]">
+                        <div className="mb-8 flex items-end justify-between gap-4 border-b border-[#c4dcc1] pb-4">
+                          <h3 className="text-3xl font-black uppercase tracking-tight !text-[#201a1a]">
                             {menu.category || 'Menu'}
                           </h3>
-                          <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#9d9284]">
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.28em] !text-[#534342]">
                             {menu.items?.length || 0} dishes
                           </span>
                         </div>
@@ -580,8 +580,8 @@ export default function SingleRestaurant() {
             </section>
 
             <section className="mt-10 grid gap-6 md:grid-cols-3">
-              <div className="rounded-[2rem] border border-[#dce6c1] bg-[#1f2e17] p-6 text-white shadow-[0_18px_50px_rgba(31,46,23,0.18)]">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/60">
+              <div className="rounded-[2rem] border border-[#c4dcc1] !bg-[#bf1e18] p-6 !text-white shadow-lg">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/70">
                   Culinary identity
                 </p>
                 <p className="mt-4 text-2xl font-black leading-tight">
@@ -590,21 +590,21 @@ export default function SingleRestaurant() {
                 </p>
               </div>
 
-              <div className="rounded-[2rem] border border-[#dce6c1] bg-white p-6 shadow-[0_18px_45px_rgba(64,48,20,0.06)]">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
+              <div className="rounded-[2rem] border border-[#c4dcc1] !bg-white p-6 shadow-lg">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.3em] !text-[#2f6a34]">
                   Atmosphere
                 </p>
-                <p className="mt-4 text-base leading-8 text-[#6d6358]">
+                <p className="mt-4 text-base leading-8 !text-[#534342]">
                   Hero banner, logo treatment, and layered content blocks work
                   together to make the page feel intentional and memorable.
                 </p>
               </div>
 
-              <div className="rounded-[2rem] border border-[#dce6c1] bg-[linear-gradient(135deg,#fff7ea_0%,#fffdf8_100%)] p-6 shadow-[0_18px_45px_rgba(64,48,20,0.06)]">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
+              <div className="rounded-[2rem] border border-[#c4dcc1] !bg-[#fff8f7] p-6 shadow-lg">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.3em] !text-[#2f6a34]">
                   Brand clarity
                 </p>
-                <p className="mt-4 text-base leading-8 text-[#6d6358]">
+                <p className="mt-4 text-base leading-8 !text-[#534342]">
                   Structured information and softer premium surfaces make the
                   restaurant easier to trust at first glance.
                 </p>
@@ -614,13 +614,13 @@ export default function SingleRestaurant() {
             <section className="mt-16">
               <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[#8e5c2d]">
+                  <p className="text-xs font-semibold uppercase tracking-[0.32em] !text-[#2f6a34]">
                     Guest Impressions
                   </p>
-                  <h2 className="mt-3 text-4xl font-black tracking-tight text-[#23411f]">
+                  <h2 className="mt-3 text-4xl font-black tracking-tight !text-[#201a1a]">
                     The Guest Journal
                   </h2>
-                  <p className="mt-3 text-base text-[#6d6358]">
+                  <p className="mt-3 text-base !text-[#534342]">
                     Reviews displayed like editorial testimonials rather than
                     generic cards.
                   </p>
@@ -629,7 +629,7 @@ export default function SingleRestaurant() {
                   <button
                     type="button"
                     onClick={() => setShowReviewModal(true)}
-                    className="flex items-center gap-2 rounded-full !bg-[#1f2e17] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] !text-white transition hover:!bg-[#2d4121]"
+                    className="flex items-center gap-2 rounded-full !bg-[#bf1e18] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] !text-white transition hover:opacity-90"
                   >
                     <HiPlus className="h-4 w-4" />
                     Add Review
@@ -642,32 +642,32 @@ export default function SingleRestaurant() {
                   {[1, 2, 3].map((i) => (
                     <div
                       key={i}
-                      className="animate-pulse rounded-[2rem] border border-[#dce6c1] bg-[#faf6ef] p-7"
+                      className="animate-pulse rounded-[2rem] border border-[#c4dcc1] !bg-[#fff8f7] p-7"
                     >
                       <div className="flex gap-1">
                         {[1, 2, 3, 4, 5].map((j) => (
-                          <HiStar key={j} className="h-5 w-5 text-[#ddd1bc]" />
+                          <HiStar key={j} className="h-5 w-5 !text-[#d8c2c0]" />
                         ))}
                       </div>
-                      <div className="mt-6 h-20 rounded-lg bg-[#e8e2d6]" />
+                      <div className="mt-6 h-20 rounded-lg !bg-[#d8c2c0]" />
                       <div className="mt-7 flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-full bg-[#e8e2d6]" />
-                        <div className="h-8 w-24 rounded-lg bg-[#e8e2d6]" />
+                        <div className="h-12 w-12 rounded-full !bg-[#d8c2c0]" />
+                        <div className="h-8 w-24 rounded-lg !bg-[#d8c2c0]" />
                       </div>
                     </div>
                   ))}
                 </div>
               ) : reviews.length === 0 ? (
-                <div className="rounded-[2rem] border border-dashed border-[#dce6c1] bg-[#fbfcf7] px-6 py-12 text-center shadow-[0_18px_45px_rgba(64,48,20,0.04)]">
+                <div className="rounded-[2rem] border-2 border-dashed border-[#c4dcc1] !bg-[#fff8f7] px-6 py-12 text-center shadow-md">
                   {user ? (
                     <>
-                      <p className="text-base text-[#6d6358]">
+                      <p className="text-base !text-[#534342]">
                         Be the first to share your experience!
                       </p>
                       <button
                         type="button"
                         onClick={() => setShowReviewModal(true)}
-                        className="mt-4 inline-flex items-center gap-2 rounded-full !bg-[#8fa31e] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:!bg-[#78871c]"
+                        className="mt-4 inline-flex items-center gap-2 rounded-full !bg-[#bf1e18] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] !text-white transition hover:opacity-90"
                       >
                         <HiPlus className="h-4 w-4" />
                         Write a review
@@ -675,24 +675,24 @@ export default function SingleRestaurant() {
                     </>
                   ) : (
                     <div className="space-y-4">
-                      <p className="text-base text-[#6d6358]">
+                      <p className="text-base !text-[#534342]">
                         Join the community to share your dining experience and help others discover this restaurant.
                       </p>
                       <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                         <Link
                           to="/login"
-                          className="inline-flex items-center justify-center gap-2 rounded-full bg-[#8fa31e] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[#78871c]"
+                          className="inline-flex items-center justify-center gap-2 rounded-full !bg-[#bf1e18] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] !text-white transition hover:opacity-90"
                         >
                           Login
                         </Link>
                         <Link
                           to="/register"
-                          className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-[#23411f] border border-[#d8dfc0] transition hover:bg-[#f7faef]"
+                          className="inline-flex items-center justify-center gap-2 rounded-full !bg-white px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] !text-[#2f6a34] border border-[#c4dcc1] transition hover:!bg-[#fff1f0]"
                         >
                           Register
                         </Link>
                       </div>
-                      <p className="text-xs text-[#9d9284]">
+                      <p className="text-xs !text-[#534342]">
                         Reviews will appear here once guests start sharing their experience.
                       </p>
                     </div>
@@ -708,7 +708,7 @@ export default function SingleRestaurant() {
                       return (
                         <article
                           key={`${review._id || index}-${index}`}
-                          className="group cursor-pointer overflow-hidden rounded-[2rem] border border-[#dce6c1] bg-white p-7 shadow-[0_18px_45px_rgba(64,48,20,0.06)] transition hover:border-[#8fa31e]"
+                          className="group cursor-pointer overflow-hidden rounded-[2rem] border !border-[#c4dcc1] bg-white p-7 shadow-[0_18px_45px_rgba(64,48,20,0.06)] transition hover:border-[#bf1e18]"
                           onClick={() => {
                             if (hasImages) {
                               const imageList = [];
@@ -735,11 +735,11 @@ export default function SingleRestaurant() {
                           }}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1f2e17] text-sm font-semibold text-white">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#bf1e18] text-sm font-semibold text-white">
                               {getReviewAuthor(review).charAt(0).toUpperCase()}
                             </div>
                             <div>
-                              <p className="text-sm font-semibold text-[#23411f]">
+                              <p className="text-sm font-semibold !text-[#201a1a]">
                                 {getReviewAuthor(review)}
                               </p>
                               <p className="text-xs uppercase tracking-[0.18em] text-[#9d9284]">
@@ -783,7 +783,7 @@ export default function SingleRestaurant() {
                                 );
                               })}
                               {reviewImages.length > 3 && (
-                                <div className="flex h-16 w-16 items-center justify-center bg-[#f6fdeb] text-xs font-semibold text-[#8e5c2d]">
+                                <div className="flex h-16 w-16 items-center justify-center !bg-[#fff8f7] text-xs font-semibold text-[#2f6a34]">
                                   +{reviewImages.length - 3}
                                 </div>
                               )}
@@ -802,7 +802,7 @@ export default function SingleRestaurant() {
                     <div className="text-center">
                       <Link
                         to={`/reviews?restaurant=${restaurant.slug}&restaurantName=${encodeURIComponent(restaurant.name)}`}
-                        className="inline-flex items-center gap-2 text-sm font-semibold text-[#8fa31e] hover:underline"
+                        className="inline-flex items-center gap-2 text-sm font-semibold !text-[#2f6a34] hover:underline"
                       >
                         View all {reviews.length} reviews
                         <HiArrowSmRight className="h-4 w-4" />
@@ -815,7 +815,7 @@ export default function SingleRestaurant() {
           </div>
 
           <aside className="space-y-6 lg:pt-8">
-            <div className="overflow-hidden rounded-[2rem] border border-[#dce6c1] bg-white shadow-[0_18px_50px_rgba(64,48,20,0.06)]">
+            <div className="overflow-hidden rounded-[2rem] border !border-[#c4dcc1] bg-white shadow-[0_18px_50px_rgba(64,48,20,0.06)]">
               <div className="h-44 overflow-hidden">
                 <img
                   src={
@@ -827,11 +827,11 @@ export default function SingleRestaurant() {
                 />
               </div>
               <div className="p-6">
-                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
+                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-[#2f6a34]">
                   <HiLocationMarker className="h-4 w-4" />
                   Location
                 </p>
-                <h3 className="mt-5 text-2xl font-black text-[#23411f]">
+                <h3 className="mt-5 text-2xl font-black !text-[#201a1a]">
                   {restaurant.address?.areaLocality ||
                     restaurant.address?.city ||
                     'Visit us'}
@@ -844,7 +844,7 @@ export default function SingleRestaurant() {
                     href={mapsUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#1f2e17] px-5 py-3 text-xs font-semibold uppercase tracking-[0.24em] text-white transition hover:bg-[#2d4121]"
+                    className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full !bg-[#bf1e18] px-5 py-3 text-xs font-semibold uppercase tracking-[0.24em] text-white transition hover:!bg-[#8a160f]"
                   >
                     Open map
                     <HiArrowSmRight className="h-4 w-4" />
@@ -853,8 +853,8 @@ export default function SingleRestaurant() {
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-[#dce6c1] bg-white p-6 shadow-[0_18px_50px_rgba(64,48,20,0.06)]">
-              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
+            <div className="rounded-[2rem] border !border-[#c4dcc1] bg-white p-6 shadow-[0_18px_50px_rgba(64,48,20,0.06)]">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-[#2f6a34]">
                 <HiLocationMarker className="h-4 w-4" />
                 Quick facts
               </p>
@@ -863,7 +863,7 @@ export default function SingleRestaurant() {
                   <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#9d9284]">
                     Price range
                   </p>
-                  <p className="mt-2 text-sm font-semibold text-[#23411f]">
+                  <p className="mt-2 text-sm font-semibold !text-[#bf1e18]">
                     {restaurant.priceRange || 'Available on request'}
                   </p>
                 </div>
@@ -871,15 +871,15 @@ export default function SingleRestaurant() {
                   <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#9d9284]">
                     Cuisine
                   </p>
-                  <p className="mt-2 text-sm font-semibold text-[#23411f]">
+                  <p className="mt-2 text-sm font-semibold !text-[#201a1a]">
                     {restaurant.cuisineType || 'Signature specials'}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-[#dce6c1] bg-white p-6 shadow-[0_18px_50px_rgba(64,48,20,0.06)]">
-              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
+            <div className="rounded-[2rem] border !border-[#c4dcc1] bg-white p-6 shadow-[0_18px_50px_rgba(64,48,20,0.06)]">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-[#2f6a34]">
                 <HiClock className="h-4 w-4" />
                 Opening Hours
               </p>
@@ -906,7 +906,7 @@ export default function SingleRestaurant() {
                       className={
                         isClosed
                           ? 'text-[#b62828]'
-                          : 'font-medium text-[#23411f]'
+                          : 'font-medium !text-[#201a1a]'
                       }
                     >
                       {label}
@@ -916,8 +916,8 @@ export default function SingleRestaurant() {
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-[#dce6c1] bg-white p-6 shadow-[0_18px_50px_rgba(64,48,20,0.06)]">
-              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-[#8e5c2d]">
+            <div className="rounded-[2rem] border !border-[#c4dcc1] bg-white p-6 shadow-[0_18px_50px_rgba(64,48,20,0.06)]">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-[#2f6a34]">
                 <HiPhone className="h-4 w-4" />
                 Inquiries
               </p>
@@ -925,9 +925,9 @@ export default function SingleRestaurant() {
                 {restaurant.contactNumber ? (
                   <a
                     href={`tel:${restaurant.contactNumber}`}
-                    className="flex items-center gap-4 text-sm text-[#6d6358] transition hover:text-[#23411f]"
+                    className="flex items-center gap-4 text-sm text-[#534342] transition hover:!text-[#2f6a34]"
                   >
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#faf6ef] text-[#8e5c2d]">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-full !bg-[#fff8f7] !text-[#2f6a34]">
                       <HiPhone className="h-5 w-5" />
                     </span>
                     <div>
@@ -944,9 +944,9 @@ export default function SingleRestaurant() {
                 {restaurant.email ? (
                   <a
                     href={`mailto:${restaurant.email}`}
-                    className="flex items-center gap-4 text-sm text-[#6d6358] transition hover:text-[#23411f]"
+                    className="flex items-center gap-4 text-sm text-[#534342] transition hover:!text-[#2f6a34]"
                   >
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#faf6ef] text-[#8e5c2d]">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-full !bg-[#fff8f7] !text-[#2f6a34]">
                       <HiMail className="h-5 w-5" />
                     </span>
                     <div>
@@ -965,9 +965,9 @@ export default function SingleRestaurant() {
                     href={restaurant.website}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-4 text-sm text-[#6d6358] transition hover:text-[#23411f]"
+                    className="flex items-center gap-4 text-sm text-[#534342] transition hover:!text-[#2f6a34]"
                   >
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#faf6ef] text-[#8e5c2d]">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-full !bg-[#fff8f7] !text-[#2f6a34]">
                       <HiGlobe className="h-5 w-5" />
                     </span>
                     <div>
@@ -994,7 +994,7 @@ export default function SingleRestaurant() {
                 <p className="text-xs font-semibold uppercase tracking-[0.35em] !text-[#b62828]">
                   Explore
                 </p>
-                <h2 className="mt-3 text-2xl font-bold text-[#23411f] sm:text-3xl">
+                <h2 className="mt-3 text-2xl font-bold !text-[#201a1a] sm:text-3xl">
                   Nearby Restaurants
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-gray-600 sm:text-base">
@@ -1015,7 +1015,7 @@ export default function SingleRestaurant() {
                 <p className="text-xs font-semibold uppercase tracking-[0.35em] !text-[#b62828]">
                   You May Also Like
                 </p>
-                <h2 className="mt-3 text-2xl font-bold text-[#23411f] sm:text-3xl">
+                <h2 className="mt-3 text-2xl font-bold !text-[#201a1a] sm:text-3xl">
                   Related Restaurants
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-gray-600 sm:text-base">
@@ -1048,8 +1048,8 @@ export default function SingleRestaurant() {
 
       <Modal show={showThankYou} onClose={handleThankYouClose} size="sm">
         <div className="text-center p-6">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#f5faeb]">
-            <HiStar className="h-8 w-8 fill-[#8fa31e] text-[#8fa31e]" />
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full !bg-[#fff8f7]">
+            <HiStar className="h-8 w-8 !fill-[#bf1e18] !text-[#2f6a34]" />
           </div>
           <Modal.Header className="justify-center text-center">
             Thank You!
@@ -1057,7 +1057,7 @@ export default function SingleRestaurant() {
           <Modal.Body>
             <p className="text-sm leading-7 text-[#6d6358]">
               Your review helps other diners discover what makes{' '}
-              <span className="font-semibold text-[#23411f]">{restaurant?.name}</span> special.
+              <span className="font-semibold !text-[#201a1a]">{restaurant?.name}</span> special.
               <br />
               Thanks for sharing your experience!
             </p>
@@ -1065,7 +1065,7 @@ export default function SingleRestaurant() {
           <Modal.Footer className="justify-center">
             <Button
               onClick={handleThankYouClose}
-              className="!bg-[#8fa31e] hover:!bg-[#78871c]"
+              className="!bg-[#bf1e18] hover:!bg-[#8a160f]"
             >
               Got it
             </Button>
