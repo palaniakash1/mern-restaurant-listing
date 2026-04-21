@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { HiLocationMarker } from 'react-icons/hi';
+import { HiLocationMarker, HiStar } from 'react-icons/hi';
 import { getNearbyRestaurants, listCategories } from '../services/restaurantService';
 import { NearbyRestaurantCard } from '../components/public/NearbyRestaurantCard';
 import { SkeletonCard } from '../components/SkeletonCard';
-import { elevatedCardClass, joinClasses } from '../utils/publicPage';
+import { joinClasses } from '../utils/publicPage';
 
 const SORT_OPTIONS = [
-  { value: 'distance', label: 'Nearest First' },
-  { value: 'rating', label: 'Highest Rated' },
+  { value: 'distance', label: 'Nearest' },
+  { value: 'rating', label: 'Top Rated' },
   { value: 'reviews', label: 'Most Reviewed' }
 ];
 
@@ -111,7 +111,7 @@ export default function NearMe() {
 
   useEffect(() => {
     requestLocation();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -135,57 +135,52 @@ export default function NearMe() {
   };
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#fdf0f0_0%,#f6fbe9_35%,#edf4dc_100%)]">
-      <div className="relative overflow-hidden pt-28 pb-16">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#23411f] via-[#3d5c33] to-[#8fa31e]">
-          <div className="absolute inset-0 opacity-20">
-            <div
-              className="w-full h-full"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-              }}
-            />
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+    <main className="!bg-[#fff8f7] min-h-screen">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden pt-24 pb-16">
+        <div className="absolute inset-0 !bg-gradient-to-br from-[#c31e18] to-[#df2921]">
+          <div className="absolute -top-24 -right-24 w-96 h-96 !bg-white/10 rounded-full blur-3xl" />
+          <div className="absolute -bottom-24 -left-24 w-64 h-64 !bg-black/10 rounded-full blur-2xl" />
         </div>
 
-        <div className="relative z-10 px-6 text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-5 py-2.5 text-sm font-medium text-white backdrop-blur">
+        <div className="relative z-10 px-6 text-center max-w-3xl mx-auto">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full !bg-white/10 px-5 py-2.5 text-sm font-medium !text-white backdrop-blur">
             <HiLocationMarker className="h-5 w-5" />
             {locationLoading ? (
               <span className="animate-pulse">Getting your location...</span>
             ) : locationError ? (
-              <span className="text-yellow-200">Showing restaurants in London</span>
+              <span className="!text-white/70">Showing restaurants in London</span>
             ) : (
               <span>Restaurants near you</span>
             )}
           </div>
 
-          <h1 className="text-4xl font-bold text-white md:text-5xl lg:text-6xl">
+          <h1 className="text-4xl font-bold !text-white md:text-5xl lg:text-6xl font-[Manrope]">
             Near Me
           </h1>
-          <p className="mt-4 max-w-lg mx-auto text-lg text-white/80">
+          <p className="mt-4 max-w-lg mx-auto text-lg !text-white/80">
             Discover the best dining spots in your vicinity
           </p>
         </div>
       </div>
 
-      <div className="mx-auto max-w-screen-xl px-6 pb-16">
-        <div className={joinClasses(elevatedCardClass, 'p-5 mb-6')}>
+      {/* Filters Section */}
+      <div className="mx-auto max-w-7xl px-6 -mt-8 relative z-10">
+        <div className="!bg-white rounded-2xl shadow-2xl p-5 mb-6">
           <div className="flex flex-col gap-5">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-500">Sort by:</span>
+                <span className="text-sm font-medium !text-[#534342]">Sort by:</span>
                 <div className="flex gap-2">
                   {SORT_OPTIONS.map((opt) => (
                     <button
                       key={opt.value}
                       onClick={() => handleFilterChange('sortBy', opt.value)}
                       className={joinClasses(
-                        'rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-200',
+                        'rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-200',
                         filters.sortBy === opt.value
-                          ? 'bg-gradient-to-r from-[#576500] to-[#8fa31e] text-white shadow-md shadow-[#8fa31e]/30'
-                          : 'bg-[#f5faeb] text-[#4f5e1d] hover:bg-[#dbe9ab]'
+                          ? '!bg-[#bf1e18] !text-white shadow-lg shadow-[#bf1e18]/30'
+                          : '!bg-[#fff1f0] !text-[#bf1e18] hover:!bg-[#bf1e18] hover:!text-white'
                       )}
                     >
                       {opt.label}
@@ -197,25 +192,25 @@ export default function NearMe() {
               <button
                 onClick={requestLocation}
                 className={joinClasses(
-                  'inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold transition-all duration-200',
+                  'inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-bold transition-all duration-200',
                   locationError
-                    ? 'border-[#b62828] text-[#b62828] hover:bg-[#fff5f5]'
-                    : 'border-[#8fa31e] text-[#576500] hover:bg-[#8fa31e]/10'
+                    ? 'border-[#bf1e18] !text-[#bf1e18] hover:!bg-[#fff1f0]'
+                    : 'border-[#d8c2c0] !text-[#534342] hover:!bg-[#fff1f0]'
                 )}
               >
                 <HiLocationMarker className="h-4 w-4" />
-                {locationLoading ? 'Locating...' : locationError ? 'Retry Location' : 'Refresh Location'}
+                {locationLoading ? 'Locating...' : locationError ? 'Retry' : 'Refresh'}
               </button>
             </div>
 
             {categories.length > 0 && (
               <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-hide">
-                <span className="text-sm font-medium text-gray-500 shrink-0">Cuisine:</span>
+                <span className="text-sm font-medium !text-[#534342] shrink-0">Cuisine:</span>
                 <div className="flex gap-2">
-                  {categories.slice(0, 6).map((cat) => (
+                  {categories.slice(0, 8).map((cat) => (
                     <button
                       key={cat._id || cat.id}
-                      className="shrink-0 rounded-full border border-[#dce6c1] bg-white px-4 py-2 text-sm font-medium text-[#4f5e1d] transition hover:border-[#8fa31e] hover:bg-[#f5faef]"
+                      className="shrink-0 rounded-full border border-[#d8c2c0] !bg-white px-4 py-2 text-sm font-bold !text-[#534342] transition hover:border-[#bf1e18] hover:!text-[#bf1e18]"
                     >
                       {cat.name}
                     </button>
@@ -226,32 +221,39 @@ export default function NearMe() {
           </div>
         </div>
 
+        {/* Results */}
         {loading ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <SkeletonCard key={i} variant="restaurant" />
             ))}
           </div>
         ) : error ? (
-          <div className={joinClasses(elevatedCardClass, 'p-12 text-center')}>
-            <p className="text-gray-600">{error}</p>
+          <div className="!bg-white rounded-2xl shadow-lg p-12 text-center">
+            <HiLocationMarker className="mx-auto h-12 w-12 !text-[#bf1e18]" />
+            <h3 className="mt-4 text-lg font-bold !text-[#201a1a] font-[Manrope]">
+              Unable to Load Restaurants
+            </h3>
+            <p className="mt-2 !text-[#534342]">{error}</p>
           </div>
         ) : restaurants.length === 0 ? (
-          <div className={joinClasses(elevatedCardClass, 'p-12 text-center')}>
-            <HiLocationMarker className="mx-auto h-12 w-12 text-gray-300" />
-            <h3 className="mt-4 text-lg font-semibold text-[#23411f]">
-              No restaurants found
+          <div className="!bg-white rounded-2xl shadow-lg p-12 text-center">
+            <div className="w-20 h-20 !bg-[#fff1f0] rounded-full flex items-center justify-center mx-auto mb-4">
+              <HiLocationMarker className="h-10 w-10 !text-[#bf1e18]" />
+            </div>
+            <h3 className="text-xl font-bold !text-[#201a1a] font-[Manrope]">
+              No Restaurants Found
             </h3>
-            <p className="mt-2 text-gray-500">
+            <p className="mt-2 !text-[#534342]">
               No restaurants found in your area
             </p>
           </div>
         ) : (
           <>
-            <p className="mb-4 text-sm text-gray-600">
-              Found <span className="font-semibold text-[#23411f]">{restaurants.length}</span> restaurants nearby
+            <p className="mb-4 text-sm !text-[#534342]">
+              Found <span className="font-bold !text-[#bf1e18]">{restaurants.length}</span> restaurants nearby
             </p>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {restaurants.map((restaurant) => (
                 <NearbyRestaurantCard
                   key={restaurant._id || restaurant.id}
