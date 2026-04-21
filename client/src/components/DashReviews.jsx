@@ -660,7 +660,7 @@ export default function DashReviews() {
               {[
                 {
                   key: 'all',
-                  label: `All (${allReviews.length})`,
+                  label: `All (${totalItems})`,
                   onClick: () => setStatusFilter('all'),
                   active: statusFilter === 'all'
                 },
