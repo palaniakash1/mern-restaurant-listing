@@ -141,7 +141,7 @@ export default function SearchResults() {
   };
 
   return (
-    <main className={publicShellClass + ' pt-16'}>
+    <main className={publicShellClass + ' pt-24'}>
       <section className="relative overflow-hidden">
         <div className="w-full mx-auto !bg-gradient-to-br from-[#c31e18] to-[#df2921] p-8 lg:p-12 relative overflow-hidden">
           <div className="absolute -top-24 -right-24 w-96 h-96 !bg-white/10 rounded-full blur-3xl" />
