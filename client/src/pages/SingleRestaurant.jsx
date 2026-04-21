@@ -470,11 +470,11 @@ export default function SingleRestaurant() {
                   </p>
                 </div>
                 
-                <div className="mt-6 border-t border-[#c4dcc1] pt-4">
-                  <div className="flex flex-wrap gap-4">
-                    <div className="flex flex-wrap gap-2">
+                <div className="mt-6 border-t border-[#c4dcc1] pt-4 space-y-4">
+                    <div className="flex flex-wrap items-center gap-3">
                       <span className="text-[10px] uppercase tracking-[0.15em] !text-[#2f6a34]">Allergens:</span>
-                      {ALLERGEN_KEYS.map((key) => (
+                      <div className="flex flex-wrap gap-2">
+                        {ALLERGEN_KEYS.map((key) => (
                           <button
                             key={key}
                             type="button"
@@ -488,10 +488,14 @@ export default function SingleRestaurant() {
                             {ALLERGY_LABELS[key]}
                           </button>
                         ))}
+                      </div>
                     </div>
                     
-                      <div className="flex flex-wrap gap-2 ml-4">
-                        <span className="text-[10px] uppercase tracking-[0.15em] !text-[#2f6a34]">Diet:</span>
+                    <div className="h-px bg-[#c4dcc1]" />
+                    
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="text-[10px] uppercase tracking-[0.15em] !text-[#2f6a34]">Diet:</span>
+                      <div className="flex flex-wrap gap-2">
                         {DIETARY_OPTIONS.map((opt) => (
                           <button
                             key={opt.key}
@@ -510,7 +514,9 @@ export default function SingleRestaurant() {
                     </div>
                   </div>
                 
-                <div className="flex flex-wrap gap-3 my-3">
+                <div className="h-px bg-[#c4dcc1] my-4" />
+
+                <div className="flex flex-wrap gap-3">
                   {categories.map((category) => (
                     <button
                       key={category}
@@ -522,7 +528,7 @@ export default function SingleRestaurant() {
                       className={`group relative rounded-full px-5 py-2.5 text-xs font-bold uppercase tracking-[0.2em] transition-all duration-300 ${
                         activeCategory === category
                           ? '!bg-[#bf1e18] !text-white shadow-lg'
-                          : '!bg-[#fff1f0] !text-[#2f6a34] hover:!bg-[#bf1e18] hover:!text-white'
+                          : '!bg-[#fff1f0] !text-[#000] hover:!bg-[#bf1e18] hover:!text-white'
                       }`}
                     >
                       <span className="relative z-10 flex items-center justify-center gap-2">
@@ -531,6 +537,7 @@ export default function SingleRestaurant() {
                     </button>
                   ))}
                 </div>
+                <div className="h-px bg-[#c4dcc1] mt-4" />
               </div>
 
               <div className="p-6 sm:p-8">
