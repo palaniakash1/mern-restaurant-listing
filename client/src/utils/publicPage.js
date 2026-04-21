@@ -12,7 +12,7 @@ export const elevatedCardClass =
   '!rounded-xl !border-[#d8c2c0]/10 !bg-white shadow-lg hover:shadow-xl transition-shadow';
 
 export const mutedPanelClass =
-  'rounded-[1.5rem] !border-[#ebf0d7] !bg-[#fbfcf7] shadow-sm';
+  'rounded-2xl !border-[#d8c2c0]/30 !bg-[#fff1f0] shadow-sm';
 
 export const primaryButtonClass =
   'inline-flex items-center justify-center gap-2 rounded-full !bg-[#bf1e18] !px-6 !py-3 text-sm font-bold !text-white transition hover:opacity-90 hover:scale-105 active:scale-95';
@@ -21,13 +21,13 @@ export const secondaryButtonClass =
   'inline-flex items-center justify-center gap-2 rounded-full !border border-[#d8c2c0] !bg-white !px-6 !py-3 text-sm font-bold !text-[#bf1e18] transition hover:!bg-[#bf1e18] hover:!text-white';
 
 export const ghostButtonClass =
-  'inline-flex items-center justify-center gap-2 rounded-[1rem] !border-[#d9e2bc] !bg-[#f8fbf1] !px-4 !py-3 text-sm font-semibold !text-[#4f5f1d] transition hover:!border-[#8fa31e] hover:!bg-white';
+  'inline-flex items-center justify-center gap-2 rounded-full !border-[#d8c2c0] !bg-[#fff8f7] !px-4 !py-3 text-sm font-semibold !text-[#534342] transition hover:!border-[#bf1e18] hover:!bg-white';
 
 export const inputClass =
-  'w-full rounded-[1rem] !border-[#d9e2bc] !bg-[#f8fbf1] !px-4 !py-3 text-sm !text-[#23411f] placeholder:!text-[#6b7280] focus:!border-[#8fa31e] focus:!bg-white focus:!outline-none focus:!ring-4 focus:!ring-[#dbe9ab]/50';
+  'w-full rounded-xl !border-[#d8c2c0] !bg-[#fff8f7] !px-4 !py-3 text-sm !text-[#201a1a] placeholder:!text-[#534342] focus:!border-[#bf1e18] focus:!bg-white focus:!outline-none focus:!ring-4 focus:!ring-[#bf1e18]/20';
 
 export const sectionEyebrowClass =
-  'text-xs font-bold uppercase tracking-[0.2em] !text-[#bf1e18]';
+  'text-xs font-bold uppercase tracking-wider !text-[#bf1e18]';
 
 export const getRestaurantCategoryNames = (restaurant) =>
   (restaurant?.categories || [])
