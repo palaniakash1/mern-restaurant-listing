@@ -2,32 +2,61 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { HiArrowRight, HiTag } from 'react-icons/hi';
-import { joinClasses, sectionWrapClass, sectionEyebrowClass, primaryButtonClass, surfaceCardClass } from '../../utils/publicPage';
+import {
+  joinClasses,
+  sectionWrapClass,
+  sectionEyebrowClass,
+  primaryButtonClass,
+  surfaceCardClass
+} from '../../utils/publicPage';
 import { listCategories } from '../../services/restaurantService';
 
 const categoryImages = {
-  Italian: 'https://images.unsplash.com/photo-1498579150354-977fffb85898?auto=format&fit=crop&w=600&q=80',
-  Japanese: 'https://images.unsplash.com/photo-1580822184713-fc5400e7fe10?auto=format&fit=crop&w=600&q=80',
-  Indian: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=600&q=80',
-  British: 'https://images.unsplash.com/photo-1599619351208-3e6f839e60b8?auto=format&fit=crop&w=600&q=80',
-  Chinese: 'https://images.unsplash.com/photo-1563245372-f21724e3856b?auto=format&fit=crop&w=600&q=80',
-  French: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=600&q=80',
-  Thai: 'https://images.unsplash.com/photo-1559314809-0d155014e29e?auto=format&fit=crop&w=600&q=80',
-  Mexican: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=600&q=80',
-  Biryani: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?auto=format&fit=crop&w=600&q=80',
-  Cakes: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=600&q=80',
-  Idli: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=600&q=80',
-  Coffee: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=600&q=80',
-  Parotta: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=600&q=80',
-  Dosa: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=600&q=80',
-  Juice: 'https://images.unsplash.com/photo-1505252585461-04db1eb84625?auto=format&fit=crop&w=600&q=80',
-  Homely: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=600&q=80'
+  Italian:
+    'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=400&q=80',
+  Japanese:
+    'https://images.unsplash.com/photo-1580822184713-fc5400e7fe10?auto=format&fit=crop&w=400&q=80',
+  Indian:
+    'https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=400&q=80',
+  British:
+    'https://images.unsplash.com/photo-1599619351208-3e6f839e60b8?auto=format&fit=crop&w=400&q=80',
+  Chinese:
+    'https://images.unsplash.com/photo-1563245372-f21724e3856b?auto=format&fit=crop&w=400&q=80',
+  French:
+    'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=400&q=80',
+  Thai: 'https://images.unsplash.com/photo-1559314809-0d155014e29e?auto=format&fit=crop&w=400&q=80',
+  Mexican:
+    'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=400&q=80',
+  Biryani:
+    'https://images.unsplash.com/photo-1589302168068-964664d93dc0?auto=format&fit=crop&w=400&q=80',
+  Cakes:
+    'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=400&q=80',
+  Idli: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=400&q=80',
+  Coffee:
+    'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=400&q=80',
+  Parotta:
+    'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=400&q=80',
+  Dosa: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=400&q=80',
+  Juice:
+    'https://images.unsplash.com/photo-1505252585461-04db1eb84625?auto=format&fit=crop&w=400&q=80',
+  Homely:
+    'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=400&q=80',
+  Korean:
+    'https://images.unsplash.com/photo-1553163147-622ab57fa1df?auto=format&fit=crop&w=400&q=80',
+  Vietnamese:
+    'https://images.unsplash.com/photo-1503764654157-1046482b771c?auto=format&fit=crop&w=400&q=80',
+  American:
+    'https://images.unsplash.com/photo-1567620905732-2d1ec7c74447?auto=format&fit=crop&w=400&q=80',
+  Mediterranean:
+    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80'
 };
 
 export function FeaturedByCategory() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const selectedAllergens = useSelector((state) => state.allergen.selectedAllergens);
+  const selectedAllergens = useSelector(
+    (state) => state.allergen.selectedAllergens
+  );
   const selectedDiet = useSelector((state) => state.dietary.selectedDiet);
 
   useEffect(() => {
@@ -35,7 +64,7 @@ export function FeaturedByCategory() {
       try {
         const response = await listCategories({ limit: 20 });
         const cats = response.data?.data || response.data || [];
-        setCategories(cats.slice(0, 8));
+        setCategories(cats.slice(0, 12));
       } catch (err) {
         console.error('Failed to fetch categories:', err);
       } finally {
@@ -93,7 +122,10 @@ export function FeaturedByCategory() {
       {loading ? (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className={joinClasses(surfaceCardClass, 'overflow-hidden')}>
+            <div
+              key={i}
+              className={joinClasses(surfaceCardClass, 'overflow-hidden')}
+            >
               <div className="h-40 bg-gray-200 animate-pulse" />
             </div>
           ))}
