@@ -87,7 +87,9 @@ export function MenuItemCard({
             className={`h-full w-full object-cover transition duration-700 group-hover:scale-105 ${isUnsuitable ? 'grayscale' : ''}`}
           />
         ) : (
-          <div className={`h-full w-full flex items-center justify-center ${isUnsuitable ? 'grayscale' : ''}`}>
+          <div
+            className={`h-full w-full flex items-center justify-center ${isUnsuitable ? 'grayscale' : ''}`}
+          >
             <span className="text-4xl">🍽️</span>
           </div>
         )}
@@ -108,19 +110,27 @@ export function MenuItemCard({
       <div className="p-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <h4 className={`text-base font-black tracking-tight truncate ${isUnsuitable ? 'grayscale' : 'text-[#23411f]'}`}>
+            <h4
+              className={`text-base font-black tracking-tight truncate ${isUnsuitable ? 'grayscale' : '!text-[#201a1a]'}`}
+            >
               {item.name}
             </h4>
-            <p className={`mt-1 text-xs leading-5 line-clamp-2 ${isUnsuitable ? 'grayscale text-[#534342]' : 'text-[#6d6358]'}`}>
+            <p
+              className={`mt-1 text-xs leading-5 line-clamp-2 ${isUnsuitable ? 'grayscale text-[#534342]' : 'text-[#6d6358]'}`}
+            >
               {item.description || 'Signature details coming soon.'}
             </p>
           </div>
-          <div className={`text-lg font-black shrink-0 ${isUnsuitable ? 'grayscale text-[#534342]' : 'text-[#2f6a34]'}`}>
+          <div
+            className={`text-lg font-black shrink-0 ${isUnsuitable ? 'grayscale text-[#534342]' : '!text-[#bf1e18]'}`}
+          >
             {formatPrice(item.price)}
           </div>
         </div>
 
-        <div className={`mt-2 flex flex-wrap gap-1 ${isUnsuitable ? 'grayscale' : ''}`}>
+        <div
+          className={`mt-2 flex flex-wrap gap-1 ${isUnsuitable ? 'grayscale' : ''}`}
+        >
           {itemBadges.map((badge) => (
             <span
               key={badge}
@@ -145,7 +155,11 @@ export function MenuItemCard({
             }`}
           >
             <span>
-              {expandedAllergens ? <HiChevronUp className="h-3 w-3" /> : <HiChevronDown className="h-3 w-3" />}
+              {expandedAllergens ? (
+                <HiChevronUp className="h-3 w-3" />
+              ) : (
+                <HiChevronDown className="h-3 w-3" />
+              )}
             </span>
             <span>Allergens</span>
           </button>
@@ -163,7 +177,11 @@ export function MenuItemCard({
             }`}
           >
             <span>
-              {expandedNutrition ? <HiChevronUp className="h-3 w-3" /> : <HiChevronDown className="h-3 w-3" />}
+              {expandedNutrition ? (
+                <HiChevronUp className="h-3 w-3" />
+              ) : (
+                <HiChevronDown className="h-3 w-3" />
+              )}
             </span>
             <span>Nutrition</span>
           </button>
@@ -181,9 +199,22 @@ export function MenuItemCard({
         </div>
 
         {expandedAllergens && itemAllergens.length > 0 && (
-          <div className="mt-2 rounded-lg bg-[#fff8f7] p-2 text-[10px]">
-            <span className="font-semibold text-[#534342]">Allergens: </span>
-            <span className="text-[#534342]">{itemAllergens.join(', ')}</span>
+          <div className="mt-2 rounded-lg border border-[#bf1e18] bg-[#fff8f7] p-2">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.2em] !text-[#bf1e18] mb-2">
+              Contains allergens
+            </p>
+            <div className="grid grid-cols-3 gap-1">
+              {itemAllergens.map((allergen) => (
+                <div
+                  key={allergen}
+                  className="rounded-md px-2 py-2 text-center bg-[#fee2e2]"
+                >
+                  <p className="text-[10px] font-semibold text-[#000] uppercase ">
+                    {allergen}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
