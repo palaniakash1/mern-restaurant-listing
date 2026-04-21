@@ -242,7 +242,7 @@ export function CinematicBanner() {
             </button>
           </div>
 
-          <div className="flex flex-col gap-12 w-full justify-center items-center">
+          <div className="flex flex-col w-full justify-center items-center">
             <div className="relative group w-full flex flex-col items-center">
               <div className="absolute -top-10 left-[80px] !-rotate-6 z-20">
                 <img
@@ -287,7 +287,7 @@ export function CinematicBanner() {
               </div>
             </div>
 
-            <div className="flex flex-col items-center gap-4 mt-8 w-full">
+            <div className="flex flex-col items-center gap-4 mt-2 w-full">
               <span className="text-white/90 text-xs font-bold uppercase tracking-widest">Filter by:</span>
               <div className="flex gap-4">
                 {DIETARY_OPTIONS.map((diet) => {
