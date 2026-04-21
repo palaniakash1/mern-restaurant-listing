@@ -159,13 +159,15 @@ export default function Restaurants() {
         <div className="!bg-white rounded-2xl shadow-2xl p-4">
           <div className="flex flex-col md:flex-row items-center gap-3">
             <div className="flex-1 w-full relative">
-              <HiSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 !text-[#bf1e18]" />
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 !bg-[#bf1e18]/10 rounded-full z-10">
+                <HiSearch className="w-4 h-4 !text-[#bf1e18]" />
+              </div>
               <input
                 type="text"
                 placeholder="Search restaurants, cuisines, or dishes..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 !bg-[#fff8f7] rounded-full border border-[#d8c2c0] !text-[#201a1a] placeholder:!text-[#534342] focus:!border-[#bf1e18] focus:!outline-none transition-colors"
+                className="w-full !pl-14 pr-4 py-4 !bg-[#fff8f7] rounded-full border border-[#d8c2c0] !text-[#201a1a] placeholder:!text-[#534342] focus:!border-[#bf1e18] focus:!outline-none transition-colors"
               />
             </div>
             <div className="w-full md:w-48">
