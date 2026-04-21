@@ -197,14 +197,14 @@ export default function Restaurants() {
 
       {/* Results */}
       <main className="max-w-7xl mx-auto px-6 py-16">
-        <div className="flex justify-between items-center mb-10">
+        {/* <div className="flex justify-between items-center mb-10">
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold !text-[#201a1a] font-[Manrope]">
               {restaurants.length} {restaurants.length === 1 ? 'Restaurant' : 'Restaurants'}
             </h2>
             <p className="!text-[#534342] mt-1">Curated dining experiences</p>
           </div>
-        </div>
+        </div> */}
 
         {/* Featured Restaurants */}
         {restaurants.length >= 2 && (() => {
