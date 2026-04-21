@@ -199,7 +199,7 @@ export function MenuItemCard({
         </div>
 
         {expandedAllergens && itemAllergens.length > 0 && (
-          <div className="mt-2 rounded-lg border border-[#bf1e18] bg-[#fff8f7] p-2">
+          <div className="mt-2 rounded-lg border border-[#facecd] bg-[#fff8f7] p-2">
             <p className="text-[9px] font-semibold uppercase tracking-[0.2em] !text-[#bf1e18] mb-2">
               Contains allergens
             </p>
