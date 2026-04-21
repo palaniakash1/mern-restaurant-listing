@@ -53,28 +53,28 @@ export default function Footer() {
 
   return (
     <>
-      <footer className="bg-[#1a2f16] text-white">
+      <footer className="!bg-[#201a1a] !text-white">
         <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 xl:px-8 py-16">
           <div className="grid gap-12 lg:grid-cols-3">
             <div className="space-y-6">
               <Link to="/">
                 <img src={logo} alt="EatWisely" className="h-12 w-auto" />
               </Link>
-              <p className="text-sm leading-7 text-white/70">
+              <p className="text-sm leading-7 !text-white/70">
                 Discover exceptional dining experiences. Find the best restaurants, 
                 read honest reviews, and make informed dining decisions.
               </p>
               <div className="flex gap-3">
-                <a href="#" className="rounded-full bg-white/10 p-2.5 transition hover:bg-white/20">
+                <a href="#" className="rounded-full !bg-white/10 p-2.5 transition hover:!bg-[#bf1e18]">
                   <FaFacebook className="h-5 w-5" />
                 </a>
-                <a href="#" className="rounded-full bg-white/10 p-2.5 transition hover:bg-white/20">
+                <a href="#" className="rounded-full !bg-white/10 p-2.5 transition hover:!bg-[#bf1e18]">
                   <FaTwitter className="h-5 w-5" />
                 </a>
-                <a href="#" className="rounded-full bg-white/10 p-2.5 transition hover:bg-white/20">
+                <a href="#" className="rounded-full !bg-white/10 p-2.5 transition hover:!bg-[#bf1e18]">
                   <FaInstagram className="h-5 w-5" />
                 </a>
-                <a href="#" className="rounded-full bg-white/10 p-2.5 transition hover:bg-white/20">
+                <a href="#" className="rounded-full !bg-white/10 p-2.5 transition hover:!bg-[#bf1e18]">
                   <FaYoutube className="h-5 w-5" />
                 </a>
               </div>
@@ -90,7 +90,7 @@ export default function Footer() {
 
             <div className="grid gap-8 sm:grid-cols-2">
               <div>
-                <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/50">
+                <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider !text-[#bf1e18]">
                   Explore
                 </h3>
                 <ul className="space-y-3">
@@ -98,7 +98,7 @@ export default function Footer() {
                     <li key={link.to}>
                       <Link
                         to={link.to}
-                        className="text-sm text-white/70 transition hover:text-white"
+                        className="text-sm !text-white/70 transition hover:!text-[#bf1e18]"
                       >
                         {link.label}
                       </Link>
@@ -107,7 +107,7 @@ export default function Footer() {
                 </ul>
               </div>
               <div>
-                <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/50">
+                <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider !text-[#bf1e18]">
                   Company
                 </h3>
                 <ul className="space-y-3">
@@ -115,7 +115,7 @@ export default function Footer() {
                     <li key={link.to}>
                       <Link
                         to={link.to}
-                        className="text-sm text-white/70 transition hover:text-white"
+                        className="text-sm !text-white/70 transition hover:!text-[#bf1e18]"
                       >
                         {link.label}
                       </Link>
@@ -126,19 +126,19 @@ export default function Footer() {
             </div>
 
             <div className="space-y-4">
-              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/50">
+              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider !text-[#bf1e18]">
                 Get in Touch
               </h3>
               <div className="space-y-3">
-                <a href="mailto:hello@eatwisely.com" className="flex items-center gap-3 text-sm text-white/70 hover:text-white">
+                <a href="mailto:hello@eatwisely.com" className="flex items-center gap-3 text-sm !text-white/70 hover:!text-[#bf1e18]">
                   <HiMail className="h-5 w-5 shrink-0" />
                   <span>hello@eatwisely.com</span>
                 </a>
-                <a href="tel:+442079460958" className="flex items-center gap-3 text-sm text-white/70 hover:text-white">
+                <a href="tel:+442079460958" className="flex items-center gap-3 text-sm !text-white/70 hover:!text-[#bf1e18]">
                   <HiPhone className="h-5 w-5 shrink-0" />
                   <span>+44 (0) 20 7946 0958</span>
                 </a>
-                <div className="flex items-start gap-3 text-sm text-white/70">
+                <div className="flex items-start gap-3 text-sm !text-white/70">
                   <HiLocationMarker className="h-5 w-5 shrink-0 mt-0.5" />
                   <span>
                     123 Dining Street<br />
@@ -151,11 +151,11 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-white/10">
+        <div className="border-t !border-white/10">
           <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 xl:px-8 py-6">
-            <div className="flex flex-col items-center justify-between gap-4 text-sm text-white/50 sm:flex-row">
+            <div className="flex flex-col items-center justify-between gap-4 text-sm !text-white/50 sm:flex-row">
               <p>&copy; {new Date().getFullYear()} EatWisely. All rights reserved.</p>
-              <p>Designed & Developed with care ❤️ by <a href="https://www.digimaraa.com" className='text-white'>DIGIMARAA TECHNOLOGIES</a></p>
+              <p>Designed & Developed with care by <a href="https://www.digimaraa.com" className='!text-[#bf1e18]'>DIGIMARAA TECHNOLOGIES</a></p>
             </div>
           </div>
         </div>
@@ -163,7 +163,7 @@ export default function Footer() {
 
       {showModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center !bg-black/60 p-4 backdrop-blur-sm"
           onClick={() => setShowModal(false)}
         >
           <div
@@ -171,11 +171,11 @@ export default function Footer() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-[#23411f]">Get in Touch</h2>
+              <h2 className="text-xl font-bold !text-[#bf1e18]">Get in Touch</h2>
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="rounded-full p-2 text-gray-400 hover:bg-gray-100"
+                className="rounded-full p-2 !text-[#534342] hover:!bg-[#fff1f0] transition"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -185,18 +185,18 @@ export default function Footer() {
 
             {submitted ? (
               <div className="py-8 text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#f5faeb]">
-                  <svg className="h-8 w-8 text-[#8fa31e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full !bg-[#fff1f0]">
+                  <svg className="h-8 w-8 !text-[#bf1e18]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-semibold text-[#23411f]">Thank You!</h3>
-                <p className="mt-2 text-sm text-gray-600">We&apos;ll get back to you soon.</p>
+                <h3 className="text-lg font-semibold !text-[#201a1a]">Thank You!</h3>
+                <p className="mt-2 text-sm !text-[#534342]">We&apos;ll get back to you soon.</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-[#23411f]">
+                  <label className="mb-1 block text-sm font-medium !text-[#201a1a]">
                     Inquiry Type
                   </label>
                   <select
@@ -214,7 +214,7 @@ export default function Footer() {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-[#23411f]">
+                  <label className="mb-1 block text-sm font-medium !text-[#201a1a]">
                     Name
                   </label>
                   <input
@@ -229,7 +229,7 @@ export default function Footer() {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-[#23411f]">
+                  <label className="mb-1 block text-sm font-medium !text-[#201a1a]">
                     Email
                   </label>
                   <input
@@ -244,7 +244,7 @@ export default function Footer() {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-[#23411f]">
+                  <label className="mb-1 block text-sm font-medium !text-[#201a1a]">
                     Message
                   </label>
                   <textarea

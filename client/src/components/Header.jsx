@@ -150,8 +150,8 @@ export default function Header() {
       className={joinClasses(
         'fixed left-0 right-0 top-0 z-50 transition-all duration-300',
         scrolled
-          ? 'bg-white/95 shadow-[0_8px_40px_rgba(77,103,22,0.12)]'
-          : 'bg-white/80 backdrop-blur-sm'
+          ? '!bg-white/95 !shadow-[0_8px_40px_rgba(191,30,24,0.12)]'
+          : '!bg-white/80 !backdrop-blur-sm'
       )}
     >
       <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 xl:px-8">
@@ -177,7 +177,7 @@ export default function Header() {
               <Link
                 key={link.to}
                 to={link.to}
-                className="rounded-[1rem] px-4 py-2.5 text-sm font-semibold text-[#23411f] transition hover:bg-[#f5faeb]"
+                className="rounded-[1rem] px-4 py-2.5 text-sm font-semibold !text-[#201a1a] transition hover:!bg-[#fff1f0] hover:!text-[#bf1e18]"
               >
                 {link.label}
               </Link>
@@ -188,37 +188,37 @@ export default function Header() {
             <div className="relative" ref={searchRef}>
               <div className="relative flex items-center">
                 <div className="relative">
-                  <HiSearch className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <HiSearch className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 !text-[#534342]" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search restaurants, cuisines..."
-                    className="w-48 rounded-full border border-[#d9e2bc] bg-[#f8fbf1] py-2 pl-10 pr-3 text-sm text-[#23411f] placeholder:text-gray-400 transition-all duration-300 focus:w-64 focus:border-[#8fa31e] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#dbe9ab]/50 lg:w-56 lg:focus:w-72"
+                    className="w-48 rounded-full border !border-[#d8c2c0] !bg-[#fff8f7] py-2 pl-10 pr-3 text-sm !text-[#201a1a] placeholder:!text-[#534342] transition-all duration-300 focus:w-64 focus:!border-[#bf1e18] focus:!bg-white focus:outline-none focus:!ring-2 focus:!ring-[#bf1e18]/20 lg:w-56 lg:focus:w-72"
                   />
                 </div>
               </div>
 
               {searchQuery.length === 1 && (
-                <div className="absolute right-0 top-full mt-2 w-[360px] rounded-[1.5rem] border border-[#dce6c1] bg-white py-4 shadow-[0_25px_80px_rgba(60,79,25,0.08)]">
-                  <p className="text-center text-sm text-gray-500">
-                    Type at least <span className="font-semibold text-[#23411f]">2 characters</span> to search
+                <div className="absolute right-0 top-full mt-2 w-[360px] rounded-[1.5rem] border !border-[#d8c2c0] !bg-white py-4 !shadow-[0_25px_80px_rgba(191,30,24,0.08)]">
+                  <p className="text-center text-sm !text-[#534342]">
+                    Type at least <span className="font-semibold !text-[#bf1e18]">2 characters</span> to search
                   </p>
                 </div>
               )}
 
               {searchQuery.length >= 2 && (
-                <div className="absolute right-0 top-full my-2 w-[360px] rounded-[1.5rem] border border-[#dce6c1] bg-white py-2 shadow-[0_25px_80px_rgba(60,79,25,0.08)] ">
+                <div className="absolute right-0 top-full my-2 w-[360px] rounded-[1.5rem] border !border-[#d8c2c0] !bg-white py-2 !shadow-[0_25px_80px_rgba(191,30,24,0.08)] ">
                   {loading ? (
                     <div className="px-4 py-6 text-center">
-                      <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-[#dce6c1] border-t-[#8fa31e]" />
+                      <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 !border-[#d8c2c0] border-t-[#bf1e18]" />
                     </div>
                   ) : hasResults ? (
                     <>
                       {searchResults.categories.length > 0 && (
-                        <div className="border-b border-[#dce6c1]">
+                        <div className="border-b !border-[#d8c2c0]">
                           <div className="px-4 py-2">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                            <p className="text-xs font-semibold uppercase tracking-wider !text-[#534342]">
                               Categories
                             </p>
                           </div>
@@ -227,9 +227,9 @@ export default function Header() {
                               key={category}
                               type="button"
                               onClick={() => handleCategoryClick(category)}
-                              className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-medium text-[#23411f] transition hover:bg-[#f5faeb]"
+                              className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-medium !text-[#201a1a] transition hover:!bg-[#fff1f0]"
                             >
-                              <HiViewGrid className="h-4 w-4 text-[#8fa31e]" />
+                              <HiViewGrid className="h-4 w-4 !text-[#bf1e18]" />
                               {category}
                             </button>
                           ))}
@@ -237,9 +237,9 @@ export default function Header() {
                       )}
 
                       {searchResults.locations.length > 0 && (
-                        <div className="border-b border-[#dce6c1]">
+                        <div className="border-b !border-[#d8c2c0]">
                           <div className="px-4 py-2">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                            <p className="text-xs font-semibold uppercase tracking-wider !text-[#534342]">
                               Locations
                             </p>
                           </div>
@@ -248,18 +248,18 @@ export default function Header() {
                               key={location}
                               type="button"
                               onClick={() => handleLocationClick(location)}
-                              className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-medium text-[#23411f] transition hover:bg-[#f5faeb]"
+                              className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-medium !text-[#201a1a] transition hover:!bg-[#fff1f0]"
                             >
-                              <HiLocationMarker className="h-4 w-4 text-[#b62828]" />
+                              <HiLocationMarker className="h-4 w-4 !text-[#bf1e18]" />
                               {location}
                             </button>
                           ))}
                         </div>
                       )}
 
-                      <div className="border-b border-[#dce6c1]">
+                      <div className="border-b !border-[#d8c2c0]">
                         <div className="px-4 py-2">
-                          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                          <p className="text-xs font-semibold uppercase tracking-wider !text-[#534342]">
                             Restaurants
                           </p>
                         </div>
@@ -268,7 +268,7 @@ export default function Header() {
                             key={restaurant._id || restaurant.id}
                             type="button"
                             onClick={() => handleResultClick(restaurant.slug)}
-                            className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition hover:bg-[#f5faeb]"
+                            className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition hover:!bg-[#fff1f0]"
                           >
                             <img
                               src={restaurant.bannerImage || restaurant.gallery?.[0] || restaurant.imageLogo || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=100&q=80'}
@@ -276,14 +276,14 @@ export default function Header() {
                               className="h-10 w-10 shrink-0 rounded-lg object-cover"
                             />
                             <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-semibold text-[#23411f]">
+                              <p className="truncate text-sm font-semibold !text-[#201a1a]">
                                 {restaurant.name}
                               </p>
-                              <p className="truncate text-xs text-gray-500">
+                              <p className="truncate text-xs !text-[#534342]">
                                 {restaurant.categories?.[0]?.name || restaurant.categories?.[0] || 'Restaurant'}
                               </p>
                             </div>
-                            <div className="flex items-center gap-1 text-xs font-medium text-[#efb634]">
+                            <div className="flex items-center gap-1 text-xs font-medium !text-[#bf1e18]">
                               <HiStar className="h-3 w-3" />
                               {restaurant.rating?.toFixed(1) || '4.5'}
                             </div>
@@ -293,7 +293,7 @@ export default function Header() {
                           <button
                             type="button"
                             onClick={handleSearch}
-                            className="flex w-full items-center justify-center gap-2 border-t border-[#dce6c1] px-4 py-2.5 text-sm font-semibold text-[#8fa31e] transition hover:bg-[#f5faeb]"
+                            className="flex w-full items-center justify-center gap-2 border-t !border-[#d8c2c0] px-4 py-2.5 text-sm font-semibold !text-[#bf1e18] transition hover:!bg-[#fff1f0]"
                           >
                             View More Restaurants
                             <HiSearch className="h-4 w-4" />
@@ -302,7 +302,7 @@ export default function Header() {
                       </div>
                     </>
                   ) : (
-                    <div className="px-4 py-6 text-center text-sm text-gray-500">
+                    <div className="px-4 py-6 text-center text-sm !text-[#534342]">
                       No results found for &quot;{searchQuery}&quot;
                     </div>
                   )}
@@ -312,7 +312,7 @@ export default function Header() {
 
             <Link
               to="/favorites"
-              className="rounded-full border border-[#d9e2bc] bg-[#f8fbf1] p-2.5 text-[#23411f] transition hover:border-[#8fa31e] hover:bg-white"
+              className="rounded-full border !border-[#d8c2c0] !bg-[#fff8f7] p-2.5 !text-[#201a1a] transition hover:!border-[#bf1e18] hover:!bg-[#fff1f0]"
               aria-label="Favorites"
             >
               <HiHeart className="h-5 w-5" />
@@ -323,44 +323,44 @@ export default function Header() {
                 <button
                   type="button"
                   onClick={() => setIsOpen(!isOpen)}
-                  className="flex items-center gap-2 rounded-full border border-[#d9e2bc] bg-white p-1 pr-3 transition hover:border-[#8fa31e]"
+                  className="flex items-center gap-2 rounded-full border !border-[#d8c2c0] !bg-white p-1 pr-3 transition hover:!border-[#bf1e18]"
                 >
                   <img
                     src={currentUser.profilePicture}
                     alt={currentUser.userName}
                     className="h-9 w-9 rounded-full object-cover"
                   />
-                  <span className="hidden text-sm font-semibold text-[#23411f] sm:block">
+                  <span className="hidden text-sm font-semibold !text-[#201a1a] sm:block">
                     {currentUser.userName}
                   </span>
                 </button>
 
                 {isOpen && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-[1.5rem] border border-[#dce6c1] bg-white py-2 shadow-[0_25px_80px_rgba(60,79,25,0.08)]">
-                    <div className="border-b border-[#ebf0d7] px-4 py-3">
-                      <p className="font-semibold text-[#23411f]">
+                  <div className="absolute right-0 mt-2 w-56 rounded-[1.5rem] border !border-[#d8c2c0] !bg-white py-2 !shadow-[0_25px_80px_rgba(191,30,24,0.08)]">
+                    <div className="border-b !border-[#d8c2c0] px-4 py-3">
+                      <p className="font-semibold !text-[#201a1a]">
                         @{currentUser.userName}
                       </p>
-                      <p className="truncate text-sm text-gray-500">
+                      <p className="truncate text-sm !text-[#534342]">
                         {currentUser.email}
                       </p>
                     </div>
                     <Link
                       to="/dashboard?tab=profile"
-                      className="block px-4 py-2.5 text-sm font-medium text-[#23411f] hover:bg-[#f5faeb]"
+                      className="block px-4 py-2.5 text-sm font-medium !text-[#201a1a] hover:!bg-[#fff1f0]"
                     >
                       Dashboard
                     </Link>
                     <Link
                       to="/favorites"
-                      className="block px-4 py-2.5 text-sm font-medium text-[#23411f] hover:bg-[#f5faeb]"
+                      className="block px-4 py-2.5 text-sm font-medium !text-[#201a1a] hover:!bg-[#fff1f0]"
                     >
                       My Favorites
                     </Link>
                     <button
                       type="button"
                       onClick={handleSignOut}
-                      className="w-full px-4 py-2.5 text-left text-sm font-medium text-[#b62828] hover:bg-[#fff5f5]"
+                      className="w-full px-4 py-2.5 text-left text-sm font-medium !text-[#bf1e18] hover:!bg-[#fff1f0]"
                     >
                       Sign Out
                     </button>
@@ -381,7 +381,7 @@ export default function Header() {
             <button
               type="button"
               onClick={() => setIsOpen(!isOpen)}
-              className="rounded-full border border-[#d9e2bc] bg-[#f8fbf1] p-3 text-[#23411f] lg:hidden"
+              className="rounded-full border !border-[#d8c2c0] !bg-[#fff8f7] p-3 !text-[#201a1a] lg:hidden"
               aria-label="Menu"
             >
               {isOpen ? (
@@ -395,21 +395,21 @@ export default function Header() {
       </div>
 
       {isOpen && (
-        <div className="border-t border-[#dce6c1] bg-white/95 px-4 py-4 backdrop-blur lg:hidden">
+        <div className="border-t !border-[#d8c2c0] !bg-white/95 px-4 py-4 backdrop-blur lg:hidden">
           <nav className="flex flex-col gap-1">
             {navLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
                 onClick={() => setIsOpen(false)}
-                className="rounded-[1rem] px-4 py-3 text-sm font-semibold text-[#23411f] transition hover:bg-[#f5faeb]"
+                className="rounded-[1rem] px-4 py-3 text-sm font-semibold !text-[#201a1a] transition hover:!bg-[#fff1f0] hover:!text-[#bf1e18]"
               >
                 {link.label}
               </Link>
             ))}
           </nav>
           {!currentUser && (
-            <div className="mt-4 flex flex-col gap-2 border-t border-[#dce6c1] pt-4">
+            <div className="mt-4 flex flex-col gap-2 border-t !border-[#d8c2c0] pt-4">
               <Link
                 to="/sign-in"
                 onClick={() => setIsOpen(false)}
