@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useAuth } from '../context/AuthContext';
 import { toggleAllergen } from '../redux/allergen/allergenSlice';
 import { setDietary } from '../redux/dietary/dietarySlice';
+import { MenuItemCard } from '../components/public/MenuItemCard';
 import {
   HiArrowSmRight,
   HiChevronDown,
@@ -66,11 +67,6 @@ const DIETARY_OPTIONS = [
   { key: 'halal', label: 'Halal' },
   { key: 'kosher', label: 'Kosher' }
 ];
-
-const priceFormatter = new Intl.NumberFormat('en-GB', {
-  style: 'currency',
-  currency: 'GBP'
-});
 
 const pickImage = (restaurant, type = 'hero') => {
   const common = [
@@ -170,65 +166,6 @@ const getReviewAuthor = (review) =>
     ? review.user
     : review?.userId?.userName || review?.user?.userName || 'Guest diner';
 
-const getItemBadges = (item) => {
-  const list = [];
-  if (item?.dietary?.vegan) list.push('Vegan');
-  if (item?.dietary?.vegetarian && !item?.dietary?.vegan)
-    list.push('Vegetarian');
-  if (item?.isMeal) list.push('Meal');
-  return list;
-};
-
-const getItemAllergens = (item) => {
-  const values = new Set();
-  // First check allergens array directly on the item (new field)
-  (item?.allergens || []).forEach((allergen) => {
-    values.add(ALLERGY_LABELS[allergen] || allergen);
-  });
-  // Fallback to ingredients-based allergens
-  (item?.ingredients || []).forEach((ingredient) => {
-    (ingredient.allergens || []).forEach((allergen) => {
-      values.add(ALLERGY_LABELS[allergen] || allergen);
-    });
-  });
-  return [...values];
-};
-
-const getItemNutrition = (item) => {
-  const nutrition = item?.nutrition || {};
-  return Object.entries(nutrition)
-    .filter(([, value]) => value?.value != null)
-    .map(([key, value]) => ({
-      label: key.charAt(0).toUpperCase() + key.slice(1),
-      value: value.value,
-      level: value.level
-    }));
-};
-
-const isItemUnsuitable = (item, allergens = [], dietary = []) => {
-  const itemAllergens = item?.allergens || [];
-  (item?.ingredients || []).forEach((ingredient) => {
-    (ingredient.allergens || []).forEach((allergen) => {
-      itemAllergens.push(allergen);
-    });
-  });
-  
-  for (const allergen of allergens) {
-    if (itemAllergens.includes(allergen)) return true;
-  }
-  
-  const itemDietary = item?.dietary || {};
-  for (const diet of dietary) {
-    if (diet === 'vegan' && !itemDietary.vegan) return true;
-    if (diet === 'vegetarian' && !itemDietary.vegetarian && !itemDietary.vegan) return true;
-    if (diet === 'gf' && !itemDietary.gf) return true;
-    if (diet === 'halal' && !itemDietary.halal) return true;
-    if (diet === 'kosher' && !itemDietary.kosher) return true;
-  }
-  
-  return false;
-};
-
 const jumpToCategory = (category) => {
   const element = document.getElementById(
     `menu-category-${category.replace(/\s+/g, '-')}`
@@ -258,10 +195,6 @@ const getFeaturedDishImage = (restaurant, menus) => {
   return pickImage(restaurant, 'hero');
 };
 
-const getItemImage = (item, restaurant) =>
-  item?.image ||
-  pickImage(restaurant, 'thumb');
-
 const Skeleton = () => (
   <div className="min-h-screen bg-[#f6fdeb] pt-24">
     <div className="h-[75vh] animate-pulse bg-[#d8ccb8]" />
@@ -283,8 +216,6 @@ export default function SingleRestaurant() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeCategory, setActiveCategory] = useState(null);
-  const [expandedAllergens, setExpandedAllergens] = useState({});
-  const [expandedNutrition, setExpandedNutrition] = useState({});
   const [relatedRestaurants, setRelatedRestaurants] = useState([]);
   const dispatch = useDispatch();
   const allergenState = useSelector((state) => state.allergen || { selectedAllergens: [] });
@@ -632,198 +563,14 @@ export default function SingleRestaurant() {
                         </div>
 
                         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                          {(menu.items || []).map((item, itemIndex) => {
-                            const itemBadges = getItemBadges(item);
-                            const itemAllergens = getItemAllergens(item);
-                            const itemNutrition = getItemNutrition(item);
-                            const itemKey = `${item.name || 'item'}-${itemIndex}`;
-                            const isAllergensExpanded = expandedAllergens[itemKey];
-                            const isNutritionExpanded = expandedNutrition[itemKey];
-                            const isUnsuitable = isItemUnsuitable(item, selectedAllergens, selectedDiet ? [selectedDiet] : []);
-
-                            return (
-                              <article
-                                key={itemKey}
-                                className={`group overflow-hidden rounded-[1.2rem] border shadow-[0_4px_16px_rgba(64,48,20,0.04)] ${
-                                  isUnsuitable
-                                    ? 'border-[#d0ccc8] bg-[#f7f5f4]'
-                                    : 'border-[#ebf0d7] bg-[linear-gradient(135deg,#ffffff_0%,#fbfcf7_100%)]'
-                                }`}
-                              >
-                                <div className="relative h-32 overflow-hidden bg-[#f4ede2]">
-                                  <img
-                                    src={getItemImage(item, restaurant)}
-                                    alt={item.name}
-                                    className={`h-full w-full object-cover transition duration-700 group-hover:scale-105 ${isUnsuitable ? 'grayscale' : ''}`}
-                                  />
-                                  {item.isAvailable === false && (
-                                    <span className="absolute left-2 top-2 rounded-full bg-[#b62828] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-white">
-                                      Unavailable
-                                    </span>
-                                  )}
-                                  {isUnsuitable && (
-                                    <span className="absolute inset-0 flex items-center justify-center">
-                                      <span className="rotate-12 rounded-full !bg-[#bf1e18] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] !text-white">
-                                        Not Suitable
-                                      </span>
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="p-3">
-                                  <div className="flex items-start justify-between gap-2">
-                                    <div className="min-w-0 flex-1">
-                                      <h4 className={`text-base font-black tracking-tight truncate ${isUnsuitable ? 'grayscale' : 'text-[#23411f]'}`}>
-                                        {item.name}
-                                      </h4>
-                                      <p className={`mt-1 text-xs leading-5 line-clamp-2 ${isUnsuitable ? 'grayscale text-[#534342]' : 'text-[#6d6358]'}`}>
-                                        {item.description ||
-                                          'Signature details coming soon.'}
-                                      </p>
-                                    </div>
-                                    <div className={`text-lg font-black shrink-0 ${isUnsuitable ? 'grayscale text-[#534342]' : 'text-[#2f6a34]'}`}>
-                                      {priceFormatter.format(
-                                        Number(item.price || 0)
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  <div className={`mt-2 flex flex-wrap gap-1 ${isUnsuitable ? 'grayscale' : ''}`}>
-                                    {itemBadges.map((badge) => (
-                                      <span
-                                        key={badge}
-                                        className="rounded-full bg-[#edf3e4] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-[#47692e]"
-                                      >
-                                        {badge}
-                                      </span>
-                                    ))}
-                                  </div>
-
-                                  <div className="mt-3 flex items-center justify-between gap-2">
-                                    <button
-                                      type="button"
-                                      disabled={itemAllergens.length === 0}
-                                      onClick={() =>
-                                        setExpandedAllergens((prev) => ({
-                                          ...prev,
-                                          [itemKey]: !prev[itemKey]
-                                        }))
-                                      }
-                                      className={`flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.18em] transition ${
-                                        itemAllergens.length === 0
-                                          ? 'text-[#ccc] cursor-not-allowed'
-                                          : isAllergensExpanded
-                                            ? 'text-[#b62828]'
-                                            : 'text-[#b62828] hover:text-[#8e1d1d]'
-                                      }`}
-                                    >
-                                      <span>
-                                        {isAllergensExpanded
-                                          ? 'Hide'
-                                          : 'Allergens'}
-                                      </span>
-                                      <HiChevronDown
-                                        className={`h-3 w-3 transition-transform ${
-                                          isAllergensExpanded
-                                            ? 'rotate-180'
-                                            : ''
-                                        }`}
-                                      />
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      disabled={itemNutrition.length === 0}
-                                      onClick={() =>
-                                        setExpandedNutrition((prev) => ({
-                                          ...prev,
-                                          [itemKey]: !prev[itemKey]
-                                        }))
-                                      }
-                                      className={`flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.18em] transition ${
-                                        itemNutrition.length === 0
-                                          ? 'text-[#ccc] cursor-not-allowed'
-                                          : isNutritionExpanded
-                                            ? 'text-[#8e5c2d]'
-                                            : 'text-[#8e5c2d] hover:text-[#6d4520]'
-                                      }`}
-                                    >
-                                      <span>
-                                        {isNutritionExpanded
-                                          ? 'Hide'
-                                          : 'Nutrition'}
-                                      </span>
-                                      <HiChevronDown
-                                        className={`h-3 w-3 transition-transform ${
-                                          isNutritionExpanded
-                                            ? 'rotate-180'
-                                            : ''
-                                        }`}
-                                      />
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      disabled={item.isAvailable === false}
-                                      className={`flex h-8 w-8 items-center justify-center rounded-full transition ${
-                                        item.isAvailable === false
-                                          ? 'cursor-not-allowed bg-[#eee5d7] text-[#9d9284]'
-                                          : '!bg-[#1f2e17] text-white hover:!bg-[#2d4121]'
-                                      }`}
-                                    >
-                                      <HiPlus className="h-4 w-4" />
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {isAllergensExpanded && itemAllergens.length > 0 && (
-                                  <div className="border-t border-[#ebf0d7] bg-[#fff1f1] px-3 py-2">
-                                    <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#b62828] mb-1">
-                                      Allergens
-                                    </p>
-                                    <div className="flex flex-wrap gap-1">
-                                      {itemAllergens.map((allergen) => (
-                                        <span
-                                          key={allergen}
-                                          className="rounded-full bg-white px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#b62828]"
-                                        >
-                                          {allergen}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {isNutritionExpanded && itemNutrition.length > 0 && (
-                                  <div className="border-t border-[#ebf0d7] bg-[#faf6ef] px-3 py-2">
-                                    <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#8e5c2d] mb-1">
-                                      Nutrition per serving
-                                    </p>
-                                    <div className="grid grid-cols-3 gap-1">
-                                      {itemNutrition.map((nutrient) => (
-                                        <div
-                                          key={nutrient.label}
-                                          className={`rounded-md px-2 py-1 text-center ${
-                                            nutrient.level === 'red'
-                                              ? 'bg-[#fee2e2]'
-                                              : nutrient.level === 'amber'
-                                                ? 'bg-[#fef3c7]'
-                                                : 'bg-[#dcfce7]'
-                                          }`}
-                                        >
-                                          <p className="text-[10px] font-semibold text-[#23411f]">
-                                            {nutrient.value}
-                                          </p>
-                                          <p className="text-[8px] uppercase tracking-[0.1em] text-[#6d6358]">
-                                            {nutrient.label}
-                                          </p>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                              </article>
-                            );
-                          })}
+                          {(menu.items || []).map((item, itemIndex) => (
+                            <MenuItemCard
+                              key={`${menu._id}-${itemIndex}`}
+                              item={item}
+                              selectedAllergens={selectedAllergens}
+                              selectedDiet={selectedDiet ? [selectedDiet] : []}
+                            />
+                          ))}
                         </div>
                       </section>
                     ))}
