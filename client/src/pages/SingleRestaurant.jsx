@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { useAuth } from '../context/AuthContext';
 import { toggleAllergen } from '../redux/allergen/allergenSlice';
+import { setDietary } from '../redux/dietary/dietarySlice';
 import {
   HiArrowSmRight,
   HiChevronDown,
@@ -284,11 +285,11 @@ export default function SingleRestaurant() {
   const [activeCategory, setActiveCategory] = useState(null);
   const [expandedAllergens, setExpandedAllergens] = useState({});
   const [expandedNutrition, setExpandedNutrition] = useState({});
-  const [selectedDietary, setSelectedDietary] = useState([]);
   const [relatedRestaurants, setRelatedRestaurants] = useState([]);
   const dispatch = useDispatch();
   const allergenState = useSelector((state) => state.allergen || { selectedAllergens: [] });
   const selectedAllergens = allergenState.selectedAllergens || [];
+  const selectedDiet = useSelector((state) => state.dietary?.selectedDiet || null);
   const [nearbyRestaurants, setNearbyRestaurants] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
@@ -564,16 +565,10 @@ export default function SingleRestaurant() {
                           <button
                             key={opt.key}
                             type="button"
-                            onClick={() => {
-                              setSelectedDietary((prev) =>
-                                prev.includes(opt.key)
-                                  ? prev.filter((d) => d !== opt.key)
-                                  : [...prev, opt.key]
-                              );
-                            }}
+                            onClick={() => dispatch(setDietary(selectedDiet === opt.key ? null : opt.key))}
                             className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] transition ${
-                              selectedDietary.includes(opt.key)
-                                ? '!bg-[#8fa31e] !text-white'
+                              selectedDiet === opt.key
+                                ? '!bg-[#bf1e18] !text-white'
                                 : '!bg-[#f4ede2] !text-[#6d6358]'
                             }`}
                           >
@@ -644,7 +639,7 @@ export default function SingleRestaurant() {
                             const itemKey = `${item.name || 'item'}-${itemIndex}`;
                             const isAllergensExpanded = expandedAllergens[itemKey];
                             const isNutritionExpanded = expandedNutrition[itemKey];
-                            const isUnsuitable = isItemUnsuitable(item, selectedAllergens, selectedDietary);
+                            const isUnsuitable = isItemUnsuitable(item, selectedAllergens, selectedDiet ? [selectedDiet] : []);
 
                             return (
                               <article
