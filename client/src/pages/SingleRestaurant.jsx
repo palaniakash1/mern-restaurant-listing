@@ -426,14 +426,21 @@ export default function SingleRestaurant() {
               <>
                 <span className="opacity-40">|</span>
                 <span
-                  className={`font-semibold ${
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider ${
                     todayHours.statusType === 'open'
-                      ? '!text-green-400'
+                      ? 'bg-green-500/90 text-white'
                       : todayHours.statusType === 'closes-soon'
-                      ? '!text-yellow-400'
-                      : '!text-red-400'
+                      ? 'bg-yellow-500/90 text-white'
+                      : 'bg-red-500/90 text-white'
                   }`}
                 >
+                  <span className={`h-2 w-2 rounded-full bg-white ${
+                    todayHours.statusType === 'open'
+                      ? 'animate-pulse'
+                      : todayHours.statusType === 'closes-soon'
+                      ? 'animate-ping'
+                      : ''
+                  }`} />
                   {todayHours.status}
                 </span>
               </>
@@ -455,68 +462,74 @@ export default function SingleRestaurant() {
       <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-20">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1.7fr)_360px]">
           <div>
-            <section className="overflow-hidden rounded-[2.2rem] border border-[#c4dcc1] !bg-white shadow-[0_22px_70px_rgba(65,48,24,0.08)]">
-              <div className="border-b border-[#c4dcc1] !bg-[#fff8f7] p-6 sm:p-8">
-                <div className="max-w-2xl">
-                  <p className="text-xs font-semibold uppercase tracking-[0.32em] !text-[#2f6a34]">
-                    Curated Menu
-                  </p>
-                  <h2 className="mt-3 text-4xl font-black tracking-tight !text-[#201a1a]">
-                    Designed to feel like a destination, not a list
-                  </h2>
-                  <p className="mt-4 text-base leading-8 !text-[#534342]">
-                    Browse the standout dishes, signature sections, and
-                    high-intent menu story of {restaurant.name}.
-                  </p>
+            <section className="rounded-[2.2rem] border border-[#c4dcc1] !bg-white shadow-[0_22px_70px_rgba(65,48,24,0.08)]">
+              <div className="!bg-[#fff8f7]">
+                <div className="p-6 sm:p-8">
+                  <div className="max-w-2xl">
+                    <p className="text-xs font-semibold uppercase tracking-[0.32em] !text-[#2f6a34]">
+                      Curated Menu
+                    </p>
+                    <h2 className="mt-3 text-4xl font-black tracking-tight !text-[#201a1a]">
+                      Designed to feel like a destination, not a list
+                    </h2>
+                    <p className="mt-4 text-base leading-8 !text-[#534342]">
+                      Browse the standout dishes, signature sections, and
+                      high-intent menu story of {restaurant.name}.
+                    </p>
+                  </div>
                 </div>
                 
-                <div className="mt-6 border-t border-[#c4dcc1] pt-4 space-y-4">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="text-[10px] uppercase tracking-[0.15em] !text-[#2f6a34]">Allergens:</span>
-                      <div className="flex flex-wrap gap-2">
-                        {ALLERGEN_KEYS.map((key) => (
-                          <button
-                            key={key}
-                            type="button"
-                            onClick={() => dispatch(toggleAllergen(key))}
-                            className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] transition ${
-                              selectedAllergens.includes(key)
-                                ? '!bg-[#bf1e18] !text-white'
-                                : '!bg-[#fff1f0] !text-[#534342]'
-                            }`}
-                          >
-                            {ALLERGY_LABELS[key]}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div className="h-px bg-[#c4dcc1]" />
-                    
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="text-[10px] uppercase tracking-[0.15em] !text-[#2f6a34]">Diet:</span>
-                      <div className="flex flex-wrap gap-2">
-                        {DIETARY_OPTIONS.map((opt) => (
-                          <button
-                            key={opt.key}
-                            type="button"
-                            onClick={() => dispatch(setDietary(selectedDiet === opt.key ? null : opt.key))}
-                            className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] transition ${
-                              selectedDiet === opt.key
-                                ? '!bg-[#bf1e18] !text-white'
-                                : '!bg-[#fff1f0] !text-[#534342]'
-                            }`}
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                      </div>
+                <div className="px-6 sm:px-8">
+                  <div className="flex flex-wrap items-center gap-3 pb-5">
+                    <span className="text-[10px] uppercase tracking-[0.15em] !text-[#2f6a34]">Allergens:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {ALLERGEN_KEYS.map((key) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => dispatch(toggleAllergen(key))}
+                          className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] transition ${
+                            selectedAllergens.includes(key)
+                              ? '!bg-[#bf1e18] !text-white'
+                              : '!bg-[#fff1f0] !text-[#534342]'
+                          }`}
+                        >
+                          {ALLERGY_LABELS[key]}
+                        </button>
+                      ))}
                     </div>
                   </div>
+                </div>
                 
-                <div className="h-px bg-[#c4dcc1] my-4" />
+                <div className="h-px bg-[#c4dcc1]" />
+                
+                <div className="px-6 sm:px-8">
+                  <div className="flex flex-wrap items-center gap-3 py-5">
+                    <span className="text-[10px] uppercase tracking-[0.15em] !text-[#2f6a34]">Diet:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {DIETARY_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.key}
+                          type="button"
+                          onClick={() => dispatch(setDietary(selectedDiet === opt.key ? null : opt.key))}
+                          className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] transition ${
+                            selectedDiet === opt.key
+                              ? '!bg-[#bf1e18] !text-white'
+                              : '!bg-[#fff1f0] !text-[#534342]'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="h-px bg-[#c4dcc1]" />
+              </div>
 
-                <div className="flex flex-wrap gap-3">
+              <div className="sticky top-[77px] z-20 border-b border-[#c4dcc1] !bg-[#fff8f7] px-6 sm:px-8 py-4">
+                <div className="flex overflow-x-auto pb-2 gap-3 scrollbar-hide">
                   {categories.map((category) => (
                     <button
                       key={category}
@@ -525,7 +538,7 @@ export default function SingleRestaurant() {
                         setActiveCategory(category);
                         jumpToCategory(category);
                       }}
-                      className={`group relative rounded-full px-5 py-2.5 text-xs font-bold uppercase tracking-[0.2em] transition-all duration-300 ${
+                      className={`group flex-shrink-0 relative rounded-full px-5 py-2.5 text-xs font-bold uppercase tracking-[0.2em] transition-all duration-300 ${
                         activeCategory === category
                           ? '!bg-[#bf1e18] !text-white shadow-lg'
                           : '!bg-[#fff1f0] !text-[#000] hover:!bg-[#bf1e18] hover:!text-white'
@@ -537,7 +550,6 @@ export default function SingleRestaurant() {
                     </button>
                   ))}
                 </div>
-                <div className="h-px bg-[#c4dcc1] mt-4" />
               </div>
 
               <div className="p-6 sm:p-8">
