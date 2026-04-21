@@ -243,10 +243,10 @@ export function CinematicBanner() {
 
           <div className="flex flex-col gap-12 w-full justify-center items-center">
             <div className="relative group w-full flex flex-col items-center">
-              <div className="absolute -top-14 left-1/2 -translate-x-1/2 z-20">
-                <div className="!bg-gradient-to-r from-[#bf1e18] to-[#df2921] !text-white px-6 py-3 rounded-full shadow-xl flex items-center gap-2 animate-pulse">
+              <div className="absolute -top-14 left-[100px] !-rotate-[20deg] -translate-x-1/2 z-20">
+                <div className="!bg-gradient-to-r from-[#fed] to-[#ffe] !text-red-500 px-6 py-3 rounded-full shadow-xl flex items-center gap-2 animate-pulse">
                   <span className="text-lg">⚠️</span>
-                  <span className="text-sm font-bold">I am allergic to</span>
+                  <span className="text-[1.2rem] font-bold">I am allergic to</span>
                   <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-[#bf1e18]"></div>
                 </div>
               </div>
