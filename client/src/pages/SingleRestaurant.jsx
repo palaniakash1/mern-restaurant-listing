@@ -646,7 +646,7 @@ export default function SingleRestaurant() {
                                 key={itemKey}
                                 className={`group overflow-hidden rounded-[1.2rem] border shadow-[0_4px_16px_rgba(64,48,20,0.04)] ${
                                   isUnsuitable
-                                    ? 'border-[#d4cec4] bg-[linear-gradient(135deg,#f5f2ed_0%,#eae7e0_100%)] opacity-60'
+                                    ? 'border-[#d0ccc8] bg-[#f7f5f4]'
                                     : 'border-[#ebf0d7] bg-[linear-gradient(135deg,#ffffff_0%,#fbfcf7_100%)]'
                                 }`}
                               >
@@ -654,7 +654,7 @@ export default function SingleRestaurant() {
                                   <img
                                     src={getItemImage(item, restaurant)}
                                     alt={item.name}
-                                    className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                                    className={`h-full w-full object-cover transition duration-700 group-hover:scale-105 ${isUnsuitable ? 'grayscale' : ''}`}
                                   />
                                   {item.isAvailable === false && (
                                     <span className="absolute left-2 top-2 rounded-full bg-[#b62828] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-white">
@@ -663,32 +663,31 @@ export default function SingleRestaurant() {
                                   )}
                                   {isUnsuitable && (
                                     <span className="absolute inset-0 flex items-center justify-center">
-                                      <span className="rotate-12 rounded-full bg-[#dc2626] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white">
+                                      <span className="rotate-12 rounded-full !bg-[#bf1e18] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] !text-white">
                                         Not Suitable
                                       </span>
                                     </span>
                                   )}
                                 </div>
-
                                 <div className="p-3">
                                   <div className="flex items-start justify-between gap-2">
                                     <div className="min-w-0 flex-1">
-                                      <h4 className="text-base font-black tracking-tight text-[#23411f] truncate">
+                                      <h4 className={`text-base font-black tracking-tight truncate ${isUnsuitable ? 'grayscale' : 'text-[#23411f]'}`}>
                                         {item.name}
                                       </h4>
-                                      <p className="mt-1 text-xs leading-5 text-[#6d6358] line-clamp-2">
+                                      <p className={`mt-1 text-xs leading-5 line-clamp-2 ${isUnsuitable ? 'grayscale text-[#534342]' : 'text-[#6d6358]'}`}>
                                         {item.description ||
                                           'Signature details coming soon.'}
                                       </p>
                                     </div>
-                                    <div className="text-lg font-black text-[#2f6a34] shrink-0">
+                                    <div className={`text-lg font-black shrink-0 ${isUnsuitable ? 'grayscale text-[#534342]' : 'text-[#2f6a34]'}`}>
                                       {priceFormatter.format(
                                         Number(item.price || 0)
                                       )}
                                     </div>
                                   </div>
 
-                                  <div className="mt-2 flex flex-wrap gap-1">
+                                  <div className={`mt-2 flex flex-wrap gap-1 ${isUnsuitable ? 'grayscale' : ''}`}>
                                     {itemBadges.map((badge) => (
                                       <span
                                         key={badge}
