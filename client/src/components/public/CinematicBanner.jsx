@@ -8,6 +8,7 @@ import { setDietary } from '../../redux/dietary/dietarySlice';
 import { ALLERGEN_FILTERS } from '../../utils/allergenConstants';
 import { joinClasses } from '../../utils/publicPage';
 import { getCities, searchAll } from '../../services/restaurantService';
+import cloudAllergyImg from '../../assets/cloud-allergy.png';
 
 const DIETARY_OPTIONS = [
   { id: 'halal', label: 'Halal', icon: '✓' },
@@ -243,12 +244,12 @@ export function CinematicBanner() {
 
           <div className="flex flex-col gap-12 w-full justify-center items-center">
             <div className="relative group w-full flex flex-col items-center">
-              <div className="absolute -top-14 left-[100px] !-rotate-[20deg] -translate-x-1/2 z-20">
-                <div className="!bg-gradient-to-r from-[#fed] to-[#ffe] !text-red-500 px-6 py-3 rounded-full shadow-xl flex items-center gap-2 animate-pulse">
-                  <span className="text-lg">⚠️</span>
-                  <span className="text-[1.2rem] font-bold">I am allergic to</span>
-                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-[#bf1e18]"></div>
-                </div>
+              <div className="absolute -top-10 left-[80px] !-rotate-6 z-20">
+                <img
+                  src={cloudAllergyImg}
+                  alt="I am allergic to"
+                  className="h-16 w-auto animate-pulse drop-shadow-md"
+                />
               </div>
               <div className="flex flex-col items-center gap-4 w-full mt-4">
                 <span className="text-white/70 text-xs font-medium uppercase tracking-widest">Click icons to toggle</span>
