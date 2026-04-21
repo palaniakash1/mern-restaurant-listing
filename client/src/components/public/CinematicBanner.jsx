@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { HiSearch, HiLocationMarker } from 'react-icons/hi';
+import { useNavigate } from 'react-router-dom';
+import { HiSearch, HiLocationMarker, HiArrowRight } from 'react-icons/hi';
 
 import { toggleAllergen } from '../../redux/allergen/allergenSlice';
 import { setDietary } from '../../redux/dietary/dietarySlice';
 import { ALLERGEN_FILTERS } from '../../utils/allergenConstants';
 import { joinClasses } from '../../utils/publicPage';
-import { getCities } from '../../services/restaurantService';
+import { getCities, searchAll } from '../../services/restaurantService';
 
 const DIETARY_OPTIONS = [
   { id: 'halal', label: 'Halal', icon: '✓' },
@@ -16,6 +17,7 @@ const DIETARY_OPTIONS = [
 
 export function CinematicBanner() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const selectedAllergens = useSelector(
     (state) => state.allergen.selectedAllergens
   );
@@ -24,6 +26,14 @@ export function CinematicBanner() {
   const [searchInput, setSearchInput] = useState('');
   const [locationOptions, setLocationOptions] = useState([]);
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [searchResults, setSearchResults] = useState({
+    restaurants: [],
+    categories: [],
+    menus: [],
+    menuItems: []
+  });
+  const searchRef = useRef(null);
 
   useEffect(() => {
     const fetchCities = async () => {
@@ -44,6 +54,34 @@ export function CinematicBanner() {
     fetchCities();
   }, []);
 
+  useEffect(() => {
+    const fetchSearchResults = async () => {
+      if (searchInput.length < 1) {
+        setSearchResults({ restaurants: [], categories: [], menus: [], menuItems: [] });
+        return;
+      }
+      try {
+        const results = await searchAll({ q: searchInput, city: locationInput || '' });
+        setSearchResults(results);
+        setShowSearchDropdown(true);
+      } catch (err) {
+        console.error('Failed to fetch search results:', err);
+      }
+    };
+    const debounce = setTimeout(fetchSearchResults, 300);
+    return () => clearTimeout(debounce);
+  }, [searchInput, locationInput]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSearchDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const filteredLocations = locationOptions.filter((city) =>
     city.toLowerCase().includes(locationInput.toLowerCase())
   );
@@ -58,15 +96,71 @@ export function CinematicBanner() {
 
     if (searchInput) {
       params.set('q', searchInput);
-      window.location.href = `/search?${params.toString()}`;
+      navigate(`/search?${params.toString()}`);
     } else {
-      window.location.href = `/restaurants?${params.toString()}`;
+      navigate(`/restaurants?${params.toString()}`);
     }
   };
 
   const handleLocationSelect = (city) => {
     setLocationInput(city);
     setShowLocationDropdown(false);
+  };
+
+  const getAllSuggestions = () => {
+    const suggestions = [];
+    const seen = new Set();
+
+    searchResults.menuItems?.forEach((menuDoc) => {
+      menuDoc.items?.slice(0, 2).forEach((item) => {
+        const key = `dish-${item.name}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          suggestions.push({ type: 'dish', label: item.name, sublabel: 'Dish', data: item, restaurantSlug: menuDoc.restaurantSlug });
+        }
+      });
+    });
+
+    searchResults.menus?.forEach((menu) => {
+      const key = `menu-${menu.name}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        suggestions.push({ type: 'menu', label: menu.name, sublabel: 'Menu', data: menu });
+      }
+    });
+
+    searchResults.categories?.forEach((cat) => {
+      const key = `category-${cat.slug}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        suggestions.push({ type: 'category', label: cat.name, sublabel: 'Category', data: cat });
+      }
+    });
+
+    searchResults.restaurants?.forEach((rest) => {
+      const key = `restaurant-${rest.slug}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        suggestions.push({ type: 'restaurant', label: rest.name, sublabel: rest.address?.city || 'Restaurant', data: rest });
+      }
+    });
+
+    return suggestions.slice(0, 8);
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    if (suggestion.type === 'restaurant') {
+      const params = new URLSearchParams();
+      if (selectedAllergens.length > 0) params.set('allergens', selectedAllergens.join(','));
+      if (selectedDiet) params.set('dietary', selectedDiet);
+      navigate(`/restaurants/${suggestion.data.slug}?${params.toString()}`);
+    } else if (suggestion.type === 'category') {
+      setSearchInput(suggestion.label);
+      setShowSearchDropdown(false);
+    } else {
+      setSearchInput(suggestion.label);
+      setShowSearchDropdown(false);
+    }
   };
 
   return (
@@ -109,7 +203,7 @@ export function CinematicBanner() {
                 </div>
               )}
             </div>
-            <div className="flex items-center flex-[2] px-6 gap-3 w-full py-2">
+            <div className="flex items-center flex-[2] px-6 gap-3 w-full py-2 relative" ref={searchRef}>
               <HiSearch className="text-[#bf1e18] text-xl" />
               <input 
                 className="!bg-transparent border-none focus:ring-0 w-full font-medium text-gray-800" 
@@ -117,7 +211,26 @@ export function CinematicBanner() {
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
+                onFocus={() => searchInput && setShowSearchDropdown(true)}
               />
+              {showSearchDropdown && getAllSuggestions().length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 !bg-white rounded-xl shadow-2xl z-50 max-h-80 overflow-auto">
+                  {getAllSuggestions().map((suggestion, idx) => (
+                    <button
+                      key={`${suggestion.type}-${suggestion.label}-${idx}`}
+                      type="button"
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      className="w-full px-4 py-3 text-left hover:!bg-[#fff1f0] flex items-center justify-between border-b border-gray-100 last:border-b-0"
+                    >
+                      <div>
+                        <span className="font-medium text-gray-800">{suggestion.label}</span>
+                        <span className="text-xs text-gray-500 ml-2">{suggestion.sublabel}</span>
+                      </div>
+                      <HiArrowRight className="w-4 h-4 text-gray-400" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <button 
               type="button"
@@ -130,14 +243,17 @@ export function CinematicBanner() {
 
           <div className="flex flex-col gap-12 w-full justify-center items-center">
             <div className="relative group w-full flex flex-col items-center">
-              <div className="absolute -top-16 left-1/2 -translate-x-1/2 !bg-white/95 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-lg border border-[#bf1e18]/10 text-sm font-bold text-[#bf1e18] animate-bounce z-20">
-                I am allergic to
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 !bg-white rotate-45 border-r border-b border-[#bf1e18]/5"></div>
+              <div className="absolute -top-14 left-1/2 -translate-x-1/2 z-20">
+                <div className="!bg-gradient-to-r from-[#bf1e18] to-[#df2921] !text-white px-6 py-3 rounded-full shadow-xl flex items-center gap-2 animate-pulse">
+                  <span className="text-lg">⚠️</span>
+                  <span className="text-sm font-bold">I am allergic to</span>
+                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-[#bf1e18]"></div>
+                </div>
               </div>
-              <div className="flex flex-col items-center gap-4 w-full">
-                <span className="text-white/90 text-xs font-bold uppercase tracking-widest">Click to remove</span>
-                <div className="flex pb-4 max-w-full flex-wrap justify-center gap-6">
-                  {ALLERGEN_FILTERS.slice(0, 12).map((allergen) => {
+              <div className="flex flex-col items-center gap-4 w-full mt-4">
+                <span className="text-white/70 text-xs font-medium uppercase tracking-widest">Click icons to toggle</span>
+                <div className="flex pb-4 max-w-full flex-wrap justify-center gap-3">
+                  {ALLERGEN_FILTERS.map((allergen) => {
                     const isSelected = selectedAllergens.includes(allergen.id);
                     return (
                       <button
@@ -145,15 +261,24 @@ export function CinematicBanner() {
                         type="button"
                         onClick={() => dispatch(toggleAllergen(allergen.id))}
                         className={joinClasses(
-                          'flex-shrink-0 w-24 h-24 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all group/icon p-2',
+                          'flex-shrink-0 w-16 h-16 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all duration-300 group',
                           isSelected
-                            ? '!bg-[#bf1e18] text-white border-transparent'
-                            : '!bg-white/10 border border-white/30 text-white hover:!bg-white hover:!text-[#bf1e18]'
+                            ? '!bg-white !text-[#bf1e18] shadow-lg shadow-[#bf1e18]/30 scale-105'
+                            : '!bg-white/10 border-2 border-white/20 !text-white hover:!bg-white hover:!text-[#bf1e18] hover:scale-105 hover:shadow-xl'
                         )}
                         title={allergen.label}
                       >
-                        <span className="text-3xl group-hover/icon:scale-110 transition-transform">{allergen.emoji}</span>
-                        <span className="text-[10px] font-bold uppercase tracking-tight">{allergen.label}</span>
+                        <span className="text-xl group-hover/icon:scale-110 transition-transform">
+                          {allergen.emoji}
+                        </span>
+                        <span
+                          className={joinClasses(
+                            'text-[6px] font-bold uppercase tracking-wider',
+                            isSelected ? '!text-[#bf1e18]' : '!text-white/90 group-hover/btn:!text-[#bf1e18]'
+                          )}
+                        >
+                          {allergen.label}
+                        </span>
                       </button>
                     );
                   })}
@@ -163,23 +288,27 @@ export function CinematicBanner() {
 
             <div className="flex flex-col items-center gap-4 mt-8 w-full">
               <span className="text-white/90 text-xs font-bold uppercase tracking-widest">Filter by:</span>
-              <div className="flex gap-6">
+              <div className="flex gap-4">
                 {DIETARY_OPTIONS.map((diet) => {
                   const isSelected = selectedDiet === diet.id;
                   return (
-                    <div key={diet.id} className="flex flex-col items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => dispatch(setDietary(isSelected ? null : diet.id))}
-                        className={joinClasses(
-                          'w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110',
-                          isSelected ? '!bg-[#bf1e18] text-white' : '!bg-white text-[#bf1e18]'
-                        )}
-                      >
-                        <span className="text-xl">{diet.icon}</span>
-                      </button>
-                      <span className="text-white text-xs font-bold">{diet.label}</span>
-                    </div>
+                    <button
+                      key={diet.id}
+                      type="button"
+                      onClick={() => dispatch(setDietary(isSelected ? null : diet.id))}
+                      className={joinClasses(
+                        'flex-shrink-0 w-16 h-16 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all duration-300',
+                        isSelected
+                          ? '!bg-white !text-[#bf1e18] shadow-lg shadow-[#bf1e18]/30 scale-105'
+                          : '!bg-white/10 border-2 border-white/20 !text-white hover:!bg-white hover:!text-[#bf1e18] hover:scale-105 hover:shadow-xl'
+                      )}
+                    >
+                      <span className="text-xl">{diet.icon}</span>
+                      <span className={joinClasses(
+                        'text-[6px] font-bold uppercase tracking-wider',
+                        isSelected ? '!text-[#bf1e18]' : '!text-white/90'
+                      )}>{diet.label}</span>
+                    </button>
                   );
                 })}
               </div>
