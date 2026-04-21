@@ -8,7 +8,7 @@ import { joinClasses } from '../utils/publicPage';
 const SORT_OPTIONS = [
   { value: 'distance', label: 'Nearest' },
   { value: 'rating', label: 'Top Rated' },
-  { value: 'reviews', label: 'Most Reviewed' }
+  { value: 'name', label: 'A-Z' }
 ];
 
 const DEFAULT_LOCATION = { lat: 51.5074, lng: -0.1278, city: 'London' };
