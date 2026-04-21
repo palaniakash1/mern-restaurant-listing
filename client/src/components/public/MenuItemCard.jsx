@@ -188,13 +188,31 @@ export function MenuItemCard({
         )}
 
         {expandedNutrition && Object.keys(itemNutrition).length > 0 && (
-          <div className="mt-2 rounded-lg bg-[#fff8f7] p-2 text-[10px]">
-            {Object.entries(itemNutrition).map(([key, nutrient]) => (
-              <div key={key} className="flex justify-between">
-                <span className="font-semibold text-[#534342]">{key}: </span>
-                <span className="text-[#534342]">{nutrient.value}</span>
-              </div>
-            ))}
+          <div className="mt-2 rounded-lg border border-[#ebf0d7] bg-[#faf6ef] p-2">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#8e5c2d] mb-2">
+              Nutrition per serving
+            </p>
+            <div className="grid grid-cols-3 gap-1">
+              {Object.entries(itemNutrition).map(([key, nutrient]) => (
+                <div
+                  key={key}
+                  className={`rounded-md px-2 py-1 text-center ${
+                    nutrient.level === 'red'
+                      ? 'bg-[#fee2e2]'
+                      : nutrient.level === 'amber'
+                        ? 'bg-[#fef3c7]'
+                        : 'bg-[#dcfce7]'
+                  }`}
+                >
+                  <p className="text-[10px] font-semibold text-[#23411f]">
+                    {nutrient.value}
+                  </p>
+                  <p className="text-[8px] uppercase tracking-[0.1em] text-[#6d6358]">
+                    {key}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
