@@ -168,44 +168,59 @@ export function CinematicBanner() {
                       })
                     )
                     .filter(Boolean);
-                  const menuOptions = (searchResults.menus || []).map((m, idx) => {
-                    const key = `menu:${m.name}-${idx}`;
-                    if (seen.has(key)) return null;
-                    seen.add(key);
-                    return {
-                      value: key,
-                      label: m.name,
-                      sublabel: 'Menu',
-                      priority: 2
-                    };
-                  }).filter(Boolean);
-                  const categoryOptions = (searchResults.categories || []).map((c, idx) => {
-                    const key = `category:${c.slug}-${idx}`;
-                    if (seen.has(key)) return null;
-                    seen.add(key);
-                    return {
-                      value: key,
-                      label: c.name,
-                      sublabel: 'Category',
-                      priority: 3
-                    };
-                  }).filter(Boolean);
-                  const restaurantOptions = (searchResults.restaurants || []).map((r, idx) => {
-                    const key = `restaurant:${r.slug}-${idx}`;
-                    if (seen.has(key)) return null;
-                    seen.add(key);
-                    return {
-                      value: r.slug,
-                      label: r.name,
-                      sublabel: r.address?.areaLocality ? `${r.address.areaLocality}, ${r.address.city}` : r.address?.city,
-                      priority: 4
-                    };
-                  }).filter(Boolean);
-                  return [...dishOptions, ...menuOptions, ...categoryOptions, ...restaurantOptions];
+                  const menuOptions = (searchResults.menus || [])
+                    .map((m, idx) => {
+                      const key = `menu:${m.name}-${idx}`;
+                      if (seen.has(key)) return null;
+                      seen.add(key);
+                      return {
+                        value: key,
+                        label: m.name,
+                        sublabel: 'Menu',
+                        priority: 2
+                      };
+                    })
+                    .filter(Boolean);
+                  const categoryOptions = (searchResults.categories || [])
+                    .map((c, idx) => {
+                      const key = `category:${c.slug}-${idx}`;
+                      if (seen.has(key)) return null;
+                      seen.add(key);
+                      return {
+                        value: key,
+                        label: c.name,
+                        sublabel: 'Category',
+                        priority: 3
+                      };
+                    })
+                    .filter(Boolean);
+                  const restaurantOptions = (searchResults.restaurants || [])
+                    .map((r, idx) => {
+                      const key = `restaurant:${r.slug}-${idx}`;
+                      if (seen.has(key)) return null;
+                      seen.add(key);
+                      return {
+                        value: r.slug,
+                        label: r.name,
+                        sublabel: r.address?.areaLocality
+                          ? `${r.address.areaLocality}, ${r.address.city}`
+                          : r.address?.city,
+                        priority: 4
+                      };
+                    })
+                    .filter(Boolean);
+                  return [
+                    ...dishOptions,
+                    ...menuOptions,
+                    ...categoryOptions,
+                    ...restaurantOptions
+                  ];
                 })()}
                 value={restaurant}
                 onChange={setRestaurant}
-                placeholder={searchQuery || "Search dishes, categories, restaurants"}
+                placeholder={
+                  searchQuery || 'Search dishes, categories, restaurants'
+                }
                 searchPlaceholder="Search dishes, categories, restaurants..."
                 icon={IoRestaurant}
                 searchValue={searchQuery}
@@ -241,7 +256,7 @@ export function CinematicBanner() {
             )}
           </div>
           <div
-            className="flex flex-wrap justify-center gap-3"
+            className="w-full max-w-3xl flex flex-wrap justify-center gap-3 self-center mx-auto"
             role="group"
             aria-label="Dietary sensitivities filter"
           >
@@ -254,16 +269,14 @@ export function CinematicBanner() {
                   onClick={() => dispatch(toggleAllergen(allergen.id))}
                   aria-pressed={isSelected}
                   className={joinClasses(
-                    'inline-flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 border',
+                    'inline-flex flex-col items-center gap-1 px-4 py-3 rounded-xl transition-all duration-300 border min-w-[70px]',
                     isSelected
                       ? 'bg-gradient-to-r from-[#8fa31e] to-[#d7ee64] border-transparent text-white shadow-xl shadow-[#8fa31e]/40 scale-105 font-bold'
                       : 'bg-white/10 backdrop-blur-md border-white/20 text-white hover:bg-[#8fa31e] hover:border-transparent hover:scale-105'
                   )}
                 >
-                  <span className="text-base leading-none">
-                    {allergen.emoji}
-                  </span>
-                  <span className="text-xs font-semibold">
+                  <span className="text-xl leading-none">{allergen.emoji}</span>
+                  <span className="text-[10px] font-semibold">
                     {allergen.label}
                   </span>
                 </button>
@@ -271,7 +284,7 @@ export function CinematicBanner() {
             })}
           </div>
 
-          <div className="flex items-center justify-center gap-4 mt-6">
+          <div className="flex items-center justify-center gap-4 mt-8">
             <h3 className="text-white/60 font-['Inter'] text-xs uppercase tracking-widest font-bold">
               Dietary Preferences
             </h3>
@@ -296,19 +309,19 @@ export function CinematicBanner() {
                 <button
                   key={diet.id}
                   type="button"
-                  onClick={() => dispatch(setDietary(isSelected ? null : diet.id))}
+                  onClick={() =>
+                    dispatch(setDietary(isSelected ? null : diet.id))
+                  }
                   aria-pressed={isSelected}
                   className={joinClasses(
-                    'inline-flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 border',
+                    'inline-flex flex-col items-center gap-1 px-4 py-3 rounded-xl transition-all duration-300 border min-w-[70px]',
                     isSelected
                       ? 'bg-gradient-to-r from-[#8fa31e] to-[#d7ee64] border-transparent text-white shadow-xl shadow-[#8fa31e]/40 scale-105 font-bold'
                       : 'bg-white/10 backdrop-blur-md border-white/20 text-white hover:bg-[#8fa31e] hover:border-transparent hover:scale-105'
                   )}
                 >
-                  <span className="text-base leading-none">
-                    {diet.emoji}
-                  </span>
-                  <span className="text-xs font-semibold">
+                  <span className="text-xl leading-none">{diet.emoji}</span>
+                  <span className="text-[10px] font-semibold">
                     {diet.label}
                   </span>
                 </button>
