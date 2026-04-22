@@ -157,7 +157,7 @@ export default function DashMenu() {
     [user]
   );
 
-  const loadMenus = useCallback(async (restaurantId, page = 1) => {
+  const loadMenus = useCallback(async (restaurantId, page = 1, searchQuery = '') => {
     if (!restaurantId) {
       setMenus([]);
       setAllMenusCount(0);
@@ -166,9 +166,10 @@ export default function DashMenu() {
     }
 
     try {
+      const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : '';
       let data;
       if (restaurantId === 'all') {
-        data = await apiGet(`/api/menus/all-restaurants?page=${page}&limit=${PAGE_SIZE}`);
+        data = await apiGet(`/api/menus/all-restaurants?page=${page}&limit=${PAGE_SIZE}${searchParam}`);
         setAllMenusCount(data.total || 0);
         setTotalPages(Math.max(1, Math.ceil((data.total || 0) / PAGE_SIZE)));
       } else {
@@ -290,9 +291,9 @@ export default function DashMenu() {
 
   useEffect(() => {
     if (selectedRestaurantId) {
-      loadMenus(selectedRestaurantId, currentPage);
+      loadMenus(selectedRestaurantId, currentPage, search);
     }
-  }, [selectedRestaurantId, currentPage, loadMenus]);
+  }, [selectedRestaurantId, currentPage, search, loadMenus]);
 
   const handleCreateMenu = async (event) => {
     event.preventDefault();
@@ -434,43 +435,29 @@ export default function DashMenu() {
     }
   };
 
-  const fuzzyMatch = (text, query) => {
-    if (!text || !query) return false;
-    const textLower = String(text).toLowerCase();
-    const words = query.trim().toLowerCase().split(/\s+/);
-    return words.every((word) => textLower.includes(word));
-  };
-
   const filteredMenus = useMemo(() => {
-    const q = search.trim();
+    const q = search.toLowerCase().trim();
     
     if (!q) {
       return menus.map((menu) => ({ ...menu, matchingItems: null }));
     }
 
-    const filtered = menus
+    return menus
       .map((menu) => {
-        const categoryMatch = [menu.categoryId?.name, menu.categoryId]
-          .filter(Boolean)
-          .some((v) => fuzzyMatch(v, q));
-
-        const matchingItems = (menu.items || []).filter((item) =>
-          fuzzyMatch(item.name, q) ||
-          fuzzyMatch(item.description, q)
-        );
-
-        const hasItemMatch = matchingItems.length > 0;
-        const hasCategoryMatch = categoryMatch;
+        const items = menu.items || [];
+        
+        const matchingItems = items.filter((item) => {
+          const name = String(item.name || '').toLowerCase();
+          const desc = String(item.description || '').toLowerCase();
+          return name.includes(q) || desc.includes(q);
+        });
 
         return {
           ...menu,
-          matchingItems: hasItemMatch ? matchingItems : null,
-          isItemSearch: hasItemMatch && !hasCategoryMatch
+          matchingItems: matchingItems.length > 0 ? matchingItems : null
         };
       })
-      .filter((menu) => menu.isItemSearch || menu.matchingItems !== null);
-
-    return filtered;
+      .filter((menu) => menu.matchingItems?.length > 0);
   }, [menus, search]);
 
   const menuCounts = useMemo(
@@ -724,7 +711,7 @@ export default function DashMenu() {
             <TextInput
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by menu, category, or item"
+              placeholder="Search by item, category, or restaurant"
             />
             <Select
               value={statusFilter}
