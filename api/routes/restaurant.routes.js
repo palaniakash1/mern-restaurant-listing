@@ -21,7 +21,8 @@ import {
   updateRestaurantStatus,
   restoreRestaurant,
   getCities,
-  searchAll
+  searchAll,
+  getPopularDishes
 } from '../controllers/restaurant.controller.js';
 
 import { verifyToken } from '../utils/verifyUser.js';
@@ -52,6 +53,7 @@ router.get(
 );
 router.get('/cities', getCities);
 router.get('/search-all', searchAll);
+router.get('/popular-dishes', getPopularDishes);
 
 // =======================
 // PUBLIC DETAILS

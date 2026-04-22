@@ -1434,3 +1434,107 @@ export const searchAll = async (req, res, next) => {
     next(error);
   }
 };
+
+// ===============================================================================
+// 🔷 GET /api/restaurants/popular-dishes — Get popular dishes from nearby restaurants
+// ===============================================================================
+export const getPopularDishes = async (req, res, next) => {
+  try {
+    const { lat, lng, radius = 50000, city, limit = 8 } = req.query;
+
+    let restaurantIds = [];
+
+    if (lat && lng) {
+      const nearbyRestaurants = await Restaurant.aggregate([
+        {
+          $geoNear: {
+            near: {
+              type: 'Point',
+              coordinates: [parseFloat(lng), parseFloat(lat)]
+            },
+            distanceField: 'distance',
+            maxDistance: parseInt(radius),
+            spherical: true,
+            query: publicRestaurantFilter
+          }
+        },
+        { $limit: 20 },
+        { $project: { _id: 1 } }
+      ]);
+      restaurantIds = nearbyRestaurants.map((r) => r._id);
+    } else if (city) {
+      const cityLower = city.toLowerCase().replace(/-/g, ' ');
+      const restaurants = await Restaurant.find(
+        {
+          ...publicRestaurantFilter,
+          $or: [
+            { 'address.city': new RegExp(cityLower, 'i') },
+            { 'address.areaLocality': new RegExp(cityLower, 'i') }
+          ]
+        },
+        { _id: 1 }
+      ).limit(20);
+      restaurantIds = restaurants.map((r) => r._id);
+    } else {
+      const restaurants = await Restaurant.find(
+        { ...publicRestaurantFilter, rating: { $gte: 3 } },
+        { _id: 1 }
+      ).sort({ rating: -1 }).limit(20);
+      restaurantIds = restaurants.map((r) => r._id);
+    }
+
+    if (restaurantIds.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: []
+      });
+    }
+
+    const menus = await Menu.find(
+      {
+        restaurantId: { $in: restaurantIds },
+        status: 'published',
+        isActive: true,
+        isDeleted: { $ne: true }
+      },
+      { restaurantId: 1, items: 1 }
+    ).limit(50);
+
+    const restIds = [...new Set(menus.map((m) => m.restaurantId.toString()))];
+    const restaurants = await Restaurant.find(
+      { _id: { $in: restIds } },
+      { name: 1, slug: 1, 'address.city': 1, rating: 1 }
+    );
+
+    const restaurantMap = restaurants.reduce((acc, r) => {
+      acc[r._id.toString()] = { name: r.name, slug: r.slug, city: r.address?.city, rating: r.rating };
+      return acc;
+    }, {});
+
+    const allDishes = [];
+    menus.forEach((menu) => {
+      const restInfo = restaurantMap[menu.restaurantId.toString()];
+      (menu.items || []).forEach((item) => {
+        if (item.isAvailable !== false && item.isActive !== false) {
+          allDishes.push({
+            ...item.toObject(),
+            restaurantId: menu.restaurantId,
+            restaurantName: restInfo?.name || 'Unknown',
+            restaurantSlug: restInfo?.slug,
+            restaurantCity: restInfo?.city,
+            restaurantRating: restInfo?.rating || 0
+          });
+        }
+      });
+    });
+
+    allDishes.sort((a, b) => (b.restaurantRating || 0) - (a.restaurantRating || 0));
+
+    res.status(200).json({
+      success: true,
+      data: allDishes.slice(0, parseInt(limit))
+    });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { HiArrowRight, HiMenu, HiStar } from 'react-icons/hi';
 import { joinClasses, sectionWrapClass, sectionEyebrowClass, primaryButtonClass, elevatedCardClass } from '../../utils/publicPage';
-import { searchAll } from '../../services/restaurantService';
+import { getPopularDishes } from '../../services/restaurantService';
+
+const DEFAULT_LOCATION = { lat: 51.5074, lng: -0.1278, city: 'London' };
 
 export function FeaturedByMenu() {
   const [dishes, setDishes] = useState([]);
@@ -11,33 +13,39 @@ export function FeaturedByMenu() {
   const selectedAllergens = useSelector((state) => state.allergen.selectedAllergens);
   const selectedDiet = useSelector((state) => state.dietary.selectedDiet);
 
-  useEffect(() => {
-    const fetchPopularDishes = async () => {
-      try {
-        const results = await searchAll({ q: '', city: '' });
-        const menuItems = results.menuItems || [];
-        const flatDishes = [];
-        menuItems.forEach((menuDoc) => {
-          if (menuDoc.items && menuDoc.items.length > 0) {
-            menuDoc.items.slice(0, 2).forEach((item) => {
-              flatDishes.push({
-                ...item,
-                restaurantName: menuDoc.restaurantName,
-                restaurantSlug: menuDoc.restaurantSlug,
-                categoryName: menuDoc.categoryName
-              });
-            });
-          }
-        });
-        setDishes(flatDishes.slice(0, 8));
-      } catch (err) {
-        console.error('Failed to fetch popular dishes:', err);
-      } finally {
-        setLoading(false);
+  const fetchPopularDishes = useCallback(async (lat, lng, city) => {
+    try {
+      const options = {};
+      if (lat && lng) {
+        options.lat = lat;
+        options.lng = lng;
+      } else if (city) {
+        options.city = city;
       }
-    };
-    fetchPopularDishes();
+      const results = await getPopularDishes(options);
+      setDishes(results || []);
+    } catch (err) {
+      console.error('Failed to fetch popular dishes:', err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          fetchPopularDishes(latitude, longitude, null);
+        },
+        () => {
+          fetchPopularDishes(null, null, DEFAULT_LOCATION.city);
+        }
+      );
+    } else {
+      fetchPopularDishes(null, null, DEFAULT_LOCATION.city);
+    }
+  }, [fetchPopularDishes]);
 
   const buildFilterParams = () => {
     const params = new URLSearchParams();
@@ -113,7 +121,7 @@ export function FeaturedByMenu() {
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="text-lg font-bold text-[#201a1a] line-clamp-1 font-[Manrope]">{dish.name}</h3>
                   <div className="flex items-center gap-1 bg-[#bf1e18]/10 px-2 py-0.5 rounded text-[#bf1e18] font-bold text-sm">
-                    <span>{dish.rating?.toFixed(1) || '4.5'}</span>
+                    <span>{dish.restaurantRating?.toFixed(1) || '4.5'}</span>
                     <HiStar className="text-xs" style={{ fill: 'currentColor' }} />
                   </div>
                 </div>

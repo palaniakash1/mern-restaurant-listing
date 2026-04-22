@@ -118,3 +118,14 @@ export const searchAll = async (options = {}) => {
   const response = await apiGet(`/api/restaurants/search-all?${params}`);
   return response.data;
 };
+
+export const getPopularDishes = async (options = {}) => {
+  const { lat, lng, radius = 50000, city, limit = 8 } = options;
+  const params = new URLSearchParams({ limit });
+  if (lat) params.set('lat', lat);
+  if (lng) params.set('lng', lng);
+  if (radius) params.set('radius', radius);
+  if (city) params.set('city', city);
+  const response = await apiGet(`/api/restaurants/popular-dishes?${params}`);
+  return response.data;
+};

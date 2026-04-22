@@ -8,6 +8,7 @@ import {
   createMenu,
   addMenuItems,
   getAllMenus,
+  getAllMenusAcrossRestaurants,
   getMenusByRestaurant,
   getMenuByRestaurant,
   updateMenuItem,
@@ -45,6 +46,13 @@ router.get(
   verifyToken,
   can('readAll', 'menu'),
   getAllMenus
+);
+
+// protected - get all menus across all restaurants (for managers)
+router.get(
+  '/all-restaurants',
+  verifyToken,
+  getAllMenusAcrossRestaurants
 );
 
 // protected - get all menus including draft (for admin/dashboard)

@@ -168,7 +168,7 @@ export default function DashMenu() {
     try {
       let data;
       if (restaurantId === 'all') {
-        data = await apiGet(`/api/menus/all?page=${page}&limit=${PAGE_SIZE}`);
+        data = await apiGet(`/api/menus/all-restaurants?page=${page}&limit=${PAGE_SIZE}`);
         setAllMenusCount(data.total || 0);
         setTotalPages(Math.max(1, Math.ceil((data.total || 0) / PAGE_SIZE)));
       } else {
@@ -434,22 +434,44 @@ export default function DashMenu() {
     }
   };
 
+  const fuzzyMatch = (text, query) => {
+    if (!text || !query) return false;
+    const textLower = String(text).toLowerCase();
+    const words = query.trim().toLowerCase().split(/\s+/);
+    return words.every((word) => textLower.includes(word));
+  };
+
   const filteredMenus = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return menus.filter((menu) => {
-      const searchMatch = q
-        ? [menu.categoryId?.name, menu.categoryId]
-            .filter(Boolean)
-            .some((v) => String(v).toLowerCase().includes(q))
-        : true;
-      const status = menu.status || 'draft';
-      const statusMatch =
-        statusFilter === 'all' ||
-        (statusFilter === 'published' && status === 'published') ||
-        (statusFilter === 'draft' && status === 'draft');
-      return searchMatch && statusMatch;
-    });
-  }, [menus, search, statusFilter]);
+    const q = search.trim();
+    
+    if (!q) {
+      return menus.map((menu) => ({ ...menu, matchingItems: null }));
+    }
+
+    const filtered = menus
+      .map((menu) => {
+        const categoryMatch = [menu.categoryId?.name, menu.categoryId]
+          .filter(Boolean)
+          .some((v) => fuzzyMatch(v, q));
+
+        const matchingItems = (menu.items || []).filter((item) =>
+          fuzzyMatch(item.name, q) ||
+          fuzzyMatch(item.description, q)
+        );
+
+        const hasItemMatch = matchingItems.length > 0;
+        const hasCategoryMatch = categoryMatch;
+
+        return {
+          ...menu,
+          matchingItems: hasItemMatch ? matchingItems : null,
+          isItemSearch: hasItemMatch && !hasCategoryMatch
+        };
+      })
+      .filter((menu) => menu.isItemSearch || menu.matchingItems !== null);
+
+    return filtered;
+  }, [menus, search]);
 
   const menuCounts = useMemo(
     () => ({
@@ -702,7 +724,7 @@ export default function DashMenu() {
             <TextInput
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by menu or category"
+              placeholder="Search by menu, category, or item"
             />
             <Select
               value={statusFilter}
@@ -893,8 +915,8 @@ export default function DashMenu() {
                   {isExpanded && (
                     <div className="border-t border-[#e7edd2] bg-white">
                       <div className="mt-4 hidden overflow-x-auto md:block p-4 sm:p-5 pt-0">
-                        {menu.items &&
-                        menu.items.filter((i) => i.isActive !== false).length >
+                        {(menu.matchingItems || menu.items) &&
+                        (menu.matchingItems || menu.items).filter((i) => i.isActive !== false).length >
                           0 ? (
                           <table className="w-full text-left text-sm">
                             <thead>
@@ -917,7 +939,7 @@ export default function DashMenu() {
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                              {(menu.items || [])
+                              {(menu.matchingItems || menu.items || [])
                                 .filter((i) => i.isActive !== false)
                                 .map((item, idx) => (
                                   <tr

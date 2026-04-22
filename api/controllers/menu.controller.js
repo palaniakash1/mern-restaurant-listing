@@ -1030,6 +1030,46 @@ export const getAllMenus = async (req, res, next) => {
   }
 };
 
+// ===============================================================================
+// 🔷 GET /api/menus/all-restaurants — Get all menus across restaurants (non-superAdmin)
+// ===============================================================================
+export const getAllMenusAcrossRestaurants = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 12, restaurantId } = req.query;
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+
+    if (pageNum < 1 || limitNum < 1) {
+      throw errorHandler(400, 'Invalid pagination values');
+    }
+
+    const filter = { isActive: true };
+    if (restaurantId && restaurantId !== 'all') {
+      filter.restaurantId = restaurantId;
+    }
+
+    const total = await Menu.countDocuments(filter);
+    const pagination = paginate({ page: pageNum, limit: limitNum, total });
+
+    const menus = await Menu.find(filter)
+      .populate('categoryId', 'name slug status isActive')
+      .populate('restaurantId', 'name slug')
+      .select('-__v')
+      .skip(pagination.skip)
+      .limit(limitNum)
+      .sort({ updatedAt: -1 })
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      ...pagination,
+      data: menus
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getMenusByRestaurant = async (req, res, next) => {
   try {
     const { restaurantId } = req.params;
