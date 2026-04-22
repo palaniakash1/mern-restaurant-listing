@@ -90,7 +90,7 @@ export default function Footer() {
 
             <div className="grid gap-8 sm:grid-cols-2">
               <div>
-                <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider !text-[#bf1e18]">
+                <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider !text-[#fff]">
                   Explore
                 </h3>
                 <ul className="space-y-3">
@@ -107,7 +107,7 @@ export default function Footer() {
                 </ul>
               </div>
               <div>
-                <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider !text-[#bf1e18]">
+                <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider !text-[#fff]">
                   Company
                 </h3>
                 <ul className="space-y-3">
@@ -126,7 +126,7 @@ export default function Footer() {
             </div>
 
             <div className="space-y-4">
-              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider !text-[#bf1e18]">
+              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider !text-[#fff]">
                 Get in Touch
               </h3>
               <div className="space-y-3">
