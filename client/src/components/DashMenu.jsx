@@ -56,6 +56,17 @@ const emptyItemForm = {
   upsells: []
 };
 
+const getActiveMenuItemIndex = (menu, item) => {
+  if (Number.isInteger(item?._sourceItemIndex)) {
+    return item._sourceItemIndex;
+  }
+
+  const activeItems = (menu.items || []).filter(
+    (menuItem) => menuItem.isActive !== false
+  );
+  return activeItems.findIndex((menuItem) => menuItem.name === item.name);
+};
+
 export default function DashMenu() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -995,13 +1006,8 @@ export default function DashMenu() {
                                           size="xs"
                                           className="!bg-[#f59e0b] hover:!bg-[#d97706] !text-white"
                                           onClick={() => {
-                                            const allItems = menu.items.filter(
-                                              (i) => i.isActive !== false
-                                            );
                                             const itemIndex =
-                                              allItems.findIndex(
-                                                (i) => i.name === item.name
-                                              );
+                                              getActiveMenuItemIndex(menu, item);
                                             setEditingItem({
                                               ...item,
                                               menuId: menu._id,

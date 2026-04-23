@@ -296,13 +296,22 @@ export const updateMenuItem = async (req, res, next) => {
       let itemIndex;
 
       if (itemId.startsWith('index:')) {
-        itemIndex = parseInt(itemId.replace('index:', ''), 10);
+        const requestedItemIndex = parseInt(itemId.replace('index:', ''), 10);
         const activeItems = menu.items.filter(i => i.isActive);
-        if (isNaN(itemIndex) || itemIndex < 0 || itemIndex >= activeItems.length) {
+        if (
+          isNaN(requestedItemIndex) ||
+          requestedItemIndex < 0 ||
+          requestedItemIndex >= activeItems.length
+        ) {
           throw errorHandler(404, 'Item not found at index');
         }
-        item = activeItems[itemIndex];
-        itemIndex = menu.items.findIndex(i => i._id.toString() === item._id.toString());
+        item = activeItems[requestedItemIndex];
+        let activeIndex = -1;
+        itemIndex = menu.items.findIndex((i) => {
+          if (!i.isActive) return false;
+          activeIndex += 1;
+          return activeIndex === requestedItemIndex;
+        });
       } else {
         if (!isValidObjectId(itemId)) {
           throw errorHandler(400, 'Invalid item ID format');
@@ -345,9 +354,17 @@ export const updateMenuItem = async (req, res, next) => {
         throw errorHandler(400, 'price must be a non-negative number');
       }
 
-      if (safeUpdates.name && safeUpdates.name !== item.name) {
+      if (
+        safeUpdates.name &&
+        safeUpdates.name.toLowerCase() !== item.name.toLowerCase()
+      ) {
+        const itemIdToCheck = item._id?.toString();
         const duplicate = menu.items.some(
-          (i, idx) => i.isActive && idx !== itemIndex && i.name.toLowerCase() === safeUpdates.name.toLowerCase()
+          (i, index) =>
+            i.isActive &&
+            index !== itemIndex &&
+            (!itemIdToCheck || i._id?.toString() !== itemIdToCheck) &&
+            i.name.toLowerCase() === safeUpdates.name.toLowerCase()
         );
         if (duplicate) {
           throw errorHandler(409, `Item name "${safeUpdates.name}" already exists`);
@@ -1035,7 +1052,7 @@ export const getAllMenus = async (req, res, next) => {
 // ===============================================================================
 export const getAllMenusAcrossRestaurants = async (req, res, next) => {
   try {
-    const { page = 1, limit = 12, restaurantId } = req.query;
+    const { page = 1, limit = 12, restaurantId, search } = req.query;
     const pageNum = Number(page);
     const limitNum = Number(limit);
 
@@ -1043,15 +1060,90 @@ export const getAllMenusAcrossRestaurants = async (req, res, next) => {
       throw errorHandler(400, 'Invalid pagination values');
     }
 
-    const filter = { isActive: true };
+    // Use aggregation pipeline for better array element matching
+    const matchStage = { isActive: true };
     if (restaurantId && restaurantId !== 'all') {
-      filter.restaurantId = restaurantId;
+      try {
+        matchStage.restaurantId = new mongoose.Types.ObjectId(restaurantId);
+      } catch {
+        // invalid restaurantId - ignore
+      }
     }
 
-    const total = await Menu.countDocuments(filter);
+    // If searching, use $match with $elemMatch after unwinding
+    if (search && search.trim()) {
+      const searchTerm = search.trim();
+
+      const menus = await Menu.aggregate([
+        { $match: matchStage },
+        {
+          $unwind: {
+            path: '$items',
+            preserveNullAndEmptyArrays: true,
+            includeArrayIndex: 'itemIndex'
+          }
+        },
+        { $match: {
+          $or: [
+            { 'items.name': { $regex: searchTerm, $options: 'i' } },
+            { 'items.description': { $regex: searchTerm, $options: 'i' } }
+          ]
+        }},
+        { $addFields: { 'items._sourceItemIndex': '$itemIndex' } },
+        { $group: {
+          _id: '$_id',
+          restaurantId: { $first: '$restaurantId' },
+          categoryId: { $first: '$categoryId' },
+          items: { $push: '$items' },
+          status: { $first: '$status' },
+          isActive: { $first: '$isActive' }
+        }},
+        { $skip: (pageNum - 1) * limitNum },
+        { $limit: limitNum }
+      ]);
+
+      // Get total count
+      const countPipeline = [
+        { $match: matchStage },
+        { $unwind: { path: '$items', preserveNullAndEmptyArrays: true } },
+        { $match: {
+          $or: [
+            { 'items.name': { $regex: searchTerm, $options: 'i' } },
+            { 'items.description': { $regex: searchTerm, $options: 'i' } }
+          ]
+        }},
+        { $group: { _id: '$_id' } },
+        { $count: 'total' }
+      ];
+      const countResult = await Menu.aggregate(countPipeline);
+      const total = countResult[0]?.total || 0;
+
+      // Populate refs manually
+      for (const menu of menus) {
+        if (menu.categoryId) {
+          const cat = await Category.findById(menu.categoryId).select('name slug').lean();
+          menu.categoryId = cat;
+        }
+        if (menu.restaurantId) {
+          const rest = await Restaurant.findById(menu.restaurantId).select('name slug').lean();
+          menu.restaurantId = rest;
+        }
+      }
+
+      const pagination = paginate({ page: pageNum, limit: limitNum, total });
+
+      return res.status(200).json({
+        success: true,
+        ...pagination,
+        data: menus
+      });
+    }
+
+    // No search - use simple find
+    const total = await Menu.countDocuments(matchStage);
     const pagination = paginate({ page: pageNum, limit: limitNum, total });
 
-    const menus = await Menu.find(filter)
+    const menus = await Menu.find(matchStage)
       .populate('categoryId', 'name slug status isActive')
       .populate('restaurantId', 'name slug')
       .select('-__v')
