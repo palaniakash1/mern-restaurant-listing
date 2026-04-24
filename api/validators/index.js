@@ -340,12 +340,14 @@ export const categoryValidators = {
     name: Joi.string().trim().min(2).required(),
     isGeneric: Joi.boolean().default(false),
     restaurantId: objectId,
-    order: Joi.number().integer().min(0)
+    order: Joi.number().integer().min(0),
+    image: Joi.string().uri().allow('')
   }),
   updateBody: Joi.object({
     name: Joi.string().trim().min(2),
     order: Joi.number().integer().min(0),
-    isActive: Joi.boolean()
+    isActive: Joi.boolean(),
+    image: Joi.string().uri().allow('')
   }).min(1),
   updateStatusBody: Joi.object({
     status: Joi.string().valid('draft', 'blocked', 'published').required()

@@ -34,6 +34,17 @@ const buildCategoryForm = () => ({
   image: ''
 });
 
+const getCategoryImageFromRecord = (category) => {
+  const image = category?.image;
+  if (typeof image === 'string') {
+    return image;
+  }
+  if (image && typeof image === 'object') {
+    return image.url || image.secure_url || image.secureUrl || '';
+  }
+  return category?.imageUrl || category?.thumbnailUrl || '';
+};
+
 const CategoryImageUpload = ({ value, progress, uploading, onSelect }) => {
   return (
     <div className="space-y-3">
@@ -162,7 +173,11 @@ export default function DashCategories() {
         apiGet(listEndpoint),
         loadRestaurants()
       ]);
-      setCategories(categoryData.data || []);
+      const normalizedCategories = (categoryData.data || []).map((category) => ({
+        ...category,
+        image: getCategoryImageFromRecord(category)
+      }));
+      setCategories(normalizedCategories);
       setRestaurants(restaurantData);
       setFormData((current) => ({
         ...current,
@@ -235,11 +250,28 @@ export default function DashCategories() {
 
     try {
       setSubmitting(true);
-      await apiPatch(`/api/categories/${editingCategory._id}`, {
+      const payload = {
         name: editingCategory.name,
         order: Number(editingCategory.order) || 0,
         image: editingCategory.image || undefined
+      };
+      const response = await apiPatch(`/api/categories/${editingCategory._id}`, {
+        ...payload
       });
+      const updatedCategory = response?.data
+        ? {
+            ...response.data,
+            image: getCategoryImageFromRecord(response.data)
+          }
+        : null;
+
+      if (updatedCategory) {
+        setCategories((current) =>
+          current.map((category) =>
+            category._id === updatedCategory._id ? updatedCategory : category
+          )
+        );
+      }
       showToast('Category updated successfully.', 'success');
       setEditingCategory(null);
       await loadCategories();
@@ -367,22 +399,6 @@ export default function DashCategories() {
       await loadCategories();
     } catch (statusError) {
       showToast(statusError.message, 'error');
-    }
-  };
-
-  const handleImageUpdate = async (categoryId, file) => {
-    try {
-      const uploaded = await uploadToCloudinary({
-        file,
-        folder: 'categories',
-        resourceType: 'image',
-        publicIdPrefix: 'category-image'
-      });
-      await apiPatch(`/api/categories/${categoryId}`, { image: uploaded.url });
-      showToast('Category image updated.', 'success');
-      await loadCategories();
-    } catch (uploadError) {
-      showToast(uploadError.message || 'Failed to update image', 'error');
     }
   };
 
@@ -596,134 +612,107 @@ export default function DashCategories() {
         </div>
 
         <div className="hidden overflow-x-auto md:block">
-          <Table hoverable>
-            <Table.Head>
-              <Table.HeadCell>Image</Table.HeadCell>
-              <Table.HeadCell>Name</Table.HeadCell>
-              <Table.HeadCell>Scope</Table.HeadCell>
-              <Table.HeadCell>Restaurant</Table.HeadCell>
-              <Table.HeadCell>Status</Table.HeadCell>
-              <Table.HeadCell>Order</Table.HeadCell>
+            <Table hoverable>
+              <Table.Head>
+                <Table.HeadCell>Image</Table.HeadCell>
+                <Table.HeadCell>Name</Table.HeadCell>
+                <Table.HeadCell>Scope</Table.HeadCell>
+                <Table.HeadCell>Restaurant</Table.HeadCell>
+                <Table.HeadCell>Status</Table.HeadCell>
+                <Table.HeadCell>Order</Table.HeadCell>
               <Table.HeadCell>Actions</Table.HeadCell>
-            </Table.Head>
-            <Table.Body className="divide-y">
-              {filteredCategories.map((category) => (
-                <Table.Row key={category._id}>
-                  <Table.Cell>
-                    {category.image ? (
-                      <ImageUploadCropper
-                        aspectRatio={1}
-                        modalTitle="Crop category image"
-                        onCropComplete={(file) =>
-                          handleImageUpdate(category._id, file)
+              </Table.Head>
+              <Table.Body className="divide-y">
+              {filteredCategories.map((category) => {
+                return (
+                  <Table.Row key={category._id}>
+                    <Table.Cell>
+                      {category.image ? (
+                        <div className="block aspect-square w-12 overflow-hidden rounded-lg border border-[#d8dfc0] bg-[#f7faef]">
+                          <img
+                            src={category.image}
+                            alt={category.name}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                      ) : null}
+                    </Table.Cell>
+                    <Table.Cell className="font-medium text-[#23411f]">
+                      {category.name}
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Badge color={category.isGeneric ? 'failure' : 'success'}>
+                        {category.isGeneric ? 'Generic' : 'Restaurant'}
+                      </Badge>
+                    </Table.Cell>
+                    <Table.Cell>
+                      {category.isGeneric
+                        ? 'Platform'
+                        : getRestaurantName(category.restaurantId)}
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Badge
+                        color={
+                          category.status === 'published'
+                            ? 'success'
+                            : 'warning'
                         }
-                        onError={() => {}}
-                        trigger={({ open }) => (
-                          <button
-                            type="button"
-                            onClick={open}
-                            className="block aspect-square w-12 overflow-hidden rounded-lg border border-[#d8dfc0] bg-[#f7faef]"
-                          >
-                            <img
-                              src={category.image}
-                              alt={category.name}
-                              className="h-full w-full object-cover"
-                            />
-                          </button>
-                        )}
-                      />
-                    ) : (
-                      <ImageUploadCropper
-                        aspectRatio={1}
-                        modalTitle="Crop category image"
-                        onCropComplete={(file) =>
-                          handleImageUpdate(category._id, file)
-                        }
-                        onError={() => {}}
-                        trigger={({ open }) => (
-                          <button
-                            type="button"
-                            onClick={open}
-                            className="flex aspect-square w-12 items-center justify-center rounded-lg border border-dashed border-[#d8dfc0] bg-[#f7faef] text-xs text-gray-400 hover:border-[#8fa31e] hover:text-[#23411f]"
-                          >
-                            +
-                          </button>
-                        )}
-                      />
-                    )}
-                  </Table.Cell>
-                  <Table.Cell className="font-medium text-[#23411f]">
-                    {category.name}
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Badge color={category.isGeneric ? 'failure' : 'success'}>
-                      {category.isGeneric ? 'Generic' : 'Restaurant'}
-                    </Badge>
-                  </Table.Cell>
-                  <Table.Cell>
-                    {category.isGeneric
-                      ? 'Platform'
-                      : getRestaurantName(category.restaurantId)}
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Badge
-                      color={
-                        category.status === 'published' ? 'success' : 'warning'
-                      }
-                    >
-                      {category.status || 'draft'}
-                    </Badge>
-                  </Table.Cell>
-                  <Table.Cell>{category.order ?? 0}</Table.Cell>
-                  <Table.Cell>
-                    <div className="flex flex-wrap gap-2">
-                      {canUpdateCategory && (
-                        <Button
-                          size="xs"
-                          className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
-                          onClick={() =>
-                            setEditingCategory({
+                      >
+                        {category.status || 'draft'}
+                      </Badge>
+                    </Table.Cell>
+                    <Table.Cell>{category.order ?? 0}</Table.Cell>
+                    <Table.Cell>
+                      <div className="flex flex-wrap gap-2">
+                        {canUpdateCategory && (
+                          <Button
+                            size="xs"
+                            className="!bg-[#f7faef] !text-[#23411f] border border-[#d8dfc0] hover:!bg-[#23411f] hover:!text-white hover:border-[#23411f] hover:shadow-md focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
+                            onClick={() =>
+                              setEditingCategory({
                               _id: category._id,
                               name: category.name,
-                              order: category.order ?? 0
+                              order: category.order ?? 0,
+                              image: category.image || ''
                             })
                           }
-                        >
-                          <HiOutlinePencilSquare className="mr-1 h-4 w-4" />
-                          Edit
-                        </Button>
-                      )}
-                      {canUpdateStatus && (
-                        <Button
-                          size="xs"
-                          className={
-                            category.status === 'published'
-                              ? '!bg-[#f59e0b] hover:!bg-[#d97706] !text-white'
-                              : '!bg-[#22c55e] hover:!bg-[#16a34a] !text-white'
-                          }
-                          onClick={() =>
-                            handleStatusChange(category._id, category.status)
-                          }
-                        >
-                          {category.status === 'published'
-                            ? 'Draft'
-                            : 'Publish'}
-                        </Button>
-                      )}
-                      {canDeleteCategory && (
-                        <Button
-                          color="failure"
-                          size="xs"
-                          onClick={() => handleDeleteCategory(category._id)}
-                        >
-                          <HiOutlineTrash className="mr-1 h-4 w-4" />
-                          Delete
-                        </Button>
-                      )}
-                    </div>
-                  </Table.Cell>
-                </Table.Row>
-              ))}
+                          >
+                            <HiOutlinePencilSquare className="mr-1 h-4 w-4" />
+                            Edit
+                          </Button>
+                        )}
+                        {canUpdateStatus && (
+                          <Button
+                            size="xs"
+                            className={
+                              category.status === 'published'
+                                ? '!bg-[#f59e0b] hover:!bg-[#d97706] !text-white'
+                                : '!bg-[#22c55e] hover:!bg-[#16a34a] !text-white'
+                            }
+                            onClick={() =>
+                              handleStatusChange(category._id, category.status)
+                            }
+                          >
+                            {category.status === 'published'
+                              ? 'Draft'
+                              : 'Publish'}
+                          </Button>
+                        )}
+                        {canDeleteCategory && (
+                          <Button
+                            color="failure"
+                            size="xs"
+                            onClick={() => handleDeleteCategory(category._id)}
+                          >
+                            <HiOutlineTrash className="mr-1 h-4 w-4" />
+                            Delete
+                          </Button>
+                        )}
+                      </div>
+                    </Table.Cell>
+                  </Table.Row>
+                );
+              })}
             </Table.Body>
           </Table>
         </div>
@@ -875,7 +864,6 @@ export default function DashCategories() {
             form="editCategoryForm"
             type="submit"
             className="!bg-[#8fa31e] hover:!bg-[#78871c]"
-            onClick={handleUpdateCategory}
             isProcessing={submitting}
           >
             Save Changes

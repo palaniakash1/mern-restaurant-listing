@@ -265,7 +265,8 @@ export const updateCategory = async (req, res, next) => {
       if (
         normalizedName === undefined &&
         order === undefined &&
-        isActive === undefined
+        isActive === undefined &&
+        image === undefined
       ) {
         throw errorHandler(400, 'nothing to update');
       }
@@ -321,7 +322,8 @@ export const updateCategory = async (req, res, next) => {
         'name',
         'slug',
         'order',
-        'isActive'
+        'isActive',
+        'image'
       ]);
 
       if (diff && Object.keys(diff).length > 0) {
