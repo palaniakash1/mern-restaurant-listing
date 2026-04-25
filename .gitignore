@@ -30,3 +30,4 @@ keys/
 demopage/
 
 screenshots/
+client/.env.dev
