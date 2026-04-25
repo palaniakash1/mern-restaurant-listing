@@ -24,10 +24,11 @@ dist-ssr
 *.sw?
 
 .env
-# JWT Keys - NEVER COMMIT
+.env.local
+.env.development
+.env.production
+.env.test
 keys/
-
 demopage/
-
 screenshots/
 client/.env.dev
