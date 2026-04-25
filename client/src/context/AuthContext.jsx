@@ -24,6 +24,7 @@ import {
   signOutSuccess as signOutSuccessRedux
 } from '../redux/user/userSlice';
 import { app } from '../firebase';
+import { hasFirebaseConfig } from '../config/env';
 
 /**
  * =============================================================================
@@ -169,7 +170,7 @@ const initialState = {
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
   const reduxDispatch = useDispatch();
-  const firebaseAuth = getAuth(app);
+  const firebaseAuth = hasFirebaseConfig ? getAuth(app) : null;
 
   // =============================================================================
   // SESSION RESTORATION ON APP LOAD
@@ -341,7 +342,10 @@ export function AuthProvider({ children }) {
     try {
       await apiSignout();
     } finally {
-      await firebaseSignOut(firebaseAuth).catch(() => {});
+      if (firebaseAuth) {
+        await firebaseSignOut(firebaseAuth).catch(() => {});
+      }
+
       reduxDispatch(signOutSuccessRedux());
       reduxDispatch(clearReduxError());
       dispatch({ type: ACTIONS.SIGNOUT });

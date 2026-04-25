@@ -1,24 +1,34 @@
-import React, { useEffect } from "react";
-import { Button } from "flowbite-react";
-import { GoogleAuthProvider, signInWithPopup, getAuth, signOut as firebaseSignOut } from "firebase/auth";
-import { app } from "../firebase";
-import { useNavigate } from "react-router-dom";
-import { AiFillGoogleCircle } from "react-icons/ai";
-import { useAuth } from "../context/AuthContext";
+import React, { useEffect } from 'react';
+import { Button } from 'flowbite-react';
+import { GoogleAuthProvider, signInWithPopup, getAuth, signOut as firebaseSignOut } from 'firebase/auth';
+import { app } from '../firebase';
+import { useNavigate } from 'react-router-dom';
+import { AiFillGoogleCircle } from 'react-icons/ai';
+import { useAuth } from '../context/AuthContext';
+import { hasFirebaseConfig } from '../config/env';
 
 export default function OAuth() {
-  const auth = getAuth(app);
+  const auth = hasFirebaseConfig ? getAuth(app) : null;
   const { loginWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!auth) {
+      return;
+    }
+
     firebaseSignOut(auth).catch(() => {});
   }, [auth]);
 
   const handleGoogleClick = async () => {
+    if (!auth) {
+      console.error('Firebase is not configured. Set VITE_FIREBASE_API_KEY in client/.env.development.local.');
+      return;
+    }
+
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({
-      prompt: "select_account",
+      prompt: 'select_account'
     });
     try {
       const credential = await signInWithPopup(auth, provider);
@@ -32,7 +42,7 @@ export default function OAuth() {
       await firebaseSignOut(auth).catch(() => {});
 
       if (result.success) {
-        navigate("/");
+        navigate('/');
       }
     } catch (error) {
       if (error.code !== 'auth/popup-closed-by-user') {
@@ -47,6 +57,7 @@ export default function OAuth() {
       outline
       className=" uppercase !bg-[#8fa31e] hover:!bg-[#7a8c1a] text-white !rounded-lg border-none focus:!ring-[#8fa31e] focus:!border-[#8fa31e]"
       onClick={handleGoogleClick}
+      disabled={!hasFirebaseConfig}
     >
       <AiFillGoogleCircle className="w-6 h-6 mr-2" />
       Signin with Google
