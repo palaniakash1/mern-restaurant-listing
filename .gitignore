@@ -31,4 +31,7 @@ dist-ssr
 keys/
 demopage/
 screenshots/
+
 client/.env.dev
+
+.codex
