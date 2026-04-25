@@ -648,23 +648,6 @@ mern-restaurant
 ├─ ENTERPRISE_GAP_CHECKLIST.md
 ├─ eslint.config.js
 ├─ JWT_KEY_ROTATION.md
-├─ keys
-│  ├─ 0464700e-f4f3-44f2-8614-cfe3049fa59f.key
-│  ├─ 225dd211-a98c-4964-a32f-820df62d4ea6.key
-│  ├─ 23107baf-5010-4268-a57e-559049397776.key
-│  ├─ 4c9b5020-eae9-4977-8a3b-43beede8d6d9.key
-│  ├─ 4d0817e5-0433-4c5a-99c2-118b6a87faef.key
-│  ├─ 50e516d5-00bf-4705-bf5c-3dc04ee576d4.key
-│  ├─ 6a68fa23-6d63-4e65-b304-395881b248d4.key
-│  ├─ 6cc76fe3-e377-43bd-86fb-45ab22dfb861.key
-│  ├─ a1070027-31e3-44d0-8204-f8a6694080b6.key
-│  ├─ af4eb789-53cf-40f9-8ad5-c367cbeee01d.key
-│  ├─ bfbc14b7-4a29-4f08-a762-340976f4a5ab.key
-│  ├─ c49d6fff-dcd3-407f-b2ef-0bb7d63c675e.key
-│  ├─ d2742b40-bdbd-4ac9-911f-eaaf8de43a4a.key
-│  ├─ d4b4aacd-9ade-4238-993a-216800a4b2cc.key
-│  ├─ ea16b998-a35e-4e70-8ee0-09003a8ccb51.key
-│  └─ faf7b8e2-4cd8-4daf-85d6-5184dace4978.key
 ├─ package-lock.json
 ├─ package.json
 ├─ Project_Structure.md
