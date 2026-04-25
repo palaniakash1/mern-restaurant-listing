@@ -117,7 +117,7 @@ export const updateUserProfile = async ({ actor, targetUserId, body, req }) =>
         }
 
         const diff = diffObject(oldUser, updatedUser, allowedFields);
-        if (Object.keys(diff).length) {
+        if (diff && Object.keys(diff).length) {
           await logAudit({
             actorId: actor.id,
             actorRole: actor.role,

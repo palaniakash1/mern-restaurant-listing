@@ -215,7 +215,11 @@ export default function DashProfile() {
     try {
       const data = await apiPatch(`/api/users/${userId}`, payload);
       updateUser(data.data);
-      setFormData((prev) => ({ ...prev, password: '' }));
+      setFormData((prev) => ({
+        ...prev,
+        ...data.data,
+        password: ''
+      }));
       showToast('Profile updated successfully.', 'success');
     } catch (submitError) {
       showToast(submitError.message, 'error');
