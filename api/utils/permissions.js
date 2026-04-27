@@ -79,7 +79,8 @@ export const PERMISSIONS = {
       'deleteSelf',
       'deactivateSelf',
       'assignStoreManager',
-      'unassignStoreManager'
+      'unassignStoreManager',
+      'reassignAdmin'
     ],
     restaurant: [
       'create',
