@@ -297,7 +297,7 @@ export default function SingleRestaurant() {
     } finally {
       setReviewsLoading(false);
     }
-  }, [restaurant?._id]);
+  }, [restaurant]);
 
   useEffect(() => {
     loadData();

@@ -22,7 +22,7 @@ export default function OAuth() {
 
   const handleGoogleClick = async () => {
     if (!auth) {
-      console.error('Firebase is not configured. Set VITE_FIREBASE_API_KEY in client/.env.development.local.');
+      console.error('Firebase is not configured. Set VITE_FIREBASE_API_KEY or FIREBASE_API_KEY in the repo-root .env file.');
       return;
     }
 

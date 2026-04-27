@@ -49,9 +49,13 @@ export function FeaturedByCategory() {
         const response = await listCategories({ limit: 50 });
         let cats = response.data?.data || response.data || [];
         if (!Array.isArray(cats) || cats.length === 0) {
-          cats = response || [];
+          cats = Array.isArray(response) ? response : [];
         }
-        setCategories(cats.slice(0, 12));
+        if (Array.isArray(cats)) {
+          setCategories(cats.slice(0, 12));
+        } else {
+          setCategories([]);
+        }
       } catch (err) {
         console.error('Failed to fetch categories:', err);
         setCategories([]);

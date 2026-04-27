@@ -86,7 +86,7 @@ export default function App() {
 
   if (!hasGoogleMapsConfig) {
     console.error(
-      'Google Maps is not configured. Set VITE_GOOGLE_MAPS_API_KEY in client/.env.development.local.'
+      'Google Maps is not configured. Set VITE_GOOGLE_MAPS_API_KEY or GOOGLE_MAPS_API_KEY in the repo-root .env file.'
     );
     return content;
   }
